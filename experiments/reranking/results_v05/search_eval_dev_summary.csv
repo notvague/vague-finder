@@ -1,0 +1,17 @@
+﻿metric,baseline,rerank,delta
+Hit@1,0.528302,0.566038,0.037736
+Hit@5,0.773585,0.792453,0.018868
+Hit@10,0.849057,0.849057,0.0
+Recall@10,0.849057,0.849057,0.0
+MRR@10,0.632495,0.651363,0.018868
+nDCG@10,0.684498,0.698668,0.01417
+Candidate Recall@30,0.981132,,
+Improved query count,,3,
+Unchanged query count,,48,
+Worsened query count,,2,
+
+commit,0b9654b315070afdf1d217156b7ad51a7f98cd17,,
+measured_at,2026-08-19 16:19 KST,,
+corpus,905 songs (namespace=dev),,
+queries,eval_queries_v04.csv split=dev (53),,
+reranker_spread_ref,0.02,,

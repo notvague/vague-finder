@@ -1,0 +1,11 @@
+﻿metric,baseline,rerank,delta
+Hit@1,0.447368,0.460526,0.013158
+Hit@5,0.671053,0.671053,0.0
+Hit@10,0.776316,0.776316,0.0
+Recall@10,0.776316,0.776316,0.0
+MRR@10,0.549556,0.56403,0.014474
+nDCG@10,0.603404,0.614683,0.011279
+Candidate Recall@30,0.947368,,
+Improved query count,,6,
+Unchanged query count,,67,
+Worsened query count,,3,

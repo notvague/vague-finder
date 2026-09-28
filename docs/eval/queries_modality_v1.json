@@ -1,0 +1,148 @@
+{
+  "version": "1.0.0",
+  "created_at": "2026-08-24",
+  "description": "모달리티 분리(#55/#56) 효과 측정 및 9월 나무위키 크롤링 사전 기준선용 신규 질의 세트. 기존 docs/eval/queries.json(v0.4, 60개)과 절대 병합하지 말 것 — v0.5 기준선과의 비교가 깨진다. 별도 파일로 별도 측정한다.",
+  "corpus": "905곡 (2026-08 기준)",
+  "usage": "venv/bin/python src/eval/evaluate.py --queries docs/eval/queries_modality_v1.json",
+  "types": {
+    "external_context": "고유명사·외부맥락. 9월 나무위키 크롤링 효과 측정의 사전 기준선. 지금은 낮게 나오는 것이 정상이며, 크롤링 후 상승폭이 곧 효과다.",
+    "audio_only": "청각 단서만. image 경로가 0으로 게이팅되는지 확인.",
+    "image_only": "시각 단서만. audio 경로가 0으로 게이팅되는지 확인.",
+    "mixed_av": "이미지+오디오 혼합. 분리 전 서로 오염되던 핵심 대상이라 개선 폭이 가장 크게 나올 자리."
+  },
+  "labeling_policy": "positives는 MongoDB 메타데이터(앨범명/발매일/보컬성별/sound_tags)로 교차 검증된 것만 기입했다. 앨범 표지 실물 확인이 필요한 질의는 positives를 비우고 needs_cover_check=true로 표시했다 — 라벨 없이 측정에 넣으면 q118처럼 잘못된 정답으로 원인 추적이 어려워진다.",
+  "queries": [
+    {
+      "query_id": "m101",
+      "query": "예능 프로그램에서 가요제 한다고 만든 곡인데, 개그맨이랑 아이돌이 같이 불렀어. 재즈풍이고 기타 소리가 인상적이었던 것 같아",
+      "type": "external_context",
+      "modality_focus": "text",
+      "positives": ["5826461"],
+      "negatives": ["3467466", "3467463", "5824839"],
+      "notes": "타깃: 레옹 (박명수, 아이유 / 무한도전 영동고속도로 가요제, 2015). 앨범명에만 '무한도전'이 있고 제목·가사에는 없다. sparse에 album 필드가 추가된 #52 효과와 9월 나무위키 효과를 함께 볼 수 있는 질의. negatives는 같은 가요제 다른 곡."
+    },
+    {
+      "query_id": "m102",
+      "query": "무한도전 가요제 곡 중에 유재석이 참여한 노래였어. 랩이 들어가고 리듬감이 있었던 걸로 기억해",
+      "type": "external_context",
+      "modality_focus": "text",
+      "positives": ["3467466"],
+      "negatives": ["3467463", "5826461", "5824839"],
+      "notes": "타깃: 압구정 날라리 (처진 달팽이 = 유재석 & 이적, 2011). 고유명사가 질의에 직접 등장하는 경우. m101과 대비해 '명시적 고유명사 vs 우회 설명' 차이를 본다."
+    },
+    {
+      "query_id": "m103",
+      "query": "2000년대 초반 겨울 드라마 OST였는데, 현악기가 깔리고 남자가 호소하듯 부르는 발라드야",
+      "type": "external_context",
+      "modality_focus": "text",
+      "positives": ["523274"],
+      "negatives": ["686651", "30157753"],
+      "notes": "타깃: 처음부터 지금까지 (Ryu / 겨울연가 OST, 2002). 앨범명에 드라마명이 있고 sound_tags=[발라드,호소력,현악기]와 질의가 일치."
+    },
+    {
+      "query_id": "m104",
+      "query": "도깨비 드라마에 나온 노래인데 피아노 반주에 남자 보컬이 감성적으로 불렀어",
+      "type": "external_context",
+      "modality_focus": "text",
+      "positives": ["30157753"],
+      "negatives": ["523274", "4097003"],
+      "notes": "타깃: Beautiful (Crush / 도깨비 OST Part 4, 2016). sound_tags=[피아노,감성보컬,호소력]. 드라마명이 명시된 케이스."
+    },
+    {
+      "query_id": "m105",
+      "query": "사극 드라마 OST였고 남자가 엄청 고음으로 절규하듯 부르는 록 발라드였어",
+      "type": "external_context",
+      "modality_focus": "text",
+      "positives": ["686651"],
+      "negatives": ["523274", "30157753"],
+      "notes": "타깃: 응급실 (izi / 쾌걸춘향 OST, 2005). sound_tags=[록사운드,고음,절규]와 정확히 대응."
+    },
+    {
+      "query_id": "m201",
+      "query": "반주가 어쿠스틱 기타 위주이고 남녀가 같이 부르는데 목소리가 맑고 청아했어. 리듬감이 있는 곡이야",
+      "type": "audio_only",
+      "modality_focus": "audio",
+      "positives": ["4097003"],
+      "negatives": [],
+      "notes": "타깃: I Love You (AKMU / 2013). sound_tags=[어쿠스틱,리듬감,청아함], vocal_gender=혼성. 시각 단서가 전혀 없으므로 image 가중치가 0으로 게이팅되어야 한다."
+    },
+    {
+      "query_id": "m202",
+      "query": "신디사이저랑 일렉트로닉 사운드가 강한 힙합풍 곡인데 남녀 목소리가 섞여 나와",
+      "type": "audio_only",
+      "modality_focus": "audio",
+      "positives": ["3467463"],
+      "negatives": ["5824839"],
+      "notes": "타깃: 바람났어 (GG = 박명수 & G-Dragon, 2011). sound_tags=[일렉트로닉,힙합,신디사이저], vocal_gender=혼성. negative는 같은 일렉트로닉 계열 다른 곡."
+    },
+    {
+      "query_id": "m203",
+      "query": "샘플링이랑 비트가 강조된 일렉트로닉 곡이고 남자들이 여러 명 부르는 느낌이었어",
+      "type": "audio_only",
+      "modality_focus": "audio",
+      "positives": ["5824839"],
+      "negatives": ["3467463"],
+      "notes": "타깃: 맙소사 (황태지, 2015). sound_tags=[비트,샘플링,일렉트로닉]. m202와 사운드 태그가 겹쳐 오디오 경로의 변별력을 본다."
+    },
+    {
+      "query_id": "m301",
+      "query": "앨범 커버가 온통 빨간색이었던 노래를 찾고 있어",
+      "type": "image_only",
+      "modality_focus": "image",
+      "positives": [],
+      "needs_cover_check": true,
+      "negatives": [],
+      "notes": "라벨 미정 — 실제 cover.jpg 확인 필요. 이 질의는 '앨범 커버 + 노래' 오판정 버그(주간계획 문서 참조)의 회귀 테스트를 겸한다. 버그가 남아 있으면 has_visual_clue=False가 되어 image 경로가 통째로 꺼진다."
+    },
+    {
+      "query_id": "m302",
+      "query": "표지에 사람 얼굴이 크게 클로즈업되어 있던 곡이야",
+      "type": "image_only",
+      "modality_focus": "image",
+      "positives": [],
+      "needs_cover_check": true,
+      "negatives": [],
+      "notes": "라벨 미정 — cover.jpg 확인 필요. '표지' 표현이라 위 버그의 영향을 받지 않는다. m301과 짝을 이뤄 '같은 의도, 다른 표현'의 결과 차이를 확인하는 용도."
+    },
+    {
+      "query_id": "m303",
+      "query": "앨범 자켓이 흑백 사진이었고 글자가 거의 없었던 것 같아",
+      "type": "image_only",
+      "modality_focus": "image",
+      "positives": [],
+      "needs_cover_check": true,
+      "negatives": [],
+      "notes": "라벨 미정 — cover.jpg 확인 필요. 색상 대비와 타이포그래피 유무만으로 된 순수 시각 질의."
+    },
+    {
+      "query_id": "m401",
+      "query": "앨범 커버가 파스텔톤으로 화사했고, 곡 자체는 어쿠스틱 기타에 남녀 보컬이 맑게 부르는 노래였어",
+      "type": "mixed_av",
+      "modality_focus": "mixed",
+      "positives": ["4097003"],
+      "needs_cover_check": true,
+      "negatives": [],
+      "notes": "타깃 후보: I Love You (AKMU). 오디오 절반(어쿠스틱/혼성/청아)은 메타데이터로 검증됨. 표지 묘사는 cover.jpg 확인 필요. 분리 전에는 '파스텔톤 커버'가 CLAP에, '어쿠스틱 기타'가 SigLIP2에 오염으로 들어가던 케이스."
+    },
+    {
+      "query_id": "m402",
+      "query": "커버가 어둡고 차가운 느낌이었는데, 노래는 현악기 깔린 남자 발라드였어",
+      "type": "mixed_av",
+      "modality_focus": "mixed",
+      "positives": ["523274"],
+      "needs_cover_check": true,
+      "negatives": ["686651"],
+      "notes": "타깃 후보: 처음부터 지금까지 (Ryu). 오디오 절반(현악기/남성/발라드) 검증됨. 표지는 확인 필요. m401과 함께 혼합 유형의 개선 폭을 본다."
+    },
+    {
+      "query_id": "m403",
+      "query": "표지가 알록달록하고 시끌벅적한 느낌인데 정작 곡은 잔잔한 피아노 발라드였어",
+      "type": "mixed_av",
+      "modality_focus": "mixed",
+      "positives": [],
+      "needs_cover_check": true,
+      "negatives": [],
+      "notes": "라벨 미정 — 표지와 사운드의 인상이 상반되는 질의. 분리 전 구조에서 가장 크게 손해 보는 형태(두 단서가 서로를 지운다)라 개선 효과가 가장 크게 나올 자리다. cover.jpg 확인 후 라벨."
+    }
+  ]
+}

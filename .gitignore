@@ -1,0 +1,96 @@
+# General
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.env
+.venv
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Project Specific
+data/
+!data/.gitkeep
+brain/
+CHECKLIST.md
+
+# IDE
+.idea/
+.vscode/
+*.log
+#embedding artifacts / caches
+artifacts/*
+!artifacts/bm25_params.json
+# 임베딩 벡터(artifacts/embeddings/)는 커밋하지 않는다.
+# 가사·앨범 커버·음원에서 뽑은 파생물이라 공개 레포에 올릴 수 없다.
+# 팀 드라이브로 공유하고 docs/vector_backend.md 절차대로 내려받는다.
+# 지도 화면 데이터도 같은 이유로 커밋하지 않는다 — 수집한 곡 전체 목록(제목·가수·YouTube ID·커버 URL)이다.
+# 팀 드라이브에서 받거나 src/pipelines/build_map.py로 다시 만든다.
+src/frontend/static/map_data.json
+*.csv
+cookies.txt
+logs/
+
+# tests
+requirements_backup.txt
+reports/
+
+# eval 질의 CSV는 *.csv 규칙에서 예외 (팀 공유 자산)
+!experiments/reranking/*.csv
+
+# 측정 요약 결과는 기준선 추적용으로 커밋 (detail은 용량 커서 제외)
+!experiments/reranking/results_*/search_eval_*_summary.csv
+# 질의별 순위·지표 경량본도 커밋 — detail 없이도 split 재집계가 재현된다
+!experiments/reranking/results_*/search_eval_*_ranks.csv
+# 재질문 정책 비교 산출물 — detail도 100KB 수준(analysis_json 없음)이고
+# 정책 간 우열의 1차 증거라 함께 커밋한다
+!experiments/reranking/results_clarify_*/clarify_*.csv
+# 감정 색인 A/B(results_emotion_index_ab) — 제외 결정의 근거라 요약과 경량 표를 커밋한다.
+# 조건별 폴더 한 단계 아래에 요약이 있어 위 results_* 예외에 걸리지 않는다. detail은 제외.
+!experiments/reranking/results_emotion_index_ab/*.csv
+!experiments/reranking/results_emotion_index_ab/*/search_eval_*_summary.csv
+
+# 지연 측정 요약도 같은 이유로 커밋한다 — 기준선이 없으면 다음 측정과 비교할 수 없다.
+# detail(질의별, ~19KB)은 관례대로 제외한다. 요약에 중앙값·p95·최댓값이 다 있다.
+!experiments/latency/*/latency_summary.csv
+
+# 질의별 전체 실행 기록. 조건당 ~600KB, 전체 22MB다.
+# analysis_cache_*.json과 같은 저장소에 있으면 결정적으로 재생성되므로 추적하지 않는다.
+experiments/reranking/results_*/*_explain.jsonl
+experiments/reranking/results_*/*/*_explain.jsonl
+
+# 조건별 폴더가 한 단계 더 깊은 실험(v12~v17)의 요약도 커밋한다.
+!experiments/reranking/results_*/*/search_eval_*_summary.csv
+!experiments/reranking/results_*/ce_batch_*_summary.csv
+!experiments/reranking/results_*/*/latency_summary.csv

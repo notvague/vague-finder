@@ -1,0 +1,21 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+venv
+.env
+.venv
+
+# Docker
+docker-compose.yml
+Dockerfile
+
+# Data (용량이 큰 데이터는 제외)
+data/

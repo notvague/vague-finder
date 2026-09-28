@@ -1,0 +1,240 @@
+diff --git a/src/embedding/text/passage_builder.py b/src/embedding/text/passage_builder.py
+index 789f962..8d3ab09 100644
+--- a/src/embedding/text/passage_builder.py
++++ b/src/embedding/text/passage_builder.py
+@@ -21,6 +21,8 @@ from __future__ import annotations
+ 
+ from typing import Dict, Any, List
+ 
++from src.common.emotion_vocab import emotion_index_terms
++
+ 
+ def _join_tags(tags: Any, *, sep: str = " ") -> str:
+     """tags가 list[str]면 join, str이면 그대로, None이면 빈 문자열."""
+@@ -257,7 +259,11 @@ def build_sparse_passage(song: Dict) -> str:
+     melon_playlist_tags = _keyword_block(_get_first_nonempty(sources, "melon_playlist_tags"))
+     visual_imagery = _keyword_block(_get_first_nonempty(sources, "visual_imagery"))
+     fans_tags = _keyword_block(_get_first_nonempty(sources, "fans_tags"))
+-    major_emotion = _keyword_block(_get_first_nonempty(sources, "major_emotion"))
++    major_emotion = emotion_index_terms(
++        _get_first_nonempty(sources, "major_emotion"),
++        tags=_as_list(_get_first_nonempty(sources, "emotion_tags"))
++        + _as_list(_get_first_nonempty(sources, "mood_tags")),
++    )
+ 
+     parts: List[str] = []
+     
+diff --git a/src/common/emotion_vocab.py b/src/common/emotion_vocab.py
+new file mode 100644
+index 0000000..3bb4e95
+--- /dev/null
++++ b/src/common/emotion_vocab.py
+@@ -0,0 +1,208 @@
++"""
++대표 감정(major_emotion) 통제 어휘
++
++설명: `community_feedback.major_emotion`은 **sparse passage(BM25)에만** 들어간다.
++      dense passage(KoE5)에는 없다. 그런데 수집분 961곡이 **전부 영어**였다.
++
++      BM25에는 위치 가중치가 없다. 이 필드의 효과는 passage 어디에 두느냐가 아니라
++      질의와 같은 토큰이 생기느냐로만 난다.
++
++          Sadness(390) Joy(125) Melancholy(101) Excitement(83) Nostalgia(65) ... 45종
++
++      질의는 한국어라 '슬픈'이 'Sadness'와 매칭될 수 없다. 영어 값은 어떤 한국어 질의와도
++      토큰을 공유하지 않는 죽은 토큰이었다.
++
++      영어인 것보다 어휘가 흩어진 게 더 문제였다. 자유 생성이라 Joy(125)·Joyful(3)·
++      Happiness(1), Sensuality(3)·Sensual(1), Longing(14)·Yearning(3)처럼 같은 뜻이
++      갈라져 있다. 토큰이 쪼개지면 BM25 가중치도 같이 쪼개진다.
++
++      그래서 한국어 고정 어휘로 통일한다. LLM에는 이 목록 중 하나만 고르게 하고,
++      passage_builder는 이미 쌓인 영어 값을 같은 어휘로 옮겨서 색인한다. 덕분에
++      기존 961곡을 다시 크롤링하지 않아도 색인이 바로잡힌다.
++
++작성자: 황찬혁 (Full)
++생성일: 2026-09-17
++"""
++from __future__ import annotations
++
++from typing import Dict, Iterable, Tuple
++
++# LLM이 고를 수 있는 값. 늘리기 전에 BM25 토큰이 쪼개진다는 점을 생각할 것.
++EMOTION_VOCAB: Tuple[str, ...] = (
++    "슬픔",
++    "쓸쓸함",
++    "그리움",
++    "추억",
++    "위로",
++    "기쁨",
++    "신남",
++    "설렘",
++    "사랑",
++    "자신감",
++    "열정",
++    "분노",
++    "몽환",
++    "희망",
++)
++
++# ---------------------------------------------------------------------------
++# 이미 수집된 영어 값 45종 → 한국어
++#
++# 매핑이 빠짐없는지와 매핑이 맞는지는 별개다. 곡마다 자체 emotion_tags·mood_tags와
++# 대조해 보니(2026-09-17) 정적 표로는 틀리는 값이 있었다.
++#
++#   Excitement(83)  댄스곡에서는 '신남'이지만 '썸 탈꺼야'·'금요일에 만나요'는 태그가
++#                   '두근거림·설렘'이다. 하나로 고정하면 3분의 1이 틀린다.
++#   Obsession       에픽하이 'Fan' — 태그가 고독·광기·집착. '설렘'으로 옮기면 반대 뜻이다.
++#   Sensuality      'Love Shot' — 섹시·치명적. '설레는 노래' 질의에 엉뚱하게 걸린다.
++#   Cynicism 등     '봄이 좋냐??' — 위트·유머. '분노'가 아니다.
++#
++# 그래서 세 갈래로 나눈다.
++#   1) 뜻이 하나로 정해지는 값      — 그대로 옮긴다.
++#   2) 뜻이 갈리는 값              — 그 곡의 한국어 태그에 근거가 있는 후보를 고른다.
++#                                   같은 LLM 호출이 만든 태그라 곡의 맥락을 담고 있다.
++#   3) 대응하는 어휘가 없는 값      — 비운다.
++# 근거 없이 억지로 넣으면 엉뚱한 질의에 걸리고, 비우면 영어였을 때와 같다(어차피 죽은
++# 토큰이었다). 틀린 토큰보다 없는 토큰이 낫다.
++# ---------------------------------------------------------------------------
++
++_UNAMBIGUOUS: Dict[str, str] = {
++    "sadness": "슬픔",
++    "melancholy": "쓸쓸함", "loneliness": "쓸쓸함",
++    "longing": "그리움", "yearning": "그리움",
++    "nostalgia": "추억",
++    "healing": "위로",
++    "joy": "기쁨", "happiness": "기쁨", "euphoria": "기쁨",
++    "love": "사랑", "affection": "사랑", "romance": "사랑",
++    "empowerment": "자신감", "confidence": "자신감", "ambition": "자신감",
++    "resilience": "자신감", "determination": "자신감",
++    "passion": "열정",
++    "resentment": "분노",
++    "mysterious": "몽환",
++    "hopeful": "희망",
++}
++
++# 곡 태그에서 근거가 가장 많이 나온 후보를 고른다. 동점이면 앞의 것(직역에 가까운 쪽).
++# 근거가 하나도 없으면 비운다.
++_NEEDS_EVIDENCE: Dict[str, Tuple[str, ...]] = {
++    "excitement": ("신남", "설렘"),
++    "joyful": ("기쁨", "설렘", "신남"),
++    "bittersweet": ("그리움", "쓸쓸함"),
++    "defiance": ("자신감", "분노"),
++    "liberation": ("자신감", "희망"),
++    "intensity": ("열정", "신남"),
++    "angst": ("슬픔", "분노"),
++    "despair": ("슬픔",),
++    "frustration": ("분노",),
++    "relief": ("위로",),
++    "catharsis": ("위로",),
++    "gratitude": ("위로", "사랑"),
++    "sensuality": ("설렘",),
++    "sensual": ("설렘",),
++    "captivation": ("설렘",),
++    "desire": ("그리움",),
++    "cool": ("자신감",),
++}
++
++# 통제 어휘에 대응하는 뜻이 없다. 곡 태그와 대조해도 근거가 없었다.
++_NO_EQUIVALENT = frozenset({
++    "obsession",   # 에픽하이 'Fan' — 고독·광기·집착
++    "suspense",    # '미친거니' — 공포·불안·섬뜩함
++    "cynicism",    # 'Dirty Cash', '그런 남자' — 씁쓸함·풍자
++    "sarcasm",     # '봄이 좋냐??' — 위트·유머
++    "conflict",    # '두사랑' — 혼란·갈등
++    "mood",        # 감정이 아니다
++})
++
++# 근거로 인정할 어간. 태그만 본다 — 반응 요약은 '향수를 느낀다' 같은 상투구가 많아
++# 그리움·추억에 거짓 근거를 만든다.
++_EVIDENCE_STEMS: Dict[str, Tuple[str, ...]] = {
++    "슬픔": ("슬픔", "슬프", "애절", "비통", "눈물", "상처", "비애"),
++    "쓸쓸함": ("쓸쓸", "고독", "외로", "공허"),
++    "그리움": ("그리움", "그립", "향수", "회상", "애틋"),
++    "추억": ("추억", "향수", "회상"),
++    "위로": ("위로", "위안", "치유", "힐링"),
++    "기쁨": ("기쁨", "기쁘", "행복", "즐거", "희열"),
++    "신남": ("신나", "신남", "흥겨", "흥분", "경쾌", "활기", "에너지", "파티"),
++    "설렘": ("설렘", "설레", "두근"),
++    "사랑": ("사랑", "로맨", "애정"),
++    "자신감": ("자신감", "당당", "자존", "투지"),
++    "열정": ("열정", "정열"),
++    "분노": ("분노", "증오", "원망", "반항"),
++    "몽환": ("몽환", "신비"),
++    "희망": ("희망",),
++}
++
++KNOWN_ENGLISH = frozenset(_UNAMBIGUOUS) | frozenset(_NEEDS_EVIDENCE) | _NO_EQUIVALENT
++
++_VOCAB_SET = frozenset(EMOTION_VOCAB)
++
++
++def _evidence_count(candidate: str, tags: Iterable[str]) -> int:
++    """후보의 어간이 걸리는 태그 수."""
++    stems = _EVIDENCE_STEMS[candidate]
++    return sum(1 for tag in tags if tag and any(stem in str(tag) for stem in stems))
++
++
++def canonical_emotion(value: object, tags: Iterable[str] = ()) -> str:
++    """대표 감정을 통제 어휘의 한국어 값으로 옮긴다.
++
++    Args:
++        value: 저장된 major_emotion (한국어 어휘 또는 예전 영어 값)
++        tags:  그 곡의 emotion_tags + mood_tags. 뜻이 갈리는 영어 값을 가릴 때 쓴다.
++
++    옮길 근거가 없으면 빈 문자열을 돌려준다.
++    """
++    text = str(value or "").strip()
++    if not text:
++        return ""
++    if text in _VOCAB_SET:
++        return text
++
++    key = text.lower()
++    if key in _UNAMBIGUOUS:
++        return _UNAMBIGUOUS[key]
++
++    tag_list = list(tags or ())
++    best, best_count = "", 0
++    for candidate in _NEEDS_EVIDENCE.get(key, ()):
++        count = _evidence_count(candidate, tag_list)
++        if count > best_count:          # 동점이면 먼저 나온 후보를 유지한다
++            best, best_count = candidate, count
++    return best
++
++
++# BM25 색인용 형용사형.
++#
++# Kiwi가 표제어로 바꾸면서 파생명사와 형용사가 갈린다. 질의 '슬픈 노래'는 `슬프다`로
++# 분석되는데 색인 값 '슬픔'은 `슬픔`이라 서로 맞지 않는다. 그래서 색인할 때만 형용사형을
++# 함께 넣는다. 레코드에 저장되는 값은 명사 하나로 둔다.
++#
++#     '슬픔'        -> ['슬픔']                  질의 '슬픈 노래' -> ['슬프다','노래']  ✗
++#     '슬픔 슬픈'    -> ['슬픔','슬프다']          같은 질의                              ✓
++#
++# 토큰이 실제로 늘어나는 것만 넣는다. '쓸쓸함'은 이미 `쓸쓸하다`로 쪼개지고,
++# '위로'·'신남'·'설렘'·'열정'·'몽환'·'추억'은 명사만으로 질의에 걸린다.
++_INDEX_EXPANSION: Dict[str, str] = {
++    "슬픔": "슬픈",        # + 슬프다
++    "그리움": "그리운",     # + 그립다
++    "기쁨": "기쁜",        # + 기쁘다
++    "분노": "화난",        # + 화나다
++    "자신감": "당당한",     # + 당당, 당당하다
++    "희망": "희망찬",       # + 희망차다
++    "사랑": "사랑하는",     # + 사랑하다
++}
++
++
++def emotion_index_terms(value: object, tags: Iterable[str] = ()) -> str:
++    """BM25 색인에 넣을 문자열. 옮길 근거가 없으면 빈 문자열."""
++    canonical = canonical_emotion(value, tags)
++    if not canonical:
++        return ""
++    expansion = _INDEX_EXPANSION.get(canonical)
++    return f"{canonical} {expansion}" if expansion else canonical
++
++
++def vocab_prompt_line() -> str:
++    """LLM 프롬프트에 넣을 목록 문자열."""
++    return " | ".join(EMOTION_VOCAB)

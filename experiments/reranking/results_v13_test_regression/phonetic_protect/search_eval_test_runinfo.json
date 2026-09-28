@@ -1,0 +1,80 @@
+{
+  "created_at": "2026-09-22T23:50:50+0900",
+  "args": {
+    "input": "experiments/reranking/eval_queries_v05.csv",
+    "output_dir": "experiments/reranking/results_v13_test_regression/phonetic_protect",
+    "split": "test",
+    "top_k": 10,
+    "candidate_k": 30,
+    "query_ids": "",
+    "exclude_query_ids": "",
+    "analysis_cache": "experiments/reranking/analysis_cache_test.json",
+    "allow_fallback_analysis": false,
+    "explain": true
+  },
+  "analysis": {
+    "mode": "cache",
+    "path": "experiments/reranking/analysis_cache_test.json",
+    "meta": {
+      "created_at": "2026-09-22T23:48:14+0900",
+      "query_source": "experiments/reranking/eval_queries_v05.csv",
+      "split": "test",
+      "analyzer": {
+        "model_name": "gemini-3.1-flash-lite",
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "reference_year": 2026,
+        "reference_year_env": "2026",
+        "prompt_sha": "08f0b3bc4c37",
+        "postprocess_sha": "34754316cc34"
+      }
+    },
+    "fallback_query_ids": [],
+    "fingerprint_drift": []
+  },
+  "corpus": {
+    "vector_backend": "qdrant",
+    "namespace": "dev",
+    "text_index": "vaguefinder-text-1024-koe5",
+    "image_index": "vaguefinder-image-768",
+    "audio_index": "vaguefinder-audio-512",
+    "qdrant_path": "artifacts/qdrant",
+    "point_count": 952
+  },
+  "bm25": {
+    "path": "artifacts/bm25_params.json",
+    "exists": true,
+    "sha256_12": "4710257067c8",
+    "bytes": 286292
+  },
+  "lyrics_source": {
+    "db": "vaguefinder",
+    "collection": "songs",
+    "document_count": 905,
+    "full_lyrics_songs": 905,
+    "full_lyrics_total_chars": 717291,
+    "content_sha256_16": "af3e0c3cf03fed98"
+  },
+  "reranker": {
+    "backend": "cross_encoder",
+    "class": "MusicReranker",
+    "enabled": true,
+    "config": {
+      "model_name": "dragonkue/bge-reranker-v2-m3-ko",
+      "device": "auto",
+      "batch_size": 8,
+      "max_length": 512,
+      "rerank_weight": 0.9,
+      "spread_ref": 0.02,
+      "low_conf_top_n": 5,
+      "min_spread": 0.0,
+      "enabled": true
+    }
+  },
+  "ranking_switches": {
+    "lyric_protect_phonetic_top1": true,
+    "lyric_protect_min_confidence": 0.8,
+    "reranker_min_spread": 0.0
+  },
+  "search_reference_year_env": "2026"
+}

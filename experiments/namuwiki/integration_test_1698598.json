@@ -1,0 +1,126 @@
+{
+  "song_id": "1698598",
+  "metadata": {
+    "title": "거짓말",
+    "artist": [
+      "BIGBANG (빅뱅)"
+    ],
+    "album": "Always",
+    "release_date": "2007.08.16",
+    "genre": [
+      "댄스",
+      "랩/힙합"
+    ],
+    "type": [
+      "그룹"
+    ],
+    "vocal_gender": "남성",
+    "album_description": "(앨범 소개문 제외 — 저작물)",
+    "album_summary": "빅뱅의 미니 앨범 [ALWAYS]는 2007년 발표되었으며 지드래곤이 솔로곡으로 준비하던 '거짓말'을 타이틀곡으로 수록하고 있다. 유로스타일 팝과 R&B 발라드, 힙합 등 다양한 장르가 어우러진 총 6곡이 수록된 완성도 높은 앨범이다."
+  },
+  "lyrics_data": {
+    "full_lyrics": "(가사 원문 제외 — 저작물)",
+    "lyrics_highlight": "(가사 원문 제외 — 저작물)",
+    "lyrics_summary": "헤어진 연인을 향한 미련과 후회를 거짓말이라는 단어로 표현한 노래이다. 뒤늦게 깨달은 사랑의 감정과 이별 후의 상실감을 애절하게 담아냈다."
+  },
+  "semantic_analysis": {
+    "search_style_summary": "비 오는 날 밤이나 퇴근길에 옛 추억을 떠올리며 듣기 좋은 곡이다. 학창 시절의 향수를 자극하며 마음을 울리는 감성적인 분위기를 선사한다.",
+    "mood_tags": [
+      "애절함",
+      "향수",
+      "슬픔",
+      "강렬함",
+      "그리움"
+    ],
+    "time_weather_tags": [
+      "밤",
+      "새벽",
+      "비",
+      "여름"
+    ],
+    "place_activity_tags": [
+      "드라이브",
+      "하교길",
+      "퇴근길",
+      "거리"
+    ],
+    "emotion_tags": [
+      "후회",
+      "상실감",
+      "애틋함"
+    ],
+    "vibe_tags": [
+      "복고풍",
+      "중독성",
+      "호소력"
+    ],
+    "relation_context_tags": [
+      "이별",
+      "미련",
+      "짝사랑"
+    ],
+    "color_tags": [
+      "회색",
+      "남색",
+      "검정"
+    ],
+    "sound_tags": [
+      "힙합",
+      "전자음",
+      "보컬"
+    ],
+    "melon_playlist_tags": [
+      "추억",
+      "2000년",
+      "2000년대"
+    ],
+    "visual_imagery": [
+      "빗방울 맺힌 창가에 기대어 서 있는 모습",
+      "텅 빈 밤거리의 가로등 아래 멈춰 선 사람",
+      "오래된 MP3 이어폰을 끼고 걷는 학창 시절의 풍경"
+    ]
+  },
+  "community_feedback": {
+    "sentiment_summary": "많은 팬들이 학창 시절의 추억과 향수를 떠올리며 이 노래를 인생곡으로 꼽고 있다. 시간이 흘러도 변함없는 감동을 주며 이별의 슬픔에 공감하는 반응이 많다.",
+    "fans_tags": [
+      "인생곡",
+      "명곡",
+      "추억",
+      "눈물버튼"
+    ],
+    "major_emotion": "Sadness",
+    "popularity": {
+      "youtube_view_count": 240644694,
+      "fame": "Mega Hit"
+    }
+  },
+  "links": {
+    "melon_url": "https://www.melon.com/song/detail.htm?songId=1698598",
+    "youtube_url": "https://www.youtube.com/watch?v=MzCbEdtNbJ0",
+    "cover_url": "https://cdnimg.melon.co.kr/cm/album/images/003/55/853/355853_500.jpg/melon/resize/500/optimize/90/optimize"
+  },
+  "comments": {
+    "melon": [
+      "(댓글 15건 제외)"
+    ],
+    "youtube": [
+      "(댓글 20건 제외)"
+    ]
+  },
+  "external_context": {
+    "namuwiki": {
+      "match_status": "matched",
+      "match_type": "song_page",
+      "page_title": "거짓말(빅뱅)",
+      "source_url": "https://namu.wiki/w/%EA%B1%B0%EC%A7%93%EB%A7%90(%EB%B9%85%EB%B1%85)",
+      "context_usable": "yes",
+      "context_tags": [
+        "BIGBANG",
+        "Always",
+        "거짓말",
+        "용감한 형제"
+      ],
+      "fact_summary": "2007년 8월 16일 발매된 빅뱅의 첫 번째 미니 앨범 Always의 타이틀곡입니다. 지드래곤이 작사하고 용감한 형제가 작곡과 편곡을 맡았으며, 125 BPM의 올림바장조 곡입니다."
+    }
+  }
+}

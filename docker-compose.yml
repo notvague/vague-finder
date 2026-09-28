@@ -1,0 +1,51 @@
+services:
+  backend:
+    build: .
+    env_file:
+        - .env
+    container_name: vague-finder-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app  # Hot Reload를 위해 코드 마운트
+      - hf_cache:/cache/huggingface  # HF/Transformers 캐시 영구화
+    environment:
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_ENV=${PINECONE_ENV}
+      - HF_TOKEN=${HF_TOKEN}
+      - HF_HOME=/cache/huggingface
+      - TRANSFORMERS_CACHE=/cache/huggingface/transformers
+      - HUGGINGFACE_HUB_CACHE=/cache/huggingface/hub
+      - SENTENCE_TRANSFORMERS_HOME=/cache/huggingface/sentence-transformers
+      - RERANKER_ENABLED=${RERANKER_ENABLED:-true} # 리랭커 환경변수 추가
+      - RERANKER_MODEL_NAME=${RERANKER_MODEL_NAME:-dragonkue/bge-reranker-v2-m3-ko}
+      - RERANKER_DEVICE=${RERANKER_DEVICE:-auto}
+      - RERANKER_BATCH_SIZE=${RERANKER_BATCH_SIZE:-8}
+      - RERANKER_MAX_LENGTH=${RERANKER_MAX_LENGTH:-512}
+      - RERANKER_WEIGHT=${RERANKER_WEIGHT:-0.90}
+      # - MONGO_URI=mongodb://localhost:27017  # 로컬 서버
+      # - MONGO_URI=mongodb://mongodb:27017 # 도커
+      # - MONGO_DB_NAME=vaguefinder # 도커 및 로컬 서버
+      - MONGO_URI=${MONGO_URI} # mongodb atlas
+      - MONGO_DB_NAME=${MONGO_DB_NAME:-vaguefinder} # mongodb atlas
+     
+    # 개발 모드: reload 옵션 활성화
+    command: uvicorn src.backend.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: always
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:7
+    container_name: vague-finder-mongo
+    ports:
+      - "27017:27017"   # (선택) MongoDB Compass용
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: vaguefinder
+    restart: always
+
+volumes:
+  hf_cache:
+  mongo_data:

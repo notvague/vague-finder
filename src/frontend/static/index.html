@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Vague Finder — every song at once</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<!--
+  헤더 락업 서체. Vogue의 2폰트 체계를 무료 대체 폰트로 옮긴 것:
+    Bodoni Moda = 마스트헤드(Didot 계열 Didone 세리프)
+    Jost        = 하위 브랜드(Vogue AG의 Futura/Avant Garde 계열 지오메트릭 산세리프)
+  서체를 바꾸려면 아래 family와 style.css의 --lockup-* 변수를 함께 교체.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400..700&family=Jost:wght@300..900&display=swap">
+<link rel="stylesheet" href="/static/style.css?v=28">
+</head>
+<body>
+
+<!--
+  헤더 — 브랜드와 보기 전환. 보기 전환은 화면 전체를 바꾸는 동작이라
+  검색 레일이 아니라 여기가 제자리다.
+-->
+<header class="topbar">
+  <h1 class="lockup">
+    <span class="lockup-main">Vague</span>
+    <span class="lockup-sub">Finder</span>
+  </h1>
+  <nav class="modes" aria-label="보기 전환">
+    <button type="button" class="mode current" data-map="sound" title="소리가 닮은 곡끼리">sound</button>
+    <button type="button" class="mode" data-map="mood" title="가사·정서가 닮은 곡끼리">mood</button>
+    <button type="button" class="mode" data-view="list" title="목록으로 보기">list</button>
+  </nav>
+</header>
+
+<!--
+  왼쪽 레일 — 검색창·검색 결과·재질문을 한 칸에 모았다.
+  예전에는 검색창이 헤더 오른쪽에 있고 결과는 지도 위에 떠 있는 패널이었다.
+  뜬 패널은 곡을 가려서 끌어 옮기는 기능이 필요했지만, 레일은 지도 영역
+  밖에 앉으므로 애초에 가리지 않는다.
+-->
+<aside id="rail" class="rail" aria-label="검색">
+  <div class="railtop">
+    <form id="searchForm" class="searchbox" autocomplete="off">
+      <input id="searchInput" type="text" placeholder="find your brain's song?"
+             spellcheck="false" aria-label="검색어">
+      <button type="button" id="clearBtn" class="clearbtn" title="검색 초기화" hidden>&times;</button>
+    </form>
+
+    <!-- 예전의 화면 폭짜리 노란 띠. 피드백을 읽는 자리는 검색창 바로 아래다 -->
+    <p id="status" class="status" role="status" hidden></p>
+  </div>
+
+  <!-- 장르 범례 — 검색 전 빈 레일을 채운다. 결과가 뜨면 자리를 내준다 -->
+  <aside id="legend" class="legend" aria-label="장르별 색상"></aside>
+
+  <!-- 검색 전에는 숨어 있다. 내용은 map.js가 채운다 -->
+  <div id="resultBlock" class="resultblock" hidden>
+    <div class="resulthead">
+      <span class="resulttitle">검색 결과</span>
+      <span id="resultSub" class="resultsub"></span>
+    </div>
+    <!--
+      요청 한 번의 실행 기록. 곡별 근거와 달리 질의 전체에 해당한다 —
+      리랭커가 예외로 멈췄으면 열 곡의 이야기가 통째로 달라지므로
+      곡을 펼쳐야 보이는 자리에 두지 않는다.
+    -->
+    <p id="runNote" class="runnote" hidden></p>
+    <ol id="resultList" class="resultlist"></ol>
+  </div>
+
+  <!-- 재질문 — 레일 맨 아래에 붙어 목록을 스크롤해도 늘 보인다 -->
+  <div id="clarifyBox" class="clarify" aria-live="polite" hidden></div>
+</aside>
+
+<!--
+  접기 탭 — 레일 오른쪽 모서리에 걸린다. 레일 안이 아니라 형제로 두어야
+  접었을 때(레일이 화면 밖으로 밀려남) 탭만 남아 다시 펼 수 있다.
+-->
+<button type="button" id="railToggle" class="railtoggle"
+        title="접기" aria-expanded="true" aria-controls="rail"></button>
+
+<main id="canvas" class="canvas">
+  <div id="axisLineX" class="axisline axisline-x"></div>
+  <div id="axisLineY" class="axisline axisline-y"></div>
+  <div id="axisLeft" class="axislabel axis-left"></div>
+  <div id="axisRight" class="axislabel axis-right"></div>
+  <div id="axisTop" class="axislabel axis-top"></div>
+  <div id="axisBottom" class="axislabel axis-bottom"></div>
+  <div id="card" class="card" hidden>
+    <div class="cardhead">
+      <img id="cardCover" class="cardcover" alt="">
+      <div class="cardtext">
+        <div id="cardTitle" class="cardtitle"></div>
+        <div id="cardArtist" class="cardartist"></div>
+      </div>
+      <button id="playBtn" class="playbtn" title="유튜브로 듣기">&#9654;</button>
+    </div>
+    <div id="cardPlayer" class="cardplayer" hidden></div>
+  </div>
+</main>
+
+<section id="listview" class="listview" hidden>
+  <div class="listbar">
+    <div class="sorts">
+      <!-- 활성 버튼을 다시 누르면 방향이 뒤집힌다. 화살표는 JS가 채운다 -->
+      <button type="button" class="sort current" data-sort="title">
+        가나다순<span class="arrow"></span>
+      </button>
+      <button type="button" class="sort" data-sort="date">
+        발매일순<span class="arrow"></span>
+      </button>
+    </div>
+    <label class="genrefilter">
+      <span>장르</span>
+      <select id="genreSelect"><option value="">전체</option></select>
+    </label>
+    <label class="genrefilter">
+      <span>가수</span>
+      <!-- 352명이라 드롭다운 대신 입력하며 좁히는 방식 -->
+      <input id="artistInput" type="text" list="artistList" placeholder="전체"
+             autocomplete="off" spellcheck="false">
+      <datalist id="artistList"></datalist>
+      <button type="button" id="artistClear" class="filterclear" title="가수 필터 해제" hidden>&times;</button>
+    </label>
+    <label class="heardfilter">
+      <input type="checkbox" id="heardOnly">
+      <span>들은 곡만</span>
+    </label>
+    <span id="listCount" class="listcount"></span>
+  </div>
+  <table class="songtable">
+    <thead>
+      <tr><th class="numcol">#</th><th>제목</th><th>가수</th><th>장르</th><th class="datecol">발매일</th></tr>
+    </thead>
+    <tbody id="listBody"></tbody>
+  </table>
+</section>
+
+<footer class="sitefooter">
+  <p>
+    Layout inspired by
+    <a href="https://everynoise.com/" target="_blank" rel="noopener noreferrer">Every Noise at Once</a>
+    by Glenn McDonald, used with permission.
+  </p>
+</footer>
+
+<script src="/static/map.js?v=28"></script>
+</body>
+</html>

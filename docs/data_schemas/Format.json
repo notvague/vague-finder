@@ -1,0 +1,77 @@
+{
+  "song_id": "1698598",
+
+  "metadata": {
+    "title": "거짓말",
+    "artist": ["BIGBANG (빅뱅)"],
+    "album": "Always",
+    "release_date": "2007.08.16",
+    "genre": ["댄스", "랩/힙합"],
+    "type": ["그룹"],
+    "vocal_gender": "남성",
+    "album_description": "앨범 설명 전문",
+    "album_summary": "앨범 설명을 바탕으로 요약한 내용"
+  },
+
+  "lyrics_data": {
+    "full_lyrics": "전체 가사",
+    "lyrics_highlight": "핵심 가사",
+    "lyrics_summary": "가사 요약"
+  },
+
+  "semantic_analysis": {
+    "search_style_summary": "검색용 자연어 요약",
+    "mood_tags": ["애절함", "향수"],
+    "time_weather_tags": ["밤", "비"],
+    "place_activity_tags": ["드라이브"],
+    "emotion_tags": ["후회", "상실감"],
+    "vibe_tags": ["복고풍", "중독성"],
+    "relation_context_tags": ["이별", "미련"],
+    "color_tags": ["회색", "남색"],
+    "sound_tags": ["힙합", "전자음"],
+    "melon_playlist_tags": ["추억", "2000년대"],
+    "visual_imagery": ["비 오는 밤거리"]
+  },
+
+  "community_feedback": {
+    "sentiment_summary": "팬 반응 요약",
+    "fans_tags": ["인생곡", "명곡"],
+    "major_emotion": "Sadness",
+    "popularity": {
+      "youtube_view_count": 240644694,
+      "fame": "Mega Hit"
+    }
+  },
+
+  "links": {
+    "melon_url": "https://...",
+    "youtube_url": "https://...",
+    "cover_url": "https://..."
+  },
+
+  "comments": {
+    "melon": [
+      "멜론 댓글 예시"
+    ],
+    "youtube": [
+      "유튜브 댓글 예시"
+    ]
+  },
+
+  "external_context": {
+    "namuwiki": {
+      "match_status": "matched",
+      "match_type": "song_page",
+      "page_title": "거짓말(빅뱅)",
+      "source_url": "https://namu.wiki/w/...",
+      "context_usable": "yes",
+      "context_tags": [
+        "BIGBANG",
+        "Always",
+        "거짓말",
+        "용감한 형제"
+      ],
+      "fact_summary": "2007년 8월 16일 발매된 빅뱅의 첫 번째 미니 앨범 Always의 타이틀곡입니다."
+    }
+  }
+}

@@ -1,0 +1,4 @@
+batch_size,ce_median_ms_per_query,ce_total_ms,vs_reference_pct,order_changed_queries,order_changed_ids,max_score_delta,scores_compared
+4,2733.9,32864.5,-1.1%,0,,5.820766091346741e-10,120
+8,2780.7,33227.6,—,0,,0.0,120
+16,2951.6,35502.2,+6.8%,0,,2.7124769985675812e-08,120

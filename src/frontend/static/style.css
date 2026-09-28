@@ -1,0 +1,951 @@
+body {
+  font: 14px "Pretendard Variable", Pretendard, "Apple SD Gothic Neo",
+    "Malgun Gothic", "Helvetica Neue", sans-serif;
+  background: #fff;
+  margin: 0;
+}
+
+/* ---------- 왼쪽 레일 ----------
+ * 검색창 · 보기 전환 · 검색 결과 · 재질문을 화면 왼쪽 한 칸에 모았다.
+ * 예전에는 검색창이 상단 바에 있고 결과는 지도 위에 떠 있는 패널이었다.
+ *
+ * --rail-open-w 가 폭의 단일 출처다. map.js가 이 값을 읽어 지도 배율을
+ * 계산하고, 접히거나 좁은 화면이면 --rail-w 를 0으로 덮어쓴다.
+ * 지도·목록·축 라벨·푸터는 모두 --rail-w 만큼 비켜 앉는다.
+ */
+:root {
+  --rail-open-w: 340px;
+  --rail-w: var(--rail-open-w);  /* 지도가 비켜 앉을 폭. map.js가 갱신한다 */
+  --rail-h: 0px;                 /* 좁은 화면에서 위로 눕힌 레일의 높이 */
+  --header-h: 70px;              /* 실제 높이는 map.js가 재서 넣는다 */
+}
+
+/*
+ * 헤더 — 브랜드와 보기 전환. 보기 전환은 화면 전체를 바꾸는 동작이라
+ * 검색 레일이 아니라 여기가 제자리다.
+ * 레일·지도·목록이 모두 이 높이만큼 아래에서 시작한다.
+ */
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: stretch;   /* 탭이 헤더 높이를 다 써서 밑줄이 아래 선에 붙는다 */
+  gap: 0 28px;
+  padding: 0 20px;
+  background: #fff;
+  border-bottom: 1px solid #e5e5e5;
+  white-space: nowrap;
+  z-index: 1100;   /* 레일(1000)보다 위 */
+}
+
+.rail {
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  bottom: 0;
+  width: var(--rail-open-w);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  /* 그림자 대신 1px 선. 지도와 레일의 경계는 물리적인 모서리로 읽혀야 한다 */
+  border-right: 1px solid #e5e5e5;
+  z-index: 1000;
+}
+/* 접으면 오른쪽 테두리까지 화면 밖으로 내보낸다 */
+body.railclosed .rail {
+  transform: translateX(calc(-1 * var(--rail-open-w) - 1px));
+}
+
+.railtop {
+  flex: none;
+  padding: 12px 16px;
+  /* 예전에는 탭 줄이 이 선을 그렸다. 탭이 헤더로 갔으니 여기서 긋는다 */
+  border-bottom: 1px solid #e5e5e5;
+}
+
+/*
+ * 접기 탭 — 레일 오른쪽 모서리에 걸린다. 레일 안이 아니라 형제로 두어야
+ * 접었을 때 탭만 남아 다시 펼 수 있다. 화살표는 테두리 두 변으로 그린다.
+ */
+.railtoggle {
+  position: fixed;
+  /* 화면이 아니라 헤더 아래 영역의 세로 가운데 */
+  top: calc(var(--header-h) + (100vh - var(--header-h)) / 2);
+  left: var(--rail-w);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 46px;
+  padding: 0;
+  transform: translateY(-50%);
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-left-color: transparent;   /* 레일에 붙어 있게 보이도록 */
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+  z-index: 1000;
+}
+.railtoggle:hover { background: #fafafa; }
+.railtoggle:focus-visible { outline: 2px solid #2258a5; outline-offset: 1px; }
+.railtoggle::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-left: 1.4px solid #777;
+  border-bottom: 1.4px solid #777;
+  transform: rotate(45deg);          /* ‹ 접기 */
+  transition: transform 0.16s ease;
+}
+body.railclosed .railtoggle::before { transform: rotate(-135deg); }  /* › 펼치기 */
+
+/*
+ * 헤더 락업 — Vogue의 2폰트 체계를 따른다.
+ * 큰 글자는 고대비 Didone 세리프, 아래 작은 글자는 넓은 자간의 지오메트릭 산세리프.
+ * 서체 교체는 아래 두 변수와 index.html의 Google Fonts 링크만 수정하면 된다.
+ */
+:root {
+  --lockup-main-font: "Jost", "Futura", "Avenir Next", "Helvetica Neue", sans-serif;
+  --lockup-sub-font: "Jost", "Futura", "Avenir Next", sans-serif;
+}
+
+.lockup {
+  display: flex;
+  flex-direction: column;
+  /* 두 줄의 폭을 맞춰 뒀으므로 왼쪽에 그대로 붙인다 */
+  align-items: flex-start;
+  align-self: center;   /* 헤더가 stretch라 락업만 가운데로 되돌린다 */
+  margin: 0;
+  padding: 10px 0;      /* 헤더 높이를 정하는 값 */
+  color: black;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.lockup-main {
+  font-family: var(--lockup-main-font);
+  /* 굵은 지오메트릭 산세리프. 자간을 좁혀 덩어리로 보이게 한다 */
+  font-weight: 800;
+  font-size: 34px;
+  letter-spacing: -0.03em;
+  /* 자간을 오른쪽에만 더하므로 그만큼 되밀어 시각적 중심을 맞춘다 */
+  margin-right: 0.03em;
+}
+
+.lockup-sub {
+  font-family: var(--lockup-sub-font);
+  font-weight: 400;
+  font-size: 11px;
+  /* 아래 줄 폭을 위 단어에 맞추는 값. 서체를 바꾸면 이 값도 다시 잡아야 한다 */
+  letter-spacing: 0.93em;
+  text-transform: uppercase;
+  margin-right: -0.93em;
+  margin-top: 3px;
+  color: #222;
+}
+
+/*
+ * 보기 전환 탭 — 밑줄형. 채움도 테두리도 없이 활성 항목만 아래 2px 선으로
+ * 표시한다. 탭이 헤더 높이를 다 쓰므로 밑줄이 헤더 아래 선에 그대로 붙는다.
+ */
+.modes {
+  display: flex;
+  align-items: stretch;
+  gap: 20px;
+}
+.mode {
+  display: flex;
+  align-items: center;
+  padding: 0 2px;
+  font: inherit;
+  font-size: 13px;
+  color: #999;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;   /* 헤더의 1px 선 위에 겹쳐 앉는다 */
+  cursor: pointer;
+}
+.mode:hover { color: #555; }
+.mode.current {
+  color: #2258a5;
+  font-weight: 600;
+  border-bottom-color: #2258a5;
+}
+.mode.disabled { cursor: default; }
+
+/*
+ * 축 선 — 캔버스 한가운데를 가로/세로로 지난다.
+ * 라벨과 마찬가지로 의미 있는 축에만 그린다 (sound 맵의 y축은 숨김).
+ */
+.axisline {
+  position: absolute;
+  background: #e2e2e2;
+  pointer-events: none;
+  /* 곡 제목보다 확실히 뒤에 깔려 글자를 가리지 않게 한다 */
+  z-index: 0;
+}
+.axisline[hidden] { display: none; }
+.axisline-x { left: 0; right: 0; top: 50%; height: 1px; }
+.axisline-y { top: 0; bottom: 0; left: 50%; width: 1px; }
+
+/* 축 라벨 — 의미 있는 축에만 붙는다 (sound 맵의 y축은 무의미해서 비워둠) */
+.axislabel {
+  position: absolute;
+  color: #b0b0b0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  z-index: 5;
+}
+.axislabel[hidden] { display: none; }
+/*
+ * 캔버스가 1800x3016px이라 라벨을 중앙에 두면 스크롤해야 보인다.
+ * fixed로 화면 가장자리에 붙여 항상 보이게 한다.
+ * 가로 기준은 화면이 아니라 '지도가 보이는 폭'이다 — 레일만큼 비켜 앉는다.
+ */
+.axislabel {
+  position: fixed;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+/* 접기 탭(폭 15px)도 세로 가운데에 있다. 겹치지 않게 그만큼 더 비켜 앉는다 */
+.axis-left { left: calc(var(--rail-w) + 26px); top: 50%; transform: translateY(-50%); }
+.axis-right { right: 8px; top: 50%; transform: translateY(-50%); }
+.axis-top {
+  top: calc(var(--header-h) + var(--rail-h) + 10px);
+  left: calc(var(--rail-w) + (100vw - var(--rail-w)) / 2);
+  transform: translateX(-50%);
+}
+.axis-bottom {
+  bottom: 8px;
+  left: calc(var(--rail-w) + (100vw - var(--rail-w)) / 2);
+  transform: translateX(-50%);
+}
+
+/* 돋보기는 장식이다 — 제출은 Enter, 지우기는 오른쪽 × 버튼이 한다 */
+:root {
+  --lens: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='%23999' stroke-width='1.4' stroke-linecap='round'%3E%3Ccircle cx='5.8' cy='5.8' r='4.1'/%3E%3Cpath d='M8.9 8.9 12.4 12.4'/%3E%3C/svg%3E");
+}
+
+.searchbox { position: relative; }
+.searchbox input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 30px 9px 32px;
+  font: inherit;
+  color: #222;
+  border: 1px solid #d5d5d5;
+  border-radius: 8px;
+  outline: none;
+  background: #fff var(--lens) no-repeat 11px 50%;
+}
+.searchbox input::placeholder { color: #aaa; }
+.searchbox input:focus { border-color: #2258a5; }
+.clearbtn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  font-size: 16px;
+  color: #888;
+  cursor: pointer;
+}
+.clearbtn:hover { color: #222; }
+
+/*
+ * 상태 문구 — 예전에는 화면 폭을 다 쓰는 노란 띠였다. 검색 피드백을 읽는
+ * 자리는 검색창 바로 아래라서 레일 안 한 줄로 줄였다.
+ * 경고(서버 연결 실패 등)만 색으로 구분한다.
+ */
+.status[hidden] { display: none; }
+.status {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #666;
+  word-break: keep-all;   /* 한국어가 단어 중간에서 꺾이지 않게 */
+}
+.status.warn { color: #8a6d00; }
+
+/*
+ * 체커보드 배경 — 레일과 푸터를 뺀 본문(맵/목록)에만 깐다.
+ * 이미지 파일 대신 인라인 SVG라 용량이 거의 없고 확대해도 깨지지 않는다.
+ * 타일 32px(사각 16px)에 아주 옅은 회색.
+ */
+:root {
+  --checker: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='16' height='16' fill='%23f8f8f5'/%3E%3Crect x='16' y='16' width='16' height='16' fill='%23f8f8f5'/%3E%3C/svg%3E");
+}
+
+.canvas {
+  position: relative;
+  margin-top: calc(var(--header-h) + var(--rail-h));
+  margin-left: var(--rail-w);
+  background-image: var(--checker);
+}
+
+/* 목록은 폭이 1100px로 제한돼 있어, 배경은 body에 깔아 화면 전체를 덮는다 */
+body.listmode { background-image: var(--checker); }
+
+/*
+ * 장르 범례 — 레일 안, 검색 전에만 보인다.
+ * 예전에는 지도 오른쪽 아래에 떠 있어 곡 제목을 가렸다. 결과가 왼쪽으로
+ * 오면서 이 자리가 비었고, 지도를 아예 덮지 않는 자리로 옮겼다.
+ * 결과가 뜨면 자리를 내준다 (map.js의 updateLegendVisibility).
+ */
+.legend[hidden] { display: none; }
+.legend {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 16px 14px;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.legendhead {
+  margin-bottom: 4px;
+  color: #999;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.legendrow { display: flex; align-items: center; gap: 8px; }
+.legendchip {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex: none;
+}
+.legendname { color: #444; }
+.legendnum {
+  margin-left: auto;
+  padding-left: 10px;
+  color: #aaa;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 좁은 화면에서는 위로 누운 레일의 높이를 범례에 쓸 여유가 없다 */
+@media (max-width: 900px) {
+  .legend { display: none; }
+}
+
+/* ---------- 목록 보기 ---------- */
+.listview[hidden] { display: none; }
+.listview {
+  margin-top: calc(var(--header-h) + var(--rail-h));
+  margin-left: var(--rail-w);
+  padding: 0 20px 40px;
+  max-width: 1100px;
+}
+
+.listbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;   /* 좁은 화면에서 필터가 잘리지 않고 다음 줄로 */
+  gap: 12px 20px;
+  padding: 14px 0;
+  position: sticky;
+  top: calc(var(--header-h) + var(--rail-h));
+  /* 스크롤 시 아래 행을 가려야 하므로 불투명하되, 패턴 위에서 튀지 않게 살짝 밝게 */
+  background: rgba(255, 255, 255, 0.94);
+  z-index: 10;
+}
+.sorts { display: flex; gap: 8px; }
+.sort {
+  padding: 5px 14px;
+  font: inherit;
+  color: #666;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 14px;
+  cursor: pointer;
+}
+.sort:hover { border-color: #bbb; }
+.sort.current {
+  color: #fff;
+  background: #2258a5;
+  border-color: #2258a5;
+}
+.genrefilter { display: flex; align-items: center; gap: 8px; color: #666; }
+.genrefilter select,
+.genrefilter input {
+  padding: 5px 8px;
+  font: inherit;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  outline: none;
+}
+.genrefilter input { width: 150px; }
+.genrefilter input:focus { border-color: #2258a5; }
+.filterclear {
+  margin-left: -4px;
+  border: none;
+  background: none;
+  font-size: 16px;
+  color: #999;
+  cursor: pointer;
+  line-height: 1;
+}
+.filterclear[hidden] { display: none; }
+.filterclear:hover { color: #b3341f; }
+.arrow { font-size: 90%; }
+.heardfilter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #666;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.heardfilter input { cursor: pointer; }
+/* 목록에서도 들은 곡을 지도와 같은 기호로 표시한다 */
+.songtable tr.heardrow td:nth-child(2)::after {
+  content: " \266A";
+  color: #aaa;
+  font-size: 90%;
+}
+.listcount { margin-left: auto; color: #999; }
+
+.songtable {
+  width: 100%;
+  border-collapse: collapse;
+}
+.songtable th {
+  padding: 8px 10px;
+  border-bottom: 2px solid #eee;
+  color: #999;
+  font-weight: normal;
+  text-align: left;
+}
+.songtable td {
+  padding: 9px 10px;
+  border-bottom: 1px solid #f2f2f2;
+}
+.songtable tbody tr { cursor: pointer; }
+.songtable tbody tr:hover { background: #fafafa; }
+.numcol { width: 56px; color: #bbb; text-align: right; }
+.datecol { width: 110px; color: #999; white-space: nowrap; }
+
+.sitefooter {
+  /* 캔버스가 화면 폭에 맞춰 늘어나므로 footer도 따라간다 (고정 1800px 제거) */
+  /* 지도일 때만 캔버스 폭을 따라간다. 목록에서는 화면 폭이면 충분하다 */
+  min-width: var(--canvas-width, 100%);
+  margin-left: var(--rail-w);
+  box-sizing: border-box;   /* padding이 폭에 더해져 넘치지 않게 */
+  padding: 10px 20px;
+  border-top: 1px solid #eee;
+  color: #888;
+  font-size: 105%;
+}
+/* 목록에서는 남은 폭을 그대로 쓴다. 100%로 두면 레일 폭만큼 넘쳐 가로 스크롤이 생긴다 */
+body.listmode .sitefooter { min-width: 0; }
+.sitefooter p { margin: 0; }
+
+/*
+ * 좁은 화면(태블릿 세로~휴대폰). 지도는 라벨이 겹쳐 축소에 한계가 있어
+ * 가로 스크롤을 허용하고, 레일·목록만 화면 안에 들어오도록 정리한다.
+ */
+@media (max-width: 700px) {
+  .topbar { gap: 0 16px; padding: 0 12px; }
+  .railtop { padding: 10px 12px; }
+  .lockup { padding: 8px 0; }
+  .lockup-main { font-size: 26px; }
+  .lockup-sub { font-size: 9px; letter-spacing: 0.86em; margin-right: -0.86em; }
+
+  .listview { padding: 0 12px 32px; }
+  .listbar { top: auto; position: static; }  /* 높이가 커져 sticky가 화면을 먹는다 */
+  .genrefilter input { width: 120px; }
+  .songtable { font-size: 92%; }
+  .songtable th, .songtable td { padding: 7px 5px; }
+  /* 좁은 화면에서는 장르·발매일을 숨겨 제목·가수에 폭을 준다 */
+  .songtable th:nth-child(4), .songtable td:nth-child(4),
+  .songtable th:nth-child(5), .songtable td:nth-child(5) { display: none; }
+  .numcol { width: 34px; }
+}
+.sitefooter a { color: #666; text-decoration: underline; }
+.sitefooter a:hover { color: #b3341f; }
+
+.song {
+  position: absolute;
+  /* 축 선(z-index 0)보다 확실히 위에 오도록 명시 */
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  padding: 0 2px;
+  white-space: nowrap;
+  cursor: pointer;
+  line-height: 1.2;
+}
+.song:hover { color: black !important; }
+/*
+ * 마커 두 종류. 재생 중은 앞(::before), 청취 기록은 뒤(::after)에 붙여
+ * 한 곡이 둘 다 가질 때도 겹치지 않게 한다.
+ */
+.song[played]::before { content: "\266B "; color: black; }
+.song[heard]::after {
+  content: " \266A";  /* 8분음표 하나. 재생 중(♫, 8분음표 두 개)과 구분된다 */
+  color: #aaa;
+  font-size: 90%;
+}
+.song.playing {
+  font-weight: bold;
+  background: whitesmoke;
+  outline: 1px solid black;
+  z-index: 20;
+}
+
+/* 검색 모드 */
+.canvas.searching .song { opacity: 0.12; }
+.canvas.searching .song.hit {
+  opacity: 1;
+  font-weight: bold;
+  z-index: 10;
+}
+.canvas.searching .song.hit.top {
+  background: #fffbe0;
+  outline: 2px solid #d4a900;
+}
+
+.card[hidden] { display: none; }
+.card {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 320px;
+  padding: 10px 14px;
+  background: rgba(20, 20, 20, 0.94);
+  color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  z-index: 2000;
+}
+.cardhead {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.cardtext { flex: 1; min-width: 0; }
+.cardtitle, .cardartist {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardplayer[hidden] { display: none; }
+.cardplayer {
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+}
+.cardplayer iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.cardcover {
+  width: 52px;
+  height: 52px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #444;
+}
+.cardtitle { font-weight: 700; }
+.cardartist { color: #bbb; font-size: 92%; margin-top: 2px; }
+.playbtn {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  color: #111;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.playbtn:hover { background: #ffd94d; }
+
+/* 검색 순위 배지 */
+.canvas.searching .song.hit[data-rank]::after {
+  content: attr(data-rank);
+  display: inline-block;
+  margin-left: 5px;
+  padding: 0 5px;
+  min-width: 8px;
+  border-radius: 9px;
+  background: #d4a900;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+  vertical-align: 2px;
+}
+.canvas.searching .song.hit.top[data-rank]::after { background: #b3341f; }
+
+/* ---------- 검색 결과 + 재질문 ----------
+ * 지도 위에 흩어진 강조만으로는 "이 중에는 없어요"를 판단할 수 없어서
+ * Top-10을 한곳에 모아 보여준다.
+ * 목록은 레일의 남는 높이를 다 쓰고 스크롤하며, 재질문은 맨 아래에 붙어
+ * 목록을 스크롤해도 항상 보인다 — 예전에는 질문이 목록 아래로 밀려
+ * 안 보여서 scrollIntoView로 끌어올려야 했다.
+ */
+.resultblock[hidden] { display: none; }
+.resultblock {
+  flex: 1;
+  /* 없으면 목록이 내용 높이만큼 늘어나 레일 안에서 스크롤되지 않는다 */
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.resulthead {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 13px 16px 7px;
+}
+.resulttitle { font-size: 13px; font-weight: 700; color: #222; }
+.resultsub { color: #999; font-size: 12px; }
+
+.resultlist {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.resultitem {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 16px;
+  border-bottom: 1px solid #f2f2f2;
+  cursor: pointer;
+}
+.resultitem:hover { background: #fafafa; }
+.resultitem.offmap { cursor: default; }
+.resultrank {
+  flex: none;
+  width: 15px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 700;
+  color: #d4a900;
+  font-variant-numeric: tabular-nums;   /* 1~10이 자리를 맞춰 서도록 */
+}
+.resultitem:first-child .resultrank { color: #b3341f; }
+.resultcover {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 3px;
+  object-fit: cover;
+  /* 커버가 없거나 멜론 CDN이 막혀도 빈칸 대신 회색 사각형이 남는다 */
+  background: #f0f0f0;
+}
+/*
+ * flex:1 — 남는 폭을 글자가 다 가져가고, 오른쪽 끝의 근거 버튼은 늘 같은
+ * 자리에 선다. 없으면 제목·장르가 긴 행(예: "첫눈처럼 너에게 가겠다 ·
+ * 발라드, 국내드라마")에서 버튼이 레일 밖으로 밀려 잘린다.
+ */
+.resulttext {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.resultsong, .resultmeta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.resultsong { font-size: 13px; font-weight: 600; color: #222; }
+.resultmeta { font-size: 12px; color: #999; }
+/* 장르는 지도와 같은 색으로 칠한다 — 목록과 지도가 같은 기준임을 보이려고 */
+.resultgenre::before { content: "\00B7"; margin: 0 5px; color: #ccc; }
+
+.clarify[hidden] { display: none; }
+.clarify {
+  /* 화면이 낮으면(선택지가 여러 줄인 질문) 줄어들며 스스로 스크롤한다.
+     안 그러면 레일 밖으로 넘쳐 "이 중에는 없어요"를 누를 수 없다 */
+  flex: 0 1 auto;
+  overflow-y: auto;
+  padding: 10px 16px 14px;
+  border-top: 1px solid #eee;
+  background: #fff;
+}
+.clarifynote {
+  margin: 0;
+  color: #888;
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.rejectbtn {
+  width: 100%;
+  padding: 10px 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2258a5;
+  background: #fff;
+  border: 1px solid #2258a5;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.rejectbtn:hover { color: #fff; background: #2258a5; }
+
+/* 질문 말풍선 — 꼬리는 결과 목록 쪽(위)을 가리킨다 */
+.bubble {
+  position: relative;
+  padding: 11px 12px;
+  background: #f3f6fb;
+  border-radius: 8px;
+}
+.bubble::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 20px;
+  border: 7px solid transparent;
+  border-top: 0;
+  border-bottom-color: #f3f6fb;
+}
+.bubbleq {
+  margin: 0 0 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #222;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+.options { display: flex; flex-wrap: wrap; gap: 6px; }
+.option {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 11px;
+  font: inherit;
+  font-size: 13px;
+  color: #222;
+  background: #fff;
+  border: 1px solid #d6dce6;
+  border-radius: 16px;
+  cursor: pointer;
+}
+.option:hover { border-color: #2258a5; color: #2258a5; }
+.optioncount { color: #aaa; font-size: 85%; }
+.option.skip { color: #777; }
+.linkbtn {
+  margin-top: 8px;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: #999;
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.rejectbtn:disabled, .option:disabled, .linkbtn:disabled { opacity: 0.5; cursor: default; }
+
+/*
+ * 좁은 화면 — 레일을 위로 눕힌다. 지도는 가로 스크롤이 전제라 폭을 다 준다.
+ * 이 폭은 map.js의 stackedRail 미디어 질의와 같아야 한다.
+ */
+@media (max-width: 900px) {
+  .rail {
+    top: var(--header-h);
+    left: 0;
+    right: 0;
+    bottom: auto;
+    width: auto;
+    max-height: 62vh;
+    border-right: 0;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  /* 위로 눕힌 레일은 밀어낼 곳이 없다. 접으면 검색줄만 남긴다 */
+  body.railclosed .rail { transform: none; }
+  body.railclosed .resultblock,
+  body.railclosed .clarify { display: none; }
+
+  .railtoggle {
+    top: calc(var(--header-h) + var(--rail-h));
+    left: 50%;
+    width: 46px;
+    height: 15px;
+    transform: translate(-50%, -1px);
+    border: 1px solid #e5e5e5;
+    border-top-color: transparent;
+    border-radius: 0 0 8px 8px;
+  }
+  .railtoggle::before { transform: rotate(135deg); }             /* ^ 접기 */
+  body.railclosed .railtoggle::before { transform: rotate(-45deg); }  /* v 펼치기 */
+}
+
+/* ---------- 선정 근거 ----------
+ *
+ * 결과 항목 바로 아래에 펼쳐진다. 지도 위에 띄우지 않는 이유는 결과 패널과
+ * 같다 — 레일은 지도 영역 밖에 앉으므로 애초에 곡을 가리지 않는다.
+ *
+ * 문구는 전부 서버 응답에서 온다. 여기서 정하는 것은 배치와 강약뿐이다.
+ * 강약에도 규칙이 있다: 합계에 들어가지 않는 줄(반영 안 된 기여)은 흐리게,
+ * 표를 잘못 읽게 하는 자리(순서를 정하지 않은 합성 점수 등)는 주의 문구로.
+ */
+.exbtn {
+  flex: none;
+  padding: 3px 6px;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+  color: #999;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.exbtn:hover { color: #2258a5; border-color: #2258a5; }
+.exbtn:focus-visible { outline: 2px solid #2258a5; outline-offset: 1px; }
+.exbtn[aria-expanded="true"] {
+  color: #fff;
+  background: #2258a5;
+  border-color: #2258a5;
+}
+
+/* 결과 항목의 형제로 끼어든다 — 항목 안에 넣으면 그 가로 배치가 깨진다 */
+.explainrow {
+  border-bottom: 1px solid #f2f2f2;
+  background: #fafafa;
+}
+.explain {
+  padding: 11px 16px 13px;
+  font-size: 11px;
+  line-height: 1.5;
+  word-break: keep-all;   /* 한국어가 낱말 가운데서 끊기지 않게 */
+}
+/* 서버가 기록만으로 만든 문장. 표보다 먼저 읽히는 자리에 둔다 */
+.exsummary {
+  margin: 0 0 9px;
+  color: #444;
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+.exgroup { margin-top: 10px; }
+.exhead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  margin: 0 0 3px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #888;
+}
+.exnote { font-weight: 400; color: #aaa; }
+
+.exrow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 2px 0;
+}
+.exlabel { flex: 1; min-width: 0; color: #555; }
+.exdetail {
+  display: block;
+  color: #aaa;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.exnum {
+  flex: none;
+  color: #2258a5;
+  font-variant-numeric: tabular-nums;   /* 소수점이 세로로 맞아야 합이 읽힌다 */
+}
+.exnum.minus { color: #b3341f; }
+.exfact {
+  flex: none;
+  max-width: 58%;
+  color: #333;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* 합계에 들어가지 않는 줄. 숫자가 있으니 색으로도 구분해 둔다 */
+.exrow.dim .exlabel,
+.exrow.dim .exnum { color: #b9b9b9; }
+
+.exsum {
+  margin-top: 3px;
+  padding-top: 4px;
+  border-top: 1px solid #e8e8e8;
+}
+.exsum .exlabel { color: #888; }
+.exsum .exnum { font-weight: 600; }
+
+/* 경로 기여 + 가감점 = 검색 점수. 장부의 마지막 칸이라 따로 앉힌다 */
+.extotal {
+  margin-top: 8px;
+  padding: 6px 9px;
+  border-radius: 4px;
+  background: #eef1f5;
+}
+.extotal .exlabel { font-weight: 700; color: #333; }
+.extotal .exdetail { font-weight: 400; color: #939ba6; }
+.extotal .exfact { font-weight: 700; color: #1e1e1e; }
+
+/* 표만 보면 잘못 읽을 수 있는 자리마다 붙는다 */
+.exwarn {
+  margin: 6px 0 0;
+  padding-left: 9px;
+  border-left: 2px solid #e0c060;
+  color: #856f1d;
+  font-size: 10px;
+  line-height: 1.6;
+}
+.exlyricnote { margin: 0 0 5px; color: #555; }
+/* 원문 인용 — 줄바꿈을 살려야 가사가 가사처럼 읽힌다 */
+.exquote {
+  margin: 0 0 6px;
+  padding-left: 9px;
+  border-left: 2px solid #c7d4e6;
+  color: #333;
+  font-size: 11px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.exquotehit {
+  background: #fdf0c8;
+  color: inherit;
+  border-radius: 2px;
+}
+.exmodelnote { margin: 5px 0 0; color: #555; line-height: 1.6; }
+
+/* 요청 한 번의 실행 기록 — 곡을 펼치지 않아도 보이는 자리 */
+.runnote[hidden] { display: none; }
+.runnote {
+  flex: none;
+  margin: 0;
+  padding: 0 16px 8px;
+  color: #aaa;
+  font-size: 10px;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+.runnote.warn { color: #856f1d; }

@@ -1,0 +1,56 @@
+# === Data Collection (데이터 수집) ===
+yt-dlp>=2026.08.19          # 유튜브 비디오/메타데이터 다운로드 크롤러
+pandas>=2.1.0               # 데이터 처리 및 CSV/JSON 관리
+lyricsgenius>=3.0.0         # Genius API 가사 크롤링 라이브러리
+google-genai==2.23.0        # Google Gemini API 라이브러리
+beautifulsoup4==4.15.0      # Melon 웹 크롤링
+selenium>=4.0.0             # 동적 웹 크롤링
+
+# === AI/ML & Embeddings (임베딩 및 인공지능) ===
+torch==2.10.0               # 딥러닝 프레임워크 (Python 3.14 호환 확인 버전)
+torchvision==0.25.0         # torch 2.10.0 대응 버전 (0.24.x는 호환 불가)
+torchaudio==2.10.0          # torch 2.10.0 대응 버전
+transformers==4.50.3        # HuggingFace 모델 로드 — SiglipModel(4.39+), ClapModel(4.31+) 포함
+                            # 5.x는 일부 모델 클래스 제거로 호환 불가
+tokenizers==0.21.4          # transformers 4.47.x 대응, Python 3.14 지원 버전
+                            # 0.19.x는 Python 3.14 빌드 불가 (pyo3 최대 3.12)
+sentencepiece==0.2.2        # SigLIP/SigLIP2 텍스트 토크나이저에 필요
+protobuf==5.29.5
+sentence-transformers==3.3.1 # KoE5 텍스트 임베딩 래퍼, transformers 4.47.x 호환
+pillow>=10.0.0              # 이미지 처리 (SigLIP 입력 전처리)
+numpy>=1.26.0               # 벡터 연산
+safetensors>=0.4.1          # 모델 가중치 로드
+kiwipiepy==0.23.2      # 한국어 형태소 분석
+
+# === Vector DB (벡터 데이터베이스) ===
+pinecone>=6.0.0             # Pinecone 벡터 DB 클라이언트 (VECTOR_BACKEND=pinecone)
+qdrant-client>=1.9.0        # Qdrant 벡터 DB 클라이언트 (VECTOR_BACKEND=qdrant, 로컬 파일 모드)
+pinecone-text>=0.11.0       # BM25 sparse 인코딩
+mmh3>=4.0.0,<6              # context BM25의 재현 가능한 unsigned 32-bit term hash
+
+# === Backend (웹 서버) ===
+fastapi>=0.128.0            # 고성능 Python 웹 프레임워크
+uvicorn>=0.24.0             # ASGI 서버
+python-multipart>=0.0.6     # 파일 업로드 처리
+pydantic==2.13.5             # 데이터 유효성 검사 및 스키마 관리
+pydantic-settings>=2.0.0    # 환경변수(.env) 관리
+
+# === Audio Processing (오디오 처리) ===
+librosa>=0.10.0             # 오디오 로딩/리샘플링
+soundfile>=0.12.0           # 오디오 파일 읽기/쓰기
+
+# === Utils (기타 유틸리티) ===
+python-dotenv==1.2.3        # .env 파일 로드
+requests==2.34.2            # HTTP 요청 라이브러리
+tqdm>=4.66.0                # 진행률 바 표시
+pymongo>=4.0.0              # MongoDB Atlas 연결
+huggingface-hub>=0.26.0,<1.0  # HuggingFace 모델 허브 (transformers 4.47.x 요구사항)
+umap-learn>=0.5.12          # 노래 맵 2D 투영 (src/pipelines/build_map.py)
+Protego==0.6.2              # 나무위키 크롤링
+playwright==1.62.0
+
+# === Test (테스트) ===
+pytest>=8.0.0               # 유닛/통합 테스트 실행기 (tests/)
+httpx>=0.27.0               # fastapi.testclient.TestClient 실행에 필요
+                            # google-genai/pinecone가 전이 의존으로 끌어오지만
+                            # 테스트가 직접 쓰므로 명시한다
