@@ -13,7 +13,14 @@ _ARTWORK = re.compile(
     r"(?:앨범\s*(?:커버|표지|아트|자켓|재킷|사진)|"
     r"(?:표지|커버)(?!곡|한|했|해|버전)|음반\s*표지)"
 )
-_LYRIC_START = re.compile(r"^(?:가사(?:에|에는|에서|에선)?|노랫말|가삿말|후렴(?:에|에서|의)?)")
+_LYRIC_START = re.compile(
+    r"^(?:(?:그|이|저)\s*노래(?:의)?\s*)?"
+    r"(?:가사(?:에|에는|에서|에선)?|노랫말|가삿말|후렴(?:에|에서|의)?)"
+)
+_TITLE_AS_EVENT = re.compile(
+    r"^(?:(?:그|이|저)\s*노래\s*)?(?:제목|곡명)\s*"
+    r"(?:이|은|에|가)?\s*['\"‘’]?가요제(?:라는|인|이)"
+)
 _MV_AUDIO_ANALOGY = re.compile(
     r"(?:뮤직\s*비디오|(?<![A-Za-z])MV(?![A-Za-z]))(?:처럼|같이|같은).{0,40}"
     r"(?:들리|소리|음악|사운드|리듬)", re.I,
@@ -36,7 +43,7 @@ _RELATIONS = (
     )),
     ("다른 작품에 사용", re.compile(
         r"(?:애니(?:메이션)?|드라마|영화|게임|예능|방송|코미디빅리그)"
-        r".{0,90}(?:장면|나왔|나오던|흘러|틀어|사용|수록|모티브|삽입)|"
+        r".{0,90}(?:장면|나왔|나온|나오던|흘러|틀어|사용|수록|모티브|삽입)|"
         r"(?:게임|펌프\s*잇\s*업|FIESTA).{0,55}수록|"
         r"(?:선생님|캐릭터).{0,70}(?:장면|흘러|나오던)", re.I,
     )),
@@ -52,7 +59,7 @@ _RELATIONS = (
         r"(?:초기|처음|원래)\s*기획", re.I,
     )),
     ("방송·공연 일화", re.compile(
-        r"(?:축제|페스티벌|콘서트|시상식|불후의\s*명곡|V앱|브이라이브)"
+        r"가요제|(?:축제|페스티벌|콘서트|시상식|불후의\s*명곡|V앱|브이라이브)"
         r".{0,110}(?:무대|앙코르|앵콜|우승|공개|불렀|커버|사고|실수|"
         r"처음|안무|공연)", re.I,
     )),
@@ -85,11 +92,23 @@ _WORK_AFTER = re.compile(
     r"(?:애니(?:메이션)?|드라마|영화|게임|예능)\s+"
     r"([가-힣A-Za-z0-9]+(?:\s+[가-힣A-Za-z0-9]+){0,2})"
 )
+_EVENT_BEFORE = re.compile(r"([가-힣A-Za-z0-9·_-]{2,30})\s+가요제")
 _PERSON = re.compile(r"([가-힣]{2,5})\s*(?:선생님|감독|배우|선수|작곡가)")
 _GENERIC = {
-    "옛날", "예전", "무슨", "어떤", "청춘", "유명한", "한국",
-    "남자", "여자", "중", "중에", "곡", "노래",
+    "옛날", "예전", "무슨", "어떤", "청춘", "사극", "유명한", "한국",
+    "옛날에", "예전에", "그때", "남자", "여자", "중", "중에", "곡", "노래",
 }
+_NONENTITY_TARGETS = {"봄", "여름", "가을", "겨울", "드라마", "영화", "애니메이션", "예능", "프로그램"}
+_WORK_BOUNDARY = re.compile(
+    r"(?:OST|BGM|오에스티|삽입곡|배경음악|주제가|사운드트랙|"
+    r"사용|수록|쓰였|나왔|나온|나오던|나오는|장면|곡|노래|중에)", re.I,
+)
+_NOT_WORK_WORD = re.compile(
+    r"^(?:\d{2,4}년(?:대)?|초반|중반|후반|가진|없는|없이|부른|"
+    r"출연(?:한|했던)|출현(?:한|했던)|나오는|나온|배경으로|한|"
+    r"주인공(?:이|은|을)?|노래(?:가|를|인데)?|"
+    r"기억(?:이|에)?|옛날에|예전에)$"
+)
 # 검색 문장에 추가할 수 있는 일반 명사만 허용한다. '삽입곡', '녹음' 같은
 # 관계 단어를 원문 없이 허용하면 모델이 뮤직비디오를 OST로 바꿔 버릴 수 있다.
 _SEARCH_WORDS = {"노래", "곡"}
@@ -111,6 +130,12 @@ _RELATED_CONTINUATION = re.compile(
     r"^(?:나중에|그다음|이후|그전(?:의|에)?|그리고|그때).{0,110}"
     r"(?:부른\s*버전|들려|커버|무대|힘들|어렵|재회|다시\s*만나)",
 )
+_MODEL_EXTERNAL_CUE = re.compile(
+    r"(?:애니(?:메이션)?|드라마|영화|게임|예능|방송|웹툰|광고|"
+    r"뮤지컬|가요제|축제|공연|뮤직\s*비디오|제작|녹음|시상식)"
+    r".{0,100}(?P<verb>나온|나오던|흘러|쓰였|쓰인|사용|수록|삽입|"
+    r"만든|제작|부른|녹음|등장|공개|공연|참여|수상)", re.I,
+)
 
 
 def _grounded(text: str, query: str, *, allow_search_words: bool = False) -> bool:
@@ -126,32 +151,52 @@ def _grounded(text: str, query: str, *, allow_search_words: bool = False) -> boo
 
 def _grounded_target(target: str, span: str) -> bool:
     """두 글자 작품명도 원문에 있어야 하며 다른 사건에서 빌려오지 않는다."""
-    return re.sub(r"\s+", "", target).casefold() in re.sub(r"\s+", "", span).casefold()
+    compact = re.sub(r"\s+", "", target).casefold()
+    words = target.split()
+    return (
+        len(compact) >= 2
+        and not any(word in _GENERIC or _NOT_WORK_WORD.match(word) for word in words)
+        and target not in _NONENTITY_TARGETS
+        and compact in re.sub(r"\s+", "", span).casefold()
+    )
 
 
 def _target(span: str) -> str:
     # 작품 종류 앞의 '어떤 청춘'과 같은 불확실한 수식어가 인접한 가수명을
     # 작품명처럼 보이게 할 수 있다. 이런 경우에는 작품명을 비워 둔다.
-    for pattern in (_WORK_BEFORE, _WORK_AFTER, _PERSON):
+    for pattern in (_WORK_BEFORE, _WORK_AFTER, _EVENT_BEFORE, _PERSON):
         match = pattern.search(span)
         if not match:
             continue
         words = match.group(1).strip().split()
         if pattern is _WORK_BEFORE and any(word in {"어떤", "무슨"} for word in words):
             continue
+        if pattern is _EVENT_BEFORE and (
+            words[0].endswith(("에서", "으로", "하고"))
+            or words[0] in {"예능", "방송", "학교", "동네", "프로그램"}
+        ):
+            continue
         if pattern is _WORK_AFTER:
-            # '드라마 도깨비 OST로 사용됐던'에서 관계 설명을 작품명에 섞지 않는다.
-            words = words[:next(
-                (i for i, word in enumerate(words)
-                 if re.match(r"(?:OST|BGM|사용|수록|쓰였|나왔|곡|노래|장면|중에)", word, re.I)),
-                len(words),
-            )]
+            # 작품명 뒤에 실제 사용 관계가 보이지 않으면 '드라마 배경으로 한
+            # 추억' 같은 일반 문장을 작품명으로 추정하지 않는다.
+            boundary = next((
+                i if _WORK_BOUNDARY.match(word) else i + 1
+                for i, word in enumerate(words)
+                if _WORK_BOUNDARY.match(word) or word.endswith(("에서", "에는", "에"))
+            ), None)
+            if boundary is None:
+                continue
+            words = words[:boundary]
         words = [word for word in words if word not in _GENERIC]
+        if any(_NOT_WORK_WORD.match(word) for word in words):
+            continue
         words = [word for word in words if word.upper() not in {"OST", "BGM", "MV"}]
         if words:
             name = " ".join(words).strip("'\"“”‘’· ")
             # "도깨비에서"처럼 작품명에 붙은 장소 조사는 원문 관계에 남긴다.
             name = re.sub(r"(?:에서|에게|의|에는|에)$", "", name)
+            if name in _NONENTITY_TARGETS:
+                continue
             return name[:120]
     return ""
 
@@ -178,6 +223,9 @@ def _rule_clues(query: str) -> list[dict]:
             previous = span
             continue
         if _FOLLOWUP_ONLY.match(span):
+            previous = span
+            continue
+        if relation == "방송·공연 일화" and _TITLE_AS_EVENT.match(span):
             previous = span
             continue
         if _LYRIC_START.match(span) or _ARTWORK.search(span):
@@ -229,6 +277,66 @@ def _rule_clues(query: str) -> list[dict]:
     return clues
 
 
+def _model_only_clues(query: str, model_clues: list[dict], used: set[int], rules: list[dict]) -> list[dict]:
+    """채택되지 않은 모델 단서를 원문 사건에 다시 연결한다.
+
+    규칙에 없는 외부 사용 표현을 허용하되, 모델만의 상식이나 앨범·가사 묘사를
+    근거로 새 검색 경로가 열리지 않도록 관계·검색어·대상을 한 절에서 확인한다.
+    """
+    spans = [part.strip() for part in re.split(r"[,，\n]+|(?<![A-Za-z0-9])\.(?=\s|$)", query)]
+    extras: list[dict] = []
+    for index, item in enumerate(model_clues):
+        if index in used:
+            continue
+        target = str(item.get("target") or "").strip()
+        relation = str(item.get("relation") or "").strip()
+        search = " ".join(str(item.get("search_query") or "").split())
+        if not relation or not search or len(relation) > 160 or len(search) > 400 or len(target) > 120:
+            continue
+        try:
+            confidence = float(item.get("confidence"))
+        except (TypeError, ValueError):
+            continue
+        if not 0 < confidence <= 1:
+            continue
+        for span in spans:
+            cue = _MODEL_EXTERNAL_CUE.search(span)
+            search_relation = next(
+                (name for name, pattern in _RELATIONS if pattern.search(search)), "",
+            )
+            already_covered = any(
+                _grounded(search, rule["_span"], allow_search_words=True)
+                and (
+                    search == rule["search_query"]
+                    or (search_relation == rule["relation"]
+                        and (not target or target == rule["target"]))
+                )
+                for rule in rules
+            )
+            if (
+                not cue
+                or _LYRIC_START.match(span)
+                or _ARTWORK.search(span)
+                or _MV_AUDIO_ANALOGY.search(span)
+                or _OST_AUDIO_ANALOGY.search(span)
+                or not _grounded(search, span, allow_search_words=True)
+                or not _grounded(cue.group("verb"), search)
+                or (target and not _grounded_target(target, span))
+                or already_covered
+            ):
+                continue
+            if any(existing["search_query"] == search for existing in extras):
+                break
+            extras.append({
+                "target": target,
+                "relation": relation if _grounded(relation, span) else cue.group("verb"),
+                "search_query": search,
+                "confidence": min(confidence, 0.5),
+            })
+            break
+    return extras
+
+
 def apply_context_query_safeguards(query: str, raw: dict) -> dict:
     """명시된 외부 사건만 Context 단서로 보존하며 fallback도 제공한다."""
     enriched = dict(raw)
@@ -242,8 +350,9 @@ def apply_context_query_safeguards(query: str, raw: dict) -> dict:
 
     final: list[dict] = []
     used: set[int] = set()
+    rule_sources = [dict(rule) for rule in rules]
     for rule in rules:
-        span = rule.pop("_span")
+        span = rule["_span"]
         chosen = None
         # 작품·인물과 검색어가 어느 사건에 붙는지 명확할 때만 모델의
         # 관계/질의 표현을 받아들인다. 매칭되지 않는 사건에는 규칙값을 사용한다.
@@ -252,16 +361,18 @@ def apply_context_query_safeguards(query: str, raw: dict) -> dict:
                 continue
             candidate_target = str(item.get("target") or "").strip()
             candidate_query = str(item.get("search_query") or "").strip()
-            if candidate_target and candidate_target.casefold() in span.casefold():
+            candidate_relation = next(
+                (name for name, pattern in _RELATIONS if pattern.search(candidate_query)), "",
+            )
+            if (
+                candidate_query
+                and _grounded(candidate_query, span, allow_search_words=True)
+                and (not candidate_target or _grounded_target(candidate_target, span))
+                and (candidate_relation == rule["relation"]
+                     or (candidate_target and candidate_target == rule["target"]))
+            ):
                 chosen, used_index = item, index
                 break
-            words = re.findall(r"[가-힣A-Za-z0-9_]{3,}", candidate_query)
-            overlap = sum(word.casefold() in span.casefold() for word in words)
-            if words and overlap >= 2 and overlap >= len(words) / 2:
-                chosen, used_index = item, index
-                break
-        if chosen is None and len(rules) == 1 and len(model_clues) == 1:
-            chosen, used_index = model_clues[0], 0
         if chosen is not None:
             used.add(used_index)
             accepted = False
@@ -287,6 +398,8 @@ def apply_context_query_safeguards(query: str, raw: dict) -> dict:
                 rule["confidence"] = min(rule["confidence"], model_confidence)
         if _UNCERTAIN.search(span):
             rule["confidence"] = min(rule["confidence"], 0.6)
+        rule.pop("_span")
         final.append(rule)
-    enriched["context_clues"] = final
+    final.extend(_model_only_clues(query, model_clues, used, rule_sources))
+    enriched["context_clues"] = final[:4]
     return enriched

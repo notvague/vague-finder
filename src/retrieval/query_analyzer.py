@@ -69,7 +69,7 @@ Given a Korean natural language music search query, output a single JSON object.
 | release_era | object | Release-period memory. Fields: {{"start_year": int|null, "end_year": int|null, "confidence": 0-1}}. Absolute periods may have high confidence. Resolve relative periods against reference year {reference_year}, but use a deliberately broad range and low confidence for vague "최근/요즘" memories. Do not fill for timeless words such as "옛날/예전" alone. |
 | artist_type | object | Stable identity of the credited artist, not the arrangement of this song. Fields: {{"values": string[], "confidence": 0-1}}. Allowed values: "솔로", "그룹", "듀오", "밴드". Fill only when the query describes the artist/team itself. |
 | performance_clues | object | What is heard inside this song, separate from artist_type. Fields: {{"vocal_count": "solo"|"duet"|"multiple"|"choir"|null, "vocal_roles": string[], "sound_ensemble": string[], "confidence": 0-1}}. Preserve singing/rap/featuring/narration/chorus roles and band/acoustic/orchestral/electronic/live/a-cappella sound clues here. |
-| context_clues | object[] | External background facts about the song, independent of intent_type and modality_weights. Each clue: {{"target": string, "relation": string, "search_query": string, "confidence": 0-1}}. target is an explicitly mentioned work/person/event (empty if unknown), relation describes how the song is connected (e.g. inserted in an animation, production story, covered in a show), and search_query is a concise Korean query containing ONLY the user's stated facts. Return [] if no external fact. Keep up to four separate clues when the user mentions separate events. |
+| context_clues | object[] | Up to 4 external song-fact clues: {{"target": string, "relation": string, "search_query": string, "confidence": 0-1}}. Return [] if absent. |
 | artist_name | string | The artist name if the query names a specific artist, KEEPING original spacing (e.g. "임영웅"). Empty string if none. |
 | artist_name_alt | string[] | ALL plausible written forms of the artist used in Korean music databases (Melon). Include Korean, English (no space), English (with space). e.g. "뉴진스" → ["NewJeans","New Jeans"], "방탄소년단" → ["BTS","Bangtan"], "에스파" → ["aespa"], "아이브" → ["IVE","IVE (아이브)"]. Empty list if artist_name is empty. |
 | vocal_gender | string or null | "남성" if the user asks for a male/man's song, "여성" for female, "혼성" for mixed. null if not specified. |
@@ -144,31 +144,15 @@ Title meaning clues are also memories, not exact titles. Keep them separate:
 
 ## External background (Context) rules
 
-- The user remembers something that happened **around a song**, rather than
-  the sound or words in it: use in an animation/drama/game/advertisement,
-  a music-video event, a production anecdote, a named performer's cover,
-  a meme or an appearance at a particular festival. Extract the *relationship*
-  with the work/person/event, even if the work name itself is forgotten.
-- Put the work, person, team or event the user ACTUALLY mentions in target.
-  Do not insert a song title or artist as a guessed answer. A person depicted
-  on album art is not an external fact merely because it is a person.
-- Write each search_query in Korean with concrete stated names and relation
-  terms. Never supply an unmentioned episode, year, artist, song title or fact
-  from world knowledge. Preserve user's uncertain or mistaken memories as
-  uncertain (lower confidence); do not silently "correct" the year or singer.
-- If a query has two independent external facts (e.g. a drama inspired by a
-  song AND another singer's award-show cover), return two context_clues. A
-  song-level sparse profile may match both, but a single fact_text might not.
-- Return context_clues=[] for listening situations ("비 오는 날 듣는 노래"),
-  ordinary mood, lyrics or lyric meaning, title shape, instrument sounds,
-  and descriptions of album artwork, even if the artwork depicts a film/artist.
-  A scene **in the actual music video or animation** can be Context, but is
-  NOT evidence for the album-cover image path. Keep actual sung words in
-  lyric_clues, artwork in image_english_query, audible details in
-  audio_english_query. A query may contain independent clues in both paths.
-- Context is a separate retrieval branch later; DO NOT add a fourth value to
-  modality_weights, and do not overwrite intent_type or text_alpha merely
-  because Context is present.
+- Use context_clues for a song's link to an external work/event/person:
+  OST/scene, music-video event, production, cover performance, meme, festival.
+  Keep separate events as separate clues; target is the stated work/person/event
+  or "" when unknown. Ground relation and Korean search_query in user words.
+  Never guess the answer or add an unstated name, year, episode or fact; lower
+  confidence for uncertain memories.
+- Return [] for lyrics, mood/listening scenes, sounds, title shape or album art.
+  Music-video/film scenes are not album art. Mixed queries may use both paths.
+  Context never changes intent_type, text_alpha or the three modality_weights.
 
 ## Modality-specific embedding prompt rules
 
@@ -589,49 +573,11 @@ Query: "남녀가 같이 부르는 노래인데 가사에서 아파운더웨이�
   "confidence": 0.9
 }}
 
-Query: "짱구 애니메이션에서 나미리 선생님이 창밖을 보며 울 때 나왔던 남자 노래가 뭐야?"
-{{
-  "intent_type": "mixed",
-  "korean_tags": ["남성보컬"],
-  "lyric_keywords": [],
-  "lyric_clues": [],
-  "lyric_semantic_query": "",
-  "song_title": "",
-  "artist_name": "",
-  "artist_name_alt": [],
-  "vocal_gender": "남성",
-  "genre": "",
-  "image_english_query": "",
-  "audio_english_query": "",
-  "has_visual_clue": false,
-  "modality_weights": {{"text": 1.0, "image": 0.0, "audio": 0.0}},
-  "context_clues": [
-    {{"target": "짱구", "relation": "애니메이션 속 이별 장면의 배경음악", "search_query": "짱구 애니메이션 나미리 선생님이 창밖을 보며 울 때 나온 노래", "confidence": 0.85}}
-  ],
-  "text_alpha": 0.6,
-  "confidence": 0.85
-}}
-
-Query: "앨범 표지에 애니메이션 장면이 그려졌고 가사에 '짱구'라는 말이 나와"
-{{
-  "intent_type": "lyrics",
-  "korean_tags": [],
-  "lyric_keywords": ["짱구"],
-  "lyric_clues": [{{"text": "짱구", "kind": "verbatim", "variants": [], "confidence": 1.0, "source": "model"}}],
-  "lyric_semantic_query": "",
-  "song_title": "",
-  "artist_name": "",
-  "artist_name_alt": [],
-  "vocal_gender": null,
-  "genre": "",
-  "image_english_query": "Album cover illustrating an animation scene.",
-  "audio_english_query": "",
-  "has_visual_clue": true,
-  "modality_weights": {{"text": 0.7, "image": 0.3, "audio": 0.0}},
-  "context_clues": [],
-  "text_alpha": 0.15,
-  "confidence": 0.9
-}}
+Context examples (other fields follow the output schema above):
+- "짱구 애니메이션에서 나미리 선생님이 울 때 나온 노래" ->
+  context_clues=[{{"target":"짱구","relation":"애니메이션에서 나온",
+  "search_query":"짱구 애니메이션에서 나미리 선생님이 울 때 나온 노래","confidence":0.8}}]
+- "앨범 표지에 애니메이션 장면, 가사에 짱구라는 말" -> context_clues=[]
 
 Now analyze:
 Query: "{query}"

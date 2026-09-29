@@ -118,6 +118,11 @@ def test_music_video_details_are_context_not_album_art():
     "OST 같은 분위기로 들리는 노래",
     "비 오는 날 애니메이션을 보면서 듣기 좋은 노래",
     "제목에 영화라는 단어가 들어가는 노래",
+    "제목이 가요제라는 노래",
+    "가사에 가요제라는 말이 나오는 노래",
+    "앨범 커버에 가요제라는 글자가 적힌 노래",
+    "그 노래 가사에 광고 영상에 쓰였다는 말이 있었어",
+    "그 노래 제목이 가요제라는 곡",
 ])
 def test_lyrics_artwork_mood_and_title_do_not_make_context(query):
     assert _fallback(query).context_clues == []
@@ -226,6 +231,119 @@ def test_prompt_rendering_keeps_context_rules_and_existing_modalities():
     assert "context_clues" in prompt
     assert "image_english_query" in prompt
     assert "audio_english_query" in prompt
+
+
+@pytest.mark.parametrize("query,expected_target", [
+    ("예능 프로그램에서 가요제 한다고 만든 곡", ""),
+    ("무한도전 가요제 곡", "무한도전"),
+    ("도깨비 드라마에 나온 노래인데 제목이 기억 안 나", "도깨비"),
+])
+def test_reviewed_background_phrasings_reach_fallback(query, expected_target):
+    clues = rule_fallback(query).context_clues
+    assert len(clues) == 1
+    assert clues[0].target == expected_target
+    assert clues[0].search_query
+
+
+@pytest.mark.parametrize("query", [
+    "드라마 가진 주인공이 나오는 곡",
+    "드라마 별 없이 부른 곡",
+    "드라마 배경으로 한 추억이 나오는 곡",
+    "2000년대 초반 겨울 드라마 OST였어",
+    "사극 드라마 OST였어",
+    "다른 가수가 부른 노래인데 배우가 출연한 드라마 OST였어",
+    "오래된 동네를 배경으로 한 추억 드라마에 삽입된 곡",
+    "랩 없이 부른 드라마 삽입곡",
+])
+def test_unreliable_after_media_phrases_do_not_become_titles(query):
+    clues = apply_context_query_safeguards(query, {})["context_clues"]
+    assert not clues or clues[0]["target"] == ""
+
+
+def test_before_media_discards_time_adverb_and_grounded_model_can_supply_target():
+    query = "옛날에 짱구 애니메이션에서 나미리 선생님이 우는 장면에 나온 노래"
+    assert rule_fallback(query).context_clues[0].target == "짱구"
+    assert rule_fallback(
+        "애니메이션 짱구에서 나미리 선생님이 우는 장면에 나온 노래"
+    ).context_clues[0].target == "짱구"
+
+    query = "드라마 도깨비에 나온 곡"
+    model = {"context_clues": [{
+        "target": "도깨비", "relation": "나온", "search_query": query,
+        "confidence": 0.7,
+    }]}
+    assert apply_context_query_safeguards(query, model)["context_clues"][0]["target"] == "도깨비"
+
+
+def test_unmatched_grounded_model_event_supplements_rules_without_double_counting():
+    query = "드라마 도깨비 OST였어, 광고 영상에 쓰였던 곡"
+    extra = {"target": "", "relation": "쓰였던", "search_query": "광고 영상에 쓰였던 곡", "confidence": 0.9}
+    clues = apply_context_query_safeguards(query, {"context_clues": [extra]})["context_clues"]
+    assert len(clues) == 2
+    assert clues[0]["target"] == "도깨비"
+    assert clues[1] == {**extra, "confidence": 0.5}
+
+    duplicate = {"target": "도깨비", "relation": "OST", "search_query": "드라마 도깨비 OST였어", "confidence": 0.9}
+    clues = apply_context_query_safeguards(query, {"context_clues": [duplicate, extra, extra]})["context_clues"]
+    assert len(clues) == 2
+    assert sum("광고" in clue["search_query"] for clue in clues) == 1
+
+    joined = "드라마 도깨비 OST였고 광고 영상에 쓰였던 곡"
+    clues = apply_context_query_safeguards(joined, {"context_clues": [extra]})["context_clues"]
+    assert len(clues) == 2
+    assert clues[0]["relation"] == "삽입곡·배경음악"
+    assert clues[1]["relation"] == "쓰였던"
+
+
+@pytest.mark.parametrize("query,search", [
+    ("가사에 광고 영상에 쓰였던 곡이라는 문장이 있어", "광고 영상에 쓰였던 곡"),
+    ("앨범 표지에 광고 영상에 쓰였던 곡이라는 글자가 있어", "광고 영상에 쓰였던 곡"),
+    ("비 오는 날 광고 보면서 들을 노래", "광고 보면서 들을 노래"),
+])
+def test_model_only_context_requires_real_external_relation(query, search):
+    unsafe = {"context_clues": [{
+        "target": "", "relation": "쓰였던", "search_query": search, "confidence": 0.9,
+    }]}
+    assert apply_context_query_safeguards(query, unsafe)["context_clues"] == []
+
+
+def test_model_only_grounding_rejects_invented_target_relation_and_nonfinite_confidence():
+    query = "광고 영상에 쓰였던 곡"
+    safe = {"target": "", "relation": "쓰였던", "search_query": query, "confidence": 0.95}
+    assert apply_context_query_safeguards(query, {"context_clues": [safe]})["context_clues"] == [
+        {**safe, "confidence": 0.5}
+    ]
+    unsafe = [
+        {**safe, "target": "없는드라마"},
+        {**safe, "search_query": query + " 없는가수"},
+        {**safe, "confidence": float("nan")},
+        {**safe, "confidence": 2},
+    ]
+    assert apply_context_query_safeguards(query, {"context_clues": unsafe})["context_clues"] == []
+    corrected = apply_context_query_safeguards(
+        query, {"context_clues": [{**safe, "relation": "광고 삽입곡"}]},
+    )["context_clues"]
+    assert len(corrected) == 1
+    assert corrected[0]["relation"] == "쓰였"
+    assert "삽입곡" not in str(corrected)
+
+
+def test_model_cannot_promote_temporal_adjective_to_work_title():
+    query = "2000년대 초반 겨울 드라마 OST였어"
+    for target in ("2000년대 초반 겨울", "겨울"):
+        model = {"context_clues": [{
+            "target": target, "relation": "OST", "search_query": query, "confidence": 0.9,
+        }]}
+        clue = apply_context_query_safeguards(query, model)["context_clues"][0]
+        assert clue["target"] == ""
+
+
+def test_context_prompt_shrunk_and_analysis_deadline_remains_bounded(monkeypatch):
+    monkeypatch.delenv("QUERY_ANALYSIS_TIMEOUT_SECONDS", raising=False)
+    analyzer = QueryAnalyzer(api_key="")
+    prompt = analyzer._prompt("드라마 도깨비 OST")
+    assert len(prompt) < 24000
+    assert analyzer.analysis_budget_seconds == 20
 
 
 def test_org_public_fallback_and_async_api_keep_context_clues():
