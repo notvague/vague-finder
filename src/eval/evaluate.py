@@ -351,7 +351,7 @@ def build_real_search_fn(
     force_weights: Optional[List[float]] = None,
     disable_boost: bool = False,
 ) -> SearchFn:
-    """실제 시스템 인스턴스화 — Pinecone/Gemini/HuggingFace 의존성 필요.
+    """실제 시스템 인스턴스화 — Qdrant 적재본·Gemini·HuggingFace 모델이 필요하다.
 
     force_weights/disable_boost: ablation 용 — router.search 로 그대로 전달.
     """
@@ -362,9 +362,8 @@ def build_real_search_fn(
     from src.retrieval.query_analyzer import QueryAnalyzer
     from src.retrieval.search_router import SearchRouter
     from src.retrieval.search_service import SearchService
-    # 백엔드는 VECTOR_BACKEND로 고른다. 여기서 Pinecone을 직접 만들면
-    # qdrant 설정으로 돌려도 Pinecone을 때려 한도를 다시 소진하고,
-    # Qdrant 성능도 측정되지 않는다.
+    # 앱과 같은 벡터 클라이언트를 쓴다. 로컬 Qdrant는 저장 폴더를 한 프로세스에서
+    # 하나만 열 수 있으므로 따로 만들면 안 된다.
     from src.backend.api.dependencies import get_vector_client
 
     pc = get_vector_client()
@@ -378,13 +377,13 @@ def build_real_search_fn(
     siglip = SigLIP2Embedder()
     clap = CLAPAudioEmbedder()
     search_svc = SearchService(
-        pinecone_client=pc, text_embedder=ko_e5, bm25_encoder=bm25
+        vector_client=pc, text_embedder=ko_e5, bm25_encoder=bm25
     )
     router = SearchRouter(
         search_service=search_svc,
         image_embedder=siglip,
         audio_embedder=clap,
-        pinecone_client=pc,
+        vector_client=pc,
     )
     analyzer = QueryAnalyzer()
 

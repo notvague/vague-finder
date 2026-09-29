@@ -1,4 +1,4 @@
-"""Qdrant 백엔드가 Pinecone과 같은 모양·같은 점수로 답하는지 확인한다."""
+"""Qdrant 백엔드의 응답 모양과 하이브리드 점수를 확인한다."""
 import pytest
 
 from src.vector_db.qdrant_backend import QdrantVectorClient, translate_filter
@@ -66,7 +66,7 @@ def _fill_text(client):
 
 
 def test_hybrid_score_is_dense_plus_sparse(client):
-    """Pinecone 하이브리드 = 스케일한 dense·sparse의 내적 합. 그 합을 재현해야 한다."""
+    """하이브리드 점수 = 스케일한 dense·sparse의 내적 합. 그 합을 재현해야 한다."""
     _fill_text(client)
     index = client.Index(TEXT_HYBRID_INDEX_NAME)
 
@@ -104,7 +104,7 @@ def test_filter_and_metadata_flags(client):
     res = index.query(vector=_unit(1.0, 0.0, 0.0), top_k=3, filter={"vocal_gender": {"$eq": "남성"}})
     assert [m["id"] for m in res["matches"]] == ["b"]
     assert res["matches"][0]["metadata"]["title"] == "B"
-    # song_id는 메타데이터가 아니라 match id로 나간다 (Pinecone과 같은 모양)
+    # song_id는 메타데이터가 아니라 match id로 나간다 (검색 코드가 읽는 모양)
     assert "song_id" not in res["matches"][0]["metadata"]
 
     res = index.query(vector=_unit(1.0, 0.0, 0.0), top_k=1, include_metadata=False)
@@ -192,11 +192,11 @@ def test_range_and_or_filters_select_the_right_songs(client):
     assert got == set()
 
 
-def test_eval_runner_uses_the_configured_backend(monkeypatch):
-    """구 평가 실행기도 VECTOR_BACKEND를 따라야 한다.
+def test_eval_runner_uses_the_app_vector_client(monkeypatch):
+    """구 평가 실행기도 앱과 같은 벡터 클라이언트를 써야 한다.
 
-    회귀 이력: get_pinecone_client()를 직접 불러, qdrant 설정으로 돌려도
-    Pinecone을 때렸다(한도 소진 + Qdrant 성능 미측정).
+    회귀 이력: 클라이언트를 따로 만들어, 앱과 다른 벡터 DB를 때렸다. 로컬 Qdrant는
+    저장 폴더를 한 프로세스에서 하나만 열 수 있어 따로 만들면 실패하기도 한다.
     """
     import inspect
 
@@ -204,7 +204,6 @@ def test_eval_runner_uses_the_configured_backend(monkeypatch):
 
     source = inspect.getsource(eval_mod)
     assert "get_vector_client" in source
-    assert "get_pinecone_client()" not in source
 
 
 def test_loader_fails_when_embedding_files_are_missing(tmp_path, monkeypatch):
@@ -406,8 +405,7 @@ def test_vector_client_is_created_once_even_when_requests_overlap(monkeypatch):
         time.sleep(0.05)          # 두 스레드가 겹칠 틈을 만든다
         return object()
 
-    monkeypatch.setattr(dependencies, "get_pinecone_client", slow_build)
-    monkeypatch.setenv("VECTOR_BACKEND", "pinecone")
+    monkeypatch.setattr(dependencies, "get_qdrant_client", slow_build)
 
     results = []
     threads = [threading.Thread(target=lambda: results.append(dependencies.get_vector_client()))
@@ -428,8 +426,7 @@ def test_close_vector_client_does_not_create_one(monkeypatch):
 
     dependencies.get_vector_client.cache_clear()
     builds = []
-    monkeypatch.setattr(dependencies, "get_pinecone_client", lambda: builds.append(1) or object())
-    monkeypatch.setenv("VECTOR_BACKEND", "pinecone")
+    monkeypatch.setattr(dependencies, "get_qdrant_client", lambda: builds.append(1) or object())
 
     dependencies.close_vector_client()
     assert builds == []
@@ -440,7 +437,7 @@ def test_close_vector_client_does_not_create_one(monkeypatch):
         def close(self):
             Closable.closed = True
 
-    monkeypatch.setattr(dependencies, "get_pinecone_client", Closable)
+    monkeypatch.setattr(dependencies, "get_qdrant_client", Closable)
     dependencies.get_vector_client()
     dependencies.close_vector_client()
     assert Closable.closed is True
@@ -483,8 +480,7 @@ def stub_search_stack(monkeypatch):
                  "LyricsExactSearchService", "MusicReranker", "QueryAnalyzer", "SearchService"):
         monkeypatch.setattr(dependencies, name, Stub)
     monkeypatch.setattr(dependencies, "SearchRouter", StubRouter)
-    monkeypatch.setattr(dependencies, "get_pinecone_client", StubClient)
-    monkeypatch.setenv("VECTOR_BACKEND", "pinecone")
+    monkeypatch.setattr(dependencies, "get_qdrant_client", StubClient)
     for factory in (dependencies.get_vector_client, dependencies.get_text_embedder,
                     dependencies.get_image_embedder, dependencies.get_audio_embedder,
                     dependencies.get_bm25_encoder, dependencies.get_search_service,
@@ -506,8 +502,8 @@ def test_restarting_in_one_process_rebuilds_the_search_stack(monkeypatch):
     first_client = dependencies.get_vector_client()
     first_router = dependencies.get_search_router()
     first_service = dependencies.get_search_service()
-    assert first_router.kwargs["pinecone_client"] is first_client
-    assert first_service.kwargs["pinecone_client"] is first_client
+    assert first_router.kwargs["vector_client"] is first_client
+    assert first_service.kwargs["vector_client"] is first_client
 
     dependencies.close_vector_client()
     assert first_client.closed is True
@@ -521,8 +517,8 @@ def test_restarting_in_one_process_rebuilds_the_search_stack(monkeypatch):
     assert second_router is not first_router
     assert second_service is not first_service
     # 닫힌 클라이언트를 쥔 객체가 남아 있지 않다
-    assert second_router.kwargs["pinecone_client"] is second_client
-    assert second_service.kwargs["pinecone_client"] is second_client
+    assert second_router.kwargs["vector_client"] is second_client
+    assert second_service.kwargs["vector_client"] is second_client
 
     dependencies.close_vector_client()
 
@@ -668,7 +664,7 @@ def test_closing_the_client_waits_for_the_search_pool(monkeypatch):
             events.append("클라이언트 닫힘")
 
     monkeypatch.setattr(dependencies, "SearchRouter", WaitingRouter)
-    monkeypatch.setattr(dependencies, "get_pinecone_client", RecordingClient)
+    monkeypatch.setattr(dependencies, "get_qdrant_client", RecordingClient)
 
     dependencies.get_vector_client()
     dependencies.get_search_router()

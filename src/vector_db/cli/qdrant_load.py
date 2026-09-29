@@ -1,9 +1,6 @@
 """
 artifacts/embeddings/* 를 읽어 로컬 Qdrant에 적재한다.
 
-Pinecone 업로드(upsert_from_artifacts.py)와 같은 입력·같은 메타데이터를 쓴다.
-두 백엔드가 다른 데이터를 갖고 있으면 결과를 비교할 수 없다.
-
     venv/bin/python -m src.vector_db.cli.qdrant_load --recreate
 
 입력 (기본값). 모델 이름 폴더는 자동으로 찾는다.

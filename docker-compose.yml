@@ -10,8 +10,6 @@ services:
       - ./:/app  # Hot Reload를 위해 코드 마운트
       - hf_cache:/cache/huggingface  # HF/Transformers 캐시 영구화
     environment:
-      - PINECONE_API_KEY=${PINECONE_API_KEY}
-      - PINECONE_ENV=${PINECONE_ENV}
       - HF_TOKEN=${HF_TOKEN}
       - HF_HOME=/cache/huggingface
       - TRANSFORMERS_CACHE=/cache/huggingface/transformers

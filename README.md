@@ -50,7 +50,7 @@ flowchart LR
 | 이미지 | [`google/siglip2-base-patch16-224`](https://huggingface.co/google/siglip2-base-patch16-224) |
 | 오디오 | [`laion/clap-htsat-fused`](https://huggingface.co/laion/clap-htsat-fused) |
 | 리랭킹 | [`dragonkue/bge-reranker-v2-m3-ko`](https://huggingface.co/dragonkue/bge-reranker-v2-m3-ko) |
-| 벡터 DB | Qdrant 로컬 모드 (기본) · Pinecone (선택) |
+| 벡터 DB | Qdrant (로컬 파일 모드 기본, 서버 모드 지원) |
 | 가사 정확 일치 | MongoDB (없으면 이 경로만 비고 나머지는 동작) |
 
 ## 성능
@@ -72,7 +72,7 @@ flowchart LR
 | --- | --- |
 | Backend | ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white) ![Pydantic](https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white) |
 | AI · ML | ![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white) ![Hugging Face](https://img.shields.io/badge/Hugging%20Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black) ![Google Gemini](https://img.shields.io/badge/Google%20Gemini-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white) |
-| Search · Storage | ![Qdrant](https://img.shields.io/badge/Qdrant-DC244C?style=for-the-badge&logo=qdrant&logoColor=white) ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white) ![Pinecone](https://img.shields.io/badge/Pinecone-000000?style=for-the-badge&logoColor=white) |
+| Search · Storage | ![Qdrant](https://img.shields.io/badge/Qdrant-DC244C?style=for-the-badge&logo=qdrant&logoColor=white) ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white) |
 | Data Pipeline | ![yt-dlp](https://img.shields.io/badge/yt--dlp-FF0000?style=for-the-badge&logo=youtube&logoColor=white) ![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge) ![UMAP](https://img.shields.io/badge/UMAP-5A4FCF?style=for-the-badge) |
 | Frontend | ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white) ![CSS](https://img.shields.io/badge/CSS-1572B6?style=for-the-badge&logo=css&logoColor=white) ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black) |
 | Infra · Test | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white) ![pytest](https://img.shields.io/badge/pytest-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white) |
@@ -101,7 +101,7 @@ Node.js는 수집 파이프라인(yt-dlp)을 돌릴 때만 필요하다.
 python3 -m venv venv
 venv/bin/pip install -r requirements.txt
 
-# 2. 환경 변수 — GEMINI_API_KEY를 채우고 VECTOR_BACKEND=qdrant인지 확인
+# 2. 환경 변수 — GEMINI_API_KEY를 채운다
 cp .env.example .env
 
 # 3. 벡터 DB 적재 (data/all_songs.jsonl과 artifacts/embeddings/가 있어야 한다)
@@ -146,7 +146,7 @@ venv/bin/python -m src.retrieval.evaluate_search_accuracy --input experiments/re
 | `src/backend/` | FastAPI 서버, 요청·응답 스키마 |
 | `src/retrieval/` | 질의 분석, 멀티모달 검색 라우터, 리랭킹, 재질문, 선정 근거 기록, 평가 스크립트 |
 | `src/embedding/` | KoE5 · BM25 · SigLIP2 · CLAP 임베딩 |
-| `src/vector_db/` | Qdrant · Pinecone 적재와 조회 |
+| `src/vector_db/` | Qdrant 적재와 조회 |
 | `src/crawler/` | 곡 메타데이터·가사·반응 수집과 LLM 정제 |
 | `src/pipelines/` | 노래 맵 좌표 생성 (UMAP) |
 | `src/frontend/static/` | 노래 맵과 검색 화면 |

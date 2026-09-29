@@ -98,9 +98,9 @@ _CORPUS = 200  # 인덱스에 곡이 충분히 있는 상황
 
 
 def _stub_router() -> SearchRouter:
-    """Pinecone/임베딩 없이 search()의 퓨전·절단 로직만 실행하는 라우터.
+    """벡터 DB·임베딩 없이 search()의 퓨전·절단 로직만 실행하는 라우터.
 
-    각 경로 스텁은 '요청한 top_k만큼 돌려준다' — 실제 Pinecone과 같은 계약이다.
+    각 경로 스텁은 '요청한 top_k만큼 돌려준다' — 실제 벡터 DB 조회와 같은 계약이다.
     폭을 넓혀 요청하지 않으면 뒤쪽 후보는 애초에 존재하지 않는다.
     """
     router = SearchRouter.__new__(SearchRouter)

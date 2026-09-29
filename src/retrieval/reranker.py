@@ -177,7 +177,7 @@ class MusicReranker:
     @staticmethod
     def build_document(track: MatchingTrack) -> str:
         """
-        Pinecone 메타데이터를 리랭커가 비교하기 좋은 자연어 문서로 변환한다.
+        벡터 DB 메타데이터를 리랭커가 비교하기 좋은 자연어 문서로 변환한다.
         빈 필드는 제외하여 불필요한 토큰 사용을 줄인다.
         """
 

@@ -128,7 +128,7 @@ def load_metadata_from_json(metadata_json: Path) -> Dict[str, Dict[str, Any]]:
 
 
 def metadata_from_record(obj: Dict[str, Any]) -> Optional[Tuple[str, Dict[str, Any]]]:
-    """meta.json / all_songs.jsonl 한 건을 (id, Pinecone 메타데이터)로 바꾼다.
+    """meta.json / all_songs.jsonl 한 건을 (id, 벡터 DB 메타데이터)로 바꾼다.
 
     meta.json 스캔과 jsonl 적재가 **같은 필드**를 만들어야 한다. 두 경로가 갈리면
     벡터 DB를 바꿀 때 검색 결과의 메타데이터가 달라진다.
@@ -236,7 +236,7 @@ def load_metadata_from_data_dir(data_dir: Path) -> Dict[str, Dict[str, Any]]:
     """
     data_dir 아래의 **/meta.json 을 전부 스캔하여 id -> metadata dict로 만든다.
 
-    Pinecone metadata에는 지정한 일부 필드만 저장한다(metadata_from_record).
+    벡터 DB payload에는 지정한 일부 필드만 저장한다(metadata_from_record).
     """
     base = Path(data_dir)
     if not base.exists():

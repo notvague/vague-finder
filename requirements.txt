@@ -23,9 +23,8 @@ safetensors>=0.4.1          # 모델 가중치 로드
 kiwipiepy==0.23.2      # 한국어 형태소 분석
 
 # === Vector DB (벡터 데이터베이스) ===
-pinecone>=6.0.0             # Pinecone 벡터 DB 클라이언트 (VECTOR_BACKEND=pinecone)
-qdrant-client>=1.9.0        # Qdrant 벡터 DB 클라이언트 (VECTOR_BACKEND=qdrant, 로컬 파일 모드)
-pinecone-text>=0.11.0       # BM25 sparse 인코딩
+qdrant-client>=1.9.0        # Qdrant 벡터 DB 클라이언트 (로컬 파일 모드 기본, QDRANT_URL이면 서버)
+pinecone-text>=0.11.0       # BM25 sparse 인코딩 라이브러리 — 이름만 같고 Pinecone 서비스·SDK와 무관
 mmh3>=4.0.0,<6              # context BM25의 재현 가능한 unsigned 32-bit term hash
 
 # === Backend (웹 서버) ===
@@ -52,5 +51,5 @@ playwright==1.62.0
 # === Test (테스트) ===
 pytest>=8.0.0               # 유닛/통합 테스트 실행기 (tests/)
 httpx>=0.27.0               # fastapi.testclient.TestClient 실행에 필요
-                            # google-genai/pinecone가 전이 의존으로 끌어오지만
+                            # google-genai가 전이 의존으로 끌어오지만
                             # 테스트가 직접 쓰므로 명시한다

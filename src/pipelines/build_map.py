@@ -10,12 +10,12 @@ src/pipelines/build_map.py
   sound: CLAP 오디오 512차원 → 소리가 닮은 곡이 모인다
   mood : KoE5 텍스트 1024차원 → 가사·정서가 닮은 곡이 모인다
 
-단계 (기본 소스: 로컬):
+단계:
   1) data/all_songs.jsonl에서 곡 메타데이터 로드
   2) artifacts/embeddings에서 곡 벡터 로드
      — 크롤링·임베딩이 끝나면 이 둘이 곧 최신이라 맵도 추가 적재 없이 따라온다.
-       예전 기본값(MongoDB + Pinecone)은 둘 다 수동 단계라 맵만 옛 곡 수에 멈춰 있었다.
-       그 경로가 필요하면 --source mongo.
+       예전 경로(MongoDB + Pinecone)는 둘 다 수동 단계라 맵만 옛 곡 수에 멈춰 있었고,
+       2026-09-29에 뺐다.
   3) UMAP으로 2D 투영
   4) 축 정렬 — 아래 align_axes() 참조
   5) 캔버스 픽셀 좌표로 스케일링 (곡 수에 비례해 면적 자동 확장 → 3000곡 대응)
@@ -23,15 +23,12 @@ src/pipelines/build_map.py
   7) 프론트가 읽는 정적 JSON 산출: src/frontend/static/map_data.json
 
 실행:
-  venv/bin/python -m src.pipelines.build_map                       # 로컬 소스 (기본)
-  venv/bin/python -m src.pipelines.build_map --source mongo        # 예전 경로
-  venv/bin/python -m src.pipelines.build_map --source mongo --force-fetch
+  venv/bin/python -m src.pipelines.build_map
 """
 from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import unicodedata
 from pathlib import Path
@@ -43,20 +40,14 @@ from dotenv import load_dotenv
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(PROJECT_ROOT / ".env")
 
-VECTOR_CACHE = PROJECT_ROOT / "artifacts" / "map" / "audio_vectors.npz"
-TEXT_CACHE = PROJECT_ROOT / "artifacts" / "map" / "text_vectors.npz"
 OUTPUT_JSON = PROJECT_ROOT / "src" / "frontend" / "static" / "map_data.json"
 
-# 로컬 소스(기본). 크롤링·임베딩이 끝나면 이 둘이 곧 최신이라, 맵도 추가 적재 없이 따라온다.
-#
-# 예전 기본값은 MongoDB(메타데이터) + Pinecone(벡터)이었다. 둘 다 별도 수동 단계라
-# 맵만 옛 곡 수에 멈춰 있기 쉬웠다 — 실제로 검색은 952곡인데 맵은 905곡이었다.
-# Pinecone은 월 전송 한도가 소진된 상태이기도 하다(.env.example 참고).
+# 크롤링·임베딩이 끝나면 이 둘이 곧 최신이라, 맵도 추가 적재 없이 따라온다.
+# (예전 MongoDB + Pinecone 경로에서는 검색은 952곡인데 맵은 905곡에 멈춰 있었다.)
 LOCAL_CORPUS = PROJECT_ROOT / "data" / "all_songs.jsonl"
 LOCAL_EMBEDDINGS = PROJECT_ROOT / "artifacts" / "embeddings"
 LOCAL_MODALITY_DIR = {"audio": "audio", "text": "text_dense"}
 
-PINECONE_NAMESPACE = os.getenv("PINECONE_NAMESPACE", "dev")
 
 # 축 정렬에 쓰는 태그. 이 태그를 가진 곡들의 벡터 차이로 축 방향을 학습한다.
 ENERGY_POS = ("신나는", "활기찬", "역동적", "중독성", "강렬함")
@@ -74,11 +65,7 @@ MARGIN = 80  # 캔버스 가장자리 여백
 
 
 def load_songs_from_jsonl(corpus: Path = LOCAL_CORPUS) -> list[dict[str, Any]]:
-    """all_songs.jsonl에서 곡 리스트를 만든다 (기본 소스).
-
-    MongoDB 경로(load_songs_from_mongo)와 **같은 모양**을 돌려준다. 맵 코드가 어느 소스든
-    구분 없이 쓰도록 여기서 형태를 맞춘다.
-    """
+    """all_songs.jsonl에서 곡 리스트를 만든다."""
     if not corpus.is_file():
         raise RuntimeError(
             f"코퍼스를 찾지 못했습니다: {corpus}\n"
@@ -162,56 +149,6 @@ def load_vectors_from_artifacts(
     return vectors
 
 
-def load_songs_from_mongo() -> list[dict[str, Any]]:
-    """MongoDB songs 컬렉션에서 곡 리스트를 만든다 (기본 소스)."""
-    from src.common.mongodb import get_collection
-
-    col = get_collection("songs")
-    cursor = col.find(
-        {},
-        {
-            "metadata.title": 1,
-            "metadata.artist": 1,
-            "metadata.genre": 1,
-            "metadata.release_date": 1,
-            "folder_name": 1,
-            "links": 1,
-            "semantic_analysis": 1,
-        },
-    )
-    tag_fields = ("sound_tags", "mood_tags", "vibe_tags",
-                  "time_weather_tags", "emotion_tags")
-    songs: list[dict[str, Any]] = []
-    for doc in cursor:
-        md = doc.get("metadata") or {}
-        title = md.get("title")
-        if not title:
-            print(f"[load] 경고: title 없는 문서 제외: {doc['_id']}")
-            continue
-        links = doc.get("links") or {}
-        sa = doc.get("semantic_analysis") or {}
-        tags: set[str] = set()
-        for field in tag_fields:
-            tags.update(sa.get(field) or [])
-        songs.append(
-            {
-                "song_id": str(doc["_id"]),
-                "title": title,
-                "artist": ", ".join(md.get("artist") or []),
-                "genre": (md.get("genre") or ["기타"])[0],
-                "folder": doc.get("folder_name", ""),
-                "youtube_id": youtube_id(links.get("youtube_url")),
-                "cover_url": links.get("cover_url") or "",
-                "tags": sorted(tags),
-                "release_date": release_date(md.get("release_date")),
-            }
-        )
-    if not songs:
-        raise RuntimeError("MongoDB songs 컬렉션에서 곡을 찾지 못했습니다. MONGO_URI 설정을 확인하세요.")
-    # 곡 순서는 UMAP 결과를 좌우하므로 folder_name으로 고정해 재현성을 보장한다
-    songs.sort(key=lambda s: s["folder"])
-    return songs
-
 
 def youtube_id(url: str | None) -> str:
     """YouTube URL에서 video id만 추출. 프론트가 임베드 주소를 조립한다."""
@@ -238,51 +175,6 @@ def display_title(title: str) -> str:
     cut = re.split(r"\s*[(\[]", t, maxsplit=1)[0].strip()
     return cut if cut else t
 
-
-def fetch_vectors(
-    song_ids: list[str],
-    force: bool,
-    kind: str = "audio",
-) -> dict[str, np.ndarray]:
-    """Pinecone에서 벡터를 가져온다. 로컬 npz 캐시 우선.
-
-    kind="audio" → CLAP 512차원 (sound 맵), "text" → KoE5 1024차원 (mood 맵)
-    """
-    from src.vector_db.settings import AUDIO_INDEX_NAME, TEXT_HYBRID_INDEX_NAME
-
-    cache = VECTOR_CACHE if kind == "audio" else TEXT_CACHE
-    index_name = AUDIO_INDEX_NAME if kind == "audio" else TEXT_HYBRID_INDEX_NAME
-
-    if cache.exists() and not force:
-        z = np.load(cache)
-        cached = {k: z[k] for k in z.files}
-        if all(sid in cached for sid in song_ids):
-            print(f"[fetch:{kind}] 캐시 사용: {cache} ({len(cached)}곡)")
-            return cached
-        print(f"[fetch:{kind}] 캐시에 없는 곡 존재 → Pinecone 재조회")
-
-    from src.vector_db.pinecone_client import get_pinecone_client
-
-    pc = get_pinecone_client()
-    index = pc.Index(index_name)
-
-    vectors: dict[str, np.ndarray] = {}
-    batch = 100
-    for i in range(0, len(song_ids), batch):
-        chunk = song_ids[i : i + batch]
-        res = index.fetch(ids=chunk, namespace=PINECONE_NAMESPACE)
-        for sid, v in res.vectors.items():
-            vectors[sid] = np.asarray(v.values, dtype=np.float32)
-        print(f"[fetch:{kind}] {min(i + batch, len(song_ids))}/{len(song_ids)}")
-
-    missing = [sid for sid in song_ids if sid not in vectors]
-    if missing:
-        print(f"[fetch:{kind}] 경고: 벡터 없는 곡 {len(missing)}개 (예: {missing[:5]})")
-
-    cache.parent.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(cache, **vectors)
-    print(f"[fetch:{kind}] 캐시 저장: {cache}")
-    return vectors
 
 
 def project_umap(matrix: np.ndarray, seed: int = 42) -> np.ndarray:
@@ -470,21 +362,13 @@ def layout(
     return relax_collisions(xy, widths), width, height
 
 
-def build(force_fetch: bool, source: str = "local") -> None:
-    if source == "local":
-        songs = load_songs_from_jsonl()
-        print(f"[load] {LOCAL_CORPUS.name}에서 {len(songs)}곡 로드")
-    else:
-        songs = load_songs_from_mongo()
-        print(f"[load] MongoDB에서 {len(songs)}곡 로드")
+def build() -> None:
+    songs = load_songs_from_jsonl()
+    print(f"[load] {LOCAL_CORPUS.name}에서 {len(songs)}곡 로드")
 
     song_ids = [s["song_id"] for s in songs]
-    if source == "local":
-        audio = load_vectors_from_artifacts(song_ids, kind="audio")
-        text = load_vectors_from_artifacts(song_ids, kind="text")
-    else:
-        audio = fetch_vectors(song_ids, force=force_fetch, kind="audio")
-        text = fetch_vectors(song_ids, force=force_fetch, kind="text")
+    audio = load_vectors_from_artifacts(song_ids, kind="audio")
+    text = load_vectors_from_artifacts(song_ids, kind="text")
 
     # 두 맵 모두에 그릴 수 있는 곡만 남긴다 (탭 전환 시 곡이 사라지지 않도록)
     songs = [s for s in songs if s["song_id"] in audio and s["song_id"] in text]
@@ -546,13 +430,8 @@ def build(force_fetch: bool, source: str = "local") -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="노래 맵 좌표 생성")
-    parser.add_argument("--force-fetch", action="store_true",
-                        help="--source mongo에서 Pinecone 재조회 (로컬 소스에는 영향 없음)")
-    parser.add_argument(
-        "--source", choices=("local", "mongo"), default="local",
-        help="local: data/all_songs.jsonl + artifacts/embeddings (기본). "
-             "mongo: MongoDB + Pinecone (예전 경로)",
+    parser = argparse.ArgumentParser(
+        description="노래 맵 좌표 생성 (data/all_songs.jsonl + artifacts/embeddings)"
     )
-    args = parser.parse_args()
-    build(force_fetch=args.force_fetch, source=args.source)
+    parser.parse_args()
+    build()

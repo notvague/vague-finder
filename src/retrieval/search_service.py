@@ -3,8 +3,6 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
-from pinecone import Pinecone
-
 from src.retrieval import timing
 from src.backend.schemas.search import MatchingTrack
 from src.embedding.models.text_bm25 import BM25SparseEncoder
@@ -16,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def hybrid_score(dense: List[float], sparse: Dict[str, Any], alpha: float):
     """
-    Pinecone Hybrid Search를 위한 Dense, Sparse 벡터 가중치 조절
+    하이브리드 검색용 Dense·Sparse 가중치 조절 (점수 = alpha·dense + (1-alpha)·sparse)
     """
     h_dense = [v * alpha for v in dense]
     h_sparse = {
@@ -27,7 +25,7 @@ def hybrid_score(dense: List[float], sparse: Dict[str, Any], alpha: float):
 
 
 def _get(obj: Any, key: str, default=None):
-    """Pinecone dict 응답과 객체 응답을 모두 지원한다."""
+    """dict 응답과 객체 응답을 모두 지원한다."""
     if isinstance(obj, Mapping):
         return obj.get(key, default)
     return getattr(obj, key, default)
@@ -42,15 +40,15 @@ def _parse_list(value: Any) -> List[str]:
 
 
 class SearchService:
-    def __init__(self, pinecone_client: Any, text_embedder: KoE5Embedder, bm25_encoder: BM25SparseEncoder):
-        self.pc = pinecone_client
-        self.text_idx = self.pc.Index(TEXT_HYBRID_INDEX_NAME)
+    def __init__(self, vector_client: Any, text_embedder: KoE5Embedder, bm25_encoder: BM25SparseEncoder):
+        self.client = vector_client
+        self.text_idx = self.client.Index(TEXT_HYBRID_INDEX_NAME)
         self.text_embedder = text_embedder
         self.bm25_encoder = bm25_encoder
 
     @staticmethod
     def track_from_match(match: Any) -> MatchingTrack:
-        """Pinecone match를 텍스트/이미지/오디오 경로 공용 MatchingTrack으로 변환한다."""
+        """벡터 DB match를 텍스트/이미지/오디오 경로 공용 MatchingTrack으로 변환한다."""
         metadata = _get(match, "metadata", {}) or {}
         match_id = str(_get(match, "id", ""))
         score = float(_get(match, "score", 0.0) or 0.0)
@@ -129,7 +127,7 @@ class SearchService:
         else:
             h_dense, h_sparse = dense_vec, None
 
-        # 4. Pinecone Query
+        # 4. 벡터 DB 조회
         query_params: Dict[str, Any] = {
             "vector": h_dense,
             "top_k": top_k,
@@ -142,17 +140,8 @@ class SearchService:
         if h_sparse is not None:
             query_params["sparse_vector"] = h_sparse
 
-        try:
-            with timing.step("text.query"):
-                res = self.text_idx.query(**query_params)
-        except Exception as e:
-            if "does not support sparse values" in str(e):
-                logger.warning("Pinecone 인덱스가 Sparse 벡터를 지원하지 않아 Dense 전용으로 자동 전환합니다.")
-                query_params.pop("sparse_vector", None)
-                query_params["vector"] = dense_vec
-                res = self.text_idx.query(**query_params)
-            else:
-                raise
+        with timing.step("text.query"):
+            res = self.text_idx.query(**query_params)
 
         # 5. Parse Results
         matches = _get(res, "matches", []) or []

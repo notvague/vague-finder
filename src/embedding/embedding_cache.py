@@ -215,7 +215,7 @@ def save_npz_sparse(
 
 def load_npz_sparse(artifacts_dir: Path, key: EmbeddingCacheKey) -> Optional[dict]:
     """
-    BM25 sparse npz 로드 후 Pinecone sparse_values 포맷으로 반환:
+    BM25 sparse npz 로드 후 sparse 벡터 포맷(dict: indices, values)으로 반환:
       {"indices": [...], "values": [...]}
     """
     if key.modality != "text_sparse":

@@ -17,8 +17,6 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
-from pinecone import Pinecone
-
 from src.backend.schemas.query import QueryAnalysis
 from src.backend.schemas.search import ClarifyAnswer, MatchingTrack
 from src.embedding.models.audio_clap import CLAPAudioEmbedder
@@ -729,7 +727,7 @@ class SearchRouter:
     멀티모달 병렬 검색 매니저.
 
     asyncio.gather + ThreadPoolExecutor 설계 이유:
-    - SigLIP2 / CLAP embed_texts, Pinecone query 모두 동기(blocking) 호출
+    - SigLIP2 / CLAP embed_texts, 벡터 DB 조회 모두 동기(blocking) 호출
     - run_in_executor로 각 경로를 별도 스레드에 위임해야 진짜 병렬 실행
     - return_exceptions=True -> 개별 모달리티 실패가 전체를 중단시키지 않음
 
@@ -743,7 +741,7 @@ class SearchRouter:
         search_service: SearchService,
         image_embedder: SigLIP2Embedder,
         audio_embedder: CLAPAudioEmbedder,
-        pinecone_client: Any,   # Pinecone 또는 같은 모양의 백엔드(qdrant_backend)
+        vector_client: Any,   # qdrant_backend.QdrantVectorClient — Index(name).query(...)만 쓴다
         lyrics_search_service: Optional[LyricsExactSearchService] = None,
         reranker: Optional[Any] = None,
         max_workers: int = 4,
@@ -752,8 +750,8 @@ class SearchRouter:
         self._img_emb = image_embedder
         self._audio_emb = audio_embedder
         self._lyrics_svc = lyrics_search_service
-        self._img_idx = pinecone_client.Index(IMAGE_INDEX_NAME)
-        self._audio_idx = pinecone_client.Index(AUDIO_INDEX_NAME)
+        self._img_idx = vector_client.Index(IMAGE_INDEX_NAME)
+        self._audio_idx = vector_client.Index(AUDIO_INDEX_NAME)
         # reranker: src.retrieval.reranker.MusicReranker (정현님 재랭킹 PR 병합 후 DI로 주입).
         # None이면 리랭킹 단계를 건너뛰고 RRF+부스팅 결과를 그대로 반환한다.
         self._reranker = reranker
@@ -1247,7 +1245,7 @@ class SearchRouter:
                 # 전 경로 가중치 0 인 비정상 케이스 — text 단독으로 폴백
                 weights = [1.0, 0.0, 0.0]
 
-        # 메타데이터 캐시 — 세 경로 모두 Pinecone에서 메타를 함께 받아오므로
+        # 메타데이터 캐시 — 세 경로 모두 벡터 DB에서 메타를 함께 받아오므로
         # (image/audio도 include_metadata=True) 어느 경로에서만 잡힌 곡이라도
         # 리랭킹용 문서를 만들 수 있다. text 우선, 그 다음 채워진 항목을 유지.
         meta_cache: Dict[str, MatchingTrack] = {}
@@ -2151,7 +2149,7 @@ class SearchRouter:
             # Dense 유사도는 '인도풍 여자 그룹' 같은 곡 설명을 잘 잡지만
             # 제목이 실제로 사람 이름처럼 보이는지는 구분하지 못한다.
             # 전용 경로 안에서만 결정론적인 제목 형태 점수를 먼저 적용하고,
-            # 동점일 때 기존 Pinecone 순서를 유지한다.
+            # 동점일 때 기존 벡터 DB 순서를 유지한다.
             hits = [
                 track
                 for _original_rank, track in sorted(
@@ -2298,7 +2296,7 @@ class SearchRouter:
 
     def _search_image(self, analysis: QueryAnalysis, top_k: int) -> List[MatchingTrack]:
         """
-        SigLIP2 텍스트→이미지 공간 임베딩 후 Pinecone image 인덱스 쿼리.
+        SigLIP2 텍스트→이미지 공간 임베딩 후 image 컬렉션 조회.
         image_english_query만 사용 (SigLIP2는 영어 성능이 극대화됨).
         메타데이터를 함께 받아와(include_metadata=True) 이 경로에서만 잡힌 곡도
         "Unknown"이 아닌 실제 제목/태그로 리랭킹/응답에 사용할 수 있게 한다.
@@ -2325,7 +2323,7 @@ class SearchRouter:
 
     def _search_audio(self, analysis: QueryAnalysis, top_k: int) -> List[MatchingTrack]:
         """
-        CLAP 텍스트→오디오 공간 임베딩 후 Pinecone audio 인덱스 쿼리.
+        CLAP 텍스트→오디오 공간 임베딩 후 audio 컬렉션 조회.
         audio_english_query만 사용 (CLAP은 영어 학습 기반 모델).
         메타데이터를 함께 받아와(include_metadata=True) 이 경로에서만 잡힌 곡도
         "Unknown"이 아닌 실제 제목/태그로 리랭킹/응답에 사용할 수 있게 한다.

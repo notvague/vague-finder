@@ -266,7 +266,7 @@ class _FakeClient:
     def __init__(self, audio_ids=()):
         self._audio_ids = list(audio_ids)
 
-    def Index(self, name):  # noqa: N802 - Pinecone 인자명을 따른다
+    def Index(self, name):  # noqa: N802 - 호출부가 쓰는 이름을 따른다
         from src.vector_db.settings import AUDIO_INDEX_NAME
         return _FakeIndex(self._audio_ids if name == AUDIO_INDEX_NAME else ())
 
@@ -355,7 +355,7 @@ def _router(text_hits, *, lyrics_hits=None, reranker=None, audio_ids=(),
         search_service=_FakeTextService(text_hits),
         image_embedder=image_embedder or _FakeEmbedder(),
         audio_embedder=_FakeEmbedder(),
-        pinecone_client=_FakeClient(audio_ids),
+        vector_client=_FakeClient(audio_ids),
         lyrics_search_service=(
             _FakeLyricsService(lyrics_hits) if lyrics_hits is not None else None
         ),

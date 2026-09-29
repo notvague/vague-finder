@@ -1,21 +1,21 @@
 """
-Qdrant 백엔드 — Pinecone 클라이언트와 **같은 모양**으로 답한다.
+Qdrant 벡터 클라이언트.
 
-검색 코드가 Pinecone을 직접 부르는 곳은 세 군데뿐이다.
+검색 코드가 벡터 DB를 부르는 곳은 세 군데뿐이다.
 
     search_service.py   텍스트 하이브리드 (dense + BM25 sparse)
     search_router.py    이미지 / 오디오
 
 세 곳 모두 `client.Index(name).query(...)` 결과에서 `matches`의
-`id / score / metadata`만 읽는다. 그래서 이 모듈이 같은 호출과 같은 응답을
-제공하면 검색·재질문·리랭킹 코드는 한 줄도 바꾸지 않아도 된다.
+`id / score / metadata`만 읽는다. 이 호출 모양은 2026-09 Pinecone에서 옮겨 올 때
+검색·재질문·리랭킹 코드를 바꾸지 않으려고 그대로 둔 것이다.
 
-Pinecone과 점수를 같게 맞추는 방법
----------------------------------
-- 텍스트: Pinecone은 alpha로 스케일한 dense·sparse를 **한 번의 dotproduct 질의**로
-  합산한다. Qdrant에는 그 합산이 없으므로 dense와 sparse를 따로 조회해 **코드에서
-  더한다.** 두 조회 모두 컬렉션 전체를 훑어 합산하므로(905곡) 잘린 상위 목록만
-  더해서 생기는 차이가 없다.
+점수 계산
+---------
+- 텍스트: 하이브리드 점수는 alpha로 스케일한 dense·sparse 내적의 합이다. Qdrant에는
+  그 합산이 없으므로 dense와 sparse를 따로 조회해 **코드에서 더한다.** 두 조회 모두
+  컬렉션 전체를 훑어 합산하므로(HYBRID_SCAN_LIMIT) 잘린 상위 목록만 더해서 생기는
+  차이가 없다.
 - 이미지·오디오: 저장된 벡터가 전부 L2 정규화되어 있어 cosine == dot이다.
 - 정확 검색(`exact=True`)을 쓴다. 근사 검색은 측정할 때마다 순위가 흔들릴 수 있다.
 
@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 DENSE_VECTOR = "dense"
 SPARSE_VECTOR = "sparse"
 
-# 인덱스 이름 → 거리 척도. Pinecone 설정과 같게 둔다.
+# 인덱스 이름 → 거리 척도.
 # (모든 벡터가 L2 정규화되어 있어 cosine과 dot은 같은 순서를 준다)
 INDEX_DISTANCE: Dict[str, models.Distance] = {
     TEXT_HYBRID_INDEX_NAME: models.Distance.DOT,
@@ -55,7 +55,7 @@ HYBRID_SCAN_LIMIT = int(os.getenv("QDRANT_HYBRID_SCAN_LIMIT", "5000"))
 
 
 def collection_name(index_name: str, namespace: str = NAMESPACE) -> str:
-    """Pinecone의 (인덱스, 네임스페이스)를 Qdrant 컬렉션 하나로 옮긴다."""
+    """(인덱스 이름, 네임스페이스)로 Qdrant 컬렉션 이름 `<인덱스>__<네임스페이스>`를 만든다."""
     return f"{index_name}__{namespace or 'default'}"
 
 
@@ -112,7 +112,7 @@ def _field_conditions(key: str, value: Any) -> List[models.Condition]:
 
 
 def translate_filter(metadata_filter: Optional[Dict[str, Any]]) -> Optional[models.Filter]:
-    """Pinecone 메타데이터 필터를 Qdrant 필터로 옮긴다.
+    """검색 코드의 메타데이터 필터(`$eq`·`$and` 같은 표기)를 Qdrant 필터로 옮긴다.
 
     실제로 쓰는 것은 제목 구조 경로의 `$eq`·`$and`·`$gte`(문장형 제목)·`$or`
     (의성어 제목)와 연주 단서 경로의 `$eq`다. 범위·OR를 빠뜨리면 그 경로가
@@ -156,7 +156,7 @@ def _filter_conditions(metadata_filter: Optional[Dict[str, Any]]) -> List[models
 
 
 class QdrantIndex:
-    """Pinecone `Index`와 같은 `query()`를 제공한다."""
+    """검색 코드가 쓰는 `query()`를 제공한다."""
 
     def __init__(self, client: QdrantClient, index_name: str, exact: bool = True):
         self._client = client
@@ -165,7 +165,7 @@ class QdrantIndex:
         # 서버 모드에서만 정확 검색을 명시한다 — 근사 검색은 측정 순위를 흔든다.
         self._search_params = models.SearchParams(exact=True) if exact else None
 
-    # Pinecone 호출부와 같은 인자를 받는다 (include_values 등 미사용 인자는 무시)
+    # 검색 코드의 호출 인자를 그대로 받는다 (include_values 등 미사용 인자는 무시)
     def query(
         self,
         *,
@@ -173,7 +173,7 @@ class QdrantIndex:
         top_k: int = 10,
         include_metadata: bool = True,
         namespace: str = NAMESPACE,
-        filter: Optional[Dict[str, Any]] = None,  # noqa: A002 - Pinecone 인자명을 따른다
+        filter: Optional[Dict[str, Any]] = None,  # noqa: A002 - 호출부 인자명을 따른다
         sparse_vector: Optional[Dict[str, Any]] = None,
         **_ignored: Any,
     ) -> Dict[str, List[Dict[str, Any]]]:
@@ -204,7 +204,7 @@ class QdrantIndex:
             with_payload=include_metadata,
         )
 
-        # dense + sparse 점수 합산 = Pinecone 하이브리드 점수
+        # dense + sparse 점수 합산 = 하이브리드 점수
         merged: Dict[Any, Dict[str, Any]] = {}
         for hit in dense_hits:
             merged[hit.id] = {"hit": hit, "score": float(hit.score)}
@@ -264,7 +264,7 @@ class QdrantIndex:
 
 
 class QdrantVectorClient:
-    """`Pinecone` 자리에 그대로 꽂히는 클라이언트."""
+    """검색 코드가 쓰는 벡터 DB 클라이언트. `Index(name)`으로 컬렉션을 연다."""
 
     def __init__(self, path: Optional[str] = None, url: Optional[str] = None, api_key: Optional[str] = None):
         url = url or os.getenv("QDRANT_URL", "").strip()
@@ -284,7 +284,7 @@ class QdrantVectorClient:
             self.is_local = True
             logger.info("[Qdrant] 로컬 모드: %s", storage)
 
-    def Index(self, index_name: str) -> QdrantIndex:  # noqa: N802 - Pinecone 이름을 따른다
+    def Index(self, index_name: str) -> QdrantIndex:  # noqa: N802 - 호출부가 쓰는 이름을 따른다
         return QdrantIndex(self.client, index_name, exact=not self.is_local)
 
     # --- 적재용 ---------------------------------------------------------
