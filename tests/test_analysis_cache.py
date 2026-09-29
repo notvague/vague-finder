@@ -328,7 +328,7 @@ def test_split_cannot_be_omitted():
 def test_default_input_is_the_reference_set():
     """기본값이 3행 스모크 파일이면 3질의 측정을 'dev 재측정'으로 읽게 된다."""
     args = ev.build_parser().parse_args(["--split", "dev"])
-    assert args.input.endswith("eval_queries_v05.csv")
+    assert args.input.endswith("eval_queries_v06.csv")
 
 
 # ---------------------------------------------------------------------------

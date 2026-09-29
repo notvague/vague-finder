@@ -1171,9 +1171,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--input",
-        default="experiments/reranking/eval_queries_v05.csv",
+        default="experiments/reranking/eval_queries_v06.csv",
         help=(
-            "평가 질의 CSV 경로. 기본값이 기준 세트다(dev 53 + test 23, "
+            "평가 질의 CSV 경로. 기본값이 기준 세트다(dev 57 + test 25, "
             "docs/eval/queries.json에서 내보낸 것). "
             "eval_queries_smoke3.csv는 3행짜리 스모크용이며 기준선이 아니다"
         ),

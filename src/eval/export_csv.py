@@ -23,7 +23,8 @@ from typing import List, Optional
 from src.eval.loader import DEFAULT_EVAL_PATH, load_eval_set
 from src.eval.schema import EvalQuery
 
-DEFAULT_OUT = Path("experiments/reranking/eval_queries_v05.csv")
+# 기준 세트. v05는 v11~v18 숫자의 기준이라 얼려 두었다 — 기본 출력이 그것을 덮어쓰면 안 된다.
+DEFAULT_OUT = Path("experiments/reranking/eval_queries_v06.csv")
 
 # evaluate_search_accuracy.py가 요구하는 컬럼.
 COLUMNS = ["query_id", "split", "query_type", "query", "relevant_ids"]
