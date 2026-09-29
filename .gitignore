@@ -94,3 +94,5 @@ experiments/reranking/results_*/*/*_explain.jsonl
 !experiments/reranking/results_*/*/search_eval_*_summary.csv
 !experiments/reranking/results_*/ce_batch_*_summary.csv
 !experiments/reranking/results_*/*/latency_summary.csv
+# Context evaluation labels are shared privately.
+/experiments/namuwiki/queries_context_v01.json
