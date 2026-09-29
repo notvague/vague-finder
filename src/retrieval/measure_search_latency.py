@@ -37,7 +37,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-DEFAULT_INPUT = Path("experiments/reranking/eval_queries_v05.csv")
+DEFAULT_INPUT = Path("experiments/reranking/eval_queries_v06.csv")
 DEFAULT_BASE_URL = "http://127.0.0.1:8000"
 SEARCH_PATH = "/api/v1/search"
 

@@ -2,8 +2,8 @@
 """평가 질의를 한 번 분석해 캐시로 저장한다.
 
     venv/bin/python -m src.retrieval.build_analysis_cache \
-        --input experiments/reranking/eval_queries_v05.csv --split dev \
-        --output experiments/reranking/analysis_cache_dev.json
+        --input experiments/reranking/eval_queries_v06.csv --split dev \
+        --output experiments/reranking/analysis_cache_v06_dev.json
 
 왜 따로 만드나: 측정 스크립트가 분석까지 하면 같은 측정을 두 번 해도 숫자가 달라진다
 (자세한 이유는 `analysis_cache.py` 문서). 분석을 먼저 고정해 두면 검색·랭킹 변경의
@@ -176,7 +176,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--input",
-        default="experiments/reranking/eval_queries_v05.csv",
+        default="experiments/reranking/eval_queries_v06.csv",
         help="평가 질의 CSV 경로. 기본값이 기준 세트다",
     )
     parser.add_argument("--output", required=True, help="저장할 캐시 JSON 경로")

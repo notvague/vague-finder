@@ -1,13 +1,13 @@
 """
 src/vector_db/settings.py
 
-- Vector DB 설정 모음
+- Vector DB(Qdrant) 설정 모음. 컬렉션 이름은 `<INDEX_NAME>__<NAMESPACE>`다
+  (qdrant_backend.collection_name).
 
 - 기존 멀티모달 인덱스 3개
-  1) TEXT_HYBRID_INDEX_NAME: text_dense_values + text_sparse_values 함께 저장(하이브리드용)
-    (sparse는 텍스트 하이브리드 인덱스에서 upsert/query 시 sparse_values로 같이 넣는 방식)
-  2) IMAGE_INDEX_NAME: image_values 저장
-  3) AUDIO_INDEX_NAME: audio_values 저장
+  1) TEXT_HYBRID_INDEX_NAME: KoE5 dense + BM25 sparse 함께 저장(하이브리드용)
+  2) IMAGE_INDEX_NAME: SigLIP2 벡터 저장
+  3) AUDIO_INDEX_NAME: CLAP 벡터 저장
 
 - 나무위키 context 전용 alias 2개
   - CONTEXT_DENSE_INDEX_NAME: 사실 단위 KoE5
@@ -22,10 +22,11 @@ load_dotenv()
 
 # -----------------------------
 # Index names / namespace
+# 기본값을 바꾸면 이미 적재한 로컬 컬렉션을 찾지 못한다 — 다시 적재해야 한다.
 # -----------------------------
-TEXT_HYBRID_INDEX_NAME = os.getenv("PINECONE_TEXT_HYBRID_INDEX", "vaguefinder-text-1024-koe5")
-IMAGE_INDEX_NAME = os.getenv("PINECONE_IMAGE_INDEX", "vaguefinder-image-768")
-AUDIO_INDEX_NAME = os.getenv("PINECONE_AUDIO_INDEX", "vaguefinder-audio-512")
+TEXT_HYBRID_INDEX_NAME = os.getenv("QDRANT_TEXT_COLLECTION", "vaguefinder-text-1024-koe5")
+IMAGE_INDEX_NAME = os.getenv("QDRANT_IMAGE_COLLECTION", "vaguefinder-image-768")
+AUDIO_INDEX_NAME = os.getenv("QDRANT_AUDIO_COLLECTION", "vaguefinder-audio-512")
 
 # Namuwiki context uses different retrieval units from the existing song index:
 # dense is one point per fact, while sparse is one point per song profile.  Keep
@@ -38,25 +39,7 @@ CONTEXT_SPARSE_INDEX_NAME = os.getenv(
     "CONTEXT_SPARSE_INDEX_NAME", "vaguefinder-context-sparse-bm25"
 )
 
-NAMESPACE = os.getenv("PINECONE_NAMESPACE", "dev")
-
-# -----------------------------
-# 벡터 DB 백엔드
-#   pinecone : 기존 관리형 (월 전송 한도 있음)
-#   qdrant   : 로컬 파일(QDRANT_PATH) 또는 서버(QDRANT_URL)
-# -----------------------------
-VECTOR_BACKEND = os.getenv("VECTOR_BACKEND", "pinecone").strip().lower()
-
-# -----------------------------
-# Serverless spec
-# -----------------------------
-PINECONE_CLOUD = os.getenv("PINECONE_CLOUD", "aws")
-PINECONE_REGION = os.getenv("PINECONE_REGION", "us-east-1")
-
-# Dense metric
-TEXT_HYBRID_METRIC = os.getenv("PINECONE_TEXT_HYBRID_METRIC", "dotproduct")
-IMAGE_METRIC = os.getenv("PINECONE_IMAGE_METRIC", "cosine")
-AUDIO_METRIC = os.getenv("PINECONE_AUDIO_METRIC", "cosine")
+NAMESPACE = os.getenv("QDRANT_NAMESPACE", "dev")
 
 # -----------------------------
 # Vector dimensions (must match embedder outputs)
@@ -67,13 +50,9 @@ IMAGE_DIM = int(os.getenv("IMAGE_DIM", "768"))
 AUDIO_DIM = int(os.getenv("AUDIO_DIM", "512"))
 CONTEXT_DENSE_DIM = int(os.getenv("CONTEXT_DENSE_DIM", str(TEXT_DENSE_DIM)))
 
-# Context DB loading is intentionally independent from Pinecone's generic
-# upsert batch setting.  A moderate default bounds memory for the full catalogue
-# while still avoiding one-request-per-fact overhead.
+# A moderate default bounds memory for the full catalogue while still avoiding
+# one-request-per-fact overhead.
 CONTEXT_QDRANT_BATCH_SIZE = int(os.getenv("CONTEXT_QDRANT_BATCH_SIZE", "256"))
-
-# Upsert batching
-UPSERT_BATCH_SIZE = int(os.getenv("PINECONE_UPSERT_BATCH_SIZE", "100"))
 
 # -----------------------------
 # Metadata selection
@@ -123,4 +102,4 @@ METADATA_ALLOWLIST = {
 }
 
 # 문자열 길이 제한 (긴 summary/comment_context 대비)
-MAX_METADATA_STR_LEN = int(os.getenv("PINECONE_MAX_METADATA_STR_LEN", "2000"))
+MAX_METADATA_STR_LEN = int(os.getenv("METADATA_MAX_STR_LEN", "2000"))

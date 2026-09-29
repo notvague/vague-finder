@@ -3,7 +3,7 @@ src/embedding/models/bm25_sparse.py
 
 BM25 기반 sparse 벡터 생성 모듈
 - BM25Encoder로 corpus에 fit한 뒤 sparse vector 생성
-- 결과는 Pinecone sparse_values 포맷(dict: indices, values)
+- 결과는 sparse 벡터 포맷(dict: indices, values)
 
 주의:
 - BM25는 corpus 통계(df)가 필요하므로, 문서(곡) 전체로 fit을 먼저 해야 함.
@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Union
 
-from pinecone_text.sparse import BM25Encoder  # pinecone-text 패키지
+from pinecone_text.sparse import BM25Encoder  # pinecone-text: BM25 라이브러리 (Pinecone 서비스와 무관)
 
 from src.embedding.text.korean_bm25_tokenizer import normalize_for_bm25
 

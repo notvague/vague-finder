@@ -156,7 +156,7 @@ def has_title_constraints(constraints: Any) -> bool:
 
 def build_title_metadata_filter(constraints: Any) -> Optional[Dict[str, Any]]:
     """
-    Pinecone metadata filter 생성.
+    벡터 DB 메타데이터 필터 생성.
 
     이것은 전체 검색에 적용하는 hard filter가 아니라
     '제목 구조 보조 검색 경로'에만 사용한다.

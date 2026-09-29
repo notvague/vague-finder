@@ -355,7 +355,7 @@ def collect_run_info(args, *, reranker, analysis_source: dict) -> dict:
         "args": {k: v for k, v in vars(args).items()},
         "analysis": analysis_source,
         "corpus": {
-            "vector_backend": os.getenv("VECTOR_BACKEND", vsettings.VECTOR_BACKEND),
+            "vector_backend": "qdrant",
             "namespace": vsettings.NAMESPACE,
             "text_index": vsettings.TEXT_HYBRID_INDEX_NAME,
             "image_index": vsettings.IMAGE_INDEX_NAME,
@@ -480,19 +480,11 @@ def _count_points(vsettings) -> Optional[int]:
     """
     from src.backend.api.dependencies import get_vector_client
 
+    from src.vector_db.qdrant_backend import collection_name
+
     client = get_vector_client()
-    backend = os.getenv("VECTOR_BACKEND", vsettings.VECTOR_BACKEND).strip().lower()
-    if backend == "qdrant":
-        from src.vector_db.qdrant_backend import collection_name
-
-        name = collection_name(vsettings.TEXT_HYBRID_INDEX_NAME, vsettings.NAMESPACE)
-        return int(client.client.count(collection_name=name, exact=True).count)
-
-    stats = client.Index(vsettings.TEXT_HYBRID_INDEX_NAME).describe_index_stats()
-    namespaces = stats.get("namespaces") or {}
-    entry = namespaces.get(vsettings.NAMESPACE) or {}
-    count = entry.get("vector_count")
-    return int(count) if count is not None else None
+    name = collection_name(vsettings.TEXT_HYBRID_INDEX_NAME, vsettings.NAMESPACE)
+    return int(client.client.count(collection_name=name, exact=True).count)
 
 
 def explain_columns(
@@ -1171,9 +1163,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--input",
-        default="experiments/reranking/eval_queries_v05.csv",
+        default="experiments/reranking/eval_queries_v06.csv",
         help=(
-            "평가 질의 CSV 경로. 기본값이 기준 세트다(dev 53 + test 23, "
+            "평가 질의 CSV 경로. 기본값이 기준 세트다(dev 57 + test 25, "
             "docs/eval/queries.json에서 내보낸 것). "
             "eval_queries_smoke3.csv는 3행짜리 스모크용이며 기준선이 아니다"
         ),

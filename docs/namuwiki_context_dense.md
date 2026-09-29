@@ -4,7 +4,7 @@
 
 `artifacts/context/songs/*.json`에서 검증된 각
 `retrieval.records[].dense_text`를 1024차원 KoE5 벡터 하나로 변환한다.
-기존 곡 단위 분위기·가사 인덱스는 변경하지 않으며, 아직 Pinecone/Qdrant에
+기존 곡 단위 분위기·가사 인덱스는 변경하지 않으며, 아직 Qdrant에
 벡터를 업로드하지도 않는다.
 
 검색 단위는 다음처럼 유지한다.

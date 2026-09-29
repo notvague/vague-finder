@@ -15,8 +15,7 @@ from src.retrieval.reranker import MusicReranker
 from src.retrieval.gemini_listwise_reranker import GeminiListwiseReranker
 from src.retrieval.search_router import SearchRouter
 from src.retrieval.search_service import SearchService
-from src.vector_db.pinecone_client import get_pinecone_client
-from src.vector_db.settings import VECTOR_BACKEND
+from src.vector_db.qdrant_backend import get_qdrant_client
 
 
 T = TypeVar("T")
@@ -55,20 +54,14 @@ def singleton(factory: Callable[[], T]) -> Callable[[], T]:
 
 @singleton
 def get_vector_client() -> Any:
-    """검색에 쓸 벡터 DB 클라이언트. VECTOR_BACKEND로 고른다.
+    """검색에 쓸 벡터 DB(Qdrant) 클라이언트.
 
-    Qdrant 백엔드는 Pinecone과 같은 `Index(name).query(...)`를 제공하므로
-    검색 코드는 어느 쪽이든 그대로 동작한다.
+    검색 코드는 `Index(name).query(...)`만 부른다(qdrant_backend 참고).
 
     로컬 Qdrant는 저장 폴더를 하나만 열 수 있다. 앱 시작 시(lifespan) 한 번 열어 두고
     요청들이 공유하며, 종료 시 close_vector_client()로 닫는다.
     """
-    backend = os.getenv("VECTOR_BACKEND", VECTOR_BACKEND).strip().lower()
-    if backend == "qdrant":
-        from src.vector_db.qdrant_backend import get_qdrant_client
-
-        return get_qdrant_client()
-    return get_pinecone_client()
+    return get_qdrant_client()
 
 
 def _vector_client_dependents() -> tuple:
@@ -119,10 +112,6 @@ def close_vector_client() -> None:
         print(f"[경고] 벡터 클라이언트를 닫는 중 오류: {exc}")
 
 
-# 이전 이름 (호출부 호환)
-get_pinecone = get_vector_client
-
-
 @singleton
 def get_text_embedder() -> KoE5Embedder:
     return KoE5Embedder()
@@ -155,7 +144,7 @@ def get_bm25_encoder() -> BM25SparseEncoder:
 @singleton
 def get_search_service() -> SearchService:
     return SearchService(
-        pinecone_client=get_vector_client(),
+        vector_client=get_vector_client(),
         text_embedder=get_text_embedder(),
         bm25_encoder=get_bm25_encoder(),
     )
@@ -197,7 +186,7 @@ def get_search_router() -> SearchRouter:
         search_service=get_search_service(),
         image_embedder=get_image_embedder(),
         audio_embedder=get_audio_embedder(),
-        pinecone_client=get_vector_client(),
+        vector_client=get_vector_client(),
         lyrics_search_service=get_lyrics_exact_search_service(),
         reranker=get_reranker(),
     )

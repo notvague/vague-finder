@@ -7,8 +7,8 @@ tokenizer a second time can split entities such as ``짱구는_못말려`` and
 ``d-e-f#m``.  This encoder therefore consumes token sequences directly.
 
 The weighting and unsigned 32-bit MurmurHash layout match the BM25 sparse
-vectors used by ``pinecone-text`` so the output can be sent to Pinecone or
-Qdrant as ``{"indices": ..., "values": ...}``.
+vectors used by ``pinecone-text`` (the song BM25 library) so the output can be
+sent to Qdrant as ``{"indices": ..., "values": ...}``.
 """
 from __future__ import annotations
 
