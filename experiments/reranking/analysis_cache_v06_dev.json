@@ -1,0 +1,3885 @@
+{
+  "format": 1,
+  "meta": {
+    "created_at": "2026-09-22T19:39:32+0900",
+    "query_source": "experiments/reranking/eval_queries_v05.csv",
+    "split": "dev",
+    "analyzer": {
+      "model_name": "gemini-3.1-flash-lite",
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "reference_year": 2026,
+      "reference_year_env": "2026",
+      "prompt_sha": "08f0b3bc4c37",
+      "postprocess_sha": "34754316cc34"
+    },
+    "drift_notes": [
+      {
+        "at": "2026-09-24T21:32:22+0900",
+        "drifted": [
+          "postprocess_sha"
+        ],
+        "kept_entries": 53,
+        "analyzer_now": {
+          "model_name": "gemini-3.1-flash-lite",
+          "temperature": 0.0,
+          "top_p": 1.0,
+          "reference_year": 2026,
+          "reference_year_env": "2026",
+          "prompt_sha": "08f0b3bc4c37",
+          "postprocess_sha": "0796bca8aedb"
+        },
+        "reason": "분석기를 동기·비동기 두 고리로 쪼갰지만 결과를 정하는 코드(_PROMPT_TEMPLATE·_apply_lyric_safeguards·_apply_metadata_safeguards·_fallback·modality_queries.py·후처리 순서)는 HEAD와 바이트 단위로 같음을 대조 확인했다. v05 공통 질의를 같은 분석으로 재기 위해 유지한다.",
+        "added_after_drift": [
+          "m302",
+          "m303",
+          "m403",
+          "q117"
+        ]
+      }
+    ]
+  },
+  "entries": {
+    "c601": {
+      "query": "전 세계에서 사람들이 따라 추는 춤이 유행했던 곡이야. 뮤직비디오가 코미디처럼 웃겼고 남자가 불렀어",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:41:05+0900",
+      "analysis": {
+        "original_query": "전 세계에서 사람들이 따라 추는 춤이 유행했던 곡이야. 뮤직비디오가 코미디처럼 웃겼고 남자가 불렀어",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "유행곡",
+          "댄스곡",
+          "남성보컬",
+          "뮤직비디오",
+          "코미디"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "댄스",
+        "image_english_query": "",
+        "audio_english_query": "",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 1.0,
+          "image": 0.0,
+          "audio": 0.0
+        },
+        "text_alpha": 0.8,
+        "confidence": 0.85,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        }
+      }
+    },
+    "c602": {
+      "query": "힙합 경연 프로그램에서 우승한 사람이 그 프로그램 안에서 발표한 곡이야",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:41:07+0900",
+      "analysis": {
+        "original_query": "힙합 경연 프로그램에서 우승한 사람이 그 프로그램 안에서 발표한 곡이야",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "힙합",
+          "경연프로그램",
+          "우승곡"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "힙합 경연 프로그램 우승자가 해당 프로그램 내에서 발표한 곡",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": null,
+        "genre": "랩/힙합",
+        "image_english_query": "",
+        "audio_english_query": "Hip-hop track with rhythmic rap vocals and a beat-driven production.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.8,
+          "image": 0.0,
+          "audio": 0.2
+        },
+        "text_alpha": 0.8,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [
+            "랩"
+          ],
+          "sound_ensemble": [
+            "힙합비트"
+          ],
+          "confidence": 0.7
+        }
+      }
+    },
+    "c603": {
+      "query": "경연 프로그램에 나온 남자가 불러서 화제가 된 곡인데, 원래 다른 가수 곡을 다시 부른 거였어",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:41:10+0900",
+      "analysis": {
+        "original_query": "경연 프로그램에 나온 남자가 불러서 화제가 된 곡인데, 원래 다른 가수 곡을 다시 부른 거였어",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "경연프로그램",
+          "리메이크",
+          "남성보컬"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 1.0,
+          "image": 0.0,
+          "audio": 0.0
+        },
+        "text_alpha": 0.8,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        }
+      }
+    },
+    "c605": {
+      "query": "배우가 주인공으로 나온 작품에서 본인이 직접 부른 곡이야. 무대에서 노래하는 장면에 나왔어",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:41:15+0900",
+      "analysis": {
+        "original_query": "배우가 주인공으로 나온 작품에서 본인이 직접 부른 곡이야. 무대에서 노래하는 장면에 나왔어",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "배우",
+          "OST",
+          "무대",
+          "직접부른"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": null,
+        "genre": "OST",
+        "image_english_query": "",
+        "audio_english_query": "A vocal performance by an actor, often characterized by emotional delivery and dramatic expression.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.7,
+          "image": 0.0,
+          "audio": 0.3
+        },
+        "text_alpha": 0.8,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "배우보컬"
+          ],
+          "sound_ensemble": [],
+          "confidence": 0.7
+        }
+      }
+    },
+    "c607": {
+      "query": "옛 동네 골목을 배경으로 한 추억 드라마에 삽입된 곡인데, 원래는 오래된 밴드가 부르던 노래를 다시 불렀어",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:41:17+0900",
+      "analysis": {
+        "original_query": "옛 동네 골목을 배경으로 한 추억 드라마에 삽입된 곡인데, 원래는 오래된 밴드가 부르던 노래를 다시 불렀어",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "드라마OST",
+          "추억",
+          "리메이크",
+          "밴드"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "오래된 밴드의 노래를 다시 부른 리메이크 곡",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": null,
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "A song featuring band instrumentation, likely a remake of an older track.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.8,
+          "image": 0.0,
+          "audio": 0.2
+        },
+        "text_alpha": 0.8,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [
+            "밴드"
+          ],
+          "confidence": 0.85
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [
+            "밴드"
+          ],
+          "confidence": 0.7
+        }
+      }
+    },
+    "c701": {
+      "query": "외계인이 나오는 드라마에 쓰인 곡인데 남자가 부르는 발라드였어. 눈 내리는 겨울에 사랑하는 사람을 떠나보내는 내용이야",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:41:19+0900",
+      "analysis": {
+        "original_query": "외계인이 나오는 드라마에 쓰인 곡인데 남자가 부르는 발라드였어. 눈 내리는 겨울에 사랑하는 사람을 떠나보내는 내용이야",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "드라마OST",
+          "남성보컬",
+          "발라드",
+          "겨울",
+          "이별"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "눈 내리는 겨울에 사랑하는 사람을 떠나보내는 내용",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "발라드",
+        "image_english_query": "",
+        "audio_english_query": "A sentimental male-vocal ballad with an emotional and melancholic tone.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.7,
+          "image": 0.0,
+          "audio": 0.3
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [],
+          "confidence": 0.9
+        }
+      }
+    },
+    "c705": {
+      "query": "클래식 연주자들이 나오는 드라마에 쓰인 곡인데 남자가 부르는 잔잔한 발라드였어. 좋아하는 사람 주변만 맴돌면서 말 못 하는 내용이야",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:41:21+0900",
+      "analysis": {
+        "original_query": "클래식 연주자들이 나오는 드라마에 쓰인 곡인데 남자가 부르는 잔잔한 발라드였어. 좋아하는 사람 주변만 맴돌면서 말 못 하는 내용이야",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "드라마OST",
+          "클래식",
+          "남성보컬",
+          "발라드",
+          "짝사랑"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "좋아하는 사람 주변을 맴돌며 마음을 표현하지 못하는 애틋한 내용",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "발라드",
+        "image_english_query": "",
+        "audio_english_query": "A calm and gentle male-vocal ballad with a sentimental and emotional atmosphere.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.7,
+          "image": 0.0,
+          "audio": 0.3
+        },
+        "text_alpha": 0.8,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [
+            "발라드"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "c706": {
+      "query": "여자 둘이 부르는 곡인데 한 명은 랩을 하고 한 명은 노래를 했어. 우는 내용이었던 것 같아",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:41:23+0900",
+      "analysis": {
+        "original_query": "여자 둘이 부르는 곡인데 한 명은 랩을 하고 한 명은 노래를 했어. 우는 내용이었던 것 같아",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "여성보컬",
+          "랩",
+          "발라드",
+          "슬픈"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "상대를 그리워하며 우는 내용",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "여성",
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "A female duet featuring one vocalist singing and one rapper, with a sad and emotional tone.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.6,
+          "image": 0.0,
+          "audio": 0.4
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "duet",
+          "vocal_roles": [
+            "랩",
+            "노래",
+            "여성노래"
+          ],
+          "sound_ensemble": [],
+          "confidence": 0.9
+        }
+      }
+    },
+    "c707": {
+      "query": "특별한 후각을 가진 주인공이 나오는 드라마 삽입곡인데 여자 혼자 부르는 곡이었어. 봄에 설레는 마음을 담았고 중간에 랩 파트가 섞여 있었어",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:41:25+0900",
+      "analysis": {
+        "original_query": "특별한 후각을 가진 주인공이 나오는 드라마 삽입곡인데 여자 혼자 부르는 곡이었어. 봄에 설레는 마음을 담았고 중간에 랩 파트가 섞여 있었어",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "드라마OST",
+          "여성보컬",
+          "봄",
+          "설레는",
+          "랩"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "봄에 느끼는 설레는 마음",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "여성",
+        "genre": "OST",
+        "image_english_query": "",
+        "audio_english_query": "A female solo vocal performance with a bright, fluttering mood, featuring a distinct rap section.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.7,
+          "image": 0.0,
+          "audio": 0.3
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "여성노래",
+            "랩"
+          ],
+          "sound_ensemble": [],
+          "confidence": 0.9
+        }
+      }
+    },
+    "m102": {
+      "query": "무한도전 가요제 곡 중에 유재석이 참여한 노래였어. 랩이 들어가고 리듬감이 있었던 걸로 기억해",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:52+0900",
+      "analysis": {
+        "original_query": "무한도전 가요제 곡 중에 유재석이 참여한 노래였어. 랩이 들어가고 리듬감이 있었던 걸로 기억해",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "무한도전",
+          "가요제",
+          "유재석",
+          "랩",
+          "리듬감"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "유재석",
+        "artist_name_alt": [
+          "유재석",
+          "Yoo Jae-suk"
+        ],
+        "vocal_gender": null,
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "A rhythmic song featuring rap vocals and a prominent beat.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.7,
+          "image": 0.0,
+          "audio": 0.3
+        },
+        "text_alpha": 0.6,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [
+            "랩"
+          ],
+          "sound_ensemble": [
+            "리듬감"
+          ],
+          "confidence": 0.8
+        }
+      }
+    },
+    "m103": {
+      "query": "2000년대 초반 겨울 드라마 OST였는데, 현악기가 깔리고 남자가 호소하듯 부르는 발라드야",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:54+0900",
+      "analysis": {
+        "original_query": "2000년대 초반 겨울 드라마 OST였는데, 현악기가 깔리고 남자가 호소하듯 부르는 발라드야",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "2000년대초반",
+          "겨울",
+          "드라마OST",
+          "발라드",
+          "남성보컬",
+          "호소력"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "발라드",
+        "image_english_query": "",
+        "audio_english_query": "A male-vocal ballad featuring prominent string arrangements and an emotional, pleading vocal delivery.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.5,
+          "image": 0.0,
+          "audio": 0.5
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": 2000,
+          "end_year": 2003,
+          "confidence": 0.9
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [
+            "현악기",
+            "스트링"
+          ],
+          "confidence": 0.85
+        }
+      }
+    },
+    "m104": {
+      "query": "도깨비 드라마에 나온 노래인데 피아노 반주에 남자 보컬이 감성적으로 불렀어",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:56+0900",
+      "analysis": {
+        "original_query": "도깨비 드라마에 나온 노래인데 피아노 반주에 남자 보컬이 감성적으로 불렀어",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "도깨비",
+          "드라마OST",
+          "피아노",
+          "남성보컬",
+          "감성"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "OST",
+        "image_english_query": "",
+        "audio_english_query": "A male vocal ballad accompanied by a prominent, emotional piano arrangement.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.5,
+          "image": 0.0,
+          "audio": 0.5
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": 2016,
+          "end_year": 2017,
+          "confidence": 0.8
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [
+            "피아노"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "m201": {
+      "query": "반주가 어쿠스틱 기타 위주이고 남녀가 같이 부르는데 목소리가 맑고 청아했어. 리듬감이 있는 곡이야",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:58+0900",
+      "analysis": {
+        "original_query": "반주가 어쿠스틱 기타 위주이고 남녀가 같이 부르는데 목소리가 맑고 청아했어. 리듬감이 있는 곡이야",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "어쿠스틱",
+          "기타",
+          "남녀보컬",
+          "듀엣",
+          "청아한목소리",
+          "리듬감"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "혼성",
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "A rhythmic acoustic song featuring a male and female duet with clear, pure, and bright vocal timbres, accompanied primarily by acoustic guitar — a clearly foregrounded, instrument-led arrangement.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.4,
+          "image": 0.0,
+          "audio": 0.6
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "duet",
+          "vocal_roles": [
+            "남성노래",
+            "여성노래"
+          ],
+          "sound_ensemble": [
+            "어쿠스틱기타",
+            "어쿠스틱"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "m202": {
+      "query": "신디사이저랑 일렉트로닉 사운드가 강한 힙합풍 곡인데 남녀 목소리가 섞여 나와",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:41:00+0900",
+      "analysis": {
+        "original_query": "신디사이저랑 일렉트로닉 사운드가 강한 힙합풍 곡인데 남녀 목소리가 섞여 나와",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "힙합",
+          "일렉트로닉",
+          "신디사이저",
+          "혼성보컬"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "혼성",
+        "genre": "랩/힙합",
+        "image_english_query": "",
+        "audio_english_query": "A hip-hop track dominated by heavy synthesizer textures and electronic sound design, featuring both male and female vocals.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.5,
+          "image": 0.0,
+          "audio": 0.5
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "multiple",
+          "vocal_roles": [
+            "남성노래",
+            "여성노래"
+          ],
+          "sound_ensemble": [
+            "신디사이저",
+            "일렉트로닉",
+            "전자음악"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "m203": {
+      "query": "샘플링이랑 비트가 강조된 일렉트로닉 곡이고 남자들이 여러 명 부르는 느낌이었어",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:41:01+0900",
+      "analysis": {
+        "original_query": "샘플링이랑 비트가 강조된 일렉트로닉 곡이고 남자들이 여러 명 부르는 느낌이었어",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "일렉트로닉",
+          "비트",
+          "샘플링",
+          "보이그룹"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "일렉트로닉",
+        "image_english_query": "",
+        "audio_english_query": "Electronic track with heavy emphasis on rhythmic sampling and prominent, driving beats, featuring multiple male vocalists.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.4,
+          "image": 0.0,
+          "audio": 0.6
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "multiple",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [
+            "일렉트로닉",
+            "샘플링",
+            "강한비트",
+            "전자음악"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "m302": {
+      "query": "표지에 사람 얼굴이 크게 클로즈업되어 있던 곡이야",
+      "fallback": false,
+      "analyzed_at": "2026-09-24T21:32:26+0900",
+      "analysis": {
+        "original_query": "표지에 사람 얼굴이 크게 클로즈업되어 있던 곡이야",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "인물",
+          "클로즈업",
+          "앨범표지"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": null,
+        "genre": "",
+        "image_english_query": "Album cover featuring a large, close-up portrait of a person's face.",
+        "audio_english_query": "",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.4,
+          "image": 0.6,
+          "audio": 0.0
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        }
+      }
+    },
+    "m303": {
+      "query": "앨범 자켓이 흑백 사진이었고 글자가 거의 없었던 것 같아",
+      "fallback": false,
+      "analyzed_at": "2026-09-24T21:32:29+0900",
+      "analysis": {
+        "original_query": "앨범 자켓이 흑백 사진이었고 글자가 거의 없었던 것 같아",
+        "intent_type": "place",
+        "korean_tags": [
+          "흑백사진",
+          "미니멀"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": null,
+        "genre": "",
+        "image_english_query": "Black and white photograph album cover with minimal or no visible typography.",
+        "audio_english_query": "",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.4,
+          "image": 0.6,
+          "audio": 0.0
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        }
+      }
+    },
+    "m402": {
+      "query": "커버가 어둡고 차가운 느낌이었는데, 노래는 현악기 깔린 남자 발라드였어",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:41:03+0900",
+      "analysis": {
+        "original_query": "커버가 어둡고 차가운 느낌이었는데, 노래는 현악기 깔린 남자 발라드였어",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "발라드",
+          "남성보컬",
+          "현악기",
+          "어두운",
+          "차가운"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "발라드",
+        "image_english_query": "Album cover with a dark, cold, and moody aesthetic.",
+        "audio_english_query": "A male-vocal ballad featuring prominent string instrument accompaniment.",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.3,
+          "image": 0.35,
+          "audio": 0.35
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [
+            "현악기",
+            "스트링"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "m403": {
+      "query": "표지가 알록달록하고 시끌벅적한 느낌인데 정작 곡은 잔잔한 피아노 발라드였어",
+      "fallback": false,
+      "analyzed_at": "2026-09-24T21:32:31+0900",
+      "analysis": {
+        "original_query": "표지가 알록달록하고 시끌벅적한 느낌인데 정작 곡은 잔잔한 피아노 발라드였어",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "알록달록",
+          "시끌벅적",
+          "잔잔한",
+          "피아노",
+          "발라드"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": null,
+        "genre": "발라드",
+        "image_english_query": "Album cover with a colorful, vibrant, and chaotic visual style.",
+        "audio_english_query": "A gentle, calm piano-led ballad with a soft and intimate atmosphere.",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.3,
+          "image": 0.35,
+          "audio": 0.35
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [
+            "피아노"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "q101": {
+      "query": "2000년대 후반에 싸이월드 배경음악으로 엄청 유행했던 곡인데, 여자애들 여러 명이 부르는 빠른 댄스곡이었어. 제목이 알파벳 세 글자였던 것 같은데",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:39:34+0900",
+      "analysis": {
+        "original_query": "2000년대 후반에 싸이월드 배경음악으로 엄청 유행했던 곡인데, 여자애들 여러 명이 부르는 빠른 댄스곡이었어. 제목이 알파벳 세 글자였던 것 같은데",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "2000년대후반",
+          "싸이월드",
+          "배경음악",
+          "걸그룹",
+          "댄스곡"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": "latin",
+          "char_count": 3,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.7
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "여성",
+        "genre": "댄스",
+        "image_english_query": "",
+        "audio_english_query": "Upbeat, fast-paced dance track with multiple female vocalists.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.7,
+          "image": 0.0,
+          "audio": 0.3
+        },
+        "text_alpha": 0.5,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": 2007,
+          "end_year": 2009,
+          "confidence": 0.75
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "multiple",
+          "vocal_roles": [
+            "여성노래"
+          ],
+          "sound_ensemble": [
+            "댄스"
+          ],
+          "confidence": 0.85
+        }
+      }
+    },
+    "q103": {
+      "query": "목소리가 되게 독특한 남자 알앤비 가수 노랜데, 걱정 말고 그냥 지나가면 된다는 식으로 위로하는 가사였어. 제목도 짧았던 것 같은데",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:39:36+0900",
+      "analysis": {
+        "original_query": "목소리가 되게 독특한 남자 알앤비 가수 노랜데, 걱정 말고 그냥 지나가면 된다는 식으로 위로하는 가사였어. 제목도 짧았던 것 같은데",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "남성보컬",
+          "알앤비",
+          "위로",
+          "독특한음색"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "걱정하지 말고 그냥 지나가라는 위로의 메시지",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": 1,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.4
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "R&B/Soul",
+        "image_english_query": "",
+        "audio_english_query": "Male R&B vocals with a unique, distinctive timbre, smooth and soulful delivery.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.7,
+          "image": 0.0,
+          "audio": 0.3
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.85,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [
+            "R&B"
+          ],
+          "confidence": 0.7
+        }
+      }
+    },
+    "q104": {
+      "query": "2000년대 초반 여자 알앤비 가수였는데 기교랑 바이브레이션이 진짜 심했어. 제목은 영어 단어 하나였고 눈물이랑 지워지지 않는 기억 얘기가 나왔던 것 같아",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:39:38+0900",
+      "analysis": {
+        "original_query": "2000년대 초반 여자 알앤비 가수였는데 기교랑 바이브레이션이 진짜 심했어. 제목은 영어 단어 하나였고 눈물이랑 지워지지 않는 기억 얘기가 나왔던 것 같아",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "2000년대초반",
+          "여성솔로",
+          "알앤비",
+          "기교",
+          "바이브레이션"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "눈물과 지워지지 않는 기억에 관한 내용",
+        "song_title": "",
+        "title_constraints": {
+          "script": "latin",
+          "char_count": null,
+          "word_count": 1,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.85
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "여성",
+        "genre": "R&B/Soul",
+        "image_english_query": "",
+        "audio_english_query": "Female R&B vocals with heavy vocal runs, melisma, and intense vibrato.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.7,
+          "image": 0.0,
+          "audio": 0.3
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": 2000,
+          "end_year": 2003,
+          "confidence": 0.75
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "여성노래"
+          ],
+          "sound_ensemble": [],
+          "confidence": 0.85
+        }
+      }
+    },
+    "q105": {
+      "query": "여자 솔로가 부르는 센 느낌의 댄스곡인데, 자기가 영화 주인공이라는 식의 가사가 있었어. 신스 소리가 웅장했고",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:39:40+0900",
+      "analysis": {
+        "original_query": "여자 솔로가 부르는 센 느낌의 댄스곡인데, 자기가 영화 주인공이라는 식의 가사가 있었어. 신스 소리가 웅장했고",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "여자솔로",
+          "댄스곡",
+          "센느낌",
+          "신스팝"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "자신이 영화 속 주인공이라는 내용",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "여성",
+        "genre": "댄스",
+        "image_english_query": "",
+        "audio_english_query": "Powerful female solo vocals with grand, heavy synthesizer sounds and an intense, upbeat dance rhythm.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.6,
+          "image": 0.0,
+          "audio": 0.4
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [
+            "솔로"
+          ],
+          "confidence": 0.85
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "여성노래"
+          ],
+          "sound_ensemble": [
+            "신디사이저",
+            "전자음악"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "q106": {
+      "query": "밴드가 부르는 노랜데 후렴에서 같은 단어를 세 번씩 반복했어. 기타 소리 강하고 남자 보컬이 좀 허스키했던 것 같아",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:39:42+0900",
+      "analysis": {
+        "original_query": "밴드가 부르는 노랜데 후렴에서 같은 단어를 세 번씩 반복했어. 기타 소리 강하고 남자 보컬이 좀 허스키했던 것 같아",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "밴드",
+          "허스키보컬",
+          "기타사운드",
+          "반복",
+          "허스키"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "A rock band song featuring a husky male vocal and prominent, distorted or heavy electric guitar riffs, with a repetitive chorus structure.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.5,
+          "image": 0.0,
+          "audio": 0.5
+        },
+        "text_alpha": 0.6,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [
+            "밴드"
+          ],
+          "confidence": 0.7
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [
+            "강한기타사운드",
+            "기타"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "q107": {
+      "query": "인디밴드 노랜데 좋아하면 좋아할수록 상처받는다는 가사가 있었어. 기타 소리가 옛날 아날로그 느낌이었고 2000년대 초반 곡인 것 같아",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:39:44+0900",
+      "analysis": {
+        "original_query": "인디밴드 노랜데 좋아하면 좋아할수록 상처받는다는 가사가 있었어. 기타 소리가 옛날 아날로그 느낌이었고 2000년대 초반 곡인 것 같아",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "인디밴드",
+          "아날로그",
+          "기타",
+          "2000년대"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "좋아하면 좋아할수록 상처받는다는 내용",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": null,
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "Indie band song featuring vintage analog-style guitar sounds and a nostalgic, raw production texture.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.6,
+          "image": 0.0,
+          "audio": 0.4
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": 2000,
+          "end_year": 2003,
+          "confidence": 0.75
+        },
+        "artist_type": {
+          "values": [
+            "밴드"
+          ],
+          "confidence": 0.7
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [
+            "기타",
+            "아날로그사운드"
+          ],
+          "confidence": 0.85
+        }
+      }
+    },
+    "q108": {
+      "query": "남자 아이돌 그룹 노랜데 힙합인데도 피아노가 계속 깔렸어. 후렴이 엄청 따라부르기 쉬워서 다들 알던 곡이었는데",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:39:46+0900",
+      "analysis": {
+        "original_query": "남자 아이돌 그룹 노랜데 힙합인데도 피아노가 계속 깔렸어. 후렴이 엄청 따라부르기 쉬워서 다들 알던 곡이었는데",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "보이그룹",
+          "아이돌",
+          "힙합",
+          "피아노",
+          "대중적인"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "랩/힙합",
+        "image_english_query": "",
+        "audio_english_query": "A hip-hop track featuring a prominent, continuous piano melody throughout, with male vocals and rap, and a catchy, singable chorus.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.5,
+          "image": 0.0,
+          "audio": 0.5
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [
+            "그룹"
+          ],
+          "confidence": 0.85
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "multiple",
+          "vocal_roles": [
+            "랩",
+            "노래"
+          ],
+          "sound_ensemble": [
+            "피아노",
+            "힙합비트"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "q110": {
+      "query": "여자 그룹인데 되게 독특하고 인도 음악 같은 이국적인 느낌이 났어. 제목이 외국 사람 이름 같았던 것 같은데",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:39:48+0900",
+      "analysis": {
+        "original_query": "여자 그룹인데 되게 독특하고 인도 음악 같은 이국적인 느낌이 났어. 제목이 외국 사람 이름 같았던 것 같은데",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "걸그룹",
+          "이국적",
+          "인도음악",
+          "독특한"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "여성",
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "Female group vocals with a unique, exotic, and Indian-inspired musical style.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.6,
+          "image": 0.0,
+          "audio": 0.4
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [
+            "그룹"
+          ],
+          "confidence": 0.7
+        },
+        "title_meaning_clue": {
+          "kind": "foreign_person_name",
+          "text": "외국 사람 이름 같은 제목",
+          "confidence": 0.65
+        },
+        "performance_clues": {
+          "vocal_count": "multiple",
+          "vocal_roles": [
+            "여성노래"
+          ],
+          "sound_ensemble": [
+            "이국적",
+            "인도음악스타일",
+            "인도풍"
+          ],
+          "confidence": 0.7
+        }
+      }
+    },
+    "q112": {
+      "query": "힙합 그룹 노랜데 팬한테 말하는 것 같은 내용이었고 스트링 반주가 깔렸어. 2000년대 중후반쯤이었던 것 같은데",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:39:50+0900",
+      "analysis": {
+        "original_query": "힙합 그룹 노랜데 팬한테 말하는 것 같은 내용이었고 스트링 반주가 깔렸어. 2000년대 중후반쯤이었던 것 같은데",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "힙합",
+          "그룹",
+          "팬송",
+          "스트링",
+          "2000년대"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "팬에게 전하는 메시지",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": null,
+        "genre": "랩/힙합",
+        "image_english_query": "",
+        "audio_english_query": "Hip-hop track featuring rap vocals with a prominent string section accompaniment.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.6,
+          "image": 0.0,
+          "audio": 0.4
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": 2004,
+          "end_year": 2009,
+          "confidence": 0.75
+        },
+        "artist_type": {
+          "values": [
+            "그룹"
+          ],
+          "confidence": 0.7
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "multiple",
+          "vocal_roles": [
+            "랩"
+          ],
+          "sound_ensemble": [
+            "스트링"
+          ],
+          "confidence": 0.85
+        }
+      }
+    },
+    "q113": {
+      "query": "여자 솔로 댄스곡인데 클래식 곡을 샘플링한 것 같았어. 제목에 클래식 용어가 들어갔던 것 같은데",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:39:52+0900",
+      "analysis": {
+        "original_query": "여자 솔로 댄스곡인데 클래식 곡을 샘플링한 것 같았어. 제목에 클래식 용어가 들어갔던 것 같은데",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "여자솔로",
+          "댄스곡",
+          "샘플링",
+          "클래식"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.5
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "여성",
+        "genre": "댄스",
+        "image_english_query": "",
+        "audio_english_query": "Upbeat dance track featuring a female solo vocal and a prominent classical music sample.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.6,
+          "image": 0.0,
+          "audio": 0.4
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [
+            "솔로"
+          ],
+          "confidence": 0.7
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "여성노래"
+          ],
+          "sound_ensemble": [
+            "샘플링"
+          ],
+          "confidence": 0.8
+        }
+      }
+    },
+    "q114": {
+      "query": "남자 두 명이 부르는 힙합인데 제목이 같은 단어를 두 번 반복하는 형태였어. 일렉트로닉 비트가 되게 강했고",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:39:54+0900",
+      "analysis": {
+        "original_query": "남자 두 명이 부르는 힙합인데 제목이 같은 단어를 두 번 반복하는 형태였어. 일렉트로닉 비트가 되게 강했고",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "힙합",
+          "남성듀오",
+          "일렉트로닉",
+          "강한비트"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": true,
+          "confidence": 0.95
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "랩/힙합",
+        "image_english_query": "",
+        "audio_english_query": "A hip-hop track featuring two male vocalists with a strong, driving electronic beat and heavy production.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.6,
+          "image": 0.0,
+          "audio": 0.4
+        },
+        "text_alpha": 0.6,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "duet",
+          "vocal_roles": [
+            "남성랩",
+            "남성노래"
+          ],
+          "sound_ensemble": [
+            "일렉트로닉",
+            "전자음악"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "q115": {
+      "query": "반주가 거의 피아노 하나뿐인데 남자가 호소하듯이 부르는 발라드였어. 오케스트라 같은 게 뒤에서 조금씩 깔렸던 것 같고 최근 곡이야",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:39:59+0900",
+      "analysis": {
+        "original_query": "반주가 거의 피아노 하나뿐인데 남자가 호소하듯이 부르는 발라드였어. 오케스트라 같은 게 뒤에서 조금씩 깔렸던 것 같고 최근 곡이야",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "발라드",
+          "남성보컬",
+          "피아노",
+          "오케스트라",
+          "호소력"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "발라드",
+        "image_english_query": "",
+        "audio_english_query": "A sparse arrangement featuring a solo piano, with a male vocalist singing in an emotional, pleading style, accompanied by a subtle, gradually building orchestral layer.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.5,
+          "image": 0.0,
+          "audio": 0.5
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": 2018,
+          "end_year": 2026,
+          "confidence": 0.35
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [
+            "피아노",
+            "오케스트라"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "q117": {
+      "query": "앨범 커버에 사진 없이 글씨만 크게 박혀 있었어. 되게 심플했는데",
+      "fallback": false,
+      "analyzed_at": "2026-09-24T21:32:24+0900",
+      "analysis": {
+        "original_query": "앨범 커버에 사진 없이 글씨만 크게 박혀 있었어. 되게 심플했는데",
+        "intent_type": "place",
+        "korean_tags": [
+          "심플",
+          "타이포그래피",
+          "앨범커버"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": null,
+        "genre": "",
+        "image_english_query": "Minimalist album cover featuring only large, prominent typography with no photographic imagery.",
+        "audio_english_query": "",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.3,
+          "image": 0.7,
+          "audio": 0.0
+        },
+        "text_alpha": 0.8,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        }
+      }
+    },
+    "q202": {
+      "query": "최근에 골반 안무랑 유행어로 인스타 릴스 챌린지 때문에 역주행한 곡이야. 여자아이돌 곡이라고 들었고, 도입부가 딴딴, 딴딴 이렇게 두 음씩 끊어지면서 중독성 있게 시작해.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:01+0900",
+      "analysis": {
+        "original_query": "최근에 골반 안무랑 유행어로 인스타 릴스 챌린지 때문에 역주행한 곡이야. 여자아이돌 곡이라고 들었고, 도입부가 딴딴, 딴딴 이렇게 두 음씩 끊어지면서 중독성 있게 시작해.",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "걸그룹",
+          "역주행",
+          "챌린지",
+          "인스타릴스",
+          "중독성"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "여성",
+        "genre": "댄스",
+        "image_english_query": "",
+        "audio_english_query": "",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 1.0,
+          "image": 0.0,
+          "audio": 0.0
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": 2018,
+          "end_year": 2026,
+          "confidence": 0.35
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        }
+      }
+    },
+    "q203": {
+      "query": "무슨 밴드 노래인데, 옛날에 짱구 애니메이션에서 누가 이별하는 되게 감성적인 장면에 OST로 삽입되어서 화제가 됐던 곡이야. 남자 목소리였던 것 같고 나머지는 기억이 안 나네.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:03+0900",
+      "analysis": {
+        "original_query": "무슨 밴드 노래인데, 옛날에 짱구 애니메이션에서 누가 이별하는 되게 감성적인 장면에 OST로 삽입되어서 화제가 됐던 곡이야. 남자 목소리였던 것 같고 나머지는 기억이 안 나네.",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "밴드",
+          "OST",
+          "짱구는못말려",
+          "이별",
+          "감성적인",
+          "남성보컬"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "이별하는 장면에서 나오는 감성적인 노래",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "Emotional male vocal performance with a band arrangement, melancholic and sentimental mood.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.8,
+          "image": 0.0,
+          "audio": 0.2
+        },
+        "text_alpha": 0.8,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [
+            "밴드"
+          ],
+          "confidence": 0.85
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [
+            "밴드사운드"
+          ],
+          "confidence": 0.7
+        }
+      }
+    },
+    "q204": {
+      "query": "노래에 대한 건 하나도 기억 안 나고 앨범 커버가 강렬해서 기억에 남아. 다섯 명의 여자가 서로 다른 동물 탈을 쓰고 있는 하얀색 배경의 그림이었어.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:05+0900",
+      "analysis": {
+        "original_query": "노래에 대한 건 하나도 기억 안 나고 앨범 커버가 강렬해서 기억에 남아. 다섯 명의 여자가 서로 다른 동물 탈을 쓰고 있는 하얀색 배경의 그림이었어.",
+        "intent_type": "place",
+        "korean_tags": [
+          "앨범커버",
+          "일러스트",
+          "동물탈",
+          "여성그룹"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "여성",
+        "genre": "",
+        "image_english_query": "Album cover featuring an illustration of five women wearing different animal masks against a plain white background.",
+        "audio_english_query": "",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.2,
+          "image": 0.8,
+          "audio": 0.0
+        },
+        "text_alpha": 0.8,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        }
+      }
+    },
+    "q205": {
+      "query": "남성 솔로 발라드 곡인데, 앨범 커버가 알록달록한 책이 엄청 많이 쌓여있는 이미지였어.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:06+0900",
+      "analysis": {
+        "original_query": "남성 솔로 발라드 곡인데, 앨범 커버가 알록달록한 책이 엄청 많이 쌓여있는 이미지였어.",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "남성솔로",
+          "발라드",
+          "책",
+          "앨범커버"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "발라드",
+        "image_english_query": "Album cover featuring a large stack of colorful books.",
+        "audio_english_query": "A male-vocal ballad with an emotional and slow-paced arrangement.",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.4,
+          "image": 0.4,
+          "audio": 0.2
+        },
+        "text_alpha": 0.6,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [
+            "솔로"
+          ],
+          "confidence": 0.85
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [],
+          "confidence": 0.8
+        }
+      }
+    },
+    "q206": {
+      "query": "2010년대 후반 정도에 나온 곡인 것 같아. 남성 솔로 곡인데 목소리가 되게 미성이었고 가창력이 돋보이는 곡이야. 이별 노래였던 것 같고 멜로디가 정통적인 발라드 느낌? 앨범 커버는 남자 모습을 펜으로 날려그린 듯한 이미지야.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:09+0900",
+      "analysis": {
+        "original_query": "2010년대 후반 정도에 나온 곡인 것 같아. 남성 솔로 곡인데 목소리가 되게 미성이었고 가창력이 돋보이는 곡이야. 이별 노래였던 것 같고 멜로디가 정통적인 발라드 느낌? 앨범 커버는 남자 모습을 펜으로 날려그린 듯한 이미지야.",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "2010년대후반",
+          "남성솔로",
+          "발라드",
+          "이별",
+          "미성"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "이별을 주제로 한 내용",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "발라드",
+        "image_english_query": "Album cover featuring a sketch-style illustration of a man, drawn with loose, expressive pen strokes.",
+        "audio_english_query": "A traditional emotional ballad featuring a male vocalist with a clear, high-pitched, and powerful voice.",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.4,
+          "image": 0.3,
+          "audio": 0.3
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": 2017,
+          "end_year": 2019,
+          "confidence": 0.75
+        },
+        "artist_type": {
+          "values": [
+            "솔로"
+          ],
+          "confidence": 0.7
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [
+            "발라드"
+          ],
+          "confidence": 0.85
+        }
+      }
+    },
+    "q207": {
+      "query": "남녀 듀엣곡이고 앨범 커버도 부른 가수 두 명이 같이 찍은 사진이었어. 반복적으로 나오는 휘파람 소리가 되게 중독적이었던 것 같아. 당시 되게 유명한 아이돌 멤버들이 혼성으로 파격적인 퍼포먼스를 보여서 화제가 됐었어.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:11+0900",
+      "analysis": {
+        "original_query": "남녀 듀엣곡이고 앨범 커버도 부른 가수 두 명이 같이 찍은 사진이었어. 반복적으로 나오는 휘파람 소리가 되게 중독적이었던 것 같아. 당시 되게 유명한 아이돌 멤버들이 혼성으로 파격적인 퍼포먼스를 보여서 화제가 됐었어.",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "남녀듀엣",
+          "혼성",
+          "아이돌",
+          "휘파람",
+          "퍼포먼스"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "혼성",
+        "genre": "",
+        "image_english_query": "Album cover featuring a photograph of the two singers together.",
+        "audio_english_query": "A catchy pop song featuring a prominent, repetitive, and addictive whistling sound.",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.4,
+          "image": 0.3,
+          "audio": 0.3
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "duet",
+          "vocal_roles": [
+            "남성노래",
+            "여성노래"
+          ],
+          "sound_ensemble": [
+            "휘파람"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "q208": {
+      "query": "휘성이 부른 노래야. 팝송으로 원곡이 있다는 것만 기억나.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:13+0900",
+      "analysis": {
+        "original_query": "휘성이 부른 노래야. 팝송으로 원곡이 있다는 것만 기억나.",
+        "intent_type": "artist",
+        "korean_tags": [
+          "휘성",
+          "팝송",
+          "리메이크",
+          "원곡"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "휘성",
+        "artist_name_alt": [
+          "휘성",
+          "Wheesung"
+        ],
+        "vocal_gender": "남성",
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 1.0,
+          "image": 0.0,
+          "audio": 0.0
+        },
+        "text_alpha": 0.5,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        }
+      }
+    },
+    "q209": {
+      "query": "여성 솔로 노래인데 노래 부르는 목소리가 되게 공기반 소리반이었어. 가성이 돋보인다고 해야 하나? 되게 유명한 노래의 ost인데.. \"나의 운명인 사랑\" 이라는 가사가 있었던 것 같아.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:15+0900",
+      "analysis": {
+        "original_query": "여성 솔로 노래인데 노래 부르는 목소리가 되게 공기반 소리반이었어. 가성이 돋보인다고 해야 하나? 되게 유명한 노래의 ost인데.. \"나의 운명인 사랑\" 이라는 가사가 있었던 것 같아.",
+        "intent_type": "lyrics",
+        "korean_tags": [
+          "여성솔로",
+          "OST",
+          "공기반소리반",
+          "가성"
+        ],
+        "lyric_keywords": [
+          "나의 운명인 사랑"
+        ],
+        "lyric_clues": [
+          {
+            "text": "나의 운명인 사랑",
+            "kind": "verbatim",
+            "variants": [],
+            "confidence": 1.0,
+            "source": "rule"
+          }
+        ],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "여성",
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "Female solo vocal with a breathy, airy timbre and prominent use of falsetto.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.7,
+          "image": 0.0,
+          "audio": 0.3
+        },
+        "text_alpha": 0.15,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [
+            "솔로"
+          ],
+          "confidence": 0.7
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "여성노래"
+          ],
+          "sound_ensemble": [],
+          "confidence": 0.9
+        }
+      }
+    },
+    "q210": {
+      "query": "남자 아이돌그룹 노래야. 비가 오면 가장 먼저 생각날 정도로 유명한 노래인 것 같은데.. 앨범 커버가 검은색 베이스였어.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:17+0900",
+      "analysis": {
+        "original_query": "남자 아이돌그룹 노래야. 비가 오면 가장 먼저 생각날 정도로 유명한 노래인 것 같은데.. 앨범 커버가 검은색 베이스였어.",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "남자아이돌",
+          "그룹",
+          "비",
+          "유명곡"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "",
+        "image_english_query": "Album cover with a solid black background.",
+        "audio_english_query": "",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.6,
+          "image": 0.4,
+          "audio": 0.0
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [
+            "그룹"
+          ],
+          "confidence": 0.7
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        }
+      }
+    },
+    "q211": {
+      "query": "위험하다는 가사가 반복적으로 나오는 노래였던 것 같아. 여러 명의 여자가 같이 부르는? 중간에 짧게 랩 파트도 있었던 것 같아. 파워풀한 보컬이 돋보이는 노래였어.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:19+0900",
+      "analysis": {
+        "original_query": "위험하다는 가사가 반복적으로 나오는 노래였던 것 같아. 여러 명의 여자가 같이 부르는? 중간에 짧게 랩 파트도 있었던 것 같아. 파워풀한 보컬이 돋보이는 노래였어.",
+        "intent_type": "lyrics",
+        "korean_tags": [
+          "위험하다",
+          "걸그룹",
+          "파워풀",
+          "랩"
+        ],
+        "lyric_keywords": [
+          "위험하다"
+        ],
+        "lyric_clues": [
+          {
+            "text": "위험하다",
+            "kind": "partial",
+            "variants": [],
+            "confidence": 0.9,
+            "source": "model"
+          }
+        ],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "여성",
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "Powerful female group vocals with a distinct rap section and high-energy delivery.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.7,
+          "image": 0.0,
+          "audio": 0.3
+        },
+        "text_alpha": 0.15,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "multiple",
+          "vocal_roles": [
+            "여성노래",
+            "랩"
+          ],
+          "sound_ensemble": [],
+          "confidence": 0.85
+        }
+      }
+    },
+    "q213": {
+      "query": "꽤 옛날 노래인데 가사에 \"너를 사랑해도 되겠니\" 라는 말이 있었어. 남성 솔로 노래인데 목소리가 되게 얇은 느낌에 가사 분위기랑 다르게 멜로디는 신나는 느낌이었던 것 같아.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:21+0900",
+      "analysis": {
+        "original_query": "꽤 옛날 노래인데 가사에 \"너를 사랑해도 되겠니\" 라는 말이 있었어. 남성 솔로 노래인데 목소리가 되게 얇은 느낌에 가사 분위기랑 다르게 멜로디는 신나는 느낌이었던 것 같아.",
+        "intent_type": "lyrics",
+        "korean_tags": [
+          "옛날노래",
+          "남성솔로",
+          "미성",
+          "신나는멜로디"
+        ],
+        "lyric_keywords": [
+          "너를 사랑해도 되겠니"
+        ],
+        "lyric_clues": [
+          {
+            "text": "너를 사랑해도 되겠니",
+            "kind": "verbatim",
+            "variants": [],
+            "confidence": 1.0,
+            "source": "rule"
+          }
+        ],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "Upbeat and energetic melody with a thin, light male vocal timbre.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.9,
+          "image": 0.0,
+          "audio": 0.1
+        },
+        "text_alpha": 0.1,
+        "confidence": 0.98,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [
+            "솔로"
+          ],
+          "confidence": 0.7
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [],
+          "confidence": 0.85
+        }
+      }
+    },
+    "q215": {
+      "query": "비 오는 밤에 혼자 드라이브 하면서 듣기 좋은 노래 같아. 이별 노래인데 생각나는 이미지가 검은색? 회색? 빛 배경에 어둡고 축축한 느낌이 생각난다. 사운드는 어쿠스틱 베이스?",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:23+0900",
+      "analysis": {
+        "original_query": "비 오는 밤에 혼자 드라이브 하면서 듣기 좋은 노래 같아. 이별 노래인데 생각나는 이미지가 검은색? 회색? 빛 배경에 어둡고 축축한 느낌이 생각난다. 사운드는 어쿠스틱 베이스?",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "비",
+          "밤",
+          "드라이브",
+          "이별",
+          "어쿠스틱"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "이별 후의 슬픔과 그리움을 담은 내용",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": null,
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "A melancholic song featuring a prominent acoustic bass, suitable for late-night driving.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.571429,
+          "image": 0.0,
+          "audio": 0.428571
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [
+            "어쿠스틱 베이스",
+            "어쿠스틱",
+            "라이브"
+          ],
+          "confidence": 0.8
+        }
+      }
+    },
+    "q218": {
+      "query": "민경훈 노래인데 남자들이 노래방 가면 많이 부렀던 노래. 일렉 기타 소리가 돋보이는 도입부에 띠리리리? 하는 전주가 유명해.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:25+0900",
+      "analysis": {
+        "original_query": "민경훈 노래인데 남자들이 노래방 가면 많이 부렀던 노래. 일렉 기타 소리가 돋보이는 도입부에 띠리리리? 하는 전주가 유명해.",
+        "intent_type": "artist",
+        "korean_tags": [
+          "민경훈",
+          "노래방",
+          "락발라드",
+          "전주",
+          "일렉기타"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "민경훈",
+        "artist_name_alt": [
+          "민경훈",
+          "Min Kyung-hoon"
+        ],
+        "vocal_gender": "남성",
+        "genre": "락발라드",
+        "image_english_query": "",
+        "audio_english_query": "A rock ballad featuring a prominent, iconic electric guitar riff in the intro with a high-energy, emotional male vocal performance.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.6,
+          "image": 0.0,
+          "audio": 0.4
+        },
+        "text_alpha": 0.3,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [
+            "일렉기타",
+            "밴드사운드",
+            "기타"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "q219": {
+      "query": "남녀 듀엣 곡인데 남자는 랩을 하고 여자는 노래를 불러. 아파운더웨이~ 하는 가사로 여자가 도입부를 시작해. 가사 내용이 남자가 되게 집착하는 듯한 내용이었고, 남자 목소리는 허스키하고 여자 목소리는 되게 몽환적이야. 끝으로는 남자가 나레이션 하면서 노래가 끝나.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:27+0900",
+      "analysis": {
+        "original_query": "남녀 듀엣 곡인데 남자는 랩을 하고 여자는 노래를 불러. 아파운더웨이~ 하는 가사로 여자가 도입부를 시작해. 가사 내용이 남자가 되게 집착하는 듯한 내용이었고, 남자 목소리는 허스키하고 여자 목소리는 되게 몽환적이야. 끝으로는 남자가 나레이션 하면서 노래가 끝나.",
+        "intent_type": "lyrics",
+        "korean_tags": [
+          "남녀듀엣",
+          "랩",
+          "보컬",
+          "집착",
+          "몽환적",
+          "허스키"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [
+          {
+            "text": "아파운더웨이",
+            "kind": "phonetic",
+            "variants": [
+              "I found the way",
+              "I found a way"
+            ],
+            "confidence": 0.85,
+            "source": "model"
+          }
+        ],
+        "lyric_semantic_query": "남자가 상대에게 집착하는 내용",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "혼성",
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "A male-female duet featuring a husky male rap and a dreamy, ethereal female vocal. The song begins with the female vocal and concludes with a male spoken-word narration.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.6,
+          "image": 0.0,
+          "audio": 0.4
+        },
+        "text_alpha": 0.5,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "duet",
+          "vocal_roles": [
+            "남성랩",
+            "여성노래",
+            "남성나레이션",
+            "나레이션"
+          ],
+          "sound_ensemble": [],
+          "confidence": 0.95
+        }
+      }
+    },
+    "q304": {
+      "query": "앨범 커버가 초록색 바탕이었고 흰색 기하학 도형 네 개가 크게 배치돼 있었어. 글자도 도형처럼 각져 보여서 전체적으로 아주 심플한 느낌이었어.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:29+0900",
+      "analysis": {
+        "original_query": "앨범 커버가 초록색 바탕이었고 흰색 기하학 도형 네 개가 크게 배치돼 있었어. 글자도 도형처럼 각져 보여서 전체적으로 아주 심플한 느낌이었어.",
+        "intent_type": "place",
+        "korean_tags": [
+          "초록색",
+          "기하학",
+          "도형",
+          "심플"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": null,
+        "genre": "",
+        "image_english_query": "Album cover with a solid green background, featuring four large white geometric shapes arranged symmetrically, with angular, geometric typography.",
+        "audio_english_query": "",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.3,
+          "image": 0.7,
+          "audio": 0.0
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        }
+      }
+    },
+    "q307": {
+      "query": "회색빛 커버였는데 사선으로 화면이 나뉘어 있었고, 남자 네 명이 아주 작게 흩어져 서 있었어. 전체적으로 차갑고 미니멀한 느낌이 강했어.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:31+0900",
+      "analysis": {
+        "original_query": "회색빛 커버였는데 사선으로 화면이 나뉘어 있었고, 남자 네 명이 아주 작게 흩어져 서 있었어. 전체적으로 차갑고 미니멀한 느낌이 강했어.",
+        "intent_type": "place",
+        "korean_tags": [
+          "회색",
+          "미니멀",
+          "커버",
+          "앨범아트"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": null,
+        "genre": "",
+        "image_english_query": "Minimalist album cover with a gray color palette, divided by a diagonal line, featuring four small figures of men standing scattered in the space.",
+        "audio_english_query": "",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.2,
+          "image": 0.8,
+          "audio": 0.0
+        },
+        "text_alpha": 0.8,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        }
+      }
+    },
+    "q308": {
+      "query": "2000년대 후반 힙합 노래인데 남자들이 랩하고 여자 가수가 후렴을 불렀어. 비 오는 날 헤어진 사람을 생각하는 내용이고, 가사에 자신을 한쪽 다리가 짧은 의자에 비유했던 게 기억나.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:33+0900",
+      "analysis": {
+        "original_query": "2000년대 후반 힙합 노래인데 남자들이 랩하고 여자 가수가 후렴을 불렀어. 비 오는 날 헤어진 사람을 생각하는 내용이고, 가사에 자신을 한쪽 다리가 짧은 의자에 비유했던 게 기억나.",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "2000년대후반",
+          "힙합",
+          "남성랩",
+          "여성보컬",
+          "이별",
+          "비"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [
+          {
+            "text": "자신을 한쪽 다리가 짧은 의자에 비유",
+            "kind": "semantic",
+            "variants": [],
+            "confidence": 0.95,
+            "source": "model"
+          }
+        ],
+        "lyric_semantic_query": "자신을 한쪽 다리가 짧은 의자에 비유하며 이별 후의 불안정하고 힘든 심정을 표현함",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "혼성",
+        "genre": "랩/힙합",
+        "image_english_query": "",
+        "audio_english_query": "Hip-hop track featuring male rapping and a female vocalist singing the chorus, melancholic mood.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.7,
+          "image": 0.0,
+          "audio": 0.3
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": 2007,
+          "end_year": 2009,
+          "confidence": 0.75
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "multiple",
+          "vocal_roles": [
+            "남성랩",
+            "여성노래"
+          ],
+          "sound_ensemble": [
+            "힙합"
+          ],
+          "confidence": 0.95
+        }
+      }
+    },
+    "q310": {
+      "query": "2010년대 중반 여자 아이돌 노래인데 첫사랑 때문에 마음대로 안 돼서 울상 짓는 내용이었어. 제목이 우는 얼굴 이모티콘처럼 보이는 같은 영어 알파벳 두 글자였던 것 같아.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:35+0900",
+      "analysis": {
+        "original_query": "2010년대 중반 여자 아이돌 노래인데 첫사랑 때문에 마음대로 안 돼서 울상 짓는 내용이었어. 제목이 우는 얼굴 이모티콘처럼 보이는 같은 영어 알파벳 두 글자였던 것 같아.",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "2010년대",
+          "걸그룹",
+          "아이돌",
+          "첫사랑",
+          "슬픈"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "첫사랑 때문에 마음대로 되지 않아 울상 짓는 내용",
+        "song_title": "",
+        "title_constraints": {
+          "script": "latin",
+          "char_count": 2,
+          "word_count": 1,
+          "contains_number": null,
+          "repeated_char": true,
+          "repeated_word": null,
+          "confidence": 0.7
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "여성",
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 1.0,
+          "image": 0.0,
+          "audio": 0.0
+        },
+        "text_alpha": 0.8,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": 2014,
+          "end_year": 2016,
+          "confidence": 0.75
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        }
+      }
+    },
+    "q311": {
+      "query": "2009년쯤 남자 아이돌 노래였는데 타악기랑 전자 신스가 엄청 강했고 후렴이 거의 주문처럼 같은 영어 소리를 계속 반복했어. 사랑에 빠지니까 머릿속에서 종이 울린다는 느낌의 가사였던 것 같아.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:38+0900",
+      "analysis": {
+        "original_query": "2009년쯤 남자 아이돌 노래였는데 타악기랑 전자 신스가 엄청 강했고 후렴이 거의 주문처럼 같은 영어 소리를 계속 반복했어. 사랑에 빠지니까 머릿속에서 종이 울린다는 느낌의 가사였던 것 같아.",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "2009년",
+          "보이그룹",
+          "아이돌",
+          "댄스곡",
+          "전자음",
+          "신스"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "사랑에 빠져 머릿속에서 종이 울리는 듯한 느낌",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "댄스",
+        "image_english_query": "",
+        "audio_english_query": "Upbeat male idol dance track with heavy percussion and aggressive electronic synth layers, featuring a repetitive, chant-like English hook in the chorus.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.5,
+          "image": 0.0,
+          "audio": 0.5
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": 2009,
+          "end_year": 2009,
+          "confidence": 0.75
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "multiple",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [
+            "타악기",
+            "전자신스",
+            "전자음악",
+            "퍼커션"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "q312": {
+      "query": "손으로 그린 것 같은 커다란 꽃 그림이 검은 선으로 들어가 있었고, 배경은 종이 질감처럼 거칠고 차분했어. 제목도 손글씨처럼 적혀 있던 남자 보컬 노래였어.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:40+0900",
+      "analysis": {
+        "original_query": "손으로 그린 것 같은 커다란 꽃 그림이 검은 선으로 들어가 있었고, 배경은 종이 질감처럼 거칠고 차분했어. 제목도 손글씨처럼 적혀 있던 남자 보컬 노래였어.",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "꽃",
+          "일러스트",
+          "남성보컬"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "",
+        "image_english_query": "Album cover featuring a large hand-drawn flower illustration with bold black lines, set against a rough, textured, paper-like background with handwritten typography.",
+        "audio_english_query": "A song featuring a male vocalist.",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.3,
+          "image": 0.5,
+          "audio": 0.2
+        },
+        "text_alpha": 0.6,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [],
+          "confidence": 0.9
+        }
+      }
+    },
+    "q313": {
+      "query": "여성 보컬이 중심인 인디 노래였어. 답답한 일상에서 벗어나 공항으로 떠나고 싶다는 내용이고, 여름 드라이브에 잘 어울리는 트로피컬 하우스랑 팝 록 느낌이 섞여 있었어.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:42+0900",
+      "analysis": {
+        "original_query": "여성 보컬이 중심인 인디 노래였어. 답답한 일상에서 벗어나 공항으로 떠나고 싶다는 내용이고, 여름 드라이브에 잘 어울리는 트로피컬 하우스랑 팝 록 느낌이 섞여 있었어.",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "여성보컬",
+          "인디",
+          "여름",
+          "드라이브",
+          "트로피컬하우스",
+          "팝록"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "답답한 일상에서 벗어나 공항으로 떠나고 싶은 마음",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "여성",
+        "genre": "인디",
+        "image_english_query": "",
+        "audio_english_query": "Upbeat female-vocal track blending tropical house rhythms with pop-rock instrumentation, perfect for summer driving.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.6,
+          "image": 0.0,
+          "audio": 0.4
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "여성노래"
+          ],
+          "sound_ensemble": [
+            "트로피컬하우스",
+            "팝록",
+            "라이브"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "q314": {
+      "query": "남자 발라드 가수가 부른 편안한 여행 노래였는데 바닷가 카페에서 듣는 것처럼 담백한 라운지 느낌이었어. 도시를 훌훌 떠나서 사랑하는 사람이랑 섬의 밤바다로 가자는 내용이 기억나.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:44+0900",
+      "analysis": {
+        "original_query": "남자 발라드 가수가 부른 편안한 여행 노래였는데 바닷가 카페에서 듣는 것처럼 담백한 라운지 느낌이었어. 도시를 훌훌 떠나서 사랑하는 사람이랑 섬의 밤바다로 가자는 내용이 기억나.",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "남성보컬",
+          "발라드",
+          "여행",
+          "바닷가",
+          "카페",
+          "라운지",
+          "밤바다"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "도시를 떠나 사랑하는 사람과 섬의 밤바다로 여행을 떠나자는 내용",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "발라드",
+        "image_english_query": "",
+        "audio_english_query": "A relaxed, laid-back lounge style ballad with a male vocalist, featuring a clean and intimate production suitable for a cafe setting.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.6,
+          "image": 0.0,
+          "audio": 0.4
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.9,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [
+            "라운지",
+            "담백한"
+          ],
+          "confidence": 0.7
+        }
+      }
+    },
+    "q315": {
+      "query": "분홍빛이 도는 연한 배경에 흑백으로 찍은 여자 얼굴 사진이 있었고, 꽃 그림자나 꽃잎 같은 게 겹쳐 보였어. 왼쪽에는 영어 대문자 한 글자가 크게 찍혀 있었던 앨범이야.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:46+0900",
+      "analysis": {
+        "original_query": "분홍빛이 도는 연한 배경에 흑백으로 찍은 여자 얼굴 사진이 있었고, 꽃 그림자나 꽃잎 같은 게 겹쳐 보였어. 왼쪽에는 영어 대문자 한 글자가 크게 찍혀 있었던 앨범이야.",
+        "intent_type": "place",
+        "korean_tags": [
+          "앨범표지",
+          "사진",
+          "흑백",
+          "꽃",
+          "여성"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": "latin",
+          "char_count": 1,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.8
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": null,
+        "genre": "",
+        "image_english_query": "Album cover featuring a black and white portrait of a woman against a soft pink-tinted background, with overlapping floral shadows or petals, and a single large uppercase English letter printed on the left side.",
+        "audio_english_query": "",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.3,
+          "image": 0.7,
+          "audio": 0.0
+        },
+        "text_alpha": 0.6,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        }
+      }
+    },
+    "q316": {
+      "query": "남자 아이돌 멤버가 처음 솔로로 낸 노래였던 것 같아. 기타랑 드럼이 시원하게 나오고 래퍼 피처링도 있었어. 힘든 시간을 지나 다시 날아가겠다는 내용이고 제목은 영어 한 글자였어.",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:48+0900",
+      "analysis": {
+        "original_query": "남자 아이돌 멤버가 처음 솔로로 낸 노래였던 것 같아. 기타랑 드럼이 시원하게 나오고 래퍼 피처링도 있었어. 힘든 시간을 지나 다시 날아가겠다는 내용이고 제목은 영어 한 글자였어.",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "남자아이돌",
+          "솔로데뷔",
+          "기타",
+          "드럼",
+          "래퍼피처링",
+          "희망"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "힘든 시간을 지나 다시 날아가겠다는 내용",
+        "song_title": "",
+        "title_constraints": {
+          "script": "latin",
+          "char_count": 1,
+          "word_count": 1,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.9
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "",
+        "image_english_query": "",
+        "audio_english_query": "Upbeat and energetic track featuring prominent guitar and drum sounds, with a male lead vocal and a rap feature.",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 0.6,
+          "image": 0.0,
+          "audio": 0.4
+        },
+        "text_alpha": 0.6,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [
+            "솔로"
+          ],
+          "confidence": 0.7
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래",
+            "래퍼피처링",
+            "피처링보컬"
+          ],
+          "sound_ensemble": [
+            "기타",
+            "드럼",
+            "퍼커션"
+          ],
+          "confidence": 0.9
+        }
+      }
+    },
+    "q318": {
+      "query": "윤하 비밀번호 486",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:40:50+0900",
+      "analysis": {
+        "original_query": "윤하 비밀번호 486",
+        "intent_type": "artist",
+        "korean_tags": [
+          "여성솔로",
+          "록",
+          "팝록"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "비밀번호 486",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": true,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 1.0
+        },
+        "artist_name": "윤하",
+        "artist_name_alt": [
+          "Younha"
+        ],
+        "vocal_gender": "여성",
+        "genre": "팝록",
+        "image_english_query": "",
+        "audio_english_query": "",
+        "has_visual_clue": false,
+        "modality_weights": {
+          "text": 1.0,
+          "image": 0.0,
+          "audio": 0.0
+        },
+        "text_alpha": 0.1,
+        "confidence": 1.0,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        }
+      }
+    }
+  }
+}
