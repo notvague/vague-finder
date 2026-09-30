@@ -8,6 +8,7 @@ queries.json 60개와 eval_queries_v04.csv 53개가 따로 놀았다).
 
   python -m src.eval.export_csv
   python -m src.eval.export_csv --query-set v04 --out experiments/reranking/eval_queries_v04_regen.csv
+  python -m src.eval.export_csv --with-allowed --out experiments/reranking/eval_queries_v07.csv
 
 split 컬럼은 그대로 실어 보내므로, 실제 dev/test 선택은 평가 스크립트의
 `--split`이 맡는다. 내보내기 단계에서 미리 거르지 않는 이유는 한 파일로
@@ -28,6 +29,8 @@ DEFAULT_OUT = Path("experiments/reranking/eval_queries_v06.csv")
 
 # evaluate_search_accuracy.py가 요구하는 컬럼.
 COLUMNS = ["query_id", "split", "query_type", "query", "relevant_ids"]
+# 허용 정답 열. 기본 출력(v06)에는 넣지 않는다 — v06은 원래 타깃만 담은 기준 세트로 얼려 둔다.
+ALLOWED_COLUMN = "allowed_ids"
 
 
 def select(
@@ -49,23 +52,26 @@ def select(
     return picked
 
 
-def to_rows(queries: List[EvalQuery]) -> List[dict]:
-    return [
-        {
+def to_rows(queries: List[EvalQuery], with_allowed: bool = False) -> List[dict]:
+    rows = []
+    for q in queries:
+        row = {
             "query_id": q.query_id,
             "split": q.split,
             "query_type": "search",
             "query": q.query,
             "relevant_ids": "|".join(q.positives),
         }
-        for q in queries
-    ]
+        if with_allowed:
+            row[ALLOWED_COLUMN] = "|".join(q.allowed)
+        rows.append(row)
+    return rows
 
 
-def write_csv(rows: List[dict], out: Path) -> None:
+def write_csv(rows: List[dict], out: Path, with_allowed: bool = False) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=COLUMNS)
+        writer = csv.DictWriter(f, fieldnames=COLUMNS + ([ALLOWED_COLUMN] if with_allowed else []))
         writer.writeheader()
         writer.writerows(rows)
 
@@ -86,6 +92,11 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["dev", "test"],
         help="특정 split만. 생략하면 둘 다 내보내고 평가 스크립트가 고른다",
     )
+    p.add_argument(
+        "--with-allowed",
+        action="store_true",
+        help="허용 정답(allowed_ids) 열을 더한다. 확장 지표(src.eval.relaxed_metrics)용",
+    )
     return p
 
 
@@ -93,7 +104,7 @@ def main() -> None:
     args = build_parser().parse_args()
     eval_set = load_eval_set(args.queries)
     picked = select(eval_set.queries, args.query_set, args.split)
-    write_csv(to_rows(picked), args.out)
+    write_csv(to_rows(picked, args.with_allowed), args.out, args.with_allowed)
 
     from collections import Counter
     print(f"{args.out} — {len(picked)}개")
