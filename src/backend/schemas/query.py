@@ -190,6 +190,34 @@ class PerformanceClues(BaseModel):
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
 
 
+class ContextClue(BaseModel):
+    """검색에 사용할 외부 사실 단서 한 개. 정답 곡명은 추측하지 않는다."""
+
+    target: str = Field(
+        default="",
+        max_length=120,
+        description="사용자가 언급한 작품·인물·행사 등의 대상. 불명확하면 빈 문자열.",
+    )
+    relation: str = Field(
+        ...,
+        min_length=1,
+        max_length=160,
+        description="그 대상과 곡의 관계(삽입곡, 제작 비화, 커버 무대 등).",
+    )
+    search_query: str = Field(
+        ...,
+        min_length=1,
+        max_length=400,
+        description="사용자가 제공한 배경 사실만으로 만든 한국어 검색 문장.",
+    )
+    confidence: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="사용자가 기억한 외부 사실 단서의 신뢰도. 전체 분석 신뢰도와 별개.",
+    )
+
+
 class QueryAnalysis(BaseModel):
     original_query: str = Field(..., description="사용자가 입력한 원본 한국어 질의")
     intent_type: Literal[
@@ -305,6 +333,11 @@ class QueryAnalysis(BaseModel):
         default_factory=PerformanceClues,
         description="곡 안에서 들리는 보컬 역할·인원·사운드 편성 단서",
     )
+    context_clues: List[ContextClue] = Field(
+        default_factory=list,
+        max_length=4,
+        description="외부 배경 사실 단서 목록. Text/Image/Audio 가중치와 독립적으로 검색한다.",
+    )
 
     @model_validator(mode="after")
     def enforce_modality_query_gates(self) -> "QueryAnalysis":
@@ -377,6 +410,10 @@ class QueryAnalysis(BaseModel):
             or self.lyric_semantic_query.strip()
             or any(clue.kind == "semantic" for clue in self.lyric_clues)
         )
+
+    @property
+    def has_context_clue(self) -> bool:
+        return any(clue.confidence > 0 for clue in self.context_clues)
 
     @property
     def has_release_era(self) -> bool:

@@ -23,6 +23,7 @@ from src.backend.schemas.query import (
     TitleConstraints,
     TitleMeaningClue,
 )
+from src.retrieval.context_query import apply_context_query_safeguards
 from src.retrieval.lyrics_query import extract_lyric_clues, normalize_lyric_surface
 from src.retrieval.modality_queries import (
     ModalityQueryValidationError,
@@ -68,6 +69,7 @@ Given a Korean natural language music search query, output a single JSON object.
 | release_era | object | Release-period memory. Fields: {{"start_year": int|null, "end_year": int|null, "confidence": 0-1}}. Absolute periods may have high confidence. Resolve relative periods against reference year {reference_year}, but use a deliberately broad range and low confidence for vague "최근/요즘" memories. Do not fill for timeless words such as "옛날/예전" alone. |
 | artist_type | object | Stable identity of the credited artist, not the arrangement of this song. Fields: {{"values": string[], "confidence": 0-1}}. Allowed values: "솔로", "그룹", "듀오", "밴드". Fill only when the query describes the artist/team itself. |
 | performance_clues | object | What is heard inside this song, separate from artist_type. Fields: {{"vocal_count": "solo"|"duet"|"multiple"|"choir"|null, "vocal_roles": string[], "sound_ensemble": string[], "confidence": 0-1}}. Preserve singing/rap/featuring/narration/chorus roles and band/acoustic/orchestral/electronic/live/a-cappella sound clues here. |
+| context_clues | object[] | Up to 4 external song-fact clues: {{"target": string, "relation": string, "search_query": string, "confidence": 0-1}}. Return [] if absent. |
 | artist_name | string | The artist name if the query names a specific artist, KEEPING original spacing (e.g. "임영웅"). Empty string if none. |
 | artist_name_alt | string[] | ALL plausible written forms of the artist used in Korean music databases (Melon). Include Korean, English (no space), English (with space). e.g. "뉴진스" → ["NewJeans","New Jeans"], "방탄소년단" → ["BTS","Bangtan"], "에스파" → ["aespa"], "아이브" → ["IVE","IVE (아이브)"]. Empty list if artist_name is empty. |
 | vocal_gender | string or null | "남성" if the user asks for a male/man's song, "여성" for female, "혼성" for mixed. null if not specified. |
@@ -139,6 +141,18 @@ Title meaning clues are also memories, not exact titles. Keep them separate:
 - Never infer group/duo solely from several voices being heard in one song.
 - If the user says "솔로? 밴드?" preserve both values and lower confidence.
 - These fields are soft memories. Never treat them as mandatory filters.
+
+## External background (Context) rules
+
+- Use context_clues for a song's link to an external work/event/person:
+  OST/scene, music-video event, production, cover performance, meme, festival.
+  Keep separate events as separate clues; target is the stated work/person/event
+  or "" when unknown. Ground relation and Korean search_query in user words.
+  Never guess the answer or add an unstated name, year, episode or fact; lower
+  confidence for uncertain memories.
+- Return [] for lyrics, mood/listening scenes, sounds, title shape or album art.
+  Music-video/film scenes are not album art. Mixed queries may use both paths.
+  Context never changes intent_type, text_alpha or the three modality_weights.
 
 ## Modality-specific embedding prompt rules
 
@@ -559,6 +573,12 @@ Query: "남녀가 같이 부르는 노래인데 가사에서 아파운더웨이�
   "confidence": 0.9
 }}
 
+Context examples (other fields follow the output schema above):
+- "짱구 애니메이션에서 나미리 선생님이 울 때 나온 노래" ->
+  context_clues=[{{"target":"짱구","relation":"애니메이션에서 나온",
+  "search_query":"짱구 애니메이션에서 나미리 선생님이 울 때 나온 노래","confidence":0.8}}]
+- "앨범 표지에 애니메이션 장면, 가사에 짱구라는 말" -> context_clues=[]
+
 Now analyze:
 Query: "{query}"
 """
@@ -646,6 +666,7 @@ class QueryAnalyzer:
         raw: dict = json.loads(response.text)
         raw = _apply_lyric_safeguards(query, raw)
         raw = _apply_metadata_safeguards(query, raw)
+        raw = apply_context_query_safeguards(query, raw)
         raw = apply_modality_query_safeguards(query, raw)
         raw["original_query"] = query
         analysis = QueryAnalysis(**raw)
@@ -823,6 +844,7 @@ def _fallback(query: str) -> QueryAnalysis:
             },
         ),
     )
+    raw = apply_context_query_safeguards(query, raw)
     modality = fallback_modality_payload(
         query,
         raw["performance_clues"],
@@ -842,6 +864,7 @@ def _fallback(query: str) -> QueryAnalysis:
         release_era=raw["release_era"],
         artist_type=raw["artist_type"],
         performance_clues=raw["performance_clues"],
+        context_clues=raw["context_clues"],
         artist_name="",
         artist_name_alt=[],
         vocal_gender=None,
