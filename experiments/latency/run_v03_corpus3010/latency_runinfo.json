@@ -1,0 +1,24 @@
+{
+  "created_at": "2026-10-01T02:16:58+0900",
+  "args": {
+    "input": "experiments/reranking/eval_queries_v06.csv",
+    "split": "dev",
+    "base_url": "http://127.0.0.1:8000",
+    "top_k": 10,
+    "explain": true,
+    "repeat": 1,
+    "clarify": false,
+    "query_ids": "",
+    "timing_log": "artifacts/timing/corpus3010.jsonl",
+    "output_dir": "experiments/latency/run_v03_corpus3010"
+  },
+  "requests": {
+    "planned": 59,
+    "recorded": 59,
+    "matched_server_records": 59,
+    "failed": 0,
+    "retried_analysis": 2
+  },
+  "timing_log_lines_before_run": 0,
+  "analysis_cache": "off (service path)"
+}

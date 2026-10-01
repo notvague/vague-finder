@@ -1,0 +1,108 @@
+{
+  "created_at": "2026-10-01T02:03:02+0900",
+  "args": {
+    "input": "experiments/reranking/eval_queries_v06.csv",
+    "output_dir": "experiments/reranking/results_v24_ce_topn_3010/scored30",
+    "split": "test",
+    "top_k": 10,
+    "candidate_k": 30,
+    "path_k": null,
+    "query_ids": "",
+    "exclude_query_ids": "",
+    "analysis_cache": "experiments/reranking/analysis_cache_v06_test.json",
+    "allow_fallback_analysis": false,
+    "explain": true
+  },
+  "analysis": {
+    "mode": "cache",
+    "path": "experiments/reranking/analysis_cache_v06_test.json",
+    "meta": {
+      "created_at": "2026-09-22T23:48:14+0900",
+      "query_source": "experiments/reranking/eval_queries_v05.csv",
+      "split": "test",
+      "analyzer": {
+        "model_name": "gemini-3.1-flash-lite",
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "reference_year": 2026,
+        "reference_year_env": "2026",
+        "prompt_sha": "08f0b3bc4c37",
+        "postprocess_sha": "34754316cc34"
+      },
+      "drift_notes": [
+        {
+          "at": "2026-09-24T21:32:41+0900",
+          "drifted": [
+            "postprocess_sha"
+          ],
+          "kept_entries": 23,
+          "analyzer_now": {
+            "model_name": "gemini-3.1-flash-lite",
+            "temperature": 0.0,
+            "top_p": 1.0,
+            "reference_year": 2026,
+            "reference_year_env": "2026",
+            "prompt_sha": "08f0b3bc4c37",
+            "postprocess_sha": "0796bca8aedb"
+          },
+          "reason": "분석기를 동기·비동기 두 고리로 쪼갰지만 결과를 정하는 코드(_PROMPT_TEMPLATE·_apply_lyric_safeguards·_apply_metadata_safeguards·_fallback·modality_queries.py·후처리 순서)는 HEAD와 바이트 단위로 같음을 대조 확인했다. v05 공통 질의를 같은 분석으로 재기 위해 유지한다.",
+          "added_after_drift": [
+            "m301",
+            "q116"
+          ]
+        }
+      ]
+    },
+    "fallback_query_ids": [],
+    "fingerprint_drift": [
+      "postprocess_sha"
+    ]
+  },
+  "corpus": {
+    "vector_backend": "qdrant",
+    "namespace": "dev",
+    "text_index": "vaguefinder-text-1024-koe5",
+    "image_index": "vaguefinder-image-768",
+    "audio_index": "vaguefinder-audio-512",
+    "qdrant_path": "artifacts/qdrant",
+    "point_count": 3010
+  },
+  "bm25": {
+    "path": "artifacts/bm25_params.json",
+    "exists": true,
+    "sha256_12": "8f0038a47cbc",
+    "bytes": 580148
+  },
+  "lyrics_source": {
+    "db": "vaguefinder",
+    "collection": "songs",
+    "document_count": 3016,
+    "full_lyrics_songs": 3016,
+    "full_lyrics_total_chars": 2518091,
+    "content_sha256_16": "e6b96526fc2fd396"
+  },
+  "reranker": {
+    "backend": "cross_encoder",
+    "class": "MusicReranker",
+    "enabled": true,
+    "config": {
+      "model_name": "dragonkue/bge-reranker-v2-m3-ko",
+      "device": "auto",
+      "batch_size": 8,
+      "max_length": 512,
+      "rerank_weight": 0.45,
+      "spread_ref": 0.01,
+      "low_conf_top_n": 5,
+      "min_spread": 0.0,
+      "score_top_n": 0,
+      "enabled": true
+    }
+  },
+  "ranking_switches": {
+    "lyric_protect_phonetic_top1": false,
+    "lyric_protect_min_confidence": 0.8,
+    "lyric_boost_scale": 1.0,
+    "reranker_min_spread": 0.0
+  },
+  "search_reference_year_env": "2026"
+}

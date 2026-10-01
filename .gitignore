@@ -73,6 +73,9 @@ reports/
 !experiments/reranking/results_*/search_eval_*_summary.csv
 # 질의별 순위·지표 경량본도 커밋 — detail 없이도 split 재집계가 재현된다
 !experiments/reranking/results_*/search_eval_*_ranks.csv
+# 후보 밖 정답의 단계별 위치·경로 깊이별 후보 포함 기록 (곡 ID와 순위만)
+!experiments/reranking/results_*/candidate_drop_*.csv
+!experiments/reranking/results_*/candidate_depth_sweep_*.csv
 # 재질문 정책 비교 산출물 — detail도 100KB 수준(analysis_json 없음)이고
 # 정책 간 우열의 1차 증거라 함께 커밋한다
 !experiments/reranking/results_clarify_*/clarify_*.csv

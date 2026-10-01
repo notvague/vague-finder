@@ -749,6 +749,7 @@ async def evaluate(args: argparse.Namespace) -> None:
             use_rerank=False,
             candidate_k=args.candidate_k,
             recorder=recorder,
+            path_k=args.path_k,
         )
         retrieval_ms = (time.perf_counter() - retrieval_started) * 1000
 
@@ -1187,6 +1188,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument("--candidate-k", type=int, default=30)
+    parser.add_argument(
+        "--path-k",
+        type=int,
+        default=None,
+        help=(
+            "세 기본 경로(text·image·audio)의 깊이와 RRF 절단 수. 생략하면 "
+            "--candidate-k와 같다. 최종 후보 수는 --candidate-k 그대로 두고 "
+            "경로 깊이만 넓힐 때 쓴다"
+        ),
+    )
     parser.add_argument(
         "--query-ids",
         default="",

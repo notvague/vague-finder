@@ -3,6 +3,8 @@
 
 엄격 지표는 원래 타깃(relevant_ids)만, 확장 지표는 원래 타깃 + 허용 정답(allowed_ids)을
 정답으로 센다. 허용 정답은 3,010곡 코퍼스 기준 팀 라벨 검토(2026-09-30~10-01)로 정했다.
+라벨 버전은 결과 파일 이름에 남는다(eval_queries_v08.csv → search_eval_{split}_relaxed_v08_*.csv).
+v07(질의 20개·80곡)과 v08(+2곡)은 v21~v24 측정에서 같은 숫자를 낸다 — 더한 두 곡이 그 측정들의 첫 정답보다 아래에 있다.
 `evaluate_search_accuracy.py`의 detail CSV에 순위별 곡 ID(baseline_top_ids·rerank_top_ids)가
 남아 있으므로, 라벨만 바뀌면 이 스크립트로 다시 집계하면 된다.
 
@@ -12,7 +14,7 @@
 엄격 지표는 원래 측정 요약(search_eval_{split}_summary.csv)과 같아야 한다. 다르면
 detail과 라벨 파일이 어긋난 것이므로 확인하도록 경고한다.
 
-주의: 허용 정답은 v21·v22 top-10 합집합에 든 후보만 검토했다. 다른 설정의 측정에 쓰면
+주의: 허용 정답은 v21·v22 top-10 합집합(+ v23 경로 깊이 40·v24 CE 30곡 채점의 새 top-10)에 든 후보만 검토했다. 다른 설정의 측정에 쓰면
 검토하지 않은 곡이 top-10에 들어와도 오답으로 세지므로, 확장 지표가 낮게 나올 수 있다.
 Candidate Recall@30은 후보 30개 목록이 detail에 없어 여기서 계산하지 않는다.
 """
@@ -20,13 +22,19 @@ from __future__ import annotations
 
 import argparse
 import csv
+import re
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Set
 
-DEFAULT_LABELS = Path("experiments/reranking/eval_queries_v07.csv")
+DEFAULT_LABELS = Path("experiments/reranking/eval_queries_v08.csv")
 KS = (1, 3, 5, 10)
 SYSTEMS = ("baseline", "rerank")
-TAG = "relaxed_v07"
+
+
+def tag_for(labels: Path) -> str:
+    """결과 파일 이름에 넣을 라벨 표시. eval_queries_v08.csv → relaxed_v08"""
+    m = re.search(r"_(v\d+)$", labels.stem)
+    return f"relaxed_{m.group(1) if m else labels.stem}"
 
 
 def split_ids(raw: Optional[str]) -> List[str]:
@@ -115,6 +123,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     args = build_parser().parse_args()
     labels = {r["query_id"]: r for r in read_csv(args.labels)}
+    tag = tag_for(args.labels)
     if not any("allowed_ids" in r for r in labels.values()):
         raise SystemExit(f"{args.labels}에 allowed_ids 열이 없다 — export_csv --with-allowed로 만든 파일을 쓸 것")
 
@@ -125,12 +134,12 @@ def main() -> None:
             continue
         per_query, summary = evaluate(read_csv(detail_path), labels)
 
-        summary_path = args.result_dir / f"search_eval_{split}_{TAG}_summary.csv"
+        summary_path = args.result_dir / f"search_eval_{split}_{tag}_summary.csv"
         with open(summary_path, "w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=list(summary[0]))
             writer.writeheader()
             writer.writerows(summary)
-        ranks_path = args.result_dir / f"search_eval_{split}_{TAG}_ranks.csv"
+        ranks_path = args.result_dir / f"search_eval_{split}_{tag}_ranks.csv"
         with open(ranks_path, "w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=list(per_query[0]))
             writer.writeheader()
