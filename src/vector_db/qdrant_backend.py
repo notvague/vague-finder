@@ -15,7 +15,9 @@ Qdrant 벡터 클라이언트.
 - 텍스트: 하이브리드 점수는 alpha로 스케일한 dense·sparse 내적의 합이다. Qdrant에는
   그 합산이 없으므로 dense와 sparse를 따로 조회해 **코드에서 더한다.** 두 조회 모두
   컬렉션 전체를 훑어 합산하므로(HYBRID_SCAN_LIMIT) 잘린 상위 목록만 더해서 생기는
-  차이가 없다.
+  차이가 없다. 훑을 때는 **점수만** 받고, 페이로드는 합산 뒤 남긴 top_k만 따로 읽는다 —
+  전체 페이로드를 두 번 받으면 곡 수에 비례해 느려진다(API 텍스트 조회 중앙값 952곡 127ms,
+  3,010곡 430ms → 이렇게 바꾼 뒤 267ms). 점수와 순서는 페이로드와 무관하다.
 - 이미지·오디오: 저장된 벡터가 전부 L2 정규화되어 있어 cosine == dot이다.
 - 정확 검색(`exact=True`)을 쓴다. 근사 검색은 측정할 때마다 순위가 흔들릴 수 있다.
 
@@ -180,16 +182,18 @@ class QdrantIndex:
         collection = collection_name(self._index_name, namespace)
         query_filter = translate_filter(filter)
 
+        hybrid = sparse_vector is not None
         dense_hits = self._search(
             collection,
             query=list(vector),
             using=DENSE_VECTOR,
-            limit=top_k if sparse_vector is None else HYBRID_SCAN_LIMIT,
+            limit=HYBRID_SCAN_LIMIT if hybrid else top_k,
             query_filter=query_filter,
-            with_payload=include_metadata,
+            # 전수 합산용 조회는 점수만 받는다. 페이로드는 아래에서 top_k만 읽는다
+            with_payload=include_metadata and not hybrid,
         )
 
-        if sparse_vector is None:
+        if not hybrid:
             return {"matches": [self._match(hit, include_metadata) for hit in dense_hits[:top_k]]}
 
         sparse_hits = self._search(
@@ -201,7 +205,7 @@ class QdrantIndex:
             using=SPARSE_VECTOR,
             limit=HYBRID_SCAN_LIMIT,
             query_filter=query_filter,
-            with_payload=include_metadata,
+            with_payload=False,
         )
 
         # dense + sparse 점수 합산 = 하이브리드 점수
@@ -216,12 +220,36 @@ class QdrantIndex:
                 entry["score"] += float(hit.score)
 
         ordered = sorted(merged.values(), key=lambda e: e["score"], reverse=True)[:top_k]
+        payloads = (
+            self._payloads(collection, [entry["hit"].id for entry in ordered])
+            if include_metadata
+            else {}
+        )
         return {
             "matches": [
-                self._match(entry["hit"], include_metadata, score=entry["score"])
+                self._match(
+                    entry["hit"], include_metadata, score=entry["score"],
+                    payload=payloads.get(entry["hit"].id),
+                )
                 for entry in ordered
             ]
         }
+
+    def _payloads(self, collection: str, ids: List[Any]) -> Dict[Any, Dict[str, Any]]:
+        """point id → 페이로드. 합산 뒤 남긴 곡만 읽는다."""
+        if not ids:
+            return {}
+        try:
+            records = self._client.retrieve(
+                collection_name=collection,
+                ids=ids,
+                with_payload=True,
+                with_vectors=False,
+            )
+        except Exception as exc:
+            logger.error("[Qdrant] %s 페이로드 조회 실패: %s", collection, exc)
+            raise
+        return {record.id: record.payload or {} for record in records}
 
     def _search(
         self,
@@ -253,8 +281,9 @@ class QdrantIndex:
         hit: models.ScoredPoint,
         include_metadata: bool,
         score: Optional[float] = None,
+        payload: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        payload = dict(hit.payload or {})
+        payload = dict((hit.payload if payload is None else payload) or {})
         song_id = str(payload.pop("song_id", hit.id))
         return {
             "id": song_id,
