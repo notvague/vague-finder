@@ -466,3 +466,163 @@ def test_fallback_after_first_turn_success_is_the_first_turn() -> None:
     }
     fill_missing_policies(results, ["initial", "reject_only", "reject_twice"])
     assert results["reject_twice"].rank == 3
+
+
+# ---------------------------------------------------------------------------
+# 서비스 2턴 흐름 (flow:*) — routes/search.py · map.js와 같은 규칙인지
+# ---------------------------------------------------------------------------
+
+from src.backend.schemas.search import ClarifyOption, ClarifyQuestion  # noqa: E402
+from src.retrieval.evaluate_clarification import (  # noqa: E402
+    FLOW_POLICIES,
+    TurnResult,
+    check_against_labels,
+    choose_answer,
+    next_question,
+    run_flow,
+)
+
+
+def _target(gender: str = "여성") -> MatchingTrack:
+    return MatchingTrack(id=TARGET, score=0.0, title="정답곡", vocal_gender=gender, genre="발라드")
+
+
+def _question(*values: str) -> ClarifyQuestion:
+    return ClarifyQuestion(
+        slot="vocal_gender", question="?",
+        options=[ClarifyOption(value=v, count=5) for v in values],
+    )
+
+
+def test_oracle_picks_the_option_that_matches_the_target() -> None:
+    answer, kind = choose_answer(_question("남성", "여성"), "oracle", _target("여성"), _song("여성"))
+    assert (answer.value, kind) == ("여성", "oracle")
+
+
+def test_oracle_cannot_pick_a_value_the_screen_does_not_offer() -> None:
+    """화면에 없는 값은 고를 수 없다 — 정확히 기억해도 '잘 모르겠어요'가 된다."""
+    answer, kind = choose_answer(_question("남성", "여성"), "oracle", _target("혼성"), _song("혼성"))
+    assert answer.skipped and kind == "skip"
+
+
+def test_noisy_picks_an_offered_wrong_option() -> None:
+    answer, kind = choose_answer(_question("여성", "남성", "혼성"), "noisy", _target("여성"), _song("여성"))
+    assert (answer.value, kind) == ("남성", "noisy")   # 하네스의 인접 오답이 선택지에 있으면 그것
+
+
+def test_no_question_after_the_last_turn_or_full_rejections() -> None:
+    result = TurnResult(rank=None, candidate_rank=None, candidate_recall=0.0)
+    assert next_question(_analysis(), result, 3, [], [], 10) is None          # 3턴 응답에는 질문 없음
+    assert next_question(_analysis(), result, 2, ["vocal_gender", "genre"], [], 10) is None
+    assert next_question(_analysis(), result, 2, [], [f"x{i}" for i in range(11)], 10) is None
+
+
+def _flow(router, mode, gender="여성"):
+    results, _slot = _run_with_slot(router, _analysis(), _song(gender))
+    initial = results["initial"]
+    return asyncio.run(run_flow(
+        router, _FakeReranker(), _analysis(), {TARGET}, initial, mode,
+        _target(gender), _song(gender), top_k=10, candidate_k=30,
+    ))
+
+
+def test_flow_stops_when_the_target_is_shown() -> None:
+    steps = _flow(_MetaRouter(), "oracle")
+    assert [s.turn for s in steps] == [1, 2]
+    assert steps[1].answer_kind == "oracle" and steps[1].answer_value == "여성"
+    assert steps[-1].result.found
+
+
+def test_flow_accumulates_answers_and_rejections_up_to_the_limit() -> None:
+    router = _MetaRouter()
+    steps = _flow(router, "noisy")
+    assert [s.turn for s in steps] == [1, 2, 3]          # 최대 두 번 다시 찾는다
+    assert [s.rejected for s in steps] == [0, 10, 20]    # 보여 준 곡이 누적된다
+    assert steps[1].answer_kind == "noisy"
+    # 성별은 이미 물었고 장르는 후보를 가르지 못한다 — 2턴에는 질문 없이 거절만 한다
+    assert steps[2].answer_kind == "none"
+    last = router.calls[-1]
+    assert len(last["exclude_ids"]) == 20
+    assert [a.value for a in last["answers"]] == ["남성"]   # 앞 턴의 답변을 계속 싣는다
+
+
+def test_reject_flow_never_answers() -> None:
+    steps = _flow(_MetaRouter(), "reject")
+    assert [s.answer_kind for s in steps[1:]] == ["none", "none"]
+
+
+def test_flow_policies_are_reported() -> None:
+    assert set(FLOW_POLICIES) <= set(POLICY_ORDER)
+
+
+def test_label_check_stops_on_any_mismatch(tmp_path) -> None:
+    from src.eval.schema import EvalQuery
+
+    q = EvalQuery(query_id="x1", query="질의", category="mixed", split="dev",
+                  query_set="v04", positives=["a"])
+    path = tmp_path / "labels.csv"
+    header = "query_id,split,query_type,query,relevant_ids\n"
+    path.write_text(header + "x1,dev,search,질의,a\n", encoding="utf-8")
+    check_against_labels([q], path, whole_split="dev")
+
+    path.write_text(header + "x1,dev,search,질의,b\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        check_against_labels([q], path)
+
+    path.write_text(header + "x1,dev,search,질의,a\nx2,dev,search,다른 질의,c\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        check_against_labels([q], path, whole_split="dev")
+
+
+# ---------------------------------------------------------------------------
+# 목표 곡 — 답변·종료·성공을 같은 곡으로 판정한다 (복수 정답 질의)
+# ---------------------------------------------------------------------------
+
+OTHER = "s045"   # 같은 질의의 다른 정답. 기본 풀에서 46번째라 처음엔 후보 밖이다
+
+
+class _OtherAnswerRouter(_MetaRouter):
+    """'여성'이라고 답하면 다른 정답(OTHER)이 1위로 온다. 목표 곡(TARGET)은 그대로 둔다."""
+
+    async def search(self, analysis, **kwargs):
+        answers = kwargs.get("answers") or []
+        female = any(a.slot == "vocal_gender" and a.value == "여성" for a in answers)
+        tracks = await super().search(analysis, **{**kwargs, "answers": []})
+        if female:
+            other = MatchingTrack(id=OTHER, score=2.0, title="다른 정답", vocal_gender="여성", genre="발라드")
+            tracks = [other] + [t for t in tracks if t.id not in (OTHER, TARGET)]
+            out = kwargs.get("candidate_tracks_out")
+            if out is not None:
+                out.clear()
+                out.extend(tracks)
+        return tracks
+
+
+def test_another_answer_song_is_not_the_conversation_target() -> None:
+    """m303 회귀: 목표 곡은 남성인데 '여성'(틀린 답)을 고르자 다른 정답(여성)이 1위에 떴다.
+    목표 곡으로 판정하면 실패, 정답 아무 곡으로 판정하면 성공 — 예전 평가기는 성공으로 셌다."""
+    def run(goal):
+        router = _OtherAnswerRouter()
+        results, _ = _run_with_slot(router, _analysis(), _song("남성"))
+        return asyncio.run(run_flow(
+            router, _FakeReranker(), _analysis(), goal, results["initial"], "noisy",
+            _target("남성"), _song("남성"), top_k=10, candidate_k=30,
+        ))
+
+    assert run({TARGET})[1].answer_value == "여성"
+    assert not any(s.result.found for s in run({TARGET}))
+    assert any(s.result.found for s in run({TARGET, OTHER}))
+
+
+def test_flow_summary_counts_queries_not_conversations() -> None:
+    def row(qid, target, hit, seen):
+        return {"query_id": qid, "policy": "flow:oracle", "target_id": target, "ran": "1",
+                "hit1": hit, "hit5": hit, "hit10": hit, "mrr10": hit, "candidate_recall": 1.0,
+                "found_turn": 2 if hit else "", "final_relaxed_hit10": hit,
+                "relaxed_seen_turn": 2 if seen else ""}
+    rows = [row("a", "a1", 1.0, True), row("a", "a2", 0.0, True), row("b", "b1", 1.0, True)]
+    summary = summarize(rows, ["flow:oracle"], intervention_ids={"a", "b"})[0]
+    assert summary["n_intervention"] == 2 and summary["n_conversations"] == 3
+    assert summary["int_hit@10"] == 0.75          # a는 두 대화의 평균 0.5, b는 1
+    assert summary["int_final_relaxed"] == 0.75   # 마지막 화면 기준
+    assert summary["int_relaxed_seen"] == 1.0     # 대화 중 한 번이라도 보였다
