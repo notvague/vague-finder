@@ -10,7 +10,9 @@ from __future__ import annotations
 import pytest
 
 from src.eval.export_csv import ALLOWED_COLUMN, COLUMNS, to_rows
-from src.eval.relaxed_metrics import evaluate, scores
+from pathlib import Path
+
+from src.eval.relaxed_metrics import evaluate, scores, tag_for
 from src.eval.schema import EvalQuery
 
 TOP = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
@@ -60,3 +62,10 @@ def test_default_export_has_no_allowed_column() -> None:
     assert ALLOWED_COLUMN not in COLUMNS
     assert ALLOWED_COLUMN not in to_rows([q])[0]
     assert to_rows([q], with_allowed=True)[0][ALLOWED_COLUMN] == "b|c"
+
+
+def test_result_files_carry_the_label_version() -> None:
+    """라벨 버전이 바뀌어도 이전 버전 결과 파일을 덮어쓰지 않는다."""
+    assert tag_for(Path("experiments/reranking/eval_queries_v08.csv")) == "relaxed_v08"
+    assert tag_for(Path("experiments/reranking/eval_queries_v07.csv")) == "relaxed_v07"
+    assert tag_for(Path("labels_custom.csv")) == "relaxed_labels_custom"

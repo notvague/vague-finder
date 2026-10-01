@@ -792,6 +792,7 @@ class SearchRouter:
         answer_multiplier: Optional[float] = None,
         recorder: ExplainRecorder = NULL_RECORDER,
         timer: Any = timing.NULL_TIMER,
+        path_k: Optional[int] = None,
     ) -> List[MatchingTrack]:
         """
         QueryAnalysis를 받아 3개 경로를 병렬 실행하고
@@ -819,6 +820,11 @@ class SearchRouter:
         answers: 재질문 답변. **질의를 바꾸지 않고** 후보 풀 안에서 재정렬만 한다.
             답변을 분석에 병합해 재검색하면 맞는 답변도 순위를 해친다
             (q200: 후보 4위 → 15위). 자세한 근거는 clarify.apply_answer_bonus 참조.
+        path_k: 세 기본 경로(text·image·audio)가 RRF에 넘기는 깊이이자 RRF 절단 수.
+            생략하면 pool_k라 기존 동작과 같다. **최종 후보 수(candidates)는 바꾸지
+            않는다.** candidate_k를 올리면 경로 깊이와 최종 후보 수가 함께 바뀌어
+            리랭커의 검색 점수 정규화 범위까지 달라지므로, 깊이만 따로 넓힐 때 쓴다.
+            보조 신호(metadata·performance)는 원래 깊이의 목록만 본다.
         """
         """
         1) 세 모달리티 병렬 후보 검색
@@ -836,6 +842,8 @@ class SearchRouter:
         # (30 → 20). 자르기 순서만 바꿔서는 뒤에서 채워 올릴 곡 자체가 없다.
         # 제외가 없으면 candidates와 같으므로 기존 동작은 변하지 않는다.
         pool_k = min(100, candidates + len(excluded)) if excluded else candidates
+        # 경로 깊이. path_k가 없으면 pool_k와 같아 아래 목록 자르기가 모두 그대로다.
+        fusion_k = max(pool_k, path_k) if path_k else pool_k
 
         use_metadata_clue = (
             analysis.has_metadata_clue
@@ -908,12 +916,15 @@ class SearchRouter:
 
         text_fut = loop.run_in_executor(
             self._pool,
-            timer.job("path.text", self._search_text, analysis, text_pool_k),
+            timer.job(
+                "path.text", self._search_text, analysis,
+                max(text_pool_k, fusion_k),
+            ),
         )
         image_fut = (
             loop.run_in_executor(
                 self._pool,
-                timer.job("path.image", self._search_image, analysis, pool_k),
+                timer.job("path.image", self._search_image, analysis, fusion_k),
             )
             if use_image else None
         )
@@ -921,7 +932,8 @@ class SearchRouter:
             loop.run_in_executor(
                 self._pool,
                 timer.job(
-                    "path.audio", self._search_audio, analysis, audio_pool_k
+                    "path.audio", self._search_audio, analysis,
+                    max(audio_pool_k, fusion_k),
                 ),
             )
             if use_audio else None
@@ -1109,10 +1121,16 @@ class SearchRouter:
         )
 
         # 실패한 경로는 빈 결과로 대체하고 기록에 남긴다
-        text_hits, image_hits, audio_hits = [
+        text_deep, image_deep, audio_deep = [
             _path_result(name, result, recorder)
             for name, result in zip(["text_hybrid", "image", "audio"], raw)
         ]
+        # 넓힌 깊이(path_k)로 받은 목록은 RRF와 메타 캐시에만 쓴다. 보조 신호는
+        # 원래 깊이로 본다 — 깊은 곡이 metadata/performance 상위 15에 끼면 기존
+        # 후보의 점수까지 바뀌어 "깊이만 넓힌" 비교가 되지 않는다.
+        # path_k가 없으면 받은 목록이 원래 깊이 이하라 이 자르기는 아무것도 바꾸지 않는다.
+        text_hits = text_deep[:text_pool_k]
+        audio_hits = audio_deep[:audio_pool_k]
 
         use_deep_audio_fusion = bool(
             use_performance_clue
@@ -1128,19 +1146,19 @@ class SearchRouter:
 
         if use_deep_audio_fusion:
             # q115처럼 제목/가사/가수 단서 없이 사운드만 상세히 묘사한 경우.
-            base_text_hits = text_hits
-            base_audio_hits = audio_hits
+            base_text_hits = text_deep
+            base_audio_hits = audio_deep
             fusion_top_k = max(
-                pool_k,
+                fusion_k,
                 len(base_text_hits),
-                len(image_hits),
+                len(image_deep),
                 len(base_audio_hits),
             )
         else:
             # 일반 질의는 기존 상위 candidate_k를 보호한다.
-            base_text_hits = text_hits[:pool_k]
-            base_audio_hits = audio_hits[:pool_k]
-            fusion_top_k = pool_k
+            base_text_hits = text_deep[:fusion_k]
+            base_audio_hits = audio_deep[:fusion_k]
+            fusion_top_k = fusion_k
 
         performance_path_hits = _path_result("performance", performance_res, recorder)
 
@@ -1250,9 +1268,9 @@ class SearchRouter:
         # 리랭킹용 문서를 만들 수 있다. text 우선, 그 다음 채워진 항목을 유지.
         meta_cache: Dict[str, MatchingTrack] = {}
         for track in [
-            *text_hits,
-            *image_hits,
-            *audio_hits,
+            *text_deep,
+            *image_deep,
+            *audio_deep,
             *performance_path_hits,
             *performance_metadata_hits,
             *balanced_semantic_hits,
@@ -1286,7 +1304,7 @@ class SearchRouter:
         fused = _rrf_fuse(
             ranked_lists=[
                 [(t.id, t.score) for t in base_text_hits],
-                [(t.id, t.score) for t in image_hits],
+                [(t.id, t.score) for t in image_deep],
                 [(t.id, t.score) for t in base_audio_hits],
             ],
             weights=weights,

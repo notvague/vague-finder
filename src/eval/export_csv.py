@@ -8,7 +8,7 @@ queries.json 60개와 eval_queries_v04.csv 53개가 따로 놀았다).
 
   python -m src.eval.export_csv
   python -m src.eval.export_csv --query-set v04 --out experiments/reranking/eval_queries_v04_regen.csv
-  python -m src.eval.export_csv --with-allowed --out experiments/reranking/eval_queries_v07.csv
+  python -m src.eval.export_csv --with-allowed --out experiments/reranking/eval_queries_v08.csv
 
 split 컬럼은 그대로 실어 보내므로, 실제 dev/test 선택은 평가 스크립트의
 `--split`이 맡는다. 내보내기 단계에서 미리 거르지 않는 이유는 한 파일로
