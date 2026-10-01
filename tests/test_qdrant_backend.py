@@ -97,6 +97,56 @@ def test_sparse_only_hit_outside_dense_top_k_is_not_lost(client):
     assert [m["id"] for m in res["matches"]] == ["b"]
 
 
+def _old_hybrid(client, dense, sparse, top_k, include_metadata=True):
+    """페이로드를 받아 전수 합산하던 예전 방식. 바뀐 조회가 같은 결과를 내는지 대조한다."""
+    from qdrant_client import models
+
+    from src.vector_db.qdrant_backend import DENSE_VECTOR, SPARSE_VECTOR, QdrantIndex, collection_name
+
+    col = collection_name(TEXT_HYBRID_INDEX_NAME)
+    merged = {}
+    for using, query in ((DENSE_VECTOR, dense), (SPARSE_VECTOR, models.SparseVector(**sparse))):
+        for hit in client.client.query_points(col, query=query, using=using, limit=100,
+                                              with_payload=include_metadata).points:
+            entry = merged.setdefault(hit.id, {"hit": hit, "score": 0.0})
+            entry["score"] += float(hit.score)
+    ordered = sorted(merged.values(), key=lambda e: e["score"], reverse=True)[:top_k]
+    return [QdrantIndex._match(e["hit"], include_metadata, score=e["score"]) for e in ordered]
+
+
+def test_hybrid_scans_scores_only_and_reads_payload_for_top_k(client, monkeypatch):
+    """전수 합산은 점수만 받고 페이로드는 남긴 top_k만 읽는다. 결과는 예전 방식과 같아야 한다."""
+    _fill_text(client)
+    dense, sparse = _unit(1.0, 0.0, 0.0), {"indices": [10], "values": [0.5]}
+    expected = _old_hybrid(client, dense, sparse, top_k=2)
+
+    calls = {"scan_payload": [], "retrieve": []}
+    real_query, real_retrieve = client.client.query_points, client.client.retrieve
+
+    def spy_query(*a, **kw):
+        calls["scan_payload"].append(kw.get("with_payload"))
+        return real_query(*a, **kw)
+
+    def spy_retrieve(*a, **kw):
+        calls["retrieve"].append(list(kw["ids"]))
+        return real_retrieve(*a, **kw)
+
+    monkeypatch.setattr(client.client, "query_points", spy_query)
+    monkeypatch.setattr(client.client, "retrieve", spy_retrieve)
+    res = client.Index(TEXT_HYBRID_INDEX_NAME).query(vector=dense, top_k=2, sparse_vector=sparse)
+
+    assert res["matches"] == expected
+    assert calls["scan_payload"] == [False, False]
+    assert calls["retrieve"] == [[2, 1]]          # b, a — top_k 두 곡만
+
+    calls["retrieve"].clear()
+    res = client.Index(TEXT_HYBRID_INDEX_NAME).query(
+        vector=dense, top_k=2, sparse_vector=sparse, include_metadata=False,
+    )
+    assert res["matches"] == _old_hybrid(client, dense, sparse, top_k=2, include_metadata=False)
+    assert calls["retrieve"] == []
+
+
 def test_filter_and_metadata_flags(client):
     _fill_text(client)
     index = client.Index(TEXT_HYBRID_INDEX_NAME)
