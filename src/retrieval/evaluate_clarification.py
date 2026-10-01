@@ -18,6 +18,35 @@
 Oracle과 Noisy를 반드시 나눠 본다. Oracle만 제시하면 과대평가다 — 사람은
 자기 기억을 틀리게 답한다.
 
+위 정책은 **거절 한 번 뒤 답변 한 번**의 효과만 잰다(reject_twice는 답변 없이 거절만 두 번).
+서비스의 2턴 흐름은 아래 flow:*로 따로 잰다.
+
+    flow:<mode>        서비스의 재질문을 그대로 밟는다 — 거절 → 질문 → 답변을 최대 두 번.
+                       질문 선택·누적 답변·거절 목록·물은 슬롯·턴 제한을 서비스와 같은 규칙으로
+                       쌓는다(`routes/search.py`의 `_can_ask_another`, 화면 `map.js`의 submitTurn).
+                       답은 **화면이 내준 선택지 안에서만** 고른다.
+                         oracle  정답 곡과 맞는 선택지 (없으면 "잘 모르겠어요")
+                         noisy   정답 곡과 맞지 않는 선택지 (없으면 "잘 모르겠어요")
+                         skip    매번 "잘 모르겠어요"
+                         reject  질문을 쓰지 않고 거절만 (= reject_only → reject_twice)
+                       턴마다 정답 순위와 후보 ID를 clarify_turns.csv에 남긴다.
+
+정답 기준
+    주 지표는 원래 타깃(positives)이다. 개입 여부도 원래 타깃이 보였는지로 정한다.
+    flow:*의 사용자는 곡 하나를 찾는다 — 정답이 여럿이면 **목표 곡마다 따로 대화**하고 답변·종료·
+    성공을 모두 그 곡으로 판정한다(다른 정답이 떠도 목표 곡이 아니면 계속 거절한다). 집계는
+    질의 안에서 먼저 평균한다. 한 번 답변 정책(rule:*·oracle:*·noisy:*)은 v07과 같은 정의로 남겼다 —
+    답변은 첫 정답 기준인데 성공은 정답 아무 곡이나 보이면 인정하므로 복수 정답 질의에서는 어긋난다.
+    허용 정답(allowed)을 넣은 열은 참고로 따로 낸다. final_relaxed_*는 마지막 화면 기준, relaxed_seen_turn은
+    대화 중 한 번이라도 보인 턴이다. 허용 정답이 이미 보였다면 사용자는 거절하지 않았을 수 있고, 질문에 대한
+    맞는 답도 곡마다 다르다.
+
+분석 캐시
+    --analysis-cache를 주면 질의 분석을 새로 하지 않는다(evaluate_search_accuracy와 같은 캐시).
+    캐시 누락·원문 불일치·폴백 분석은 **모델과 DB를 올리기 전에** 전부 확인하고 멈춘다.
+    --labels(기본 eval_queries_v06.csv)와 질의 ID·원문·정답·split이 하나라도 다르면 시작하지 않는다
+    — 이 평가기는 docs/eval/queries.json을 읽으므로 측정 기준 세트와 어긋나지 않는지 본다.
+
 가장 중요한 수치는 **오답 응답 시 정답의 후보@30 유지율**이다.
 "답변은 필터가 아니라 부스팅이라 안전하다"는 주장은 이 수치로만 증명된다.
 유지율이 낮으면 틀린 답변 한 번에 정답이 후보 풀에서 사라진다는 뜻이고,
@@ -29,7 +58,9 @@ Oracle과 Noisy를 반드시 나눠 본다. Oracle만 제시하면 과대평가�
     전체 집합 지표와 개입 집합 지표를 함께 보고한다 — 전자는 서비스 전체
     효과, 후자는 정책 간 우열을 본다.
 
-  python -m src.retrieval.evaluate_clarification --split dev
+  python -m src.retrieval.evaluate_clarification --split dev \\
+      --analysis-cache experiments/reranking/analysis_cache_v06_dev.json \\
+      --output-dir experiments/reranking/results_clarify_vNN
   python -m src.retrieval.evaluate_clarification --split dev --limit 3   # 스모크
 """
 from __future__ import annotations
@@ -52,17 +83,31 @@ from src.backend.api.dependencies import (
     get_query_analyzer,
     get_reranker,
     get_search_router,
+    get_vector_client,
 )
+from src.backend.api.routes.search import _can_ask_another
 from src.retrieval.clarify import (
     analysis_with_answers,
+    answer_matches,
     canonical_artist_types,
     pick_question,
 )
 from src.backend.schemas.query import QueryAnalysis
-from src.backend.schemas.search import ClarifyAnswer
+from src.backend.schemas.search import (
+    MAX_REJECTED_IDS,
+    ClarifyAnswer,
+    ClarifyQuestion,
+    MatchingTrack,
+)
 from src.eval.loader import DEFAULT_EVAL_PATH, load_eval_set
 from src.eval.schema import EvalQuery
+from src.retrieval.analysis_cache import (
+    AnalysisCacheError,
+    analyzer_fingerprint,
+    load_cache,
+)
 from src.retrieval.evaluate_search_accuracy import (
+    collect_run_info,
     first_relevant_rank,
     mean,
     metric_bundle,
@@ -71,6 +116,7 @@ from src.retrieval.evaluate_search_accuracy import (
 )
 
 DEFAULT_CORPUS = Path("data/all_songs.jsonl")
+DEFAULT_LABELS = Path("experiments/reranking/eval_queries_v06.csv")
 DEFAULT_OUTPUT_DIR = Path("experiments/reranking/results_clarify_v01")
 
 # 재질문에 쓸 슬롯. 계획서의 4슬롯과 같다. 실제로 묻는 것은 clarify.ALLOWED_SLOTS의
@@ -339,12 +385,129 @@ async def evaluate_query(
 
 
 # ---------------------------------------------------------------------------
+# 서비스 2턴 흐름 (flow:*)
+# ---------------------------------------------------------------------------
+
+FLOW_MODES: Sequence[str] = ("reject", "skip", "oracle", "noisy")
+FLOW_POLICIES: List[str] = [f"flow:{mode}" for mode in FLOW_MODES]
+
+
+@dataclass
+class FlowStep:
+    """흐름의 검색 한 번. turn 1은 최초 검색이다."""
+    turn: int
+    result: TurnResult
+    slot: str = ""          # 이 검색 직전에 답한 질문의 슬롯
+    answer_kind: str = ""   # oracle · noisy · skip · none(질문 없이 거절) — turn 1은 빈칸
+    answer_value: str = ""
+    options: str = ""       # 화면이 내준 선택지 "값:곡수|…"
+    rejected: int = 0       # 이 검색에서 뺀 곡 수
+
+
+def choose_answer(
+    question: ClarifyQuestion,
+    mode: str,
+    target: Optional[MatchingTrack],
+    song: Optional[dict],
+) -> Tuple[ClarifyAnswer, str]:
+    """화면에서 고를 수 있는 답만 고른다 — 선택지 하나 또는 "잘 모르겠어요".
+
+    맞는지는 서비스의 판정기(`answer_matches`)로 본다. 정답 곡은 후보와 같은
+    출처(벡터 DB 페이로드)에서 읽은 MatchingTrack이어야 한다.
+    """
+    skip = ClarifyAnswer(slot=question.slot, skipped=True)
+    if mode == "skip" or target is None:
+        return skip, "skip"
+    values = [option.value for option in question.options]
+    matching = [v for v in values if answer_matches(target, as_answer(question.slot, v))]
+    if mode == "oracle":
+        return (as_answer(question.slot, matching[0]), "oracle") if matching else (skip, "skip")
+    wrong = [v for v in values if v not in matching]
+    if not wrong:
+        return skip, "skip"
+    # 결정적으로 고른다. 하네스의 인접 오답이 선택지에 있으면 그것, 아니면 가장 많은 쪽.
+    preferred = noisy_value(song, question.slot) if song is not None else None
+    return as_answer(question.slot, preferred if preferred in wrong else wrong[0]), "noisy"
+
+
+def next_question(
+    analysis: QueryAnalysis,
+    result: TurnResult,
+    turn: int,
+    asked: Sequence[str],
+    rejected: Sequence[str],
+    top_k: int,
+) -> Optional[ClarifyQuestion]:
+    """이번 턴 응답에 실릴 질문. 라우트와 같은 조건(`_can_ask_another`)으로 정한다."""
+    if not _can_ask_another(turn, list(asked), list(rejected), top_k):
+        return None
+    return pick_question(analysis, result.remaining, list(asked))
+
+
+async def run_flow(
+    router,
+    reranker,
+    analysis: QueryAnalysis,
+    relevant_ids: set,
+    initial: TurnResult,
+    mode: str,
+    target: Optional[MatchingTrack],
+    song: Optional[dict],
+    *,
+    top_k: int,
+    candidate_k: int,
+    answer_multiplier: Optional[float] = None,
+) -> List[FlowStep]:
+    """서비스의 재질문 대화를 한 번 밟는다. 정답이 보이면 사용자는 멈춘다.
+
+    매 턴 화면이 보내는 것 — 이전 분석(다시 분석하지 않는다), 지금까지의 답변 전부,
+    지금까지 보여 준 곡 전부(거절 목록), 물은 슬롯. 거절 목록이 한도(20)를 넘으면
+    더 거절할 수 없다(`map.js`의 canRejectMore).
+    """
+    steps = [FlowStep(turn=1, result=initial)]
+    current, turn = initial, 1
+    rejected: List[str] = []
+    answers: List[ClarifyAnswer] = []
+    asked: List[str] = []
+    question = None if mode == "reject" else next_question(
+        analysis, current, turn, asked, rejected, top_k
+    )
+    while not current.found:
+        nxt = list(dict.fromkeys([*rejected, *current.shown_ids]))
+        if not current.shown_ids or len(nxt) > MAX_REJECTED_IDS:
+            break
+        step = FlowStep(turn=turn + 1, result=current, answer_kind="none")
+        if question is not None:
+            answer, kind = choose_answer(question, mode, target, song)
+            answers = [*answers, answer]
+            if answer.slot not in asked:
+                asked.append(answer.slot)
+            step.slot, step.answer_kind, step.answer_value = question.slot, kind, answer.value
+            step.options = "|".join(f"{o.value}:{o.count}" for o in question.options)
+        rejected, turn = nxt, turn + 1
+        current = await run_search(
+            router, reranker, analysis, relevant_ids,
+            top_k=top_k, candidate_k=candidate_k, exclude_ids=rejected,
+            answers=answers, answer_multiplier=answer_multiplier,
+        )
+        step.result, step.rejected = current, len(rejected)
+        steps.append(step)
+        question = None if mode == "reject" else next_question(
+            analysis, current, turn, asked, rejected, top_k
+        )
+    return steps
+
+
+# ---------------------------------------------------------------------------
 # 집계
 # ---------------------------------------------------------------------------
 
-POLICY_ORDER = ["initial", "reject_only", "reject_twice", "skip"] + \
+# 한 번 답변 정책 — v07과 같은 정의다. 답변은 첫 정답(positives[0]) 기준인데 성공은 정답 중
+# 아무 곡이나 보이면 인정하므로, 복수 정답 질의에서는 두 기준이 어긋난다(아래 flow:*는 맞췄다).
+LEGACY_ORDER = ["initial", "reject_only", "reject_twice", "skip"] + \
                [f"oracle:{s}" for s in SLOTS] + [f"noisy:{s}" for s in SLOTS] + \
                ["rule:oracle", "rule:noisy", "rule:skip", "oracle:best"]
+POLICY_ORDER = LEGACY_ORDER + FLOW_POLICIES
 
 
 def add_oracle_best(results: Dict[str, TurnResult]) -> None:
@@ -385,26 +548,59 @@ def summarize(
     policies: Sequence[str],
     intervention_ids: set,
 ) -> List[dict]:
-    """정책별 집계. 전체 집합과 개입 집합을 함께 낸다."""
+    """정책별 집계. 전체 집합과 개입 집합을 함께 낸다.
+
+    **질의 단위로 센다.** flow:*는 복수 정답 질의에서 목표 곡마다 한 행(대화 하나)이 있으므로
+    질의 안에서 먼저 평균한 뒤 질의끼리 평균한다. 한 행뿐인 정책은 그대로다.
+
+    int_found_by_turn2  flow:*에서 첫 재질문(두 번째 검색) 안에 목표 곡이 보인 비율
+    int_final_relaxed   마지막 화면에 원래 타깃 또는 허용 정답이 있는 비율
+    int_relaxed_seen    flow:* 대화 중 한 번이라도 원래 타깃 또는 허용 정답이 보인 비율. 대화는 목표 곡을
+                        찾을 때까지 진행하므로, 앞에서 본 허용 정답을 거절하고 지나갔을 수 있다 — 참고값이다
+    """
+
+    def by_query(group: List[dict], value) -> List[float]:
+        per: Dict[str, List[float]] = {}
+        for r in group:
+            per.setdefault(r["query_id"], []).append(float(value(r)))
+        return [sum(v) / len(v) for v in per.values()]
+
+    def avg(group: List[dict], value) -> float:
+        vals = by_query(group, value)
+        return round(sum(vals) / len(vals), 4) if vals else 0.0
+
     out: List[dict] = []
     for policy in policies:
         full = [r for r in rows if r["policy"] == policy]
         if not full:
             continue
         inter = [r for r in full if r["query_id"] in intervention_ids]
+        is_flow = policy in FLOW_POLICIES
+        has_relaxed = "final_relaxed_hit10" in full[0]
         out.append({
             "policy": policy,
-            "n_full": len(full),
-            "n_intervention": len(inter),
-            "n_executed": sum(1 for r in full if r["ran"] == "1"),
-            "full_hit@1": round(mean(full, "hit1"), 4),
-            "full_hit@5": round(mean(full, "hit5"), 4),
-            "full_hit@10": round(mean(full, "hit10"), 4),
-            "full_mrr@10": round(mean(full, "mrr10"), 4),
-            "int_hit@1": round(mean(inter, "hit1"), 4) if inter else "",
-            "int_hit@5": round(mean(inter, "hit5"), 4) if inter else "",
-            "int_hit@10": round(mean(inter, "hit10"), 4) if inter else "",
-            "int_candidate_recall@30": round(mean(inter, "candidate_recall"), 4) if inter else "",
+            "n_full": len({r["query_id"] for r in full}),
+            "n_intervention": len({r["query_id"] for r in inter}),
+            "n_conversations": len(inter),
+            "n_executed": len({r["query_id"] for r in full if r["ran"] == "1"}),
+            "full_hit@1": avg(full, lambda r: r["hit1"]),
+            "full_hit@5": avg(full, lambda r: r["hit5"]),
+            "full_hit@10": avg(full, lambda r: r["hit10"]),
+            "full_mrr@10": avg(full, lambda r: r["mrr10"]),
+            "int_hit@1": avg(inter, lambda r: r["hit1"]) if inter else "",
+            "int_hit@5": avg(inter, lambda r: r["hit5"]) if inter else "",
+            "int_hit@10": avg(inter, lambda r: r["hit10"]) if inter else "",
+            "int_candidate_recall@30": avg(inter, lambda r: r["candidate_recall"]) if inter else "",
+            "int_found_by_turn2": (
+                avg(inter, lambda r: r.get("found_turn") == 2) if inter and is_flow else ""
+            ),
+            "int_final_relaxed": (
+                avg(inter, lambda r: r["final_relaxed_hit10"]) if inter and has_relaxed else ""
+            ),
+            "int_relaxed_seen": (
+                avg(inter, lambda r: r.get("relaxed_seen_turn") not in ("", None))
+                if inter and is_flow and has_relaxed else ""
+            ),
         })
     return out
 
@@ -423,7 +619,7 @@ def write_csv(path: Path, rows: List[dict]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# 실행
+# 실행 전 확인 — 모델·DB를 올리기 전에 끝낸다
 # ---------------------------------------------------------------------------
 
 def select_queries(
@@ -442,6 +638,178 @@ def select_queries(
     return queries[:limit] if limit else queries
 
 
+def _ids(raw: str) -> set:
+    return {part.strip() for part in (raw or "").split("|") if part.strip()}
+
+
+def check_against_labels(
+    queries: Sequence[EvalQuery],
+    path: Path,
+    whole_split: Optional[str] = None,
+) -> None:
+    """평가기가 읽는 queries.json이 측정 기준 CSV와 같은 질의·정답인지.
+
+    whole_split을 주면 그 split의 CSV 질의가 빠짐없이 들어왔는지도 본다.
+    """
+    with open(path, encoding="utf-8-sig") as f:
+        rows = {r["query_id"].strip(): r for r in csv.DictReader(f)}
+    problems: List[str] = []
+    for q in queries:
+        row = rows.get(q.query_id)
+        if row is None:
+            problems.append(f"{q.query_id}: 라벨 CSV에 없다")
+            continue
+        if row["query"].strip() != q.query.strip():
+            problems.append(f"{q.query_id}: 질의 원문이 다르다")
+        if _ids(row["relevant_ids"]) != set(q.positives):
+            problems.append(f"{q.query_id}: 정답이 다르다")
+        if row["split"].strip() != q.split:
+            problems.append(f"{q.query_id}: split이 다르다")
+    if whole_split:
+        selected = {q.query_id for q in queries}
+        extra = sorted(
+            qid for qid, row in rows.items()
+            if row["split"].strip() == whole_split
+            and row.get("query_type", "search").strip().lower() == "search"
+            and _ids(row["relevant_ids"]) and qid not in selected
+        )
+        if extra:
+            problems.append(f"라벨 CSV에만 있는 질의: {', '.join(extra)}")
+    if problems:
+        raise ValueError(
+            f"질의 세트가 {path}와 다르다 ({len(problems)}건)\n  " + "\n  ".join(problems[:10])
+        )
+
+
+def prepare_analyses(
+    cache_path: Optional[Path],
+    queries: Sequence[EvalQuery],
+    allow_fallback: bool = False,
+) -> Tuple[Optional[Dict[str, QueryAnalysis]], dict]:
+    """분석 캐시를 읽어 **선택한 질의 전부**를 꺼내 본다. 문제가 있으면 여기서 멈춘다.
+
+    캐시가 없으면 (None, 출처)를 돌려준다 — 호출부가 질의마다 새로 분석한다.
+    """
+    if not cache_path:
+        print("경고: 분석 캐시 없이 실행합니다. 같은 측정을 두 번 해도 질의 분석이 달라져 "
+              "숫자가 갈릴 수 있습니다(--analysis-cache 권장).", flush=True)
+        return None, {"mode": "live", "analyzer": analyzer_fingerprint()}
+
+    cache = load_cache(Path(cache_path))
+    ids = [q.query_id for q in queries]
+    missing = cache.missing(ids)
+    if missing:
+        raise AnalysisCacheError(f"캐시에 없는 질의 {len(missing)}건: {', '.join(missing[:10])}")
+    fallbacks = cache.fallback_ids(ids)
+    if fallbacks and not allow_fallback:
+        raise AnalysisCacheError(
+            f"규칙 폴백으로 저장된 질의 {len(fallbacks)}건: {', '.join(fallbacks[:10])} "
+            "— 캐시를 다시 채우거나 --allow-fallback-analysis를 주세요"
+        )
+    analyses: Dict[str, QueryAnalysis] = {}
+    problems: List[str] = []
+    for q in queries:
+        try:
+            analyses[q.query_id] = cache.get(q.query_id, q.query)
+        except AnalysisCacheError as exc:
+            problems.append(str(exc))
+        except Exception as exc:  # noqa: BLE001 - 스키마가 깨진 항목
+            problems.append(f"{q.query_id}: {type(exc).__name__}: {exc}")
+    if problems:
+        raise AnalysisCacheError(
+            f"캐시 항목 {len(problems)}건을 쓸 수 없습니다.\n" + "\n".join(problems[:10])
+        )
+    drift = cache.fingerprint_drift()
+    if drift:
+        print(f"경고: 캐시를 만든 분석 조건이 지금과 다릅니다({', '.join(drift)}).", flush=True)
+    print(f"분석 캐시 사용: {cache_path} (질의 {len(ids)}건, 폴백 {len(fallbacks)}건)", flush=True)
+    return analyses, {
+        "mode": "cache",
+        "path": str(cache_path),
+        "meta": cache.meta,
+        "fallback_query_ids": fallbacks,
+        "fingerprint_drift": drift,
+    }
+
+
+def load_target_tracks(song_ids: Sequence[str]) -> Dict[str, MatchingTrack]:
+    """정답 곡을 후보와 **같은 출처**(텍스트 컬렉션 페이로드)에서 읽는다.
+
+    flow:oracle·noisy가 선택지와 맞는지 판정할 때 쓴다. 코퍼스 JSONL로 만들면 장르 표기
+    등이 후보와 달라 같은 곡인데도 선택지와 안 맞을 수 있다.
+    """
+    from src.retrieval.search_service import SearchService
+    from src.vector_db.qdrant_backend import collection_name, point_id
+    from src.vector_db.settings import NAMESPACE, TEXT_HYBRID_INDEX_NAME
+
+    ids = list(dict.fromkeys(str(s) for s in song_ids))
+    if not ids:
+        return {}
+    records = get_vector_client().client.retrieve(
+        collection_name=collection_name(TEXT_HYBRID_INDEX_NAME, NAMESPACE),
+        ids=[point_id(s) for s in ids],
+        with_payload=True,
+        with_vectors=False,
+    )
+    out: Dict[str, MatchingTrack] = {}
+    for record in records:
+        payload = dict(record.payload or {})
+        song_id = str(payload.pop("song_id", record.id))
+        out[song_id] = SearchService.track_from_match(
+            {"id": song_id, "score": 0.0, "metadata": payload}
+        )
+    return out
+
+
+# ---------------------------------------------------------------------------
+# 실행
+# ---------------------------------------------------------------------------
+
+def retarget(result: TurnResult, target_ids: set, top_k: int) -> TurnResult:
+    """같은 검색 결과를 다른 정답 기준으로 다시 잰 사본. 검색은 다시 하지 않는다."""
+    return TurnResult(
+        rank=first_relevant_rank(result.shown_ids, target_ids),
+        candidate_rank=first_relevant_rank(result.candidate_ids, target_ids),
+        candidate_recall=recall_at_k(result.candidate_ids, target_ids, len(result.candidate_ids) or 1),
+        shown_ids=result.shown_ids,
+        candidate_ids=result.candidate_ids,
+        candidate_tracks=result.candidate_tracks,
+        metrics=metric_bundle(result.shown_ids, target_ids, top_k),
+    )
+
+
+def _row(q: EvalQuery, policy: str, ran: bool, picked_slot: Optional[str], turn: TurnResult,
+         relaxed_ids: set, target_id: str = "", steps: Optional[List[FlowStep]] = None) -> dict:
+    final_relaxed = first_relevant_rank(turn.shown_ids, relaxed_ids)
+    flow = steps is not None
+    return {
+        "query_id": q.query_id,
+        "split": q.split,
+        "query_set": q.query_set,
+        "tier": q.tier,
+        "policy": policy,
+        "target_id": target_id,
+        "ran": "1" if ran else "0",
+        "picked_slot": picked_slot or "",
+        "rank": turn.rank if turn.rank is not None else "",
+        "candidate_rank@30": turn.candidate_rank if turn.candidate_rank is not None else "",
+        "candidate_recall": round(turn.candidate_recall, 6),
+        "hit1": turn.metrics["hit1"],
+        "hit5": turn.metrics["hit5"],
+        "hit10": turn.metrics["hit10"],
+        "mrr10": round(float(turn.metrics["mrr10"]), 6),
+        "ndcg10": round(float(turn.metrics["ndcg10"]), 6),
+        "final_relaxed_rank": final_relaxed or "",
+        "final_relaxed_hit10": int(final_relaxed is not None),
+        "found_turn": next((s.turn for s in steps if s.result.found), "") if flow else "",
+        "relaxed_seen_turn": next(
+            (s.turn for s in steps if first_relevant_rank(s.result.shown_ids, relaxed_ids)), ""
+        ) if flow else "",
+        "searches": len(steps) if flow else "",
+        "shown_ids": "|".join(turn.shown_ids),
+    }
+
+
 async def evaluate(args: argparse.Namespace) -> None:
     queries = select_queries(
         args.queries, args.split, args.limit,
@@ -450,21 +818,51 @@ async def evaluate(args: argparse.Namespace) -> None:
     if not queries:
         raise ValueError("평가할 질의가 없습니다. --split과 label_status를 확인하세요.")
 
+    # 모델·DB를 올리기 전에 끝낸다 — 중간에 멈추면 앞 질의 결과만 남은 폴더가 생긴다.
+    if args.labels:
+        check_against_labels(
+            queries, Path(args.labels),
+            whole_split=args.split if not (args.limit or args.query_ids) else None,
+        )
+    analyses, analysis_source = prepare_analyses(
+        Path(args.analysis_cache) if args.analysis_cache else None,
+        queries, allow_fallback=args.allow_fallback_analysis,
+    )
+
     corpus = load_corpus(args.corpus) if args.corpus.exists() else {}
     if not corpus:
         print(f"[경고] {args.corpus} 없음 — 답변 정책(oracle/noisy)을 건너뜁니다.", flush=True)
 
-    analyzer, router, reranker = get_query_analyzer(), get_search_router(), get_reranker()
+    analyzer = get_query_analyzer() if analyses is None else None
+    router, reranker = get_search_router(), get_reranker()
     reranker.load()
+    targets = load_target_tracks([sid for q in queries for sid in q.positives])
+
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    plain_args = argparse.Namespace(
+        **{k: (str(v) if isinstance(v, Path) else v) for k, v in vars(args).items()}
+    )
+    run_info = collect_run_info(plain_args, reranker=reranker, analysis_source=analysis_source)
+    run_info["clarify"] = {
+        "flow_modes": list(FLOW_MODES),
+        "flow_target": "정답마다 따로 대화한다 — 답변·종료·성공 판정이 같은 목표 곡",
+        "max_rejected_ids": MAX_REJECTED_IDS,
+        "targets_from_vector_db": len(targets),
+    }
+    (args.output_dir / "clarify_runinfo.json").write_text(
+        json.dumps(run_info, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8"
+    )
 
     detail: List[dict] = []
+    turn_rows: List[dict] = []
     intervention_ids: set = set()
     started = time.perf_counter()
 
     for index, q in enumerate(queries, start=1):
         print(f"[{index}/{len(queries)}] {q.query_id}: {q.query[:58]}", flush=True)
         relevant = set(q.positives)
-        analysis = analyzer.analyze(q.query)   # Gemini는 질의당 한 번만
+        relaxed_ids = relevant | set(q.allowed)
+        analysis = analyses[q.query_id] if analyses is not None else analyzer.analyze(q.query)
         song = corpus.get(q.positives[0]) if corpus else None
 
         results, picked_slot = await evaluate_query(
@@ -473,33 +871,58 @@ async def evaluate(args: argparse.Namespace) -> None:
             answer_multiplier=args.answer_multiplier,
         )
         add_oracle_best(results)
-
-        if "reject_only" in results:
+        intervened = "reject_only" in results
+        if intervened:
             intervention_ids.add(q.query_id)
-        executed = fill_missing_policies(results, POLICY_ORDER)
+        executed = fill_missing_policies(results, LEGACY_ORDER)
 
-        for policy in POLICY_ORDER:
-            turn = results[policy]
-            detail.append({
-                "query_id": q.query_id,
-                "split": q.split,
-                "query_set": q.query_set,
-                "tier": q.tier,
-                "policy": policy,
-                "ran": "1" if policy in executed else "0",
-                "picked_slot": picked_slot or "",
-                "rank": turn.rank if turn.rank is not None else "",
-                "candidate_rank@30": turn.candidate_rank if turn.candidate_rank is not None else "",
-                "candidate_recall": round(turn.candidate_recall, 6),
-                "hit1": turn.metrics["hit1"],
-                "hit5": turn.metrics["hit5"],
-                "hit10": turn.metrics["hit10"],
-                "mrr10": round(float(turn.metrics["mrr10"]), 6),
-                "ndcg10": round(float(turn.metrics["ndcg10"]), 6),
-                "shown_ids": "|".join(turn.shown_ids),
-            })
+        for policy in LEGACY_ORDER:
+            detail.append(_row(q, policy, policy in executed, picked_slot, results[policy], relaxed_ids))
+
+        # flow:* — 사용자는 곡 하나를 찾는다. 정답이 여럿이면 목표 곡마다 따로 대화하고,
+        # 답변·종료·성공을 모두 그 곡으로 판정한다.
+        for mode in FLOW_MODES:
+            policy = f"flow:{mode}"
+            if not intervened:
+                # 정답이 이미 보였다 — 대화는 최초 검색 한 번으로 끝난다.
+                steps = [FlowStep(turn=1, result=results["initial"])]
+                detail.append(_row(q, policy, False, picked_slot, results["initial"], relaxed_ids,
+                                   steps=steps))
+                continue
+            for target_id in q.positives:
+                goal = {target_id}
+                steps = await run_flow(
+                    router, reranker, analysis, goal,
+                    retarget(results["initial"], goal, args.top_k), mode,
+                    targets.get(target_id), corpus.get(target_id) if corpus else None,
+                    top_k=args.top_k, candidate_k=args.candidate_k,
+                    answer_multiplier=args.answer_multiplier,
+                )
+                detail.append(_row(q, policy, True, picked_slot, steps[-1].result, relaxed_ids,
+                                   target_id=target_id, steps=steps))
+                for step in steps:
+                    result = step.result
+                    turn_rows.append({
+                        "query_id": q.query_id,
+                        "split": q.split,
+                        "tier": q.tier,
+                        "policy": policy,
+                        "target_id": target_id,
+                        "turn": step.turn,
+                        "slot": step.slot,
+                        "answer_kind": step.answer_kind,
+                        "answer_value": step.answer_value,
+                        "options": step.options,
+                        "rejected": step.rejected,
+                        "rank": result.rank if result.rank is not None else "",
+                        "candidate_rank@30": result.candidate_rank if result.candidate_rank is not None else "",
+                        "relaxed_rank": first_relevant_rank(result.shown_ids, relaxed_ids) or "",
+                        "shown_ids": "|".join(result.shown_ids),
+                        "candidate_ids": "|".join(result.candidate_ids),
+                    })
 
         write_csv(args.output_dir / "clarify_detail.csv", detail)
+        write_csv(args.output_dir / "clarify_turns.csv", turn_rows)
 
     summary = summarize(detail, POLICY_ORDER, intervention_ids)
     write_csv(args.output_dir / "clarify_summary.csv", summary)
@@ -511,14 +934,17 @@ async def evaluate(args: argparse.Namespace) -> None:
           f"답변 보너스 ×{weight} · {elapsed:.0f}초")
     print(f"개입 대상: {', '.join(sorted(intervention_ids)) or '없음'}\n")
 
-    header = (f"{'정책':<18}{'실행':>5}{'전체 Hit@10':>12}"
-              f"{'개입 Hit@10':>12}{'개입 후보유지':>13}")
+    header = (f"{'정책':<18}{'실행':>5}{'전체 Hit@10':>12}{'개입 Hit@10':>12}"
+              f"{'개입 후보유지':>13}{'2턴 안':>8}{'확장(마지막)':>12}{'확장(대화중)':>12}")
     print(header)
     print("-" * len(header))
     for row in summary:
         print(f"{row['policy']:<18}{row['n_executed']:>5}{row['full_hit@10']:>12}"
-              f"{str(row['int_hit@10']):>12}{str(row['int_candidate_recall@30']):>13}")
+              f"{str(row['int_hit@10']):>12}{str(row['int_candidate_recall@30']):>13}"
+              f"{str(row['int_found_by_turn2']):>8}{str(row['int_final_relaxed']):>12}"
+              f"{str(row['int_relaxed_seen']):>12}")
     print(f"\n상세: {args.output_dir / 'clarify_detail.csv'}")
+    print(f"턴별: {args.output_dir / 'clarify_turns.csv'}")
     print(f"요약: {args.output_dir / 'clarify_summary.csv'}")
 
 
@@ -535,6 +961,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--answer-multiplier", type=float, default=None,
         help="답변 일치 보너스 배수 (생략하면 clarify.ANSWER_MATCH_MULTIPLIER). 보정용",
+    )
+    p.add_argument(
+        "--analysis-cache", default="",
+        help="build_analysis_cache로 만든 QueryAnalysis 캐시. 주면 질의 분석을 새로 하지 않는다",
+    )
+    p.add_argument(
+        "--allow-fallback-analysis", action="store_true",
+        help="캐시에 규칙 폴백(Gemini 실패)으로 저장된 질의가 있어도 진행한다",
+    )
+    p.add_argument(
+        "--labels", default=str(DEFAULT_LABELS),
+        help="질의·정답이 같은지 대조할 기준 CSV. 빈 문자열이면 대조하지 않는다",
     )
     return p
 
