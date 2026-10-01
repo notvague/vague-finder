@@ -76,6 +76,8 @@ reports/
 # 후보 밖 정답의 단계별 위치·경로 깊이별 후보 포함 기록 (곡 ID와 순위만)
 !experiments/reranking/results_*/candidate_drop_*.csv
 !experiments/reranking/results_*/candidate_depth_sweep_*.csv
+# 표지 질의 진단 — 곡 ID·순위·점수와 질의에서 나온 문장만 (표지 이미지·주소는 남기지 않는다, 주소는 해시로만)
+!experiments/reranking/results_*/image_diag_*.csv
 # 재질문 정책 비교 산출물 — detail도 100KB 수준(analysis_json 없음)이고
 # 정책 간 우열의 1차 증거라 함께 커밋한다
 !experiments/reranking/results_clarify_*/clarify_*.csv
