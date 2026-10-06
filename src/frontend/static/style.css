@@ -180,7 +180,7 @@ body.railclosed .railtoggle::before { transform: rotate(-135deg); }  /* › 펼�
 
 /*
  * 축 선 — 캔버스 한가운데를 가로/세로로 지난다.
- * 라벨과 마찬가지로 의미 있는 축에만 그린다 (sound 맵의 y축은 숨김).
+ * 어느 선을 그릴지는 맵 데이터가 정한다 (sound 맵은 위아래를 가르는 가로선만).
  */
 .axisline {
   position: absolute;
@@ -193,7 +193,7 @@ body.railclosed .railtoggle::before { transform: rotate(-135deg); }  /* › 펼�
 .axisline-x { left: 0; right: 0; top: 50%; height: 1px; }
 .axisline-y { top: 0; bottom: 0; left: 50%; width: 1px; }
 
-/* 축 라벨 — 의미 있는 축에만 붙는다 (sound 맵의 y축은 무의미해서 비워둠) */
+/* 축 라벨 — 의미 있는 축에만 붙는다 (sound 맵의 가로축은 무의미해서 비워둠) */
 .axislabel {
   position: absolute;
   color: #b0b0b0;
@@ -204,7 +204,7 @@ body.railclosed .railtoggle::before { transform: rotate(-135deg); }  /* › 펼�
 }
 .axislabel[hidden] { display: none; }
 /*
- * 캔버스가 1800x3016px이라 라벨을 중앙에 두면 스크롤해야 보인다.
+ * 캔버스가 곡 수만큼 세로로 길어서(3,010곡이면 1800x10,033px) 라벨을 캔버스에 두면 스크롤해야 보인다.
  * fixed로 화면 가장자리에 붙여 항상 보이게 한다.
  * 가로 기준은 화면이 아니라 '지도가 보이는 폭'이다 — 레일만큼 비켜 앉는다.
  */

@@ -1,0 +1,106 @@
+{
+  "created_at": "2026-10-01T14:08:54+0900",
+  "image_model": "google__siglip2-base-patch16-224",
+  "image_collection": {
+    "name": "vaguefinder-image-768__dev",
+    "points": 3010
+  },
+  "control": {
+    "n": 30,
+    "seed": 20261001
+  },
+  "files_sha256_12": {
+    "docs/eval/queries.json": "5a4a32c9c11a",
+    "data/all_songs.jsonl": "9bfdfa4d99c4",
+    "artifacts/bm25_params.json": "8f0038a47cbc",
+    "experiments/reranking/analysis_cache_v06_dev.json": "69b142661488",
+    "experiments/reranking/analysis_cache_v06_test.json": "9e57b105495b",
+    "experiments/reranking/results_v23_path_depth/candidate_drop_dev.csv": "28c480c9dcc3",
+    "experiments/reranking/results_v23_path_depth/candidate_drop_test.csv": "442bf54de388",
+    "experiments/reranking/results_v22_corpus3010/search_eval_dev_detail.csv": "c923648f403f",
+    "experiments/reranking/results_v22_corpus3010/search_eval_test_detail.csv": "535c6a023caf",
+    "experiments/reranking/results_v22_corpus3010/search_eval_dev_explain.jsonl": "508d8731e39b",
+    "experiments/reranking/results_v22_corpus3010/search_eval_test_explain.jsonl": "03b9bee372f3",
+    "experiments/reranking/results_v22_corpus3010/search_eval_dev_runinfo.json": "28752346e976",
+    "experiments/reranking/results_v22_corpus3010/search_eval_test_runinfo.json": "cdbddef849d5"
+  },
+  "analysis_cache_meta": {
+    "dev": {
+      "created_at": "2026-09-22T19:39:32+0900",
+      "query_source": "experiments/reranking/eval_queries_v05.csv",
+      "split": "dev",
+      "analyzer": {
+        "model_name": "gemini-3.1-flash-lite",
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "reference_year": 2026,
+        "reference_year_env": "2026",
+        "prompt_sha": "08f0b3bc4c37",
+        "postprocess_sha": "34754316cc34"
+      },
+      "drift_notes": [
+        {
+          "at": "2026-09-24T21:32:22+0900",
+          "drifted": [
+            "postprocess_sha"
+          ],
+          "kept_entries": 53,
+          "analyzer_now": {
+            "model_name": "gemini-3.1-flash-lite",
+            "temperature": 0.0,
+            "top_p": 1.0,
+            "reference_year": 2026,
+            "reference_year_env": "2026",
+            "prompt_sha": "08f0b3bc4c37",
+            "postprocess_sha": "0796bca8aedb"
+          },
+          "reason": "분석기를 동기·비동기 두 고리로 쪼갰지만 결과를 정하는 코드(_PROMPT_TEMPLATE·_apply_lyric_safeguards·_apply_metadata_safeguards·_fallback·modality_queries.py·후처리 순서)는 HEAD와 바이트 단위로 같음을 대조 확인했다. v05 공통 질의를 같은 분석으로 재기 위해 유지한다.",
+          "added_after_drift": [
+            "m302",
+            "m303",
+            "m403",
+            "q117"
+          ]
+        }
+      ]
+    },
+    "test": {
+      "created_at": "2026-09-22T23:48:14+0900",
+      "query_source": "experiments/reranking/eval_queries_v05.csv",
+      "split": "test",
+      "analyzer": {
+        "model_name": "gemini-3.1-flash-lite",
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "reference_year": 2026,
+        "reference_year_env": "2026",
+        "prompt_sha": "08f0b3bc4c37",
+        "postprocess_sha": "34754316cc34"
+      },
+      "drift_notes": [
+        {
+          "at": "2026-09-24T21:32:41+0900",
+          "drifted": [
+            "postprocess_sha"
+          ],
+          "kept_entries": 23,
+          "analyzer_now": {
+            "model_name": "gemini-3.1-flash-lite",
+            "temperature": 0.0,
+            "top_p": 1.0,
+            "reference_year": 2026,
+            "reference_year_env": "2026",
+            "prompt_sha": "08f0b3bc4c37",
+            "postprocess_sha": "0796bca8aedb"
+          },
+          "reason": "분석기를 동기·비동기 두 고리로 쪼갰지만 결과를 정하는 코드(_PROMPT_TEMPLATE·_apply_lyric_safeguards·_apply_metadata_safeguards·_fallback·modality_queries.py·후처리 순서)는 HEAD와 바이트 단위로 같음을 대조 확인했다. v05 공통 질의를 같은 분석으로 재기 위해 유지한다.",
+          "added_after_drift": [
+            "m301",
+            "q116"
+          ]
+        }
+      ]
+    }
+  },
+  "links_checked": "질의·정답 행 존재, 분석 내용 = v22 analysis_json, 이미지 순위 = v23 추적, 곡별 v23 후보 순위 = v22 리랭킹 전 순위, 질의 최솟값 = v22 candidate_rank@30, v22 분석 캐시 경로·곡 수·BM25 = 지금"
+}

@@ -17,6 +17,9 @@ const GENRE_COLORS = {
   "포크/블루스": "#8a7a2f",
   "일렉트로니카": "#7f6fe0",
   "J-POP": "#3aa5d9",
+  "성인가요/트로트": "#a0522d",
+  "재즈": "#2e8b57",
+  "국내뮤지컬": "#a3378f",
 };
 const FALLBACK_COLOR = "#777";
 
@@ -132,7 +135,7 @@ function applyAxisLabels() {
   axisRight.textContent = a.x[1] || "";
   axisTop.textContent = a.y[0] || "";
   axisBottom.textContent = a.y[1] || "";
-  // 의미 없는 축에는 라벨도 선도 그리지 않는다 (sound 맵의 y축)
+  // 의미 없는 축에는 라벨을 붙이지 않는다 (sound 맵의 가로축)
   for (const el of [axisLeft, axisRight, axisTop, axisBottom]) {
     el.hidden = !el.textContent;
   }
@@ -306,7 +309,7 @@ function fillGenreOptions() {
     o.textContent = `${genre} (${n})`;
     genreSelect.appendChild(o);
   }
-  // 가수는 352명이라 곡 수 많은 순으로 제안한다
+  // 가수가 천 명이 넘어 곡 수 많은 순으로 제안한다
   const frag = document.createDocumentFragment();
   for (const [name, n] of [...artists].sort(
     (a, b) => b[1] - a[1] || collator.compare(a[0], b[0])
@@ -444,7 +447,7 @@ for (const btn of document.querySelectorAll(".sort")) {
 let artistDebounce = null;
 artistInput.addEventListener("input", () => {
   artistClear.hidden = !artistInput.value;
-  // 타이핑마다 905행을 다시 그리면 버벅이므로 잠깐 모아서 처리한다
+  // 타이핑마다 수천 행을 다시 그리면 버벅이므로 잠깐 모아서 처리한다
   clearTimeout(artistDebounce);
   artistDebounce = setTimeout(renderList, 120);
 });

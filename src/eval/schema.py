@@ -5,6 +5,8 @@ EvalQuery
     하나의 검색 평가 케이스. 한국어 질의 + 정답(positives) + 오답(negatives) +
     평가 시나리오 구분(tier) + 모달리티 포커스(modality_focus).
     - positives: top-10 안에 반드시 등장해야 하는 song_id (multi-label)
+    - allowed: 원래 타깃은 아니지만 질의 설명에 맞아 팀이 정답으로 인정한 song_id.
+      엄격 지표는 positives만, 확장 지표는 positives + allowed로 잰다 (이중 정답 구조)
     - negatives: top-10에 절대 등장하면 안 되는 song_id (함정)
     - negative_reason: 왜 함정인지 사람이 읽을 수 있는 메모
     - tier: vague | baseline | low_signal | misinformation
@@ -110,6 +112,10 @@ class EvalQuery(BaseModel):
         default_factory=list,
         description="top-10 안에 반드시 등장해야 하는 song_id (label_status=labeled일 때 1개 이상 필수)",
     )
+    allowed: List[str] = Field(
+        default_factory=list,
+        description="허용 정답 song_id. 원래 타깃이 아니지만 질의 설명에 맞아 팀이 인정한 곡 — 확장 지표에서만 정답으로 센다",
+    )
     negatives: List[str] = Field(
         default_factory=list,
         description="top-10에 절대 등장하면 안 되는 song_id (False Positive 방지)",
@@ -142,6 +148,12 @@ class EvalQuery(BaseModel):
         if overlap:
             raise ValueError(
                 f"[{self.query_id}] positives/negatives 겹침: {sorted(overlap)}"
+            )
+        # 1-1) 허용 정답은 원래 타깃·함정과 겹칠 수 없다
+        overlap = set(self.allowed) & (set(self.positives) | set(self.negatives))
+        if overlap:
+            raise ValueError(
+                f"[{self.query_id}] allowed가 positives/negatives와 겹침: {sorted(overlap)}"
             )
         # 2) negatives 가 있으면 negative_reason 필수
         if self.negatives and not self.negative_reason:
