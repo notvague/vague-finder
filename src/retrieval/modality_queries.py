@@ -27,12 +27,77 @@ class ModalityQueryValidationError(ValueError):
 # 앞에 '앨범'이 붙어도 표지가 아니므로 양쪽 분기에 모두 적용한다.
 _COVER_VERB_SUFFIX = (
     r"(?:곡|송|한|했|하는|하던|해서|해본|해봤|"
+    # "커버해 우승" is a cover performance. Keep the bare ending bounded so
+    # "앨범 커버 해상도" still means album artwork.
+    r"해(?=\s|$|[,.!?])|해도|해줘|"
     r"할|불러|불렀|부른|를\s*(?:한|했|하는|할|불러|불렀|부른)|했던|버전)"
 )
 
 # 위 + 명사류. "커버 노래"는 리메이크지만 "앨범 커버 노래"는 표지 질의라서
 # 노래/음원/무대는 단독 '커버'에만 적용한다.
 _COVER_SONG_SUFFIX = _COVER_VERB_SUFFIX + r"|노래|음원|무대"
+
+# A cover dance is a performance event, in either Korean word order. Do not
+# turn its bare "커버" into album artwork or its "댄스" into a recording genre.
+# Keep the original query intact for Context and inspect each cover occurrence
+# separately, so an independent album-cover description still opens image.
+COVER_DANCE_PATTERN = (
+    r"(?:커버\s*(?:댄스|댄싱|춤|안무)|(?:댄스|댄싱|춤|안무)\s*커버)"
+)
+_COVER_DANCE_RE = re.compile(COVER_DANCE_PATTERN, re.IGNORECASE)
+
+# Cover competitions and recorded performances use the same Korean noun as
+# album artwork. Share their spans with Context; do not special-case a song,
+# platform, programme or evaluation question. Quotation marks and line breaks
+# can occur within a competition name.
+COVER_CONTEST_PATTERN = r"커버(?:['\"’”])?[\s·-]*(?:서바이벌|공모전|경연|대회|콘테스트)"
+COVER_RECORDING_PATTERN = r"커버\s*(?:영상|라이브|연주|공연)"
+_COVER_EVENT_RE = re.compile(
+    rf"(?:{COVER_CONTEST_PATTERN}|{COVER_RECORDING_PATTERN})", re.IGNORECASE,
+)
+_COVER_PERFORMANCE_RE = re.compile(
+    rf"(?:{COVER_DANCE_PATTERN}|{COVER_CONTEST_PATTERN}|{COVER_RECORDING_PATTERN})",
+    re.IGNORECASE,
+)
+_ALBUM_ART_BEFORE_COVER_RE = re.compile(
+    r"(?:앨범(?:의)?|표지|자켓|재킷|아트워크)\s*$", re.IGNORECASE,
+)
+# Bare "커버" is ambiguous. Require a physical appearance description before
+# using it as an image anchor; "가수의 커버가 화제" is a rendition, and a bare
+# recollection without either kind of evidence stays available to Text.
+_BARE_COVER_ART_DETAIL_RE = re.compile(
+    r"(?:색깔|색감|색상|디자인|아트(?:워크)?|이미지|사진|그림|일러스트|"
+    r"삽화|드로잉|수채화|유화|초상|얼굴|실루엣|글씨|글자|손글씨|"
+    r"필기체|폰트|타이포|질감|인쇄|종이|캔버스|꽃|꽃잎|도형|"
+    r"흑백|단색|파스텔|분홍|핑크|파랑|파란|파랗|푸른|보라|"
+    r"빨강|빨간|빨갛|붉은|노랑|노란|노랗|초록|녹색|주황|"
+    r"검정|검은|하양|하얀|하얗|흰색|회색|베이지|갈색)", re.IGNORECASE,
+)
+_COVER_LITERAL_TEXT_START_RE = re.compile(
+    r"^\s*(?:가사|노랫말|제목|곡명)(?:에|에는|속에)\s*", re.IGNORECASE,
+)
+_COVER_SOUND_ANALOGY_RE = re.compile(
+    r"(?:그림|사진|색|빛|꽃).{0,16}(?:처럼|같은|같이).{0,16}"
+    r"(?:소리|음색|음질|사운드|멜로디|보컬|노래|음악)", re.IGNORECASE,
+)
+_BARE_COVER_MOOD_RE = re.compile(
+    r"커버(?:가|는|의)?\s*(?:어둡|어두운|밝|차갑|차가운|따뜻|몽환|화려|심플|미니멀)"
+    r"[^,;.!?。！？\n]{0,30}(?:느낌|분위기|톤)(?:이|였)|"
+    r"(?:어두운|밝은|차가운|따뜻한|몽환적인|화려한|심플한|미니멀한)\s*커버",
+    re.IGNORECASE,
+)
+_COVER_HEARD_DESCRIPTOR_RE = re.compile(
+    r"(?:소리|음색|음질|사운드|멜로디|보컬|반주|창법)", re.IGNORECASE,
+)
+
+
+def normalize_cover_performance_spacing(text: str) -> str:
+    """Fold formatting inside a performance phrase, not sentence boundaries.
+
+    Context splits independent clauses at newlines. A newline in '커버\n대회'
+    should not split this single event. The caller keeps the original query.
+    """
+    return _COVER_PERFORMANCE_RE.sub(lambda match: " ".join(match.group().split()), text)
 
 _COVER_CONTEXT_RE = re.compile(
     # 1) "앨범 표지 / 앨범 커버 / 앨범 자켓 ..."
@@ -44,6 +109,70 @@ _COVER_CONTEXT_RE = re.compile(
     r"자켓|재킷)(?:에|가|는|의|에서|였|였던|처럼|인데)?)",
     re.IGNORECASE,
 )
+
+
+def _bare_cover_has_appearance(text: str, cover: re.Match[str]) -> bool:
+    left, right = 0, len(text)
+    for boundary in _CLAUSE_BREAK_RE.finditer(text):
+        if boundary.end() <= cover.start():
+            left = boundary.end()
+        elif boundary.start() >= cover.end():
+            right = boundary.start()
+            break
+    # Each occurrence owns its local evidence. A later independent album
+    # cover must not retroactively turn an earlier cover performance into art.
+    for other in _COVER_CONTEXT_RE.finditer(text, cover.end()):
+        right = min(right, other.start())
+        break
+    clause = text[left:right].strip()
+    if _COVER_LITERAL_TEXT_START_RE.match(clause):
+        return False
+    nearby = text[max(left, cover.start() - 45):min(right, cover.end() + 55)]
+    nearby = _mask_performed_venue_names(nearby)
+    appearance = _BARE_COVER_ART_DETAIL_RE.search(nearby) is not None
+    mood = (_BARE_COVER_MOOD_RE.search(nearby) is not None
+            and not _COVER_HEARD_DESCRIPTOR_RE.search(nearby))
+    return not _COVER_SOUND_ANALOGY_RE.search(nearby) and (appearance or mood)
+
+
+def _find_album_cover_context(text: str) -> re.Match[str] | None:
+    dances = list(_COVER_DANCE_RE.finditer(text))
+    events = list(_COVER_EVENT_RE.finditer(text))
+    for cover in _COVER_CONTEXT_RE.finditer(text):
+        if any(
+            cover.start() < event.end() and event.start() < cover.end()
+            for event in dances
+        ):
+            continue
+        explicit_album_art = (
+            cover.group().startswith("앨범")
+            or _ALBUM_ART_BEFORE_COVER_RE.search(text[:cover.start()]) is not None
+        )
+        if not explicit_album_art and any(
+            cover.start() < event.end() and event.start() < cover.end()
+            for event in events
+        ):
+            continue
+        if (not explicit_album_art and cover.group().startswith("커버")
+                and not _bare_cover_has_appearance(text, cover)):
+            continue
+        return cover
+    return None
+
+
+def explicit_artwork_reference_start(query: str) -> int | None:
+    """Return a literal artwork offset, ignoring negation and cover events."""
+    text = _NEGATED_COVER_CONTEXT_RE.sub(
+        lambda match: " " * len(match.group()), str(query or ""),
+    )
+    match = _find_album_cover_context(text)
+    return match.start() if match else None
+
+
+def has_explicit_artwork_reference(query: str) -> bool:
+    """Share literal artwork gating with Context without interpreting scenes."""
+    return explicit_artwork_reference_start(query) is not None
+
 
 _VISUAL_DETAIL_RE = re.compile(
     r"(?:색|빛|컬러|흑백|단색|사진|그림|일러스트|삽화|스케치|드로잉|"
@@ -111,10 +240,40 @@ _STATIC_VISUAL_PREDICATE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# A programme/venue name can contain a visual noun (e.g. a name ending in
+# "스케치북"). It is not an artwork medium when it is the location of a past
+# performance. Mask only that noun for implicit image detection, never the
+# original Text/Context query or the rest of a mixed artwork description.
+_PERFORMED_VENUE_NAME_RE = re.compile(
+    r"(?<![가-힣A-Za-z0-9])(?P<name>"
+    r"['\"‘“][^'\"’”\n,;.!?]{2,60}['\"’”]|[가-힣A-Za-z0-9·&_-]{2,40})"
+    r"['\"‘’“”]?에서(?:는|도)?"
+    r"(?P<between>[^,;.!?。！？\n]{0,70}?)"
+    r"(?:부른|부르던|불렀|가창(?:한|했)|연주(?:한|했)|공연(?:한|했)|"
+    r"커버(?:한|했|해(?=\s)))",
+    re.IGNORECASE,
+)
+
+
+def _mask_performed_venue_names(text: str) -> str:
+    masked = list(text)
+    for venue in _PERFORMED_VENUE_NAME_RE.finditer(text):
+        name = venue.group("name").strip("'\"‘’“”")
+        # "사진에서 남자가 노래를 부른 모습" still describes a real image.
+        # Likewise, a drawing/layout predicate before the performance verb
+        # supplies independent visual evidence and must remain inspectable.
+        if (_IMPLICIT_ARTWORK_EVIDENCE["medium"].fullmatch(name)
+                or _STATIC_VISUAL_PREDICATE_RE.search(venue.group("between"))):
+            continue
+        start, end = venue.span("name")
+        masked[start:end] = " " * (end - start)
+    return "".join(masked)
+
 # 이미지라는 단어 자체는 앨범 아트를 뜻하지 않는다. 뮤직비디오/무대/작품 속
 # 장면이나 음악을 들으며 떠올린 심상은 text 단서로 남기고 SigLIP2에는 보내지 않는다.
 _NON_COVER_VISUAL_CONTEXT_RE = re.compile(
-    r"(?:뮤직\s*비디오|뮤비|\bmv\b|티저\s*(?:영상|장면)?|"
+    r"(?:" + COVER_DANCE_PATTERN + r"|" + COVER_CONTEST_PATTERN + r"|" + COVER_RECORDING_PATTERN
+    + r"|뮤직\s*비디오|뮤비|\bmv\b|티저\s*(?:영상|장면)?|"
     r"무대\s*(?:배경|영상|장면|의상)?|공연\s*(?:영상|장면|배경)?|"
     r"콘서트\s*(?:영상|장면|배경)?|방송\s*(?:화면|영상|장면)?|"
     r"애니(?:메이션)?\s*(?:속|에서|장면|영상)|"
@@ -144,11 +303,45 @@ _NEGATED_COVER_CONTEXT_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Do not find the rock genre inside unrelated Korean words such as "탈락",
+# "연락", or "기록". Keep stand-alone and familiar compound genre spellings.
+_ROCK_GENRE_PATTERN = (
+    r"(?:(?<![가-힣])(?:록|락)(?=$|[\s,.!?…]|[은는이가을를의로]|"
+    r"밴드|음악|곡|장르|사운드|스타일)|"
+    r"(?:하드|모던|인디|펑크|팝|얼터너티브|포스트)(?:록|락))"
+)
+
+# Genre words can describe a TV show or a person instead of the recording.
+# Keep the song genre itself, e.g. "힙합 그룹의 곡" or "클래식 음악".
+_NON_AUDITORY_GENRE_CONTEXT_RE = re.compile(
+    COVER_DANCE_PATTERN + r"|" + COVER_CONTEST_PATTERN + r"|" + COVER_RECORDING_PATTERN
+    + r"|(?:힙합|재즈|클래식|록|락)(?=\s*(?:경연|대회|프로그램|방송|예능|"
+    r"연주자(?:들)?))",
+    re.IGNORECASE,
+)
+
+# An unrecorded arrangement discussed during planning is a Context fact, not
+# evidence of what the released track sounds like. Remove only an explicitly
+# hypothetical performance span; preserve the rest of the query, including any
+# later description of the actual recording. Text and Context see the original.
+_UNREALIZED_PERFORMANCE_PLAN_RE = re.compile(
+    r"(?:(?:초기|당초)\s*(?:기획|계획)(?:\s*(?:당시|단계|때))?|"
+    r"(?:기획|계획)\s*(?:당시|초기|단계|때))"
+    r"[^.!?。！？\n]{0,90}?(?:듀엣|부르|가창|보컬|랩|녹음|연주|반주|편곡|"
+    r"피아노|기타|드럼|소리)"
+    r"[^.!?。！？\n]{0,80}?(?:"
+    r"(?:안|계획|구상)(?:도|이|은|을)?\s*"
+    r"(?:있었|나왔|검토(?:됐|했)|세웠|잡혔|이었|였)|"
+    r"예정(?:이었|였))(?:다(?:더라|고)?|지만|고|어|네)?",
+    re.IGNORECASE,
+)
+
 _STRONG_AUDIO_RE = re.compile(
-    r"(?:발라드|댄스곡?|재즈|알앤비|r\s*&\s*b|힙합|랩(?:핑|파트)?|록|락|"
-    r"메탈|트로트|포크|클래식|edm|케이팝|k-?pop|보컬|목소리|음색|가창|무반주|"
-    r"부르(?:는|던|고|며)|노래하(?:는|던)|멜로디|리듬|비트|템포|bpm|"
-    r"사운드|소리|반주|편곡|화음|코러스|후렴|고음|저음|미성|허스키|"
+    r"(?:발라드|댄스곡?|재즈|알앤비|r\s*&\s*b|힙합|랩(?:핑|파트)?|"
+    + _ROCK_GENRE_PATTERN
+    + r"|메탈|트로트|포크|클래식|edm|케이팝|k-?pop|보컬|목소리|음색|가창|무반주|"
+    r"멜로디|리듬|비트|템포|bpm|"
+    r"사운드(?!\s*트랙)|소리|반주|편곡|화음|코러스|고음|저음|미성|허스키|"
     r"바이브레이션|기교|피아노|건반|기타|드럼|퍼커션|타악기|신스|"
     r"신디사이저|베이스|바이올린|첼로|현악|스트링|오케스트라|브라스|"
     r"트럼펫|색소폰|플루트|플룻|피리|하모니카|아카펠라|휘파람|휘슬|"
@@ -204,7 +397,9 @@ _AUDIO_RHYTHM_DYNAMICS_RE = re.compile(
 )
 
 _AUDIO_GENRE_RE = re.compile(
-    r"(?:발라드|댄스곡?|재즈|알앤비|r\s*&\s*b|힙합|록|락|메탈|"
+    r"(?:발라드|댄스곡?|재즈|알앤비|r\s*&\s*b|힙합|"
+    + _ROCK_GENRE_PATTERN
+    + r"|메탈|"
     r"트로트|포크|클래식|edm|케이팝|k-?pop|아카펠라)",
     re.IGNORECASE,
 )
@@ -375,20 +570,67 @@ _CLAUSE_BREAK_RE = re.compile(
     re.IGNORECASE,
 )
 
-# These are deliberately strong, physically visual anchors.  Broad mood words
-# such as "dreamy" or "dark" are allowed because they can describe sound too.
+# Most anchors below are physically visual. Spatial words also describe the
+# audible mix ("background vocals", "guitar in the foreground"); validate those
+# against a bounded audio phrase instead of rejecting the word by itself.
+# Broad mood words such as "dreamy" or "dark" can describe sound too.
 _VISUAL_LEAK_IN_AUDIO_RE = re.compile(
     r"\b(?:album\s+cover|cover\s+art|cover\s+image|on\s+the\s+cover|"
     r"illustration|drawing|sketch|line\s+art|paint(?:ed|ing)|watercolou?r|"
-    r"photograph(?:y|ic)?|photo|portrait|pictured|handwrit(?:ten|ing)|"
+    r"photograph(?:s|y|ic)?|photos?|portraits?|pictures?|images?|artwork|"
+    r"pictured|handwrit(?:ten|ing)|"
     r"calligraph(?:y|ic)|paper[-\s]+texture|textured\s+paper|"
     r"depict(?:s|ed|ing)?|visual(?:s|ly)?|background|foreground|typography|"
     r"font|lettering|on\s+the\s+(?:left|right)|night[-\s]sky|starry|stars?|"
     r"pink|purple|violet|orange|yellow|green|blue|red|beige|brown|"
     r"black|white|gr[ae]y|black[-\s]and[-\s]white|monochrome|flowers?|"
-    r"floral|diagonal\s+(?:layout|split)|geometric\s+(?:shape|art))\b",
+    r"floral|diagonal\s+(?:layout|split)|geometric\s+(?:shapes?|art))\b",
     re.IGNORECASE,
 )
+
+# Restrict spatial exemptions to explicit audible nouns and a short set of
+# sound modifiers/predicates. Never extend an exemption across arbitrary text
+# or a sentence boundary: a later "background image" must still be rejected.
+_SPATIAL_AUDIO_NOUN = (
+    r"(?:backing\s+vocals?|vocal\s+harmon(?:y|ies)|instrumental\s+layers?|"
+    r"vocals?|voices?|chorus(?:es)?|choirs?|harmon(?:y|ies)|singing|chants?|"
+    r"whispers?|whistling|instrumentation|instruments?|accompaniment|"
+    r"music|melod(?:y|ies)|sounds?|noises?|ambi(?:ence|ance)|beats?|rhythms?|"
+    r"percussion|drums?|piano|guitars?|bass|synth(?:esizer)?s?|strings?)"
+)
+_SPATIAL_AUDIO_MODIFIER = (
+    r"(?:male|female|mixed|soft|subtle|quiet|faint|low|high|pitched|deep|"
+    r"prominent|layered|harmonized|choral|wordless|breathy|smooth|raspy|"
+    r"instrumental|electronic|acoustic|distorted|ambient|warm|bright|dark)"
+)
+_SPATIAL_AUDIO_PREDICATE = (
+    r"(?:is|are|was|were|remains?|sit(?:s|ting)?|sound(?:s|ing)?|"
+    r"play(?:s|ing|ed)?|heard|audible|sing(?:s|ing)?|sung|"
+    r"mov(?:e[sd]?|ing)|gradually|slowly|softly|quietly|gently|subtly|faintly|clearly)"
+)
+_SPATIAL_AUDIO_CONTEXT_RE = re.compile(
+    r"\b(?:background|foreground)\b[-\s]+"
+    r"(?:" + _SPATIAL_AUDIO_MODIFIER + r"\b[-\s]+){0,3}"
+    + _SPATIAL_AUDIO_NOUN + r"\b|"
+    r"\b" + _SPATIAL_AUDIO_NOUN + r"\b"
+    r"(?:\s+" + _SPATIAL_AUDIO_PREDICATE + r"\b){0,4}"
+    r"\s+(?:in|into|from)\s+(?:the\s+)?(?:background|foreground)\b",
+    re.IGNORECASE,
+)
+
+
+def _find_visual_leak_in_audio(prompt: str) -> re.Match[str] | None:
+    """Ignore only audible uses of spatial words; inspect every other anchor."""
+    audio_spans = [match.span() for match in _SPATIAL_AUDIO_CONTEXT_RE.finditer(prompt)]
+    for leak in _VISUAL_LEAK_IN_AUDIO_RE.finditer(prompt):
+        if leak.group(0).lower() in {"background", "foreground"} and any(
+            start <= leak.start() and leak.end() <= end
+            for start, end in audio_spans
+        ):
+            continue
+        return leak
+    return None
+
 
 # Likewise, only phrases that unambiguously describe the waveform are rejected
 # from an image prompt.  "A portrait of a singer holding a guitar" remains valid.
@@ -458,33 +700,49 @@ def has_explicit_visual_clue(query: str) -> bool:
     """
     text = str(query or "")
     positive_text = _NEGATED_COVER_CONTEXT_RE.sub("", text)
-    if _COVER_CONTEXT_RE.search(positive_text):
+    if has_explicit_artwork_reference(positive_text):
         return True
-    # Some users describe several visual details first and end with just
-    # "그런 앨범이야".  Album context plus concrete visual vocabulary is enough.
-    if "앨범" in positive_text and _VISUAL_DETAIL_RE.search(positive_text):
-        return True
+    positive_text = _mask_performed_venue_names(positive_text)
+    # "다음 앨범" may describe a release teased in an MV, while a different
+    # clause mentions a visual scene. Do not join those independent clauses
+    # into an album-art prompt. A real album appearance description must
+    # include a concrete form or color close to the album noun itself.
+    if "앨범" in positive_text:
+        for raw_part in _CLAUSE_BREAK_RE.split(positive_text):
+            part = raw_part.strip()
+            if not part or _NON_COVER_VISUAL_CONTEXT_RE.search(part):
+                continue
+            for album in re.finditer("앨범", part):
+                after = part[album.end() : album.end() + 40]
+                if (
+                    re.search(r"(?:색(?:깔|감)?|디자인|이미지|아트워크)", after)
+                    or any(
+                        _IMPLICIT_ARTWORK_EVIDENCE[name].search(after)
+                        for name in ("medium", "surface", "typography", "palette")
+                    )
+                ):
+                    return True
     return _has_implicit_artwork_description(positive_text)
 
 
 def extract_audio_evidence_text(query: str) -> str:
-    """Remove album-cover clauses before applying auditory keyword rules.
+    """Remove unrealized plans and album-cover clauses from audio evidence.
 
     This prevents visible instruments or people (for example, ``표지에 피아노
     그림``) from becoming CLAP/performance clues.  Mixed clauses are split on
     Korean connective endings, and any non-cover remainder with explicit music
     context is preserved.
     """
-    text = str(query or "")
+    text = _UNREALIZED_PERFORMANCE_PLAN_RE.sub("", str(query or ""))
     if not has_explicit_visual_clue(text):
-        return text
+        return _NON_AUDITORY_GENRE_CONTEXT_RE.sub("", text)
 
     kept: list[str] = []
     for raw_part in _CLAUSE_BREAK_RE.split(text):
         part = raw_part.strip()
         if not part:
             continue
-        cover = _COVER_CONTEXT_RE.search(part)
+        cover = _find_album_cover_context(part)
         if cover is not None:
             outside = [part[: cover.start()], part[cover.end() :]]
             for segment in outside:
@@ -508,7 +766,7 @@ def extract_audio_evidence_text(query: str) -> str:
         ):
             continue
         kept.append(part)
-    return " ".join(kept)
+    return _NON_AUDITORY_GENRE_CONTEXT_RE.sub("", " ".join(kept))
 
 
 def _audio_detail_evidence_text(query: str) -> str:
@@ -638,7 +896,7 @@ def has_explicit_audio_clue(
     """Return whether the user supplied evidence that can be heard."""
     clue = _clean_mapping(performance_clues)
     text = extract_audio_evidence_text(query)
-    if _STRONG_AUDIO_RE.search(text):
+    if _STRONG_AUDIO_RE.search(text) or _AUDIO_RHYTHM_DYNAMICS_RE.search(text):
         return True
 
     if text.strip() and (
@@ -780,7 +1038,7 @@ def apply_modality_query_safeguards(query: str, raw: dict) -> dict:
         audio_query = _supplement_audio_prompt(query, audio_query)
 
     if audio_query:
-        leak = _VISUAL_LEAK_IN_AUDIO_RE.search(audio_query)
+        leak = _find_visual_leak_in_audio(audio_query)
         if leak:
             raise ModalityQueryValidationError(
                 "audio_english_query contains visual-only wording: "

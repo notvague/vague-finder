@@ -10,18 +10,26 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 import os
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from functools import partial
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
-from src.backend.schemas.query import QueryAnalysis
+from src.backend.schemas.query import ContextClue, QueryAnalysis
 from src.backend.schemas.search import ClarifyAnswer, MatchingTrack
 from src.embedding.models.audio_clap import CLAPAudioEmbedder
 from src.embedding.models.image_siglip2 import SigLIP2Embedder
 from src.retrieval import timing
+from src.retrieval.context_qdrant_search import ContextQdrantSearch
+from src.retrieval.context_route import ContextRouteHit, combine_context_clues
+from src.retrieval.context_query import (
+    context_media_target_terms, context_path_weight, context_search_queries,
+)
+from src.retrieval.context_evidence import context_candidate_matches_media_description
 from src.retrieval.explain import (
     LYRIC_MATCH_LABELS,
     LYRIC_SCORE_LABELS,
@@ -60,6 +68,12 @@ _Hit = Tuple[str, float]
 
 # RRF 표준 상수 (보통 60)
 _RRF_K = 60
+
+
+@dataclass(frozen=True)
+class _ContextTrack:
+    route: ContextRouteHit
+    track: MatchingTrack
 
 
 
@@ -745,7 +759,22 @@ class SearchRouter:
         lyrics_search_service: Optional[LyricsExactSearchService] = None,
         reranker: Optional[Any] = None,
         max_workers: int = 4,
+        context_search: Optional[ContextQdrantSearch] = None,
+        context_weight: float = 1.0,
+        context_fact_k: int = 100,
+        context_sparse_k: int = 100,
+        context_named_media_multiplier: float = 1.0,
+        default_candidate_k: int = 30,
     ):
+        if not math.isfinite(context_weight) or context_weight < 0:
+            raise ValueError("context_weight must be finite and nonnegative")
+        if context_fact_k < 1 or context_sparse_k < 1:
+            raise ValueError("Context retrieval widths must be positive")
+        if (not math.isfinite(context_named_media_multiplier)
+                or context_named_media_multiplier < 1):
+            raise ValueError("context_named_media_multiplier must be finite and >= 1")
+        if type(default_candidate_k) is not int or not 1 <= default_candidate_k <= 100:
+            raise ValueError("default_candidate_k must be an integer between 1 and 100")
         self._text_svc = search_service
         self._img_emb = image_embedder
         self._audio_emb = audio_embedder
@@ -755,6 +784,12 @@ class SearchRouter:
         # reranker: src.retrieval.reranker.MusicReranker (정현님 재랭킹 PR 병합 후 DI로 주입).
         # None이면 리랭킹 단계를 건너뛰고 RRF+부스팅 결과를 그대로 반환한다.
         self._reranker = reranker
+        self._context_search = context_search
+        self._context_weight = context_weight
+        self._context_fact_k = context_fact_k
+        self._context_sparse_k = context_sparse_k
+        self._context_named_media_multiplier = context_named_media_multiplier
+        self._default_candidate_k = default_candidate_k
         self._pool = ThreadPoolExecutor(
             max_workers=max_workers,
             thread_name_prefix="search_worker",
@@ -792,6 +827,8 @@ class SearchRouter:
         answer_multiplier: Optional[float] = None,
         recorder: ExplainRecorder = NULL_RECORDER,
         timer: Any = timing.NULL_TIMER,
+        use_context: bool = True,
+        context_hits_out: Optional[List[ContextRouteHit]] = None,
     ) -> List[MatchingTrack]:
         """
         QueryAnalysis를 받아 3개 경로를 병렬 실행하고
@@ -807,6 +844,10 @@ class SearchRouter:
             예) [1,0,0]=text-only, [0,1,0]=image-only.
         disable_boost: True 면 RRF 이후 정확매칭 부스팅을 끄고 순수 RRF 점수만 사용.
             ablation 에서 검색 경로 기여만 isolate 할 때 사용(부스팅 confound 제거).
+        use_context: False면 Context 경로만 끈다. 재랭킹 없는 전후 평가에 사용한다.
+            force_weights는 기존 세 모달리티 전용 실험이라 Context도 끈다.
+        context_hits_out: 후보 풀에 남은 Context 단서와 원본 hit를 보관하는
+            내부 통로. 후속 관련성 검증에서만 사용하며 아직 결과에 사실을 표시하지 않는다.
         exclude_ids: 후보 풀에서 뺄 song_id. 재질문 2턴에서 사용자가 "이 중에는
             없어요"로 거절한 곡을 제외하는 데 쓴다. 제외한 수만큼 후보 검색 폭을
             넓혀(pool_k) 최종 풀이 candidates개로 유지된다.
@@ -828,7 +869,7 @@ class SearchRouter:
         5) top_k 반환
         """
         loop = asyncio.get_running_loop()
-        candidates = candidate_k or max(top_k * 3, 30)
+        candidates = candidate_k or max(top_k * 3, getattr(self, "_default_candidate_k", 30))
         candidates = min(100, max(top_k, candidates))
         excluded = set(exclude_ids) if exclude_ids else None
         # 거절한 수만큼 후보를 더 가져온다. 이걸 하지 않으면 각 경로와 RRF가
@@ -925,6 +966,23 @@ class SearchRouter:
                 ),
             )
             if use_audio else None
+        )
+
+        # Context runs only for grounded external-fact clues. Keep the existing
+        # Text/Image/Audio weights intact; Context is an additive fourth path.
+        use_context_path = bool(
+            use_context
+            and force_weights is None
+            and analysis.has_context_clue
+            and getattr(self, "_context_search", None) is not None
+            and getattr(self, "_context_weight", 1.0) > 0
+        )
+        context_fut = (
+            loop.run_in_executor(
+                self._pool,
+                timer.job("path.context", self._search_context, analysis, pool_k),
+            )
+            if use_context_path else None
         )
 
         performance_fut = (
@@ -1063,6 +1121,7 @@ class SearchRouter:
                 text_fut,
                 image_fut,
                 audio_fut,
+                context_fut,
                 performance_fut,
                 performance_metadata_fut,
                 balanced_semantic_fut,
@@ -1081,6 +1140,7 @@ class SearchRouter:
         text_res = next(_it)
         image_res = next(_it) if use_image else []
         audio_res = next(_it) if use_audio else []
+        context_res = next(_it) if use_context_path else []
         performance_res = next(_it) if use_performance_clue else []
         performance_metadata_res = (
             next(_it) if use_performance_metadata else []
@@ -1113,6 +1173,13 @@ class SearchRouter:
             _path_result(name, result, recorder)
             for name, result in zip(["text_hybrid", "image", "audio"], raw)
         ]
+        context_hits = _path_result("context", context_res, recorder)
+        context_weight = context_path_weight(
+            getattr(self, "_context_weight", 1.0),
+            max(hit.route.clue.confidence for hit in context_hits),
+            getattr(self, "_context_named_media_multiplier", 1.0),
+            analysis,
+        ) if context_hits else 0.0
 
         use_deep_audio_fusion = bool(
             use_performance_clue
@@ -1265,6 +1332,11 @@ class SearchRouter:
             if current is None or current.title == "Unknown":
                 meta_cache[track.id] = track
 
+        # Context payloads are retrieval hints, not the authoritative catalogue.
+        # The Text index lookup took place inside the Context worker before fusion.
+        for hit in context_hits:
+            meta_cache[hit.route.song_id] = hit.track
+
         # text metadata가 먼저 캐시된 경우에도 exact lyrics 일치 정보는 보존한다.
         for track in lyrics_hits:
             current = meta_cache.get(track.id)
@@ -1288,10 +1360,16 @@ class SearchRouter:
                 [(t.id, t.score) for t in base_text_hits],
                 [(t.id, t.score) for t in image_hits],
                 [(t.id, t.score) for t in base_audio_hits],
+                [(hit.route.song_id, hit.route.score) for hit in context_hits],
             ],
-            weights=weights,
-            top_k=fusion_top_k,
-            labels=["text_hybrid", "image", "audio"],
+            weights=[*weights, context_weight],
+            # Context-only songs may have a smaller RRF vote than every Text
+            # candidate, even when Dense and Sparse both rank them first. Let
+            # the canonical metadata boosts see the complete Context union;
+            # _reject_and_trim below is the final candidate-pool cut. Queries
+            # without Context hits keep their existing fusion limit.
+            top_k=None if context_hits else fusion_top_k,
+            labels=["text_hybrid", "image", "audio", "context"],
             recorder=recorder,
         )
 
@@ -1525,6 +1603,12 @@ class SearchRouter:
         )
 
         boosted = _reject_and_trim(boosted, excluded, candidates)
+
+        if context_hits_out is not None:
+            surviving = {song_id for song_id, _ in boosted}
+            context_hits_out.extend(
+                hit.route for hit in context_hits if hit.route.song_id in surviving
+            )
 
         # 답변은 여기서만 반영한다 — 후보 풀은 그대로 두고 순위만 바꾼다.
         if answers:
@@ -1956,6 +2040,63 @@ class SearchRouter:
     # ------------------------------------------------------------------
     # Private: 동기 검색 메서드 (ThreadPoolExecutor 안에서 실행)
     # ------------------------------------------------------------------
+
+    def _search_context(
+        self, analysis: QueryAnalysis, pool_k: int
+    ) -> List[_ContextTrack]:
+        """Find Context songs, then fetch their canonical Text index metadata.
+
+        The Dense width counts facts per lookup, not songs. A grounded media
+        name may also issue one focused lookup. Both lookups compete for the
+        same Context song vote; their scores are never added as extra paths.
+        """
+        search = self._context_search
+        if search is None:
+            return []
+
+        # Repeated wording must not issue duplicate Qdrant queries or add votes.
+        clues: Dict[tuple[str, tuple[str, ...]], ContextClue] = {}
+        for clue in analysis.context_clues:
+            if clue.confidence <= 0:
+                continue
+            for position, query in enumerate(context_search_queries(
+                clue, original_query=analysis.original_query,
+            )):
+                targets = context_media_target_terms(
+                    clue, original_query=analysis.original_query,
+                ) if position else ()
+                key = (query, targets)
+                if key not in clues or clue.confidence > clues[key].confidence:
+                    clues[key] = clue
+
+        rankings = [
+            (
+                clue,
+                search.search_fused_songs(
+                    query,
+                    fact_k=max(getattr(self, "_context_fact_k", 100), pool_k),
+                    sparse_k=max(getattr(self, "_context_sparse_k", 100), pool_k),
+                    **({"media_targets": targets} if targets else {}),
+                ),
+            )
+            for (query, targets), clue in clues.items()
+        ]
+        # Retrieve beyond the final pool so missing Text points can be removed
+        # without allowing a non-catalogue Context record into the candidates.
+        ranked = combine_context_clues(rankings)
+        ranked = tuple(hit for hit in ranked if context_candidate_matches_media_description(
+            hit, query_clues=analysis.context_clues,
+        ))[:min(200, max(100, pool_k * 2))]
+        if not ranked:
+            return []
+        tracks = self._text_svc.fetch_tracks_by_ids([hit.song_id for hit in ranked])
+        return [
+            _ContextTrack(hit, tracks[hit.song_id])
+            for hit in ranked
+            if hit.song_id in tracks
+            and tracks[hit.song_id].id == hit.song_id
+            and tracks[hit.song_id].title != "Unknown"
+        ]
 
     def _search_text(self, analysis: QueryAnalysis, top_k: int) -> List[MatchingTrack]:
         """KoE5(dense) + BM25(sparse) 하이브리드 검색."""

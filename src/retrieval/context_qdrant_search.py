@@ -1,8 +1,8 @@
 """Query the published Namuwiki fact and song-profile collections.
 
 The retrieval boundary returns individual facts and sparse song profiles;
-their raw scores are not comparable. Song aggregation is available as a
-separate ranking step; Dense/Sparse fusion belongs to a later stage.
+their raw scores are not comparable. Dense facts are aggregated by song, then
+the two Context rankings can be fused into one candidate path with RRF.
 """
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ import hashlib
 import json
 import math
 import threading
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
@@ -25,8 +26,11 @@ from src.embedding.context_sparse import (
 )
 from src.embedding.models.text_koe5 import DEFAULT_KOE5_MODEL, KoE5Embedder
 from src.retrieval.context_ranking import (
+    CONTEXT_RRF_K,
     ContextDenseSongHit,
+    ContextFusedSongHit,
     aggregate_dense_facts_by_song,
+    fuse_context_song_candidates,
 )
 from src.vector_db.context_qdrant import (
     CONTEXT_QDRANT_MANIFEST_VERSION,
@@ -77,6 +81,22 @@ class ContextSearchHits:
 
 
 @dataclass(frozen=True)
+class ContextSongCandidates:
+    """Separate song rankings to use in Context-only rank fusion.
+
+    ``dense_facts`` retains the same query's retrieved sentences for the
+    final evidence check. Even ``dense_songs[].best_fact`` is only a candidate
+    until that check. A sparse profile hit cannot substantiate a sentence.
+    """
+
+    dense_songs: tuple[ContextDenseSongHit, ...]
+    sparse_songs: tuple[ContextProfileHit, ...]
+    # Keep the same snapshot's fact hits for later evidence checking. Ranking
+    # still uses only one maximum-score fact per song.
+    dense_facts: tuple[ContextFactHit, ...] = ()
+
+
+@dataclass(frozen=True)
 class _Snapshot:
     dense_collection: str
     sparse_collection: str
@@ -84,6 +104,11 @@ class _Snapshot:
     dimension: int
     dense_manifest_sha256: str
     sparse_manifest_sha256: str
+
+
+def _media_key(value: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFKC", value).casefold()
+                   if c.isalnum())
 
 
 def _manifest(path: Path, schema: str) -> dict:
@@ -157,6 +182,8 @@ class ContextQdrantSearch:
         self._hash_fn = hash_fn
         self._sparse_encoder: ContextBM25QueryEncoder | None = None
         self._sparse_manifest_sha256: str | None = None
+        self._media_index_key: tuple[str, str] | None = None
+        self._media_index_rows: tuple[tuple[Any, str], ...] = ()
         self._lock = threading.Lock()
 
     def _snapshot(self) -> _Snapshot | None:
@@ -253,7 +280,55 @@ class ContextQdrantSearch:
             raise RuntimeError("context Qdrant hit is incompatible with the active generation")
         return payload
 
-    def _dense(self, snapshot: _Snapshot, query: str, limit: int) -> tuple[ContextFactHit, ...]:
+    def _media_fact_ids(
+        self, snapshot: _Snapshot, targets: tuple[str, ...],
+    ) -> list[Any]:
+        """Cache literal fact text once per generation, never the query ranks.
+
+        Korean work names often carry particles ("...에서") and varying spaces.
+        MatchText tokenization varies across Qdrant versions/index settings.
+        Match normalized names here, then use the matching point IDs as a
+        Dense filter. The fact corpus is read without vectors or song metadata.
+        """
+        key = (snapshot.dense_collection, snapshot.build_id)
+        with self._lock:
+            if self._media_index_key != key:
+                rows, seen, offset = [], set(), None
+                while True:
+                    points, next_offset = self.client.scroll(
+                        collection_name=snapshot.dense_collection,
+                        limit=512, offset=offset, with_vectors=False,
+                        with_payload=["fact_text", "context_build_id",
+                                      "payload_schema_version", "point_kind"],
+                    )
+                    for point in points:
+                        payload = point.payload
+                        if (not isinstance(payload, dict)
+                                or payload.get("context_build_id") != snapshot.build_id
+                                or payload.get("payload_schema_version") != CONTEXT_QDRANT_PAYLOAD_VERSION
+                                or payload.get("point_kind") != "context_fact"
+                                or point.id in seen):
+                            raise RuntimeError("context media fact index has incompatible or duplicate points")
+                        seen.add(point.id)
+                        rows.append((point.id, _media_key(_required(payload, "fact_text"))))
+                    if next_offset is None:
+                        break
+                    if next_offset == offset:
+                        raise RuntimeError("context media fact index scroll made no progress")
+                    offset = next_offset
+                self._media_index_rows = tuple(rows)
+                self._media_index_key = key
+            names = tuple(_media_key(name) for name in targets)
+            return [point_id for point_id, text in self._media_index_rows
+                    if any(name in text for name in names)]
+
+    def _dense(
+        self, snapshot: _Snapshot, query: str, limit: int,
+        media_targets: tuple[str, ...] = (),
+    ) -> tuple[ContextFactHit, ...]:
+        ids = self._media_fact_ids(snapshot, media_targets) if media_targets else None
+        if ids == []:
+            return ()
         vector = np.asarray(self._text_embedder(snapshot).embed_passages(
             [f"query: {query}"], add_e5_prefix=False, normalize=True
         ), dtype=np.float32)
@@ -263,6 +338,10 @@ class ContextQdrantSearch:
             or not math.isclose(float(np.linalg.norm(vector[0])), 1.0, abs_tol=2e-3)
         ):
             raise RuntimeError("context query embedding has invalid dimension or norm")
+        # This optional focused lookup searches facts containing the supplied
+        # work name. It is separate from the router's unrestricted recollection
+        # lookup; a text filter contributes no score or extra outer RRF vote.
+        query_filter = models.Filter(must=[models.HasIdCondition(has_id=ids)]) if ids is not None else None
         hits = self.client.query_points(
             collection_name=snapshot.dense_collection,
             query=vector[0].tolist(),
@@ -270,6 +349,7 @@ class ContextQdrantSearch:
             limit=limit,
             with_payload=True,
             with_vectors=False,
+            **({"query_filter": query_filter} if query_filter is not None else {}),
         ).points
         results = []
         for hit in hits:
@@ -342,14 +422,85 @@ class ContextQdrantSearch:
         snapshot = self._snapshot()
         return self._sparse(snapshot, query.strip(), limit) if snapshot and query.strip() else ()
 
-    def search(self, query: str, *, dense_k: int = 50, sparse_k: int = 50) -> ContextSearchHits:
+    def search(
+        self, query: str, *, dense_k: int = 50, sparse_k: int = 50,
+        media_targets: tuple[str, ...] = (),
+    ) -> ContextSearchHits:
         if dense_k < 1 or sparse_k < 1:
             raise ValueError("dense_k and sparse_k must be positive")
+        if (not isinstance(media_targets, tuple) or len(media_targets) > 4
+                or any(not isinstance(name, str) or len(_media_key(name)) < 2
+                       or len(name) > 80 for name in media_targets)):
+            raise ValueError("media_targets must contain at most four nonempty work names")
         snapshot = self._snapshot()
         query = query.strip()
         if snapshot is None or not query:
             return ContextSearchHits((), ())
         return ContextSearchHits(
-            dense_facts=self._dense(snapshot, query, dense_k),
+            dense_facts=self._dense(snapshot, query, dense_k, media_targets),
             sparse_profiles=self._sparse(snapshot, query, sparse_k),
+        )
+
+    def search_song_candidates(
+        self,
+        query: str,
+        *,
+        fact_k: int = 50,
+        sparse_k: int = 50,
+        song_k: int | None = None,
+        media_targets: tuple[str, ...] = (),
+    ) -> ContextSongCandidates:
+        """Retrieve both rankings against one published Qdrant generation.
+
+        ``fact_k`` limits Dense facts before song aggregation; ``song_k``
+        limits the resulting Dense songs. Sparse results already represent
+        one profile per song. Keep both score scales and rankings separate so
+        the fusion step can combine their *ranks* without counting multiple
+        profiles for one song or treating profile overlap as an evidence quote.
+        """
+        if song_k is not None and song_k < 1:
+            raise ValueError("song_k must be positive")
+        hits = self.search(query, dense_k=fact_k, sparse_k=sparse_k,
+                           **({"media_targets": media_targets} if media_targets else {}))
+        sparse_ids = [hit.song_id for hit in hits.sparse_profiles]
+        if len(sparse_ids) != len(set(sparse_ids)):
+            raise RuntimeError("context sparse search returned more than one profile per song")
+        return ContextSongCandidates(
+            dense_songs=aggregate_dense_facts_by_song(hits.dense_facts, limit=song_k),
+            sparse_songs=hits.sparse_profiles,
+            dense_facts=hits.dense_facts,
+        )
+
+    def search_fused_songs(
+        self,
+        query: str,
+        *,
+        fact_k: int = 50,
+        sparse_k: int = 50,
+        song_k: int | None = None,
+        limit: int | None = None,
+        rrf_k: int = CONTEXT_RRF_K,
+        dense_weight: float = 1.0,
+        sparse_weight: float = 1.0,
+        media_targets: tuple[str, ...] = (),
+    ) -> tuple[ContextFusedSongHit, ...]:
+        """Return one Context ranking from the same published collection pair.
+
+        ``fact_k`` is a number of facts, not songs. ``song_k`` caps Dense
+        songs after aggregation; ``limit`` caps the fused ranking. The RRF
+        score is internal: the SearchRouter integration should give this
+        entire ranking *one* Context path contribution based on its rank.
+        Retrieved Dense facts are not display-ready evidence until a later
+        relevance check accepts them.
+        """
+        candidates = self.search_song_candidates(
+            query, fact_k=fact_k, sparse_k=sparse_k, song_k=song_k,
+            **({"media_targets": media_targets} if media_targets else {}),
+        )
+        return fuse_context_song_candidates(
+            candidates,
+            limit=limit,
+            rrf_k=rrf_k,
+            dense_weight=dense_weight,
+            sparse_weight=sparse_weight,
         )

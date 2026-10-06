@@ -39,6 +39,7 @@ PATH_LABELS: Dict[str, str] = {
     "text_hybrid": "텍스트(의미+키워드)",
     "image": "앨범 이미지",
     "audio": "소리",
+    "context": "배경 지식",
     "lyrics_surface": "가사 구절 일치",
     "title": "제목 구조",
     "title_presence": "제목 표기",

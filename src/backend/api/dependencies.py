@@ -14,6 +14,7 @@ from src.retrieval.lyrics_exact_search import LyricsExactSearchService
 from src.retrieval.reranker import MusicReranker
 from src.retrieval.gemini_listwise_reranker import GeminiListwiseReranker
 from src.retrieval.search_router import SearchRouter
+from src.retrieval.context_qdrant_search import ContextQdrantSearch
 from src.retrieval.search_service import SearchService
 from src.vector_db.qdrant_backend import get_qdrant_client
 
@@ -189,4 +190,12 @@ def get_search_router() -> SearchRouter:
         vector_client=get_vector_client(),
         lyrics_search_service=get_lyrics_exact_search_service(),
         reranker=get_reranker(),
+        context_search=ContextQdrantSearch(
+            get_vector_client(), text_embedder=get_text_embedder()
+        ),
+        context_weight=0.5,
+        context_fact_k=100,
+        context_sparse_k=100,
+        context_named_media_multiplier=2.0,
+        default_candidate_k=30,
     )

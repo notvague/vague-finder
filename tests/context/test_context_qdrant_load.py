@@ -204,6 +204,84 @@ def test_separate_fact_and_song_collections_are_atomic_and_reusable(
     assert collections_after == collections_before
 
 
+def test_sparse_profiles_feed_song_candidates_without_becoming_fact_evidence(
+    tmp_path: Path,
+    qdrant: QdrantVectorClient,
+):
+    from src.retrieval.context_qdrant_search import ContextQdrantSearch
+
+    sources = _sources(tmp_path)
+    _load(tmp_path, sources, qdrant)
+    searcher = ContextQdrantSearch(
+        qdrant,
+        namespace="test",
+        dense_dir=sources[1],
+        sparse_dir=sources[2],
+        state_manifest=tmp_path / "state.json",
+        text_embedder=FakeEmbedder(),
+        hash_fn=_hash,
+        expected_dense_dim=4,
+    )
+
+    candidates = searcher.search_song_candidates(
+        "테스트 프로그램 배경음악", fact_k=1, sparse_k=2, song_k=1
+    )
+
+    assert len(candidates.dense_songs) == 1
+    assert candidates.dense_songs[0].best_fact.fact_text
+    assert candidates.dense_songs[0].best_fact.source_url
+    assert candidates.dense_facts
+    assert candidates.dense_songs[0].best_fact in candidates.dense_facts
+    assert {hit.song_id for hit in candidates.sparse_songs} == {"101", "202"}
+    assert all(hit.profile_id and hit.title and hit.artists for hit in candidates.sparse_songs)
+    assert any(
+        hit.song_id not in {dense.song_id for dense in candidates.dense_songs}
+        for hit in candidates.sparse_songs
+    )
+    assert all(not hasattr(hit, "fact_text") for hit in candidates.sparse_songs)
+    assert all(not hasattr(hit, "source_url") for hit in candidates.sparse_songs)
+
+    fused = searcher.search_fused_songs(
+        "테스트 프로그램 배경음악", fact_k=1, sparse_k=2
+    )
+    assert len(fused) == 2
+    assert {hit.song_id for hit in fused} == {hit.song_id for hit in candidates.sparse_songs}
+    assert fused[0].dense_song is not None and fused[0].sparse_profile is not None
+    assert fused[0].dense_facts
+    assert fused[0].dense_song.best_fact in fused[0].dense_facts
+    assert fused[1].dense_song is None and fused[1].sparse_profile is not None
+    assert fused[0].score > fused[1].score > 0
+
+    empty = searcher.search_song_candidates("  ", fact_k=1, sparse_k=2)
+    assert empty.dense_songs == empty.sparse_songs == ()
+    assert searcher.search_fused_songs("  ") == ()
+
+
+def test_song_candidate_boundary_rejects_duplicate_sparse_profiles(monkeypatch):
+    from src.retrieval.context_qdrant_search import (
+        ContextProfileHit,
+        ContextQdrantSearch,
+        ContextSearchHits,
+    )
+
+    profile = ContextProfileHit("101", "nws:101", 0.5, "가상 제목", ("가상 가수",))
+    calls = []
+
+    def fake_search(self, query, *, dense_k, sparse_k):
+        calls.append((query, dense_k, sparse_k))
+        return ContextSearchHits((), (profile, profile))
+
+    monkeypatch.setattr(ContextQdrantSearch, "search", fake_search)
+    searcher = object.__new__(ContextQdrantSearch)
+    with pytest.raises(RuntimeError, match="more than one profile per song"):
+        searcher.search_song_candidates("가상 작품 OST", fact_k=5, sparse_k=9)
+    assert calls == [("가상 작품 OST", 5, 9)]
+
+    with pytest.raises(ValueError, match="song_k must be positive"):
+        searcher.search_song_candidates("가상 작품 OST", song_k=0)
+    assert len(calls) == 1
+
+
 def test_failed_repair_never_moves_the_active_alias_pair(
     tmp_path: Path,
     qdrant: QdrantVectorClient,

@@ -799,6 +799,27 @@ function renderPanel() {
       meta.append(tag);
     }
     text.append(meta);
+    if (r.context_evidence && r.context_evidence.fact_text) {
+      const proof = makeEl("span", "resultcontext");
+      const summary = makeEl("span", "resultcontextsummary");
+      summary.append(makeEl("span", "resultcontextlabel", "나무위키 기록 · "));
+      summary.append(document.createTextNode(r.context_evidence.fact_text));
+      proof.append(summary);
+      try {
+        const source = new URL(r.context_evidence.source_url);
+        if (source.protocol === "https:" && source.hostname === "namu.wiki"
+            && source.pathname.startsWith("/w/") && !source.username
+            && !source.password && (!source.port || source.port === "443")) {
+          const link = makeEl("a", "resultcontextsource", "원문");
+          link.href = source.href;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.addEventListener("click", (event) => event.stopPropagation());
+          proof.append(link);
+        }
+      } catch (_) { /* 출처 주소가 유효하지 않으면 링크를 생략한다. */ }
+      text.append(proof);
+    }
     li.append(text);
 
     /*

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from src.retrieval import timing
 from src.backend.schemas.search import MatchingTrack
@@ -85,6 +85,34 @@ class SearchService:
             youtube_url=metadata.get("youtube_url"),
             cover_url=metadata.get("cover_url"),
         )
+
+    def fetch_tracks_by_ids(self, song_ids: Sequence[str]) -> Dict[str, MatchingTrack]:
+        """Get canonical Text-index metadata for Context-only candidates.
+
+        Missing points or missing titles are omitted. A Context profile title
+        must never stand in for metadata from the indexed song catalogue.
+        """
+        if not song_ids:
+            return {}
+        response = self.text_idx.fetch(ids=list(song_ids), namespace=NAMESPACE)
+        vectors = _get(response, "vectors", {}) or {}
+        tracks: Dict[str, MatchingTrack] = {}
+        for song_id in song_ids:
+            item = _get(vectors, str(song_id))
+            if item is None:
+                continue
+            metadata = _get(item, "metadata", {}) or {}
+            if (
+                not isinstance(metadata, Mapping)
+                or not str(metadata.get("title") or "").strip()
+            ):
+                continue
+            track = self.track_from_match({
+                "id": str(song_id), "score": 0.0, "metadata": metadata,
+            })
+            if track.title != "Unknown":
+                tracks[track.id] = track
+        return tracks
 
     def search_text(
         self,
