@@ -20,6 +20,73 @@ class ModalityQueryValidationError(ValueError):
     """Raised when a generated embedding prompt violates modality boundaries."""
 
 
+# Literal lyric words remain Text evidence even if they name a mood,
+# instrument or album picture. Mask locally attributed lyric spans only.
+# Preserve offsets for Context's artwork gate; the original query is retained.
+_LYRIC_QUOTATION_RE = re.compile(
+    r'"[^"]*"|“[^”]*”|‘[^’]*’|「[^」]*」|『[^』]*』|`[^`]+`|'
+    r"(?<!\w)'(?:[^']|(?<=[A-Za-z])'(?=[A-Za-z]))*'(?![A-Za-z0-9])"
+)
+_LYRIC_QUOTE_PREFIX_RE = re.compile(
+    r"(?:가사|가삿말|노랫말|후렴(?:구)?)"
+    r"[^\"'“”‘’「」『』`.,;!?。！？\n]{0,28}$"
+)
+_LYRIC_QUOTE_SUFFIX_RE = re.compile(
+    r"^\s*(?:(?:이)?라는|(?:이)?라고|같은|비슷한|이런)?\s*"
+    r"(?:가사|가삿말|노랫말|구절)"
+)
+_SUNG_QUOTE_SUFFIX_RE = re.compile(
+    r"^\s*(?:(?:이)?라는|(?:이)?라고|하고)?\s*"
+    r"(?:가사|구절|말|나오|나와|나왔|들리|들렸|반복)"
+)
+_LYRIC_QUOTE_GAP_RE = re.compile(r"^[\s,，/]*(?:(?:와|과|또는|그리고|및|또)[\s,，/]*)?$")
+_SEPARATE_DESCRIPTOR_RE = re.compile(
+    r"보컬|목소리|음색|반주|템포|리듬|음질|표지|커버|자켓|재킷|색감|곡명|제목"
+)
+_NEGATED_LYRIC_ATTRIBUTION_RE = re.compile(r"아닌|아니라|아니고|말고|대신")
+_UNQUOTED_LYRIC_RE = re.compile(
+    r"(?:가사|가삿말|노랫말|후렴(?:구)?)(?:에는|에서|에|이|가|은|는)\s*"
+    r"(?P<phrase>[^\"'“”‘’「」『』`.,;!?。！？\n]{2,180}?)\s*"
+    r"(?:이라는|이라고|라고|라는|하고)\s*"
+    r"(?:말|가사|가삿말|노랫말|구절|부분|소리|나오|나와|나왔|들리|들렸)"
+)
+_LYRIC_FRAGMENT_BEFORE_RE = re.compile(
+    r"(?:^|[.,;!?。！？\n]\s*)(?P<phrase>[^\"'“”‘’「」『』`.,;!?。！？\n]{2,160}?)\s*"
+    r"(?:이라는|라는)\s*(?:가사|가삿말|노랫말|구절)"
+)
+_LYRIC_LINE_HEADER_RE = re.compile(
+    r"(?:^|\n)\s*(?:가사|가삿말|노랫말)\s*[:：]\s*"
+    r"(?P<phrase>[^\n]+?)(?=\s+(?:보컬|반주|음향|표지|앨범|커버)\s*[:：]|\n|$)"
+)
+
+
+def _mask_lyric_literals(query: str) -> str:
+    text = str(query or "")
+    spans: list[tuple[int, int]] = []
+    active_end: int | None = None
+    for quote in _LYRIC_QUOTATION_RE.finditer(text):
+        prefix = _LYRIC_QUOTE_PREFIX_RE.search(text[:quote.start()])
+        direct = (prefix is not None
+                  and _SEPARATE_DESCRIPTOR_RE.search(prefix.group()) is None
+                  and _NEGATED_LYRIC_ATTRIBUTION_RE.search(prefix.group()) is None)
+        if direct and prefix.group().startswith("후렴") and not re.search(r"가사|가삿말|노랫말", prefix.group()):
+            # A quoted chorus sound is not a lyric without a sung-words predicate.
+            direct = _SUNG_QUOTE_SUFFIX_RE.search(text[quote.end():]) is not None
+        continued = (active_end is not None
+                     and _LYRIC_QUOTE_GAP_RE.fullmatch(text[active_end:quote.start()]) is not None)
+        if direct or continued or _LYRIC_QUOTE_SUFFIX_RE.search(text[quote.end():]):
+            spans.append(quote.span())
+            active_end = quote.end()
+        else:
+            active_end = None
+    for pattern in (_UNQUOTED_LYRIC_RE, _LYRIC_FRAGMENT_BEFORE_RE, _LYRIC_LINE_HEADER_RE):
+        spans.extend(match.span("phrase") for match in pattern.finditer(text))
+    masked = list(text)
+    for start, end in spans:
+        masked[start:end] = [c if c in "\r\n" else " " for c in text[start:end]]
+    return "".join(masked)
+
+
 # 리메이크를 뜻하는 "커버곡 / 커버 노래 / 커버 버전"을 표지 단서에서 제외한다.
 # 단독 "커버"에만 적용한다 — "앨범 커버"는 앞의 '앨범'이 이미 표지를 확정하므로
 # 뒤에 노래/곡/음원이 와도("빨간 앨범 커버 노래") 표지 질의로 봐야 한다.
@@ -163,7 +230,7 @@ def _find_album_cover_context(text: str) -> re.Match[str] | None:
 def explicit_artwork_reference_start(query: str) -> int | None:
     """Return a literal artwork offset, ignoring negation and cover events."""
     text = _NEGATED_COVER_CONTEXT_RE.sub(
-        lambda match: " " * len(match.group()), str(query or ""),
+        lambda match: " " * len(match.group()), _mask_lyric_literals(query),
     )
     match = _find_album_cover_context(text)
     return match.start() if match else None
@@ -698,7 +765,7 @@ def has_explicit_visual_clue(query: str) -> bool:
     The public name is kept for compatibility.  "Explicit" includes a detailed
     static artwork description whose cover noun is naturally omitted.
     """
-    text = str(query or "")
+    text = _mask_lyric_literals(query)
     positive_text = _NEGATED_COVER_CONTEXT_RE.sub("", text)
     if has_explicit_artwork_reference(positive_text):
         return True
@@ -733,7 +800,7 @@ def extract_audio_evidence_text(query: str) -> str:
     Korean connective endings, and any non-cover remainder with explicit music
     context is preserved.
     """
-    text = _UNREALIZED_PERFORMANCE_PLAN_RE.sub("", str(query or ""))
+    text = _UNREALIZED_PERFORMANCE_PLAN_RE.sub("", _mask_lyric_literals(query))
     if not has_explicit_visual_clue(text):
         return _NON_AUDITORY_GENRE_CONTEXT_RE.sub("", text)
 
@@ -1223,7 +1290,7 @@ def build_fallback_modality_queries(
     performance_clues: object = None,
 ) -> tuple[str, str]:
     """Build conservative, English modality prompts without an LLM."""
-    text = str(query or "")
+    text = _mask_lyric_literals(query)
     audio_text = extract_audio_evidence_text(text)
     visual_features: list[str] = []
     if has_explicit_visual_clue(text):

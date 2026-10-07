@@ -161,7 +161,7 @@ def test_application_stops_before_writing_when_registration_or_gate_is_wrong(tmp
 
 def response(path="context"):
     ids = [str(index) for index in range(1, 31)]
-    return dict(analysis=dict(original_query="합성 질문", context_clues=[{}] if path == "context" else [],
+    return dict(analysis=dict(original_query="합성 질문", context_clues=[dict(search_query="가상 작품 OST", confidence=.8)] if path == "context" else [],
                               modality_weights={path: 0.4}, **{path + "_english_query": "Synthetic dedicated prompt"}),
                 explain=dict(analysis_fallback=False, failed_paths=[], rerank_calls=0, rerank_calls_applied=0),
                 candidate_ids=ids,
@@ -172,7 +172,7 @@ def response(path="context"):
 
 def case(path="context"):
     return dict(query_id="synthetic", query="합성 질문", required_path=path,
-                expected_targets=["20"] if path == "context" else [], no_context=path != "context")
+                expected_targets=["1"] if path == "context" else [], no_context=path != "context")
 
 
 def request_timing(path="context", query="합성 질문", request_id="synthetic-request"):
@@ -240,14 +240,14 @@ def test_api_smoke_cannot_turn_bad_runtime_behavior_into_a_pass(failure):
             fact["source_url"] = "https://namu.wiki:8443/w/Synthetic"
         body["results"][0]["context_evidence"] = fact
     with pytest.raises(ValueError):
-        check_response(c, body, rejected=rejected)
+        check_response(c, body, rejected=rejected, timing_record=request_timing())
 
 
 def test_optional_none_fact_can_be_omitted_but_step7_schema_is_required():
     body = response()
     for track in body["results"]:
         track.pop("context_evidence")
-    check_response(case(), body)
+    check_response(case(), body, timing_record=request_timing())
     document = {"paths": {"/api/v1/search": {"post": {"responses": {"200": {"content": {
         "application/json": {"schema": {"$ref": "#/components/schemas/Response"}}
     }}}}}}, "components": {"schemas": {
@@ -361,12 +361,17 @@ def test_full_activation_api_sequence_uses_private_observed_cases_and_refills(tm
 
     def fake_search(url, body, **kwargs):
         requests.append(body)
-        assert body["use_rerank"] is False and body["candidate_k"] == 30 and body["top_k"] == 10
+        assert body["use_rerank"] is False and body["candidate_k"] == 30 and body["top_k"] in {10, 30}
         path = body["query"].split()[0]
         if path == "control":
             path = "text_hybrid"
         value = response(path)
         value["analysis"]["original_query"] = body["query"]
+        if body["top_k"] == 30:
+            assert path == "context" and "prior_analysis" in body
+            value["results"].extend(dict(id=sid, title="Synthetic track", context_evidence=None,
+                                         explain=dict(paths=[dict(path=path, delta=.01, rank=1, dropped=False)]))
+                                    for sid in value["candidate_ids"][10:])
         if ((body["query"] == "audio only" and observation == "audio_not_in_top10")
                 or path == "audio" and observation in {"all_audio_not_in_top10", "mixed_audio_only_survives"}):
             for track in value["results"]:
@@ -386,6 +391,9 @@ def test_full_activation_api_sequence_uses_private_observed_cases_and_refills(tm
                 dict(id=5, parent=4, name="audio.embed", run_ms=1., wait_ms=0.),
                 dict(id=6, parent=4, name="audio.query", run_ms=1., wait_ms=0.),
             ])
+        if "prior_analysis" in body:
+            value["analysis"] = body["prior_analysis"]
+            record["attrs"]["analysis_mode"] = "prior"
         if body["query"] == "audio only" and observation == "audio_query_error":
             record["spans"][-1]["error"] = "SyntheticIndexError"
         with log.open("a") as stream:
@@ -399,7 +407,9 @@ def test_full_activation_api_sequence_uses_private_observed_cases_and_refills(tm
     failed = observation in {"audio_query_error", "all_audio_not_in_top10"}
     assert result["status"] == ("failed_api_smoke" if failed else "passed_api_smoke")
     assert len(result["rows"]) == 18
-    assert len(requests) == 18 and "prior_analysis" not in requests[0] and "prior_analysis" in requests[-1]
+    assert len(requests) == 21 and "prior_analysis" not in requests[0] and "prior_analysis" in requests[-1]
+    assert result["primary_checks"] == 18 and result["candidate_probe_requests"] == 3
+    assert result["http_requests"] == 21
     assert result["rows"][-1]["rejected_ids"] == ["1", "2", "3", "4", "5"]
     assert result["setting"] == SETTING
     assert all(row["media_execution"]["verified"] for row in result["rows"]

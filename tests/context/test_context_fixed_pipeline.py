@@ -21,6 +21,13 @@ from src.backend.schemas.query import ContextClue, ModalityWeights, QueryAnalysi
 from tests.context.test_context_fixed_core import independent_rows, row
 
 
+def _review_fixed_router_stub():
+    # This test double represents the actual fixed factory, not a setting override.
+    from src.retrieval.context_search_settings import ContextSearchSettings
+    return SimpleNamespace(**{"_" + name: value
+                              for name, value in ContextSearchSettings().router_arguments().items()})
+
+
 def analysis(query="synthetic query", *, context=False):
     return QueryAnalysis(original_query=query, intent_type="mixed", confidence=0.9,
                          has_visual_clue=True,
@@ -329,7 +336,7 @@ def test_fresh_cache_has_experiment_binding_and_rejects_a_renamed_old_cache(back
 def test_phase_preflight_failure_still_closes_an_opened_client(backend, monkeypatch, tmp_path):
     query = Query("dev1", "dev", "context", "context_context", "context", "query", frozenset({"answer"}))
     monkeypatch.setattr(fixed.old, "_analyses", lambda *a, **k: ({}, "cache"))
-    monkeypatch.setattr(fixed.old, "_corpus", lambda *a: ({"build": "fixed"}, object(), frozenset({"answer"})))
+    monkeypatch.setattr(fixed.old, "_corpus", lambda *a: ({"build": "fixed"}, _review_fixed_router_stub(), frozenset({"answer"})))
     def fail(*_):
         raise ValueError("image target missing")
     monkeypatch.setattr(fixed, "_modality_identity", fail)
@@ -344,7 +351,7 @@ def test_resume_keeps_completed_pairs_and_rejects_a_changed_corpus(backend, monk
     registration = {"phase_counts": {"dev": 2}}
     monkeypatch.setattr(fixed, "fresh_analyses", lambda *a: ({key: object() for key in queries}, "same_cache"))
     identity = {"build": "same"}
-    monkeypatch.setattr(fixed.old, "_corpus", lambda *_: (deepcopy(identity), SimpleNamespace(), frozenset({"answer"})))
+    monkeypatch.setattr(fixed.old, "_corpus", lambda *_: (deepcopy(identity), _review_fixed_router_stub(), frozenset({"answer"})))
     monkeypatch.setattr(fixed.old, "_assert_unchanged", lambda *_: None)
     monkeypatch.setattr(fixed, "_assert_registered_files", lambda *_: None)
     monkeypatch.setattr(fixed, "_modality_identity", lambda *_: {})
@@ -384,7 +391,7 @@ def test_reanalysis_uses_predeclared_groups_and_is_not_added_to_the_independent_
         selected_keys.extend(selected)
         return {key: object() for key in selected}, "cache"
     monkeypatch.setattr(fixed, "fresh_analyses", analyses)
-    monkeypatch.setattr(fixed.old, "_corpus", lambda *_: ({"same": True}, SimpleNamespace(), frozenset({"answer"})))
+    monkeypatch.setattr(fixed.old, "_corpus", lambda *_: ({"same": True}, _review_fixed_router_stub(), frozenset({"answer"})))
     monkeypatch.setattr(fixed.old, "_assert_unchanged", lambda *_: None)
     monkeypatch.setattr(fixed, "_assert_registered_files", lambda *_: None)
     monkeypatch.setattr(fixed, "_modality_identity", lambda *_: {})
@@ -400,7 +407,49 @@ def test_reanalysis_uses_predeclared_groups_and_is_not_added_to_the_independent_
     assert main["evaluated"] == 60 and not result["violations"]
 
 
-def test_existing_regression_failure_prevents_consuming_new_independent_cases(monkeypatch, tmp_path):
+@pytest.mark.parametrize("loss_phase", ("dev", "test", "independent"))
+def test_existing_regression_failure_collects_all_requested_diagnostics_without_approving(monkeypatch, tmp_path, loss_phase):
+    monkeypatch.setenv("SEARCH_REFERENCE_YEAR", "2026")
+    registration = {"fixed": True}
+    monkeypatch.setattr(fixed, "_registration", lambda *a: (registration, {}, {}, {}))
+    phases = []
+    async def measure(phase, *_):
+        phases.append(phase)
+        report = fixed_report([row(phase)], phase="dev" if phase == "independent" else phase, expected=1)
+        report.update(corpus={"same": True}, registration=registration)
+        if phase == loss_phase:
+            report["violations"] = ["synthetic regression loss"]
+        return report
+    monkeypatch.setattr(fixed, "measure_phase", measure)
+    repeated = []
+    async def variation(*args):
+        repeated.append(True)
+        return {"violations": [], "evidence": {"unreviewed_count": 0}}
+    monkeypatch.setattr(fixed, "measure_variation", variation)
+    final = {}
+    monkeypatch.setattr(fixed, "_write_report", lambda *a, **kw: final.update(kw))
+    args = SimpleNamespace(output_dir=tmp_path, new_csv=None, new_audit=None, disclosed_csv=None, phase="all")
+    assert asyncio.run(fixed.run(args)) == 4
+    assert phases == ["dev", "test", "independent"]
+    assert repeated == [True]
+    assert final["status"] == "blocked"
+
+
+def test_missing_existing_split_reports_prevents_additional_analysis(monkeypatch, tmp_path):
+    monkeypatch.setenv("SEARCH_REFERENCE_YEAR", "2026")
+    monkeypatch.setattr(fixed, "_registration", lambda *a: ({"fixed": True}, {}, {}, {}))
+    async def unexpected(*args):
+        pytest.fail("Additional analysis must wait for complete existing split reports")
+    monkeypatch.setattr(fixed, "measure_phase", unexpected)
+    monkeypatch.setattr(fixed, "measure_variation", unexpected)
+    final = {}
+    monkeypatch.setattr(fixed, "_write_report", lambda *a, **kw: final.update(kw))
+    args = SimpleNamespace(output_dir=tmp_path, new_csv=None, new_audit=None, disclosed_csv=None, phase="independent")
+    assert asyncio.run(fixed.run(args)) == 4
+    assert final["status"] == "blocked_before_independent"
+
+
+def test_corpus_change_stops_diagnostics_before_the_next_split(monkeypatch, tmp_path):
     monkeypatch.setenv("SEARCH_REFERENCE_YEAR", "2026")
     registration = {"fixed": True}
     monkeypatch.setattr(fixed, "_registration", lambda *a: (registration, {}, {}, {}))
@@ -408,15 +457,14 @@ def test_existing_regression_failure_prevents_consuming_new_independent_cases(mo
     async def measure(phase, *_):
         phases.append(phase)
         report = fixed_report([row(phase)], phase=phase, expected=1)
-        report.update(corpus={"same": True}, registration=registration)
-        if phase == "test":
-            report["violations"] = ["synthetic regression loss"]
+        report.update(corpus={"identity": phase}, registration=registration)
         return report
     monkeypatch.setattr(fixed, "measure_phase", measure)
+    monkeypatch.setattr(fixed, "_write_report", lambda *a, **kw: None)
     args = SimpleNamespace(output_dir=tmp_path, new_csv=None, new_audit=None, disclosed_csv=None, phase="all")
-    assert asyncio.run(fixed.run(args)) == 4
+    with pytest.raises(ValueError, match="corpus or modality content changed"):
+        asyncio.run(fixed.run(args))
     assert phases == ["dev", "test"]
-    assert fixed.old._read(tmp_path / "validation_report.json")["status"] == "blocked_before_independent"
 
 
 def test_corpus_lock_prevents_new_queries_after_same_count_index_content_changes(tmp_path):

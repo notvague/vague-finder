@@ -318,7 +318,9 @@ def context_path_weight(
 
 def is_media_usage_relation(relation: str) -> bool:
     return bool(_NAMED_MEDIA_RELATION.search(relation) or re.search(
-        r"등장곡|로고송|선거송|사운드\s*트랙|게임\s*음악", relation, re.I,
+        r"등장곡|로고송|선거송|사운드\s*트랙|게임\s*음악|"
+        r"(?<![가-힣])(?:쓰인|쓰였(?:던)?|쓰이는|쓰여|사용(?:된|한|했|됐)?|"
+        r"활용(?:된|한|됐)|나온|나오던|흘러)(?![가-힣])", relation, re.I,
     ))
 
 
@@ -350,6 +352,11 @@ def has_specific_media_target(clue: object, *, original_query: str | None = None
     )
     if not target or not _grounded_target(target, source):
         return False
+    if target in _NONENTITY_TARGETS or target.casefold() in {
+        "애니", "게임", "방송", "광고", "뮤지컬", "ost", "bgm", "오에스티",
+        "삽입곡", "배경음악", "주제가", "테마곡", "노래", "음악", "곡",
+    }:
+        return False
     if re.fullmatch(
         r"(?:봄|여름|가을|겨울|청춘|사극|추억|옛날|유명한)\s*"
         r"(?:드라마|영화|애니(?:메이션)?|게임|예능)", target,
@@ -369,13 +376,15 @@ def context_media_description_requires_support(clue: object) -> bool:
     if (not is_media_usage_relation(str(getattr(clue, "relation", "")))
             or has_specific_media_target(clue)):
         return False
-    terms = [term.casefold() for term in re.findall(
+    terms = [re.sub(r"(?:에서|에는|의|에)$", "", term.casefold()) for term in re.findall(
         r"[가-힣A-Za-z0-9]+", str(getattr(clue, "search_query", "")),
     )]
     enumeration = {
         "드라마", "영화", "애니", "애니메이션", "게임", "예능", "프로그램",
         "ost", "bgm", "오에스티", "삽입곡", "배경음악", "주제가", "테마곡",
         "노래", "곡", "음악", "추천", "찾아줘", "사운드트랙",
+        "쓰인", "쓰였던", "쓰이는", "사용된", "사용한", "나온", "나오던",
+        "흘러", "쓰였", "활용된",
     }
     return len(terms) >= 3 and any(term not in enumeration for term in terms)
 
@@ -621,6 +630,7 @@ def _model_only_clues(query: str, model_clues: list[dict], used: set[int], rules
     규칙에 없는 외부 사용 표현을 허용하되, 모델만의 상식이나 앨범·가사 묘사를
     근거로 새 검색 경로가 열리지 않도록 관계·검색어·대상을 한 절에서 확인한다.
     """
+    from src.retrieval.context_clue_specificity import preserve_context_media_search
     source = normalize_cover_performance_spacing(query)
     spans = [part.strip() for part in re.split(r"[,，\n]+|(?<![A-Za-z0-9])\.(?=\s|$)", source)]
     extras: list[dict] = []
@@ -671,7 +681,11 @@ def _model_only_clues(query: str, model_clues: list[dict], used: set[int], rules
             extras.append({
                 "target": target,
                 "relation": relation if _grounded(relation, span) else cue.group("verb"),
-                "search_query": search,
+                "search_query": preserve_context_media_search(
+                    search, source_query=span,
+                    relation=relation if _grounded(relation, span) else cue.group("verb"),
+                    target=target,
+                ),
                 "confidence": min(confidence, 0.5),
             })
             break
@@ -680,6 +694,7 @@ def _model_only_clues(query: str, model_clues: list[dict], used: set[int], rules
 
 def apply_context_query_safeguards(query: str, raw: dict) -> dict:
     """명시된 외부 사건만 Context 단서로 보존하며 fallback도 제공한다."""
+    from src.retrieval.context_clue_specificity import preserve_context_media_search
     enriched = dict(raw)
     rules = _rule_clues(query)
     model_clues = enriched.get("context_clues") or []
@@ -729,7 +744,7 @@ def apply_context_query_safeguards(query: str, raw: dict) -> dict:
             if search and len(search) <= 400 and _grounded(
                 search, span, allow_search_words=True,
             ):
-                rule["search_query"] = search
+                rule["search_query"] = preserve_context_media_search(search, source_query=rule["search_query"], relation=rule["relation"], target=rule["target"])
                 accepted = True
             try:
                 model_confidence = float(chosen.get("confidence"))

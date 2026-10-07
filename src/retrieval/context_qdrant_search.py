@@ -72,6 +72,9 @@ class ContextProfileHit:
     score: float
     title: str
     artists: tuple[str, ...]
+    # Existing v1 payload terms provide a literal work anchor for retrieval,
+    # never a sentence that can be presented as fact evidence.
+    sparse_terms: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -387,12 +390,16 @@ class ContextQdrantSearch:
         results = []
         for hit in hits:
             payload = self._payload(hit, snapshot, "context_song_profile")
+            terms = payload.get("sparse_terms", [])
+            if not isinstance(terms, list) or any(not isinstance(term, str) for term in terms):
+                raise RuntimeError("context profile has invalid sparse terms")
             results.append(ContextProfileHit(
                 song_id=_required(payload, "song_id"),
                 profile_id=_required(payload, "profile_id"),
                 score=float(hit.score),
                 title=str(payload.get("title") or ""),
                 artists=_artists(payload),
+                sparse_terms=tuple(terms),
             ))
         return tuple(results)
 

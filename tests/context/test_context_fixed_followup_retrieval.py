@@ -32,7 +32,7 @@ def clue(query, *, target="", relation="삽입곡·배경음악", confidence=0.8
                        search_query=query, confidence=confidence)
 
 
-def route(cue, text=None, *, category="media_usage", sid="fictional"):
+def route(cue, text=None, *, category="media_usage", sid="fictional", sparse_terms=()):
     fact = None if text is None else ContextFactHit(
         sid, f"nw:{sid}:synthetic", 0.7, text, "https://namu.wiki/w/fictional",
         "가상 곡", ("가상 가수",), category, "여담", "ok", (0,),
@@ -40,7 +40,7 @@ def route(cue, text=None, *, category="media_usage", sid="fictional"):
     fused = ContextFusedSongHit(
         sid, 0.02, 1 if fact else None, 1,
         ContextDenseSongHit(sid, fact.score, fact) if fact else None,
-        ContextProfileHit(sid, f"nws:{sid}", 0.2, "임시 제목", ()),
+        ContextProfileHit(sid, f"nws:{sid}", 0.2, "임시 제목", (), sparse_terms),
         (fact,) if fact else (),
     )
     return ContextRouteHit(sid, 0.01, cue, fused)
@@ -142,7 +142,7 @@ def test_a_production_fact_cannot_bypass_an_unsupported_media_description():
     clue("가상 작품 OST", target="가상 작품"),
 ])
 def test_broad_or_named_or_non_media_queries_keep_sparse_only_candidates(cue):
-    hit = route(cue)
+    hit = route(cue, sparse_terms=("가상_작품",))
     assert context_candidate_matches_media_description(hit, query_clues=[cue])
     assert context_evidence_for_result(hit, query_clues=[cue]) is None
 

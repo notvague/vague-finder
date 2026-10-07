@@ -16,8 +16,10 @@ from urllib.parse import urlsplit
 
 from src.backend.schemas.query import ContextClue
 from src.retrieval.context_query import (
-    context_media_description_requires_support, is_media_usage_relation,
+    context_media_description_requires_support, context_media_target_terms,
+    is_media_usage_relation,
 )
+from src.retrieval.context_media_match import media_name_in_text
 
 if TYPE_CHECKING:
     from src.backend.schemas.search import ContextEvidence
@@ -321,7 +323,10 @@ def _related(clue: ContextClue, fact: ContextFactHit, song_id: str) -> bool:
         return False
 
     relation = clue.relation.strip()
-    family = next((item for item in _FAMILIES if item[0].search(relation)), None)
+    # Grounded model-only relations can retain the user's verb ("쓰인",
+    # "나온", ...). They must receive the same media checks as an OST label.
+    family_relation = "다른 작품에 사용" if is_media_usage_relation(relation) else relation
+    family = next((item for item in _FAMILIES if item[0].search(family_relation)), None)
     if family is None or fact.category not in family[1]:
         return False
     text = unicodedata.normalize("NFKC", fact.fact_text)
@@ -389,21 +394,42 @@ def _related(clue: ContextClue, fact: ContextFactHit, song_id: str) -> bool:
 def context_candidate_matches_media_description(
     hit: ContextRouteHit, *, query_clues: Sequence[ContextClue],
 ) -> bool:
-    """Gate promotion for an unresolved media description, not for all facts.
+    """Gate media promotion against its literal work or remembered details.
 
     Sparse-only hits remain useful for other queries. They cannot substantiate
     a qualified description of an unnamed work or independently add an OST
     vote to an unrelated production fact. No new index request is made here.
     """
-    required = [clue for clue in query_clues if clue.confidence > 0
-                and context_media_description_requires_support(clue)]
-    if not required:
-        return True
     snapshots = (hit.fused_hit, *(fused for _, fused in hit.alternatives))
     facts = {fact.record_id: fact
              for fused in snapshots if fused.song_id == hit.song_id
              and fused.dense_song is not None
              for fact in (fused.dense_facts or (fused.dense_song.best_fact,))}
+    required = [clue for clue in query_clues if clue.confidence > 0
+                and context_media_description_requires_support(clue)]
+    # A named-work query may retain Sparse-only recall, but only when that
+    # same song's retrieved profile actually includes the supplied name.
+    # Matching a generic OST token is insufficient. A Dense sentence can
+    # supply the anchor too; it still needs _related() before being displayed.
+    for clue in query_clues:
+        if clue.confidence <= 0:
+            continue
+        names = context_media_target_terms(clue)
+        if not names:
+            continue
+        profile_terms = (
+            term for fused in snapshots if fused.song_id == hit.song_id
+            and getattr(fused, "sparse_profile", None) is not None
+            and fused.sparse_profile.song_id == hit.song_id
+            for term in getattr(fused.sparse_profile, "sparse_terms", ())
+        )
+        anchored = any(media_name_in_text(name, term) for term in profile_terms for name in names)
+        if not anchored:
+            anchored = any(media_name_in_text(name, fact.fact_text)
+                           for fact in facts.values() if fact.song_id == hit.song_id
+                           for name in names)
+        if not anchored:
+            return False
     return all(any(_related(clue, fact, hit.song_id) for fact in facts.values())
                for clue in required)
 

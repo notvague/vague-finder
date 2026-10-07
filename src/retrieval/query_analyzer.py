@@ -574,10 +574,17 @@ Query: "남녀가 같이 부르는 노래인데 가사에서 아파운더웨이�
 }}
 
 Context examples (other fields follow the output schema above):
-- "짱구 애니메이션에서 나미리 선생님이 울 때 나온 노래" ->
-  context_clues=[{{"target":"짱구","relation":"애니메이션에서 나온",
-  "search_query":"짱구 애니메이션에서 나미리 선생님이 울 때 나온 노래","confidence":0.8}}]
-- "앨범 표지에 애니메이션 장면, 가사에 짱구라는 말" -> context_clues=[]
+The following work is fictional and illustrates the schema only; it is not a song fact.
+Only use people, works and scene details actually mentioned in the user's query.
+Do not add a character, scene, song title or answer from an example to another query.
+When the user recalls an unnamed work, retain the supplied scene, era and singer
+constraints in its Context search_query. Do not reduce that memory to a broad
+category such as "drama OST". Keep independent artwork and waveform clues in
+their dedicated fields; do not invent a work name or a missing answer.
+- "가상 작품 A에서 주인공이 떠나는 장면에 나온 노래" ->
+  context_clues=[{{"target":"가상 작품 A","relation":"삽입곡·배경음악",
+  "search_query":"가상 작품 A에서 주인공이 떠나는 장면에 나온 노래","confidence":0.8}}]
+- "앨범 표지에 만화 그림이 있고 가사에 주인공이라는 말이 있어" -> context_clues=[]
 
 Now analyze:
 Query: "{query}"

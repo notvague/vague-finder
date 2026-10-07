@@ -234,6 +234,13 @@ def test_sparse_profiles_feed_song_candidates_without_becoming_fact_evidence(
     assert candidates.dense_songs[0].best_fact in candidates.dense_facts
     assert {hit.song_id for hit in candidates.sparse_songs} == {"101", "202"}
     assert all(hit.profile_id and hit.title and hit.artists for hit in candidates.sparse_songs)
+    stored, _ = qdrant.client.scroll(
+        "vaguefinder-context-sparse-bm25__test", limit=10,
+        with_payload=True, with_vectors=False,
+    )
+    stored_terms = {str(row.payload["song_id"]): tuple(row.payload["sparse_terms"]) for row in stored}
+    assert all(hit.sparse_terms and hit.sparse_terms == stored_terms[hit.song_id]
+               for hit in candidates.sparse_songs)
     assert any(
         hit.song_id not in {dense.song_id for dense in candidates.dense_songs}
         for hit in candidates.sparse_songs
@@ -255,6 +262,25 @@ def test_sparse_profiles_feed_song_candidates_without_becoming_fact_evidence(
     empty = searcher.search_song_candidates("  ", fact_k=1, sparse_k=2)
     assert empty.dense_songs == empty.sparse_songs == ()
     assert searcher.search_fused_songs("  ") == ()
+
+
+@pytest.mark.parametrize("terms", ("ost", {"word": 1}, [None], [42]))
+def test_invalid_stored_profile_terms_fail_clearly_instead_of_becoming_media_evidence(tmp_path, qdrant, terms):
+    from src.retrieval.context_qdrant_search import ContextQdrantSearch
+
+    sources = _sources(tmp_path)
+    loaded = _load(tmp_path, sources, qdrant)
+    qdrant.client.set_payload(
+        collection_name=loaded["sparse_alias"],
+        payload={"sparse_terms": terms}, points=models.Filter(must=[]),
+    )
+    searcher = ContextQdrantSearch(
+        qdrant, namespace="test", dense_dir=sources[1], sparse_dir=sources[2],
+        state_manifest=tmp_path / "state.json", text_embedder=FakeEmbedder(),
+        hash_fn=_hash, expected_dense_dim=4,
+    )
+    with pytest.raises(RuntimeError, match="invalid sparse terms"):
+        searcher.search_sparse_profiles("테스트 프로그램 배경음악", limit=2)
 
 
 def test_song_candidate_boundary_rejects_duplicate_sparse_profiles(monkeypatch):
