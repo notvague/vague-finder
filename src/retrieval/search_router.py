@@ -623,6 +623,22 @@ def _explicit_boost_scale() -> float:
         return 1.0
 
 
+def _attr_boost_scale() -> float:
+    """일반 속성 가산(성별·발매 시기·솔로/그룹 형태·보컬 역할/편성·장르)에만 곱하는 배율. 1.0이 현행.
+
+    **실험 E1′용이다(experiments/reranking/results_v27_boost_scale/RUN_INFO.md).** 가산 전체에 배율을 건
+    E1(`BOOST_SCALE`)은 dev +2 · test −1이었다. 잃은 질의(q310·q111)는 모두 제목 구조·표기 가산에 기대어
+    후보에 들던 곡이고, 얻은 질의는 성별·장르 같은 일반 속성 가산이 경쟁곡 수백 곡을 올린 경우였다.
+    그래서 제목(`title_*`)·아티스트·가사 키워드 가산은 그대로 두고 일반 속성 가산만 줄인다.
+    `BOOST_SCALE`과 곱으로 함께 작용한다.
+    """
+    raw = os.getenv("ATTR_BOOST_SCALE", "").strip()
+    try:
+        return max(0.0, float(raw)) if raw else 1.0
+    except ValueError:
+        return 1.0
+
+
 def _gender_mismatch_scale() -> float:
     """보컬 성별 불일치 감점에 곱하는 배율. **기본 0 — 감점을 주지 않는다.** 1.0이면 예전 감점.
 
@@ -1808,6 +1824,8 @@ class SearchRouter:
             if clue.kind in {"verbatim", "partial", "phonetic"}
         ]
         boost_unit = (1.0 / (_RRF_K + 1)) * _explicit_boost_scale()
+        # 일반 속성 가산 전용 단위. 제목·아티스트·가사 가산은 boost_unit을 그대로 쓴다.
+        attr_unit = boost_unit * _attr_boost_scale()
         gender_mismatch_scale = _gender_mismatch_scale()
         want_title = _norm(analysis.song_title)
         want_artist = _norm(analysis.artist_name)
@@ -1932,13 +1950,13 @@ class SearchRouter:
                     actual_gender = str(track.vocal_gender).strip()
 
                     if actual_gender == want_gender:
-                        bump("vocal_gender_match", boost_unit * 1.0, f"{actual_gender}")
+                        bump("vocal_gender_match", attr_unit * 1.0, f"{actual_gender}")
 
                     elif (
                         actual_gender == "혼성"
                         and want_gender in ("남성", "여성")
                     ):
-                        bump("vocal_gender_partial", boost_unit * 0.25, f"{actual_gender}")
+                        bump("vocal_gender_partial", attr_unit * 0.25, f"{actual_gender}")
 
                     elif gender_mismatch_scale <= 0.0:
                         # 불일치 감점 없음(기본). 기록도 남기지 않는다 — 0점 감점을
@@ -1951,7 +1969,7 @@ class SearchRouter:
                     ):
                         bump(
                             "vocal_gender_mismatch",
-                            -(boost_unit * 0.5 * gender_mismatch_scale),
+                            -(attr_unit * 0.5 * gender_mismatch_scale),
                             f"{actual_gender}",
                         )
 
@@ -1961,7 +1979,7 @@ class SearchRouter:
                     } == {"남성", "여성"}:
                         bump(
                             "vocal_gender_mismatch",
-                            -(boost_unit * 1.0 * gender_mismatch_scale),
+                            -(attr_unit * 1.0 * gender_mismatch_scale),
                             f"{actual_gender}",
                         )
 
@@ -1974,7 +1992,7 @@ class SearchRouter:
                 if era_similarity > 0:
                     bump(
                         "release_era",
-                        boost_unit * 1.25 * analysis.release_era.confidence * era_similarity,
+                        attr_unit * 1.25 * analysis.release_era.confidence * era_similarity,
                         f"시기 유사 {era_similarity:.2f}",
                     )
 
@@ -1987,7 +2005,7 @@ class SearchRouter:
                 if artist_type_similarity > 0:
                     bump(
                         "artist_type",
-                        boost_unit * 1.0 * analysis.artist_type.confidence * artist_type_similarity,
+                        attr_unit * 1.0 * analysis.artist_type.confidence * artist_type_similarity,
                         f"형태 유사 {artist_type_similarity:.2f}",
                     )
 
@@ -2000,7 +2018,7 @@ class SearchRouter:
                 if performance_similarity > 0:
                     bump(
                         "performance_clues",
-                        boost_unit * 1.50 * analysis.performance_clues.confidence * performance_similarity,
+                        attr_unit * 1.50 * analysis.performance_clues.confidence * performance_similarity,
                         f"단서 유사 {performance_similarity:.2f}",
                     )
 
@@ -2011,7 +2029,7 @@ class SearchRouter:
                     and track.genre
                     and want_genre in _norm(track.genre)
                 ):
-                    bump("genre_match", boost_unit * 1)
+                    bump("genre_match", attr_unit * 1)
 
             boosted.append((song_id, score))
 
