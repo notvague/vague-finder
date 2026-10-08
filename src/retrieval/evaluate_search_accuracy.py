@@ -27,6 +27,7 @@ from src.backend.api.dependencies import (
     get_search_router,
 )
 from src.backend.schemas.explain import to_track_explain
+from src.eval.relaxed_metrics import top10_path, write_top10
 from src.retrieval.analysis_cache import (
     AnalysisCacheError,
     analyzer_fingerprint,
@@ -1022,6 +1023,8 @@ async def evaluate(args: argparse.Namespace) -> None:
     # 정상 완료 시에도 마지막 상태를 한 번 더 확정 저장한다.
     write_detail_checkpoint(detail_path, detail_rows)
     write_detail_checkpoint(lyric_path, lyric_rows)
+    # detail은 제목·설명 문장이 있어 커밋하지 않는다. 곡 ID만 담은 경량본을 따로 남긴다.
+    write_top10(detail_rows, top10_path(output_dir, suffix))
     if explain_file is not None:
         explain_file.close()
 
@@ -1125,6 +1128,7 @@ async def evaluate(args: argparse.Namespace) -> None:
 
     print()
     print(f"상세 결과: {detail_path}")
+    print(f"top-10 경량본: {top10_path(output_dir, suffix)}")
     print(f"요약 결과: {summary_path}")
     if args.explain:
         print(f"실행 기록: {explain_path}")

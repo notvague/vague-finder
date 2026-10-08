@@ -11,6 +11,14 @@ v07(질의 20개·80곡)과 v08(+2곡)은 v21~v24 측정에서 같은 숫자를 
   python -m src.eval.relaxed_metrics --result-dir experiments/reranking/results_v22_corpus3010
   python -m src.eval.relaxed_metrics --result-dir experiments/reranking/results_v21_ce_topn/scored20_fullnorm --split test
 
+detail은 곡 제목·설명 문장이 들어 있어 커밋하지 않는다. 대신 곡 ID만 담은 top-10 경량본
+(search_eval_{split}_top10.csv)을 커밋한다 — detail이 있으면 이 스크립트가 경량본을 새로 쓰고,
+detail이 없으면 경량본을 읽는다. 측정 때는 evaluate_search_accuracy.py가 함께 쓴다.
+
+범주형 집계: docs/eval/queries.json에서 target_scope=categorical인 질의(질의가 일반 속성만 말해
+원래 타깃을 특정할 수 없는 질의)를 나눠 본 요약을 search_eval_{split}_{tag}_scope_summary.csv로 함께 낸다.
+전체 지표는 바꾸지 않는다 — 범주형 질의도 전체 집계에 그대로 들어간다.
+
 엄격 지표는 원래 측정 요약(search_eval_{split}_summary.csv)과 같아야 한다. 다르면
 detail과 라벨 파일이 어긋난 것이므로 확인하도록 경고한다.
 
@@ -26,9 +34,16 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Set
 
+from src.eval.loader import DEFAULT_EVAL_PATH, load_target_scopes
+from src.eval.schema import TARGET_SCOPES
+
 DEFAULT_LABELS = Path("experiments/reranking/eval_queries_v08.csv")
 KS = (1, 3, 5, 10)
 SYSTEMS = ("baseline", "rerank")
+# top-10 경량본의 열. 곡 ID와 질의 ID만 — 공개 레포에 올려도 되는 범위다(docs/data_policy.md).
+TOP10_COLUMNS = ("query_id", "split", "relevant_ids", "baseline_top_ids", "rerank_top_ids")
+# 범주형 집계의 묶음. all은 원래 요약과 같은 전체 집합이다.
+SCOPES = ("all",) + TARGET_SCOPES
 
 
 def tag_for(labels: Path) -> str:
@@ -61,18 +76,51 @@ def read_csv(path: Path) -> List[dict]:
         return list(csv.DictReader(f))
 
 
-def evaluate(detail: List[dict], labels: Dict[str, dict]) -> tuple[List[dict], List[dict]]:
-    """질의별 행과 요약 행을 돌려준다."""
+def write_csv(path: Path, rows: List[dict]) -> None:
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(rows[0]), lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def top10_path(result_dir: Path, split: str) -> Path:
+    return result_dir / f"search_eval_{split}_top10.csv"
+
+
+def write_top10(detail: List[dict], path: Path) -> None:
+    """detail에서 곡 ID 열만 골라 top-10 경량본을 쓴다."""
+    if detail:
+        write_csv(path, [{col: row[col] for col in TOP10_COLUMNS} for row in detail])
+
+
+def load_result_rows(result_dir: Path, split: str) -> Optional[tuple[List[dict], Path]]:
+    """detail이 있으면 detail을, 없으면 top-10 경량본을 읽는다. 둘 다 없으면 None."""
+    for path in (result_dir / f"search_eval_{split}_detail.csv", top10_path(result_dir, split)):
+        if path.exists():
+            return read_csv(path), path
+    return None
+
+
+def evaluate(
+    detail: List[dict],
+    labels: Dict[str, dict],
+    scopes: Optional[Dict[str, str]] = None,
+) -> tuple[List[dict], List[dict]]:
+    """질의별 행과 요약 행을 돌려준다. scopes를 주면 질의별 행에 target_scope 열을 붙인다."""
     per_query: List[dict] = []
     for row in detail:
         qid = row["query_id"]
         if qid not in labels:
             raise KeyError(f"{qid}: 라벨 파일에 없는 질의 — detail과 라벨의 질의 세트가 다르다")
+        if scopes is not None and qid not in scopes:
+            raise KeyError(f"{qid}: queries.json에 없는 질의 — 범주형 여부를 알 수 없다")
         strict = set(split_ids(labels[qid]["relevant_ids"]))
         if strict != set(split_ids(row["relevant_ids"])):
             raise ValueError(f"{qid}: detail과 라벨 파일의 relevant_ids가 다르다")
         relaxed = strict | set(split_ids(labels[qid].get("allowed_ids")))
         out: dict = {"query_id": qid, "allowed_count": len(relaxed) - len(strict)}
+        if scopes is not None:
+            out["target_scope"] = scopes[qid]
         for system in SYSTEMS:
             top = split_ids(row[f"{system}_top_ids"])
             out[f"{system}_strict_rank"] = first_rank(top, strict) or ""
@@ -82,7 +130,11 @@ def evaluate(detail: List[dict], labels: Dict[str, dict]) -> tuple[List[dict], L
             for name, value in scores(top, relaxed).items():
                 out[f"{system}_relaxed_{name}"] = value
         per_query.append(out)
+    return per_query, summarize(per_query)
 
+
+def summarize(per_query: List[dict]) -> List[dict]:
+    """질의 평균. 질의가 없으면 값을 비운다(0으로 깔지 않는다)."""
     summary: List[dict] = []
     n = len(per_query)
     for name in [f"hit@{k}" for k in KS] + ["mrr@10"]:
@@ -90,9 +142,19 @@ def evaluate(detail: List[dict], labels: Dict[str, dict]) -> tuple[List[dict], L
         for system in SYSTEMS:
             for kind in ("strict", "relaxed"):
                 col = f"{system}_{kind}_{name}"
-                row[f"{system}_{kind}"] = round(sum(q[col] for q in per_query) / n, 6) if n else 0.0
+                row[f"{system}_{kind}"] = round(sum(q[col] for q in per_query) / n, 6) if n else ""
         summary.append(row)
-    return per_query, summary
+    return summary
+
+
+def scope_summary(per_query: List[dict]) -> List[dict]:
+    """범주형 집계 — 전체 · 범주형 제외(specific) · 범주형으로 나눈 요약. evaluate(..., scopes)의 행을 받는다."""
+    rows: List[dict] = []
+    for scope in SCOPES:
+        group = per_query if scope == "all" else [q for q in per_query if q["target_scope"] == scope]
+        for row in summarize(group):
+            rows.append({"scope": scope, "n_queries": len(group), **row})
+    return rows
 
 
 def check_against_original(summary: List[dict], original: Path) -> List[str]:
@@ -114,8 +176,12 @@ def check_against_original(summary: List[dict], original: Path) -> List[str]:
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="저장된 top-10으로 엄격·확장(허용 정답 포함) 지표 재계산")
-    p.add_argument("--result-dir", type=Path, required=True, help="search_eval_{split}_detail.csv가 있는 폴더")
+    p.add_argument(
+        "--result-dir", type=Path, required=True,
+        help="search_eval_{split}_detail.csv 또는 search_eval_{split}_top10.csv가 있는 폴더",
+    )
     p.add_argument("--labels", type=Path, default=DEFAULT_LABELS, help="allowed_ids 열이 있는 질의 CSV")
+    p.add_argument("--queries", type=Path, default=DEFAULT_EVAL_PATH, help="target_scope를 읽을 질의 원본")
     p.add_argument("--split", action="append", choices=["dev", "test"], help="생략하면 dev·test 둘 다")
     return p
 
@@ -126,27 +192,27 @@ def main() -> None:
     tag = tag_for(args.labels)
     if not any("allowed_ids" in r for r in labels.values()):
         raise SystemExit(f"{args.labels}에 allowed_ids 열이 없다 — export_csv --with-allowed로 만든 파일을 쓸 것")
+    scopes = load_target_scopes(args.queries)
 
     for split in args.split or ["dev", "test"]:
-        detail_path = args.result_dir / f"search_eval_{split}_detail.csv"
-        if not detail_path.exists():
-            print(f"[{split}] detail 없음: {detail_path} — 건너뜀")
+        loaded = load_result_rows(args.result_dir, split)
+        if loaded is None:
+            print(f"[{split}] detail도 top-10 경량본도 없음: {args.result_dir} — 건너뜀")
             continue
-        per_query, summary = evaluate(read_csv(detail_path), labels)
+        rows, source = loaded
+        if source != top10_path(args.result_dir, split):
+            write_top10(rows, top10_path(args.result_dir, split))
+        per_query, summary = evaluate(rows, labels, scopes)
 
         summary_path = args.result_dir / f"search_eval_{split}_{tag}_summary.csv"
-        with open(summary_path, "w", encoding="utf-8", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=list(summary[0]))
-            writer.writeheader()
-            writer.writerows(summary)
-        ranks_path = args.result_dir / f"search_eval_{split}_{tag}_ranks.csv"
-        with open(ranks_path, "w", encoding="utf-8", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=list(per_query[0]))
-            writer.writeheader()
-            writer.writerows(per_query)
+        write_csv(summary_path, summary)
+        write_csv(args.result_dir / f"search_eval_{split}_{tag}_ranks.csv", per_query)
+        by_scope = scope_summary(per_query)
+        scope_path = args.result_dir / f"search_eval_{split}_{tag}_scope_summary.csv"
+        write_csv(scope_path, by_scope)
 
         with_allowed = sum(1 for q in per_query if q["allowed_count"])
-        print(f"[{split}] 질의 {len(per_query)}개 (허용 정답 있는 질의 {with_allowed}개) — {summary_path}")
+        print(f"[{split}] 질의 {len(per_query)}개 (허용 정답 있는 질의 {with_allowed}개, 입력 {source.name}) — {summary_path}")
         print(f"  {'지표':<8}{'baseline 엄격':>14}{'확장':>8}{'rerank 엄격':>14}{'확장':>8}")
         for row in summary:
             print(f"  {row['metric']:<8}{row['baseline_strict']:>14.4f}{row['baseline_relaxed']:>8.4f}"
@@ -157,6 +223,12 @@ def main() -> None:
         if moved:
             print("  허용 정답이 원래 타깃보다 먼저 나온 질의(rerank): "
                   + ", ".join(f"{q['query_id']}({q['rerank_strict_rank'] or '밖'}→{q['rerank_relaxed_rank']})" for q in moved))
+        print(f"  범주형 집계 (rerank Hit@10 엄격 · 확장) — {scope_path.name}")
+        for row in by_scope:
+            if row["metric"] == "Hit@10":
+                cell = (f"{row['rerank_strict']:.4f} · {row['rerank_relaxed']:.4f}"
+                        if row["n_queries"] else "질의 없음")
+                print(f"    {row['scope']:<12}{row['n_queries']:>3}개  {cell}")
 
 
 if __name__ == "__main__":

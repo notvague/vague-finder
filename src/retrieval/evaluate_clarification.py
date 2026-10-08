@@ -62,6 +62,13 @@ Oracle과 Noisy를 반드시 나눠 본다. Oracle만 제시하면 과대평가�
       --analysis-cache experiments/reranking/analysis_cache_v06_dev.json \\
       --output-dir experiments/reranking/results_clarify_vNN
   python -m src.retrieval.evaluate_clarification --split dev --limit 3   # 스모크
+  python -m src.retrieval.evaluate_clarification --resummarize \\
+      --output-dir experiments/reranking/results_clarify_v08          # 요약만 다시 (모델·DB 없음)
+
+범주형 집계
+    docs/eval/queries.json에서 target_scope=categorical인 질의(질의가 일반 속성만 말해 원래 타깃을
+    특정할 수 없는 질의)를 나눠 본 요약을 clarify_summary_by_scope.csv로 함께 낸다. 전체 지표는
+    바꾸지 않는다 — 범주형 질의도 전체 집계(clarify_summary.csv)에 그대로 들어간다.
 """
 from __future__ import annotations
 
@@ -99,8 +106,8 @@ from src.backend.schemas.search import (
     ClarifyQuestion,
     MatchingTrack,
 )
-from src.eval.loader import DEFAULT_EVAL_PATH, load_eval_set
-from src.eval.schema import EvalQuery
+from src.eval.loader import DEFAULT_EVAL_PATH, load_eval_set, load_target_scopes
+from src.eval.schema import TARGET_SCOPES, EvalQuery
 from src.retrieval.analysis_cache import (
     AnalysisCacheError,
     analyzer_fingerprint,
@@ -557,6 +564,9 @@ def summarize(
     int_final_relaxed   마지막 화면에 원래 타깃 또는 허용 정답이 있는 비율
     int_relaxed_seen    flow:* 대화 중 한 번이라도 원래 타깃 또는 허용 정답이 보인 비율. 대화는 목표 곡을
                         찾을 때까지 진행하므로, 앞에서 본 허용 정답을 거절하고 지나갔을 수 있다 — 참고값이다
+    n_conv_out_of_candidates
+                        flow:*에서 목표 곡을 찾지 못했고 마지막 검색에서도 후보 30 밖이었던 대화 수(질의 평균이
+                        아니라 대화 수). 답변은 후보 안에서만 순위를 바꾸므로 재질문이 닿지 않는 대화다
     """
 
     def by_query(group: List[dict], value) -> List[float]:
@@ -592,7 +602,7 @@ def summarize(
             "int_hit@10": avg(inter, lambda r: r["hit10"]) if inter else "",
             "int_candidate_recall@30": avg(inter, lambda r: r["candidate_recall"]) if inter else "",
             "int_found_by_turn2": (
-                avg(inter, lambda r: r.get("found_turn") == 2) if inter and is_flow else ""
+                avg(inter, lambda r: str(r.get("found_turn", "")) == "2") if inter and is_flow else ""
             ),
             "int_final_relaxed": (
                 avg(inter, lambda r: r["final_relaxed_hit10"]) if inter and has_relaxed else ""
@@ -601,8 +611,40 @@ def summarize(
                 avg(inter, lambda r: r.get("relaxed_seen_turn") not in ("", None))
                 if inter and is_flow and has_relaxed else ""
             ),
+            "n_conv_out_of_candidates": (
+                sum(1 for r in inter
+                    if r.get("found_turn") in ("", None) and r.get("candidate_rank@30") in ("", None))
+                if inter and is_flow else ""
+            ),
         })
     return out
+
+
+def summarize_by_scope(
+    rows: List[dict],
+    policies: Sequence[str],
+    intervention_ids: set,
+    scopes: Dict[str, str],
+) -> List[dict]:
+    """범주형 집계 — 전체 · 범주형 제외(specific) · 범주형으로 나눠 summarize를 다시 돈다.
+
+    all은 clarify_summary.csv와 같다. 질의가 없는 묶음은 행이 없다.
+    """
+    unknown = sorted({r["query_id"] for r in rows} - set(scopes))
+    if unknown:
+        raise KeyError(f"queries.json에 없는 질의 — 범주형 여부를 알 수 없다: {', '.join(unknown)}")
+    out: List[dict] = []
+    for scope in ("all",) + TARGET_SCOPES:
+        group = [r for r in rows if scope == "all" or scopes[r["query_id"]] == scope]
+        ids = {r["query_id"] for r in group}
+        for row in summarize(group, policies, intervention_ids & ids):
+            out.append({"scope": scope, **row})
+    return out
+
+
+def intervention_ids_from_detail(rows: List[dict]) -> set:
+    """저장된 detail에서 개입 대상을 되찾는다 — reject_only를 실제로 실행한 질의다."""
+    return {r["query_id"] for r in rows if r["policy"] == "reject_only" and str(r["ran"]) == "1"}
 
 
 def write_csv(path: Path, rows: List[dict]) -> None:
@@ -924,14 +966,33 @@ async def evaluate(args: argparse.Namespace) -> None:
         write_csv(args.output_dir / "clarify_detail.csv", detail)
         write_csv(args.output_dir / "clarify_turns.csv", turn_rows)
 
-    summary = summarize(detail, POLICY_ORDER, intervention_ids)
-    write_csv(args.output_dir / "clarify_summary.csv", summary)
+    summary, by_scope = write_summaries(
+        args.output_dir, detail, intervention_ids, {q.query_id: q.target_scope for q in queries},
+    )
 
     elapsed = time.perf_counter() - started
     from src.retrieval.clarify import ANSWER_MATCH_MULTIPLIER
     weight = args.answer_multiplier if args.answer_multiplier is not None else ANSWER_MATCH_MULTIPLIER
     print(f"\n질의 {len(queries)}개 · 개입 대상 {len(intervention_ids)}개 · "
           f"답변 보너스 ×{weight} · {elapsed:.0f}초")
+    print_summaries(args.output_dir, summary, by_scope, intervention_ids)
+    print(f"상세: {args.output_dir / 'clarify_detail.csv'}")
+    print(f"턴별: {args.output_dir / 'clarify_turns.csv'}")
+
+
+def write_summaries(
+    output_dir: Path, detail: List[dict], intervention_ids: set, scopes: Dict[str, str],
+) -> Tuple[List[dict], List[dict]]:
+    summary = summarize(detail, POLICY_ORDER, intervention_ids)
+    write_csv(output_dir / "clarify_summary.csv", summary)
+    by_scope = summarize_by_scope(detail, POLICY_ORDER, intervention_ids, scopes)
+    write_csv(output_dir / "clarify_summary_by_scope.csv", by_scope)
+    return summary, by_scope
+
+
+def print_summaries(
+    output_dir: Path, summary: List[dict], by_scope: List[dict], intervention_ids: set,
+) -> None:
     print(f"개입 대상: {', '.join(sorted(intervention_ids)) or '없음'}\n")
 
     header = (f"{'정책':<18}{'실행':>5}{'전체 Hit@10':>12}{'개입 Hit@10':>12}"
@@ -943,9 +1004,31 @@ async def evaluate(args: argparse.Namespace) -> None:
               f"{str(row['int_hit@10']):>12}{str(row['int_candidate_recall@30']):>13}"
               f"{str(row['int_found_by_turn2']):>8}{str(row['int_final_relaxed']):>12}"
               f"{str(row['int_relaxed_seen']):>12}")
-    print(f"\n상세: {args.output_dir / 'clarify_detail.csv'}")
-    print(f"턴별: {args.output_dir / 'clarify_turns.csv'}")
-    print(f"요약: {args.output_dir / 'clarify_summary.csv'}")
+
+    print("\n범주형 집계 — 개입 대상에서 3턴 안에 목표 곡을 본 비율 · 끝까지 후보 밖인 대화 수")
+    for row in by_scope:
+        if row["policy"] in FLOW_POLICIES and row["n_intervention"]:
+            print(f"  {row['scope']:<12}{row['policy']:<14}개입 {row['n_intervention']:>2} · "
+                  f"3턴 안 {row['int_hit@10']:<6} · 대화 {row['n_conversations']:>2} 중 후보 밖 "
+                  f"{row['n_conv_out_of_candidates']}")
+    print(f"\n요약: {output_dir / 'clarify_summary.csv'}")
+    print(f"범주형 집계: {output_dir / 'clarify_summary_by_scope.csv'}")
+
+
+def resummarize(args: argparse.Namespace) -> None:
+    """이미 잰 clarify_detail.csv로 요약 두 개를 다시 쓴다. 모델·DB를 올리지 않는다."""
+    detail_path = args.output_dir / "clarify_detail.csv"
+    with detail_path.open(encoding="utf-8") as f:
+        detail = list(csv.DictReader(f))
+    if not detail:
+        raise ValueError(f"detail이 비어 있다: {detail_path}")
+    intervention_ids = intervention_ids_from_detail(detail)
+    summary, by_scope = write_summaries(
+        args.output_dir, detail, intervention_ids, load_target_scopes(args.queries),
+    )
+    print(f"{detail_path} — 질의 {len({r['query_id'] for r in detail})}개 · "
+          f"개입 대상 {len(intervention_ids)}개 (재집계만)")
+    print_summaries(args.output_dir, summary, by_scope, intervention_ids)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -974,8 +1057,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--labels", default=str(DEFAULT_LABELS),
         help="질의·정답이 같은지 대조할 기준 CSV. 빈 문자열이면 대조하지 않는다",
     )
+    p.add_argument(
+        "--resummarize", action="store_true",
+        help="측정하지 않고 --output-dir의 clarify_detail.csv로 요약(전체·범주형)만 다시 쓴다",
+    )
     return p
 
 
 if __name__ == "__main__":
-    asyncio.run(evaluate(build_parser().parse_args()))
+    _args = build_parser().parse_args()
+    if _args.resummarize:
+        resummarize(_args)
+    else:
+        asyncio.run(evaluate(_args))

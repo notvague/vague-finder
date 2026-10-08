@@ -266,3 +266,22 @@ def test_sparse_passage_keeps_album_context_but_not_namuwiki():
     assert "시청자반응문장" in passage
     assert "나무위키여담문장" not in passage
     assert "나무위키태그" not in passage
+
+
+# ---------------------------------------------------------------------------
+# 범주형 표시 — 표지 질의 진단(results_v25_cover_diag)에서 정한 8건
+# ---------------------------------------------------------------------------
+
+def test_categorical_queries_are_the_general_cover_queries(eval_set) -> None:
+    """질의만으로 원래 타깃을 특정할 수 없는 일반 속성 표지 질의. 바꾸면 범주형 집계 숫자가 바뀐다."""
+    categorical = {q.query_id for q in eval_set.queries if q.target_scope == "categorical"}
+    assert categorical == {"q116", "q117", "m301", "m302", "m303", "m401", "m402", "m403"}
+    assert all(q.is_scorable for q in eval_set.queries if q.query_id in categorical)
+
+
+def test_target_scope_defaults_to_specific() -> None:
+    q = EvalQuery(query_id="x", query="질의", category="mixed", split="dev", query_set="v04", positives=["1"])
+    assert q.target_scope == "specific"
+    with pytest.raises(ValueError):
+        EvalQuery(query_id="x", query="질의", category="mixed", split="dev", query_set="v04",
+                  positives=["1"], target_scope="vague")

@@ -73,6 +73,9 @@ reports/
 !experiments/reranking/results_*/search_eval_*_summary.csv
 # 질의별 순위·지표 경량본도 커밋 — detail 없이도 split 재집계가 재현된다
 !experiments/reranking/results_*/search_eval_*_ranks.csv
+# 질의별 top-10 곡 ID 경량본 — detail 없이 relaxed_metrics(확장 지표·범주형 집계)를 다시 돌린다 (곡 ID만)
+!experiments/reranking/results_*/search_eval_*_top10.csv
+!experiments/reranking/results_*/*/search_eval_*_top10.csv
 # 후보 밖 정답의 단계별 위치·경로 깊이별 후보 포함 기록 (곡 ID와 순위만)
 !experiments/reranking/results_*/candidate_drop_*.csv
 !experiments/reranking/results_*/candidate_depth_sweep_*.csv
