@@ -125,10 +125,50 @@ v23 추적에서 정답이 가장 가까운 경로에서도 82~1,836위였던 �
 - 감점을 줄이면 첫 검색은 나아질 수 있지만, 말한 성별이 맞는 대부분의 질의에서 반대 성별 곡이 올라올 수 있다.
   최초 검색 품질 · 재질문 회복 · 틀린 답의 손해를 함께 재야 정할 수 있다 — 별도 실험으로 남긴다
 
+## 범주형 집계 · 2026-10-08
+
+질의만으로 원래 타깃을 특정할 수 없는 질의(`docs/eval/queries.json` 0.5.4의 `target_scope: "categorical"` —
+표지 진단 `results_v25_cover_diag`의 일반 속성 표지 질의 8건)를 따로 본 요약을 더했다. **다시 재지 않았다** —
+커밋된 `clarify_detail.csv`에서 요약만 다시 계산했다.
+
+```bash
+venv/bin/python -m src.retrieval.evaluate_clarification --resummarize \
+    --output-dir experiments/reranking/results_clarify_v08
+```
+
+`clarify_summary.csv`의 기존 값은 dev · test 모두 한 칸도 바뀌지 않았고, 열 하나(`n_conv_out_of_candidates` —
+목표 곡을 찾지 못했고 마지막 검색에서도 후보 30 밖이었던 대화 수)가 늘었다. 묶음별 요약은 `clarify_summary_by_scope.csv`
+(`all`은 전체 요약과 같다 · `specific`은 범주형 제외 · `categorical`).
+
+개입 대상에서 3턴 안에 목표 곡을 Top-10에서 본 질의 수 (질의 단위, `flow:*`):
+
+| | dev 범주형 제외 (16) | dev 범주형 (5) | test 범주형 제외 (9) | test 범주형 (2) |
+|---|---|---|---|---|
+| `flow:reject` | 9 | 0.58 | 4 | 0.29 |
+| **`flow:oracle`** | **12** | 0.92 | **5** | 0.29 |
+| `flow:noisy` | 6 | 0.25 | 1 | 0 |
+| 대화 수 | 16 | 19 | 9 | 8 |
+| 끝까지 후보 밖인 대화 | 3 | 16 | 4 | 6 |
+
+범주형 묶음이 소수인 것은 복수 정답 질의(m302 · m303 · m402 · m403 · q117, test q116)의 목표 곡별 평균이라서다.
+
+**읽는 법**
+
+- **범주형을 빼도 결론은 같다.** 맞는 답은 dev에서 3건(12 vs 9), test에서 1건(5 vs 4) 더 찾고, 틀린 답은 dev에서 3건(6 vs 9),
+  test에서 3건(1 vs 4) 덜 찾는다. 이득과 손해의 질의도 위 표의 것 그대로다(dev c701 · c705 · q316 / c601 · c607 · c707,
+  test q102 / c606 · c703 · q214) — 범주형 쪽에 있던 것은 m303(이득·손해 각 1/3)과 q116(손해 2/7)뿐이다
+- 범주형은 재질문으로 거의 찾지 못한다(dev 5건 중 0.92). 대화 19개 중 16개는 두 번 거절해도 목표 곡이 후보에 들어오지 않는다
+- **끝까지 후보 밖인 대화 29개는 범주형 22개 + 나머지 7개**(dev q112 · q115 · q203, test c608 · c704 · q118 · q200)다 — v25 진단과 같다
+- 범주형 질의에서 개입한 7건은 **첫 화면에 이미 허용 정답이 있다**(마지막 화면 확장 지표: `initial` dev 1.0 · test 1.0).
+  목표 곡을 찾을 때까지 거절하는 대화는 그 허용 정답을 거절하고 지나가므로, 마지막 화면 기준 값이 `flow:oracle` dev 0.37 ·
+  test 0.21로 떨어진다. 범주형 질의의 사용자가 특정 곡을 찾는지, 조건에 맞는 곡이면 되는지는 이 측정이 가리지 못한다
+
 ## 산출물
 
 - `clarify_detail.csv` — 질의×정책 최종 결과. `flow:*`는 목표 곡마다 한 행(`target_id`), `found_turn`·`relaxed_seen_turn`,
   마지막 화면 기준 `final_relaxed_*`
 - `clarify_turns.csv` — `flow:*`의 목표 곡·턴별 질문 슬롯·선택지·답·거절 수·순위·후보 30 ID (곡 ID만)
-- `clarify_summary.csv` — 정책별 집계 (질의 단위; `n_conversations`, `int_found_by_turn2`, `int_final_relaxed`, `int_relaxed_seen`)
+- `clarify_summary.csv` — 정책별 집계 (질의 단위; `n_conversations`, `int_found_by_turn2`, `int_final_relaxed`, `int_relaxed_seen`,
+  대화 수 `n_conv_out_of_candidates`)
+- `clarify_summary_by_scope.csv` — 같은 집계를 전체 · 범주형 제외 · 범주형으로 나눈 것 (2026-10-08)
 - `clarify_runinfo.json` — 코퍼스·BM25·리랭커·분석 캐시 지문

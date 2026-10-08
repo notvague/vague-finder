@@ -626,3 +626,59 @@ def test_flow_summary_counts_queries_not_conversations() -> None:
     assert summary["int_hit@10"] == 0.75          # a는 두 대화의 평균 0.5, b는 1
     assert summary["int_final_relaxed"] == 0.75   # 마지막 화면 기준
     assert summary["int_relaxed_seen"] == 1.0     # 대화 중 한 번이라도 보였다
+
+
+from src.retrieval.evaluate_clarification import (  # noqa: E402
+    intervention_ids_from_detail,
+    summarize_by_scope,
+)
+
+
+def _flow_row(qid, target, found_turn, cand="", policy="flow:oracle"):
+    hit = 1.0 if found_turn else 0.0
+    return {"query_id": qid, "policy": policy, "target_id": target, "ran": "1",
+            "hit1": hit, "hit5": hit, "hit10": hit, "mrr10": hit, "candidate_recall": hit,
+            "candidate_rank@30": cand, "found_turn": found_turn, "final_relaxed_hit10": hit,
+            "relaxed_seen_turn": found_turn}
+
+
+def test_flow_summary_counts_conversations_left_outside_the_candidates() -> None:
+    """찾지 못했고 마지막 검색에서도 후보 30 밖인 대화 — 답변이 닿지 않는 대화 수다."""
+    rows = [_flow_row("a", "a1", 2, cand=3), _flow_row("a", "a2", "", cand=""),
+            _flow_row("b", "b1", "", cand=12),   # 후보 안까지만 (c603 같은 경우)
+            _flow_row("c", "c1", "", cand="")]
+    summary = summarize(rows, ["flow:oracle"], intervention_ids={"a", "b", "c"})[0]
+    assert summary["n_conv_out_of_candidates"] == 2
+
+
+def test_summary_reads_saved_detail_the_same_way() -> None:
+    """--resummarize는 CSV 문자열을 읽는다 — found_turn이 "2"여도 2턴 안으로 센다."""
+    rows = [_flow_row("a", "a1", 2, cand=3), _flow_row("b", "b1", "", cand="")]
+    saved = [{k: str(v) for k, v in r.items()} for r in rows]
+    assert summarize(saved, ["flow:oracle"], {"a", "b"}) == summarize(rows, ["flow:oracle"], {"a", "b"})
+
+
+def test_scope_summary_splits_categorical_queries_and_keeps_the_whole() -> None:
+    rows = [_flow_row("s1", "s1a", 1, cand=1), _flow_row("s2", "s2a", "", cand=""),
+            _flow_row("k1", "k1a", "", cand=""), _flow_row("k1", "k1b", 3, cand=2)]
+    scopes = {"s1": "specific", "s2": "specific", "k1": "categorical"}
+    out = summarize_by_scope(rows, ["flow:oracle"], {"s1", "s2", "k1"}, scopes)
+    by = {r["scope"]: r for r in out}
+    assert {k: v for k, v in by["all"].items() if k != "scope"} == \
+        summarize(rows, ["flow:oracle"], {"s1", "s2", "k1"})[0]
+    assert (by["specific"]["n_intervention"], by["specific"]["int_hit@10"]) == (2, 0.5)
+    assert (by["categorical"]["n_conversations"], by["categorical"]["int_hit@10"]) == (2, 0.5)
+    assert by["categorical"]["n_conv_out_of_candidates"] == 1
+
+
+def test_scope_summary_stops_on_a_query_missing_from_the_label_file() -> None:
+    with pytest.raises(KeyError):
+        summarize_by_scope([_flow_row("zz", "z1", 1)], ["flow:oracle"], {"zz"}, {"a": "specific"})
+
+
+def test_intervention_set_is_recovered_from_saved_detail() -> None:
+    """개입 대상 = reject_only를 실제로 실행한 질의. 실행 안 한 행은 최초 검색을 채운 것이다."""
+    rows = [{"query_id": "a", "policy": "reject_only", "ran": "1"},
+            {"query_id": "b", "policy": "reject_only", "ran": "0"},
+            {"query_id": "c", "policy": "initial", "ran": "1"}]
+    assert intervention_ids_from_detail(rows) == {"a"}

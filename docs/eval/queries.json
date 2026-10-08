@@ -1,7 +1,7 @@
 {
-  "version": "0.5.3",
+  "version": "0.5.4",
   "created_at": "2026-09-17",
-  "description": "eval set v0.5 — 통합 SSOT (905곡 코퍼스). v0.4 60개 + modality_v1 14개 + 재질문 측정용 clarify_v1 15개 = 89개. query_set으로 출처를 보존하므로 v0.5 공식 기준선과의 비교는 query_set='v04' 부분집합으로 수행한다. split은 층화 70:30이며 튜닝은 dev, 최종 보고는 test로만 한다. label_status가 labeled가 아닌 질의는 정확도 집계에서 제외한다. clarify_v1은 2026-09-15 재작성본 — 초안 26개는 v0.6 측정에서 18/18이 Top-10 안에 들어와 폐기했다(정답의 희소 sound_tags 토큰을 질의에 그대로 썼다). 재작성본은 앨범명에만 있는 외부맥락과 오정보 tier로만 구성했다. 2026-10-01: 3,010곡 코퍼스 기준 팀 라벨 검토로 vague 질의 20개에 허용 정답(allowed) 80곡을 더했다. positives는 그대로이며, 엄격 지표는 positives만, 확장 지표는 positives+allowed로 잰다. 같은 날 경로 깊이·CE 채점 실험에서 새로 top-10에 든 후보를 추가 검토해 2곡을 더했다(질의 20개 · 82곡).",
+  "description": "eval set v0.5 — 통합 SSOT (905곡 코퍼스). v0.4 60개 + modality_v1 14개 + 재질문 측정용 clarify_v1 15개 = 89개. query_set으로 출처를 보존하므로 v0.5 공식 기준선과의 비교는 query_set='v04' 부분집합으로 수행한다. split은 층화 70:30이며 튜닝은 dev, 최종 보고는 test로만 한다. label_status가 labeled가 아닌 질의는 정확도 집계에서 제외한다. clarify_v1은 2026-09-15 재작성본 — 초안 26개는 v0.6 측정에서 18/18이 Top-10 안에 들어와 폐기했다(정답의 희소 sound_tags 토큰을 질의에 그대로 썼다). 재작성본은 앨범명에만 있는 외부맥락과 오정보 tier로만 구성했다. 2026-10-01: 3,010곡 코퍼스 기준 팀 라벨 검토로 vague 질의 20개에 허용 정답(allowed) 80곡을 더했다. positives는 그대로이며, 엄격 지표는 positives만, 확장 지표는 positives+allowed로 잰다. 같은 날 경로 깊이·CE 채점 실험에서 새로 top-10에 든 후보를 추가 검토해 2곡을 더했다(질의 20개 · 82곡). 2026-10-08: 표지의 일반 속성만 말해 원래 타깃을 질의만으로 특정할 수 없는 질의 8개(q116·q117·m301·m302·m303·m401·m402·m403)에 target_scope=categorical을 표시했다(results_v25_cover_diag). 정답·허용 정답은 그대로이며 전체 지표에도 그대로 들어간다.",
   "queries": [
     {
       "query_id": "q101",
@@ -246,6 +246,7 @@
       "split": "test",
       "query_set": "v04",
       "label_status": "labeled",
+      "target_scope": "categorical",
       "notes": "파란 계열 + 사람 얼굴 없음 + 잔잔한 곡 셋을 모두 만족하는 표지만 골랐다. 보라에 가까운 30086173(비행운)은 '파란색 계열'로 단정하기 어려워 제외했다. 2026-09-24 실제 cover.jpg 육안 확인. 표지 통계(src/eval/cover_survey.py)로 후보를 좁힌 뒤 대조표로 한 장씩 봤다. 검색 시스템을 쓰지 않았으므로 평가 대상으로 평가 라벨을 만드는 순환은 없다. 다만 통계 임계로 좁혔기 때문에 **정답이 빠졌을 수 있다**(재현율 과소평가 방향).",
       "positives": [
         "31133898",
@@ -276,6 +277,7 @@
       "split": "dev",
       "query_set": "v04",
       "label_status": "labeled",
+      "target_scope": "categorical",
       "notes": "사진이 없고 글씨가 화면을 차지하는 표지만. 로고·도형이 주인공인 2NE1(4478187)·EXO(4633162)·BTS WINGS(30029173)는 '글씨만'이 아니라 제외했다. 2026-09-24 실제 cover.jpg 육안 확인. 표지 통계(src/eval/cover_survey.py)로 후보를 좁힌 뒤 대조표로 한 장씩 봤다. 검색 시스템을 쓰지 않았으므로 평가 대상으로 평가 라벨을 만드는 순환은 없다. 다만 통계 임계로 좁혔기 때문에 **정답이 빠졌을 수 있다**(재현율 과소평가 방향).",
       "positives": [
         "1379738",
@@ -1124,6 +1126,7 @@
       "split": "test",
       "query_set": "modality_v1",
       "label_status": "labeled",
+      "target_scope": "categorical",
       "clue_type": "image_only",
       "notes": "'온통 빨간색'이 성립하는 표지만. 연분홍(317801·420037)과 빨강이 일부인 표지(30657307·1590172)는 제외했다. 이 질의는 '앨범 커버 + 노래' 오판정(BUG_LOG) 회귀 확인도 겸한다 — 2026-09-24 실서버에서 이 문구는 image 경로가 정상 동작했다. 2026-09-24 실제 cover.jpg 육안 확인. 표지 통계(src/eval/cover_survey.py)로 후보를 좁힌 뒤 대조표로 한 장씩 봤다. 검색 시스템을 쓰지 않았으므로 평가 대상으로 평가 라벨을 만드는 순환은 없다. 다만 통계 임계로 좁혔기 때문에 **정답이 빠졌을 수 있다**(재현율 과소평가 방향).",
       "positives": [
@@ -1153,6 +1156,7 @@
       "split": "dev",
       "query_set": "modality_v1",
       "label_status": "labeled",
+      "target_scope": "categorical",
       "clue_type": "image_only",
       "notes": "얼굴이 화면을 채우는 표지만. 눈만 크게 나온 85257(바꿔)은 '얼굴'이 아니라 제외했고, 옆모습 중간 크기(1569649·1560045)도 뺐다. 2026-09-24 실제 cover.jpg 육안 확인. 표지 통계(src/eval/cover_survey.py)로 후보를 좁힌 뒤 대조표로 한 장씩 봤다. 검색 시스템을 쓰지 않았으므로 평가 대상으로 평가 라벨을 만드는 순환은 없다. 다만 통계 임계로 좁혔기 때문에 **정답이 빠졌을 수 있다**(재현율 과소평가 방향).",
       "positives": [
@@ -1191,6 +1195,7 @@
       "split": "dev",
       "query_set": "modality_v1",
       "label_status": "labeled",
+      "target_scope": "categorical",
       "clue_type": "image_only",
       "notes": "흑백 **사진** + 글자 거의 없음. 흑백이어도 큰 제목이 박힌 표지(2540268·1204915·3600223)와 그래픽·로고 표지(4478187·4633162)는 제외했다. 3859894(Only One)는 글자가 제법 커서 뺐다. 2026-09-24 실제 cover.jpg 육안 확인. 표지 통계(src/eval/cover_survey.py)로 후보를 좁힌 뒤 대조표로 한 장씩 봤다. 검색 시스템을 쓰지 않았으므로 평가 대상으로 평가 라벨을 만드는 순환은 없다. 다만 통계 임계로 좁혔기 때문에 **정답이 빠졌을 수 있다**(재현율 과소평가 방향).",
       "positives": [
@@ -1217,6 +1222,7 @@
       "split": "test",
       "query_set": "modality_v1",
       "label_status": "labeled",
+      "target_scope": "categorical",
       "clue_type": "mixed_av",
       "positives": [
         "4097003"
@@ -1241,6 +1247,7 @@
       "split": "dev",
       "query_set": "modality_v1",
       "label_status": "labeled",
+      "target_scope": "categorical",
       "clue_type": "mixed_av",
       "positives": [
         "67169",
@@ -1270,6 +1277,7 @@
       "split": "dev",
       "query_set": "modality_v1",
       "label_status": "labeled",
+      "target_scope": "categorical",
       "clue_type": "mixed_av",
       "notes": "표지는 알록달록·시끌벅적하고 곡은 잔잔한 피아노 발라드 — 둘 다 성립하는 곡만. 3509752(Lonely)·4723861은 곡이 피아노가 아니라 뺐고, 2783260(난 너에게)은 곡이 '활기참'이라 뺐다. 코퍼스에 이 조합 자체가 드물어 정답이 2곡뿐이다. 2026-09-24 실제 cover.jpg 육안 확인. 표지 통계(src/eval/cover_survey.py)로 후보를 좁힌 뒤 대조표로 한 장씩 봤다. 검색 시스템을 쓰지 않았으므로 평가 대상으로 평가 라벨을 만드는 순환은 없다. 다만 통계 임계로 좁혔기 때문에 **정답이 빠졌을 수 있다**(재현율 과소평가 방향).",
       "positives": [

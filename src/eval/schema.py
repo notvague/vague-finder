@@ -14,6 +14,7 @@ EvalQuery
     - split: dev | test (튜닝은 dev, 최종 보고는 test)
     - label_status: 정답 라벨이 확정됐는지. tier와 직교한다.
     - query_set: 질의 출처. 통합 후에도 세트별 분리 집계를 가능하게 한다.
+    - target_scope: 질의만으로 원래 타깃을 특정할 수 있는지. 범주형 질의는 따로 본 집계를 함께 낸다.
 
 EvalSet
     EvalQuery 목록 컨테이너. version/created_at 메타데이터 포함.
@@ -57,6 +58,16 @@ QuerySplit = Literal["dev", "test"]
 #                   이유는 왜 실패했는지가 다음 사람에게 필요하기 때문이다.
 #                   ⚠️ 코퍼스가 커지면 다시 판정해야 한다 — 순위는 코퍼스 상대적이다.
 LabelStatus = Literal["labeled", "pending_cover", "no_target", "unreachable"]
+
+# 질의만으로 원래 타깃을 특정할 수 있는가. label_status·tier와 직교한다.
+#   specific    : 질의가 곡 하나를 가리킨다 (기본)
+#   categorical : 질의가 일반 속성만 말한다("빨간 표지", "얼굴 클로즈업"). 코퍼스에 조건에 맞는
+#                 곡이 많아 원래 타깃을 질의만으로 고를 수 없다. 전체 지표에는 그대로 넣고,
+#                 범주형만 따로 본 집계를 함께 낸다(relaxed_metrics · evaluate_clarification).
+#                 표지 질의 진단(results_v25_cover_diag)에서 일반 속성 표지 질의 8건을 정했다.
+#                 ⚠️ unreachable처럼 코퍼스 상대적이다 — 코퍼스가 바뀌면 다시 판정한다.
+TargetScope = Literal["specific", "categorical"]
+TARGET_SCOPES: tuple = ("specific", "categorical")
 
 # 질의 출처 세트. 통합 파일에서도 세트별로 분리 집계하기 위한 것으로,
 # v0.5 기준선 비교는 query_set="v04" 부분집합으로만 수행한다.
@@ -107,6 +118,10 @@ class EvalQuery(BaseModel):
     clue_type: Optional[ClueType] = Field(
         default=None,
         description="질의가 의존하는 단서 유형 (선택). 단서 유형별 효과 분석에 사용",
+    )
+    target_scope: TargetScope = Field(
+        default="specific",
+        description="categorical이면 질의가 일반 속성만 말해 원래 타깃을 특정할 수 없다. 범주형 집계에 사용",
     )
     positives: List[str] = Field(
         default_factory=list,
