@@ -190,7 +190,7 @@ class Kit:
         out.mkdir(parents=True, exist_ok=True)
 
     def write(self, name: str, w: float, h: float, groups: list[tuple[str, str, list[str]]], title: str) -> None:
-        (self.out / f"{name}.svg").write_text(svg(w, h, groups, title))
+        (self.out / f"{name}.svg").write_text(svg(w, h, groups, title), encoding="utf-8")
 
     # 심볼 — 256 캔버스, 긴 변 208, 광학 중심을 2 위로
     def symbols(self) -> None:
@@ -248,7 +248,7 @@ LABEL = 'font-family="Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif"
 
 def nest(src: Path, x: float, y: float, h: float) -> tuple[str, float]:
     """마스터 SVG를 높이 h로 끼워 넣는다. (요소, 폭)."""
-    raw = src.read_text()
+    raw = src.read_text(encoding="utf-8")
     vb = raw.split('viewBox="', 1)[1].split('"', 1)[0]
     vw, vh = (float(v) for v in vb.split()[2:])
     inner = raw.split(">", 1)[1].rsplit("</svg>", 1)[0]
@@ -298,7 +298,7 @@ def guide(logo: Path, out: Path) -> None:
             + clear_zone(sx, sy, sx + sym_w, sy + sym_h, c_sy) + sym + notes)
     (out / "clearspace.svg").write_text(
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {f(W)} {f(H)}" width="{f(W)}" height="{f(H)}">'
-        f'{body}</svg>\n')
+        f'{body}</svg>\n', encoding="utf-8")
 
     # 팔레트
     def lum(hexc: str) -> float:
@@ -338,7 +338,7 @@ def guide(logo: Path, out: Path) -> None:
             f'<text x="{x}" y="372" {LABEL} font-size="15" fill="#7A7488">{use}</text>')
     (out / "palette.svg").write_text(
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 410" width="1240" height="410">'
-        '<rect width="100%" height="100%" fill="#FFFFFF"/>' + "".join(cards) + "</svg>\n")
+        '<rect width="100%" height="100%" fill="#FFFFFF"/>' + "".join(cards) + "</svg>\n", encoding="utf-8")
 
 
 if __name__ == "__main__":

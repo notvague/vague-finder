@@ -138,7 +138,7 @@ def build(fonts: Path, out: Path) -> None:
 
     # 심볼: 256 캔버스, 긴 변 208, 광학 중심을 살짝 위(126)로
     (out / "a-symbol.svg").write_text(svg(256, 256, placed(paths, dots, bbox, 208, 128, 126),
-                                          "Vague Finder symbol"))
+                                          "Vague Finder symbol"), encoding="utf-8")
 
     # 락업: 흩어지는 V가 'Vague'의 V를 대신한다
     heavy, regular = Face(fonts / "Jost-800.ttf"), Face(fonts / "Jost-400.ttf")
@@ -157,7 +157,7 @@ def build(fonts: Path, out: Path) -> None:
     _, lo2, _ = regular.run("FINDER", SUB, 0, b2, track)
     d2, _, right2 = regular.run("FINDER", SUB, x0 - lo2, b2, track)
     els += [f'<path d="{d1}"/>', f'<path d="{d2}"/>']
-    (out / "a-lockup.svg").write_text(svg(max(right1, right2) + x0, 256, els, "Vague Finder"))
+    (out / "a-lockup.svg").write_text(svg(max(right1, right2) + x0, 256, els, "Vague Finder"), encoding="utf-8")
 
 
 if __name__ == "__main__":
