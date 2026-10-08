@@ -117,8 +117,9 @@ def test_explicit_boosts_unchanged_when_recording():
     assert off == on, "기록을 켜도 (id, score) 목록이 동일해야 한다"
 
 
-def test_penalty_is_recorded_as_negative():
-    """감점도 기록해야 한다 — 왜 밀렸는지가 설명의 절반이다."""
+def test_penalty_is_recorded_as_negative(monkeypatch):
+    """감점을 켜면 기록해야 한다 — 왜 밀렸는지가 설명의 절반이다."""
+    monkeypatch.setenv("GENDER_MISMATCH_SCALE", "1")
     analysis = _analysis(original_query="여자가 부른 노래", vocal_gender="여성")
     meta = {
         "s1": MatchingTrack(id="s1", score=0.0, title="곡", artist="A",
@@ -133,6 +134,26 @@ def test_penalty_is_recorded_as_negative():
     assert adjustments, "성별 불일치 감점이 기록되어야 한다"
     mismatch = [a for a in adjustments if a.rule == "vocal_gender_mismatch"]
     assert mismatch and mismatch[0].delta < 0
+
+
+def test_no_penalty_and_no_record_by_default(monkeypatch):
+    """기본값(감점 0)에서는 점수도 기록도 없다 — 0점 감점을 설명하면 이유를 지어내는 것이다."""
+    monkeypatch.delenv("GENDER_MISMATCH_SCALE", raising=False)
+    analysis = _analysis(original_query="여자가 부른 노래", vocal_gender="여성")
+    meta = {
+        "s1": MatchingTrack(id="s1", score=0.0, title="곡", artist="A",
+                            vocal_gender="남성"),
+        "s2": MatchingTrack(id="s2", score=0.0, title="곡", artist="B",
+                            vocal_gender="여성"),
+    }
+    rec = ExplainRecorder("q")
+    scored = dict(sr.SearchRouter._apply_explicit_boosts(
+        analysis, _hits(("s1", 0.01), ("s2", 0.01)), meta, recorder=rec
+    ))
+    assert scored["s1"] == 0.01, "불일치 곡의 점수는 그대로여야 한다"
+    assert scored["s2"] > 0.01, "일치 가산은 그대로 준다"
+    rules = [a.rule for a in rec.record.get("s1").adjustments]
+    assert "vocal_gender_mismatch" not in rules
 
 
 def test_answer_bonus_unchanged_when_recording():
