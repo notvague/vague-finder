@@ -156,6 +156,28 @@ def test_no_penalty_and_no_record_by_default(monkeypatch):
     assert "vocal_gender_mismatch" not in rules
 
 
+def test_attr_boost_scale_leaves_title_boosts_alone(monkeypatch):
+    """ATTR_BOOST_SCALE은 일반 속성 가산만 줄이고 제목 가산은 그대로 둔다 (E1′)."""
+    monkeypatch.setenv("ATTR_BOOST_SCALE", "0.2")
+    analysis = _analysis(
+        original_query="여자가 부른 발라드 제목은 봄날", vocal_gender="여성",
+        genre="발라드", song_title="봄날",
+    )
+    meta = {
+        "s1": MatchingTrack(id="s1", score=0.0, title="봄날", artist="A",
+                            vocal_gender="여성", genre="발라드"),
+    }
+    rec = ExplainRecorder("q")
+    sr.SearchRouter._apply_explicit_boosts(
+        analysis, _hits(("s1", 0.01)), meta, recorder=rec
+    )
+    delta = {a.rule: a.delta for a in rec.record.get("s1").adjustments}
+    unit = 1.0 / 61
+    assert abs(delta["title_exact"] - unit * 5) < 1e-9, "제목 가산은 배율의 영향이 없어야 한다"
+    assert abs(delta["vocal_gender_match"] - unit * 0.2) < 1e-9
+    assert abs(delta["genre_match"] - unit * 0.2) < 1e-9
+
+
 def test_answer_bonus_unchanged_when_recording():
     analysis_tracks = {
         "s1": MatchingTrack(id="s1", score=0.0, title="곡1", artist="A",
