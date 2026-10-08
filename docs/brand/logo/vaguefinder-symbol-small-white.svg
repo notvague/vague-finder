@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="t"><title id="t">Vague Finder</title>
+<g id="symbol" fill="#FFFFFF">
+<path transform="matrix(0.84 0 0 0.84 128 217.17)" d="M22.62 -10.55 L-29.78 -122.93 A24.96 24.96 0 0 0 -75.03 -101.83 L-22.62 10.55 A24.96 24.96 0 0 0 22.62 -10.55 Z M22.62 10.55 L75.03 -101.83 A24.96 24.96 0 0 0 29.78 -122.93 L-22.62 -10.55 A24.96 24.96 0 0 0 22.62 10.55 Z"/>
+<circle cx="60.57" cy="72.57" r="17.73"/>
+<circle cx="39.99" cy="28.44" r="12.9"/>
+<circle cx="195.43" cy="72.57" r="17.73"/>
+<circle cx="216.01" cy="28.44" r="12.9"/>
+</g>
+</svg>
