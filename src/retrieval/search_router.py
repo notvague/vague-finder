@@ -607,6 +607,37 @@ def _lyric_boost_scale() -> float:
         return 1.0
 
 
+def _explicit_boost_scale() -> float:
+    """명시 가산(`_apply_explicit_boosts`의 모든 bump)에 곱하는 배율. 1.0이 현행.
+
+    **실험 E1용이다(experiments/reranking/results_v27_boost_scale/RUN_INFO.md).**
+    일치 가산 1단위(1/61 ≈ 0.0164)가 RRF에서 텍스트
+    1위와 30위의 차이(0.0053)보다 3배 커서, 메타데이터가 맞는 먼 곡이 후보를 차지한다.
+    배율을 줄이면 가산은 "검색 순위를 뒤집는 힘"에서 "같은 순위대 안의 순서"로 내려간다.
+    가사 표면 부스트(`LYRIC_BOOST_SCALE`)와 답변 보너스는 이 배율의 영향을 받지 않는다.
+    """
+    raw = os.getenv("BOOST_SCALE", "").strip()
+    try:
+        return max(0.0, float(raw)) if raw else 1.0
+    except ValueError:
+        return 1.0
+
+
+def _gender_mismatch_scale() -> float:
+    """보컬 성별 불일치 감점에 추가로 곱하는 배율. 1.0이 현행, 0이면 감점만 끈다.
+
+    **실험 E3용이다(experiments/reranking/results_v27_boost_scale/RUN_INFO.md).**
+    성별을 잘못 기억한 misinformation 질의에서
+    정답이 감점으로 후보 밖으로 밀리는 것을 줄인다. 일치 가산은 그대로 둔다.
+    `BOOST_SCALE`과 곱으로 함께 작용한다.
+    """
+    raw = os.getenv("GENDER_MISMATCH_SCALE", "").strip()
+    try:
+        return max(0.0, float(raw)) if raw else 1.0
+    except ValueError:
+        return 1.0
+
+
 def _lyric_match_note(track: MatchingTrack) -> str:
     """부스트가 걸린 근거를 문장에 덧붙인다 — 구절 길이와 겹치는 곡 수.
 
@@ -1774,7 +1805,8 @@ class SearchRouter:
             for clue in analysis.lyric_clues
             if clue.kind in {"verbatim", "partial", "phonetic"}
         ]
-        boost_unit = 1.0 / (_RRF_K + 1)
+        boost_unit = (1.0 / (_RRF_K + 1)) * _explicit_boost_scale()
+        gender_mismatch_scale = _gender_mismatch_scale()
         want_title = _norm(analysis.song_title)
         want_artist = _norm(analysis.artist_name)
         want_gender = analysis.vocal_gender
@@ -1910,13 +1942,21 @@ class SearchRouter:
                         want_gender == "혼성"
                         and actual_gender in ("남성", "여성")
                     ):
-                        bump("vocal_gender_mismatch", -(boost_unit * 0.5), f"{actual_gender}")
+                        bump(
+                            "vocal_gender_mismatch",
+                            -(boost_unit * 0.5 * gender_mismatch_scale),
+                            f"{actual_gender}",
+                        )
 
                     elif {
                         want_gender,
                         actual_gender,
                     } == {"남성", "여성"}:
-                        bump("vocal_gender_mismatch", -(boost_unit * 1.0), f"{actual_gender}")
+                        bump(
+                            "vocal_gender_mismatch",
+                            -(boost_unit * 1.0 * gender_mismatch_scale),
+                            f"{actual_gender}",
+                        )
 
                 # 발매 시기 soft boost
                 era_similarity = _release_era_similarity(
