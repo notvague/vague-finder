@@ -624,18 +624,20 @@ def _explicit_boost_scale() -> float:
 
 
 def _gender_mismatch_scale() -> float:
-    """보컬 성별 불일치 감점에 추가로 곱하는 배율. 1.0이 현행, 0이면 감점만 끈다.
+    """보컬 성별 불일치 감점에 곱하는 배율. **기본 0 — 감점을 주지 않는다.** 1.0이면 예전 감점.
 
-    **실험 E3용이다(experiments/reranking/results_v27_boost_scale/RUN_INFO.md).**
-    성별을 잘못 기억한 misinformation 질의에서
-    정답이 감점으로 후보 밖으로 밀리는 것을 줄인다. 일치 가산은 그대로 둔다.
-    `BOOST_SCALE`과 곱으로 함께 작용한다.
+    사용자 기억은 성별부터 틀리는 일이 잦다(평가 세트의 misinformation 질의). 감점은 그 정답을
+    후보 밖으로 밀어내고, 맞게 기억한 질의에서는 일치 가산(+1단위)이 이미 같은 성별 곡을 올려 주므로
+    감점이 더 보태는 것이 없다. 3,010곡 측정(experiments/reranking/results_v27_boost_scale/RUN_INFO.md,
+    E3): 감점을 없애면 dev 57건 중 q316 하나가 Top-10에 돌아오고 나머지 56건과 test 25건은 순위가
+    전혀 바뀌지 않았다. 0이면 감점을 **기록도 하지 않는다** — "말한 성별과 다름 (−0.0000)"은 설명이 아니다.
+    일치·부분 일치 가산은 그대로다. `BOOST_SCALE`과 곱으로 함께 작용한다.
     """
     raw = os.getenv("GENDER_MISMATCH_SCALE", "").strip()
     try:
-        return max(0.0, float(raw)) if raw else 1.0
+        return max(0.0, float(raw)) if raw else 0.0
     except ValueError:
-        return 1.0
+        return 0.0
 
 
 def _lyric_match_note(track: MatchingTrack) -> str:
@@ -1937,6 +1939,11 @@ class SearchRouter:
                         and want_gender in ("남성", "여성")
                     ):
                         bump("vocal_gender_partial", boost_unit * 0.25, f"{actual_gender}")
+
+                    elif gender_mismatch_scale <= 0.0:
+                        # 불일치 감점 없음(기본). 기록도 남기지 않는다 — 0점 감점을
+                        # "말한 성별과 다름"으로 설명하면 순위에 없는 이유를 지어내는 셈이다.
+                        pass
 
                     elif (
                         want_gender == "혼성"
