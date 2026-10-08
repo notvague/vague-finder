@@ -177,6 +177,16 @@ class LyricSurfaceMatch(BaseModel):
     )
 
 
+class ContextEvidence(BaseModel):
+    """An excerpt from the retrieved Namuwiki fact, tied to this query."""
+
+    record_id: str = Field(..., description="이번 검색에서 확인한 사실 레코드 ID")
+    fact_text: str = Field(..., description="출처에 저장된 사실 문장")
+    source_url: str = Field(..., description="나무위키 원문 URL")
+    section: str = Field(default="", description="출처 문서의 절")
+    category: str = Field(default="", description="사실의 유형")
+
+
 class MatchingTrack(BaseModel):
     id: str = Field(..., description="곡의 고유 ID (Melon ID 등)")
     score: float = Field(..., description="최종 검색 점수")
@@ -246,6 +256,12 @@ class MatchingTrack(BaseModel):
     melon_url: Optional[str] = None
     youtube_url: Optional[str] = None
     cover_url: Optional[str] = None
+
+    # Context에서 검색됐다는 사실만으로 채우지 않는다. 검색 당시 Dense 사실의
+    # 문장·관계·대상·출처를 확인하고 최종 결과에 남은 곡에만 실어 보낸다.
+    context_evidence: Optional[ContextEvidence] = Field(
+        default=None, description="현재 질의와 연결된 나무위키 사실과 원문 주소",
+    )
 
     # --- 선정 근거 ---
     # 요청에 explain=true를 준 경우에만 채워진다. None은 "근거가 없다"가 아니라

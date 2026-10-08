@@ -65,6 +65,11 @@ def analyzer_fingerprint() -> Dict[str, Any]:
     modality_src = Path(qa.__file__).with_name("modality_queries.py").read_text(
         encoding="utf-8"
     )
+    # Context clues are produced by a separate safeguard module. Omitting it
+    # silently reuses pre-change analyses after the Context rules change.
+    context_src = Path(qa.__file__).with_name("context_query.py").read_text(
+        encoding="utf-8"
+    )
     return {
         "model_name": os.getenv("GEMINI_MODEL_NAME", "gemini-3.1-flash-lite"),
         # query_analyzer.py가 직접 넣는 값. 여기서 바꿀 수 있는 설정이 아니다.
@@ -73,7 +78,7 @@ def analyzer_fingerprint() -> Dict[str, Any]:
         "reference_year": qa._reference_year(),
         "reference_year_env": os.getenv("SEARCH_REFERENCE_YEAR", "").strip(),
         "prompt_sha": _sha(qa._PROMPT_TEMPLATE),
-        "postprocess_sha": _sha(analyzer_src + modality_src),
+        "postprocess_sha": _sha(analyzer_src + modality_src + context_src),
     }
 
 
@@ -89,7 +94,7 @@ def analyzer_sha() -> str:
     실제로 만든 조건"이다. 둘은 갈릴 수 있다 — 조건이 어긋난 캐시를 이어서
     채울 때가 그렇다(`--reuse-despite-drift`).
 
-    매번 계산한다. 파일 두 개를 읽지만 Gemini 호출 한 번의 수천 분의 일이고,
+    매번 계산한다. 분석 코드 세 파일을 읽지만 Gemini 호출 한 번의 수천 분의 일이고,
     캐싱하면 **환경 변수가 바뀐 것을 놓친다**(기준 연도·모델 이름이 지문에 들어간다).
     """
     return fingerprint_sha(analyzer_fingerprint())

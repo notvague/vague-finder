@@ -235,10 +235,54 @@ class QdrantIndex:
             ]
         }
 
-    def _payloads(self, collection: str, ids: List[Any]) -> Dict[Any, Dict[str, Any]]:
-        """point id → 페이로드. 합산 뒤 남긴 곡만 읽는다."""
+    def fetch(
+        self, *, ids: Sequence[str], namespace: str = NAMESPACE
+    ) -> Dict[str, Dict[str, Any]]:
+        """Look up song payloads by ID, without a similarity search.
+
+        The Context collection's title/artist are only profile hints. Search
+        results must use the canonical song metadata from the Text index.
+        Verify the payload ID too: a missing or mismatched point must not
+        produce an invented ``Unknown`` track in the candidate pool.
+        """
+        wanted = list(dict.fromkeys(
+            song_id for item in ids if (song_id := str(item).strip())
+        ))
+        if not wanted:
+            return {"vectors": {}}
+        collection = collection_name(self._index_name, namespace)
+        try:
+            points = self._client.retrieve(
+                collection_name=collection,
+                ids=[point_id(song_id) for song_id in wanted],
+                with_payload=True,
+                with_vectors=False,
+            )
+        except Exception as exc:
+            logger.error("[Qdrant] %s metadata 조회 실패: %s", collection, exc)
+            raise
+
+        requested = set(wanted)
+        vectors: Dict[str, Dict[str, Any]] = {}
+        for point in points:
+            payload = dict(point.payload or {})
+            song_id = str(payload.pop("song_id", "")).strip()
+            if song_id not in requested or point.id != point_id(song_id):
+                logger.warning(
+                    "[Qdrant] %s의 곡 ID와 payload가 일치하지 않습니다: %s",
+                    collection, point.id,
+                )
+                continue
+            vectors[song_id] = {"id": song_id, "metadata": payload}
+        return {"vectors": vectors}
+      
+    def _payloads(
+        self, collection: str, ids: List[Any]
+    ) -> Dict[Any, Dict[str, Any]]:
+        """point ID별 payload를 조회한다."""
         if not ids:
             return {}
+
         try:
             records = self._client.retrieve(
                 collection_name=collection,
@@ -247,9 +291,17 @@ class QdrantIndex:
                 with_vectors=False,
             )
         except Exception as exc:
-            logger.error("[Qdrant] %s 페이로드 조회 실패: %s", collection, exc)
+            logger.error(
+                "[Qdrant] %s 페이로드 조회 실패: %s",
+                collection,
+                exc,
+            )
             raise
-        return {record.id: record.payload or {} for record in records}
+
+        return {
+            record.id: record.payload or {}
+            for record in records
+        }
 
     def _search(
         self,

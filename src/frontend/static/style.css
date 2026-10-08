@@ -679,6 +679,27 @@ body.listmode .sitefooter { min-width: 0; }
 .resultmeta { font-size: 12px; color: #999; }
 /* 장르는 지도와 같은 색으로 칠한다 — 목록과 지도가 같은 기준임을 보이려고 */
 .resultgenre::before { content: "\00B7"; margin: 0 5px; color: #ccc; }
+.resultcontext {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #656565;
+}
+.resultcontextsummary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.resultcontextlabel { color: #576d59; font-weight: 600; }
+.resultcontextsource { flex: none; color: #286746; text-decoration: underline; }
+.resultcontextsource:focus-visible { outline: 2px solid currentColor; }
 
 .clarify[hidden] { display: none; }
 .clarify {

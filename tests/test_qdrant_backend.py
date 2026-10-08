@@ -529,6 +529,7 @@ def stub_search_stack(monkeypatch):
     for name in ("KoE5Embedder", "BM25SparseEncoder", "SigLIP2Embedder", "CLAPAudioEmbedder",
                  "LyricsExactSearchService", "MusicReranker", "QueryAnalyzer", "SearchService"):
         monkeypatch.setattr(dependencies, name, Stub)
+    monkeypatch.setattr(dependencies, "ContextQdrantSearch", Stub)
     monkeypatch.setattr(dependencies, "SearchRouter", StubRouter)
     monkeypatch.setattr(dependencies, "get_qdrant_client", StubClient)
     for factory in (dependencies.get_vector_client, dependencies.get_text_embedder,
@@ -554,6 +555,9 @@ def test_restarting_in_one_process_rebuilds_the_search_stack(monkeypatch):
     first_service = dependencies.get_search_service()
     assert first_router.kwargs["vector_client"] is first_client
     assert first_service.kwargs["vector_client"] is first_client
+    first_context = first_router.kwargs["context_search"]
+    assert first_context.args[0] is first_client
+    assert first_context.kwargs["text_embedder"] is dependencies.get_text_embedder()
 
     dependencies.close_vector_client()
     assert first_client.closed is True
@@ -569,6 +573,10 @@ def test_restarting_in_one_process_rebuilds_the_search_stack(monkeypatch):
     # 닫힌 클라이언트를 쥔 객체가 남아 있지 않다
     assert second_router.kwargs["vector_client"] is second_client
     assert second_service.kwargs["vector_client"] is second_client
+    second_context = second_router.kwargs["context_search"]
+    assert second_context is not first_context
+    assert second_context.args[0] is second_client
+    assert second_context.kwargs["text_embedder"] is dependencies.get_text_embedder()
 
     dependencies.close_vector_client()
 

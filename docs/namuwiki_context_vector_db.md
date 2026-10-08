@@ -100,17 +100,66 @@ docker compose up -d backend
 로컬 적재에서 `storage is already accessed`가 나오면 backend가 아직 같은
 `QDRANT_PATH`를 열고 있는 것이다. backend를 중지한 뒤 다시 실행한다.
 
-## 다음 단계
+## 검색 연결 현황과 다음 단계
 
-DB 적재 자체는 검색 순위를 바꾸지 않는다. 후속 검색 통합에서 다음을 구현한다.
+`ContextQdrantSearch.search_song_candidates(query, fact_k=50, sparse_k=50)`는
+한 번 확인한 적재 세대에서 Dense 사실과 Sparse 곡 프로필을 조회한다. Dense는
+곡별 최고 점수의 사실을 보관하고, Sparse는 조회된 곡의 `song_id`, `profile_id`,
+점수와 임시 표시 메타데이터를 순서대로 보관한다. `song_k`를 지정하면 Dense
+**사실 검색 이후** 곡 수만 제한한다. Sparse 프로필 일치만으로는 특정 사실을
+증명할 수 없으므로 출처나 `fact_text`를 부여하지 않는다.
 
-1. 배경 단서 질의를 판별하는 Context query router
-2. KoE5 `query: ` 벡터로 Dense fact top-k 조회
-3. 현재 Sparse manifest와 결합된 query encoder로 song profile 조회
-4. Dense hit를 `song_id`별 `max_per_song`으로 집계
-5. Context Dense/Sparse 순위를 RRF로 결합
-6. 기존 text/image/audio 후보와 다시 RRF 또는 검증된 가중 방식으로 결합
-7. 최종 결과에 `fact_text`, category, section, source URL을 근거로 노출
+`ContextQdrantSearch.search_fused_songs(query, fact_k=50, sparse_k=50)`는
+두 **곡 순위**를 내부 RRF로 결합해 Context 후보 목록 **하나**를 만든다.
+기본 점수는 `1/(60 + Dense 곡 순위) + 1/(60 + Sparse 곡 순위)`이고,
+해당 경로에 없는 곡은 그 경로의 항이 없다. 원래의 Dense 유사도와 BM25
+점수는 더하지 않는다. 같은 곡이 각 순위에 여러 번 있으면 중복 가산을
+막기 위해 오류를 낸다. `dense_weight`와 `sparse_weight`는 별도로 조정할
+수 있고, `limit`는 내부 결합 **이후**에만 적용한다.
+
+반환값은 곡마다 `song_id`, 내부 RRF 점수, 두 경로의 순위와 원본 hit를
+보관한다. Sparse에서만 발견한 곡에는 Dense 사실이 없다. Dense fact가
+있더라도 이는 아직 표시가 검증된 근거가 아니다. `SearchRouter`는
+`context_clues`에 양수 확신도가 있을 때 이 결과를 **한 개의 Context 경로**로
+후보 절단 전에 결합한다. 동일 검색 문장은 한 번만 조회하고, 여러 단서에서 같은
+곡이 나오면 가장 강한 단서만 유지한다. 바깥 RRF에는 내부 Dense/Sparse 점수가
+아닌 최종 Context 곡 **순위**만 사용한다.
+
+Context 곡 ID는 Text Qdrant 인덱스에서 다시 조회한다. 해당 ID가 없거나 제목이
+비어 있으면 후보로 넣지 않는다. 결과의 제목·가수 등은 Context 프로필의 임시
+표시 값이 아니라 기존 곡 인덱스의 정식 메타데이터다. Context 점수는 기존
+Text/Image/Audio 가중치 합계에 **추가**하므로 Context에 없는 곡의 기존 점수는
+변하지 않는다. Context 조회 실패는 다른 검색 경로의 실패 처리와 동일하게 빈
+경로로 처리하고 실행 기록에 실패 사유를 남긴다.
+
+현재 SearchRouter 기본값은 Context 경로 가중치 1.0에 단서의 최대 확신도를
+곱하며, `fact_k=100`, `sparse_k=100` 이상을 읽는다. Dense 폭은 곡 수가 아닌
+**사실 수**다. 이는 현재 부분 코퍼스에서 단서 곡이 Dense 순위 58위까지
+내려간 사례를 놓치지 않기 위한 임시 기본값이며 전체 평가 후 조정한다.
+`SearchRouter.search(..., use_context=False)`로 재랭킹 없는 전후 비교가 가능하다.
+기존 세 모달리티 전용 `force_weights` 실험은 Context를 끈다.
+
+실제 데이터 검증은 backend를 중지한 뒤 제공한
+`Vague-Finder_Context_Router_Step6_Inspect.py`를 일회성 컨테이너에 표준 입력으로
+전달해 실행한다. 기존 경로만 사용했을 때와 Context를 켰을 때의 후보 30개,
+Top-10, 목표곡 위치, Text 인덱스 제목, 거절 후 후보 수를 출력한다.
+
+결과 화면에서는 Context 후보라는 이유만으로 출처를 붙이지 않는다. 검색에 사용한
+같은 Qdrant 조회에서 Dense 사실들을 보관하고, 반환할 곡에 한해 질의 단서의 관계,
+작품 또는 인물, 구체적 장면 단서, 사실 유형, `song_id`, 레코드 ID, 나무위키
+원문 URL을 확인한다. 가장 높은 Dense 사실이 맞지 않으면 같은 곡의 다른 검색
+사실을 확인한다. 여러 Context 단서가 같은 곡을 찾았을 때도 각 단서로 확인하되
+랭킹 표는 한 번만 가산한다. 확인되지 않으면 `context_evidence=null`이다.
+Sparse 프로필 단독 일치, 절 제목만 일치하거나 출처가 없는 사실은 근거로 쓰지
+않는다. 이 판정은 질의와 **검색된 문장의 관련성**을 확인하는 보수적 규칙이며,
+외부 문서 내용 자체의 진위 보장은 아니다. 근거 검증 실패로 기존 검색 결과가
+실패하지 않도록 근거만 생략한다. 검증된 근거가 있으면 `MatchingTrack`의
+`context_evidence`에 `record_id`, `fact_text`, `source_url`, `section`,
+`category`를 채우고, 지도 검색 결과의 사실 요약과 원문 링크에 표시한다.
+이는 `explain`을 요청하지 않아도 제공된다.
+
+다음 단계는 부분 코퍼스 Context 평가와 기존 질의 회귀 검사다. 그 후 전체 수집과
+재적재를 마치고 corpus 기준으로 검색 폭·가중치를 조정한다.
 
 두 곡 파일럿은 파이프라인 배선과 무결성만 검증한다. 최종 top-k, router threshold,
 RRF 상수와 context 가중치는 전체 corpus와 모호 질의 평가셋이 준비된 뒤 고정한다.

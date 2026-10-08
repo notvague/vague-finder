@@ -1,0 +1,113 @@
+{
+  "schema": "context_media_scope_local_checks_v1",
+  "tests_passed": 3772,
+  "subtests_passed": 32,
+  "test_seconds": 28.27,
+  "local_python": "3.12",
+  "user_docker_python": "3.11",
+  "tested_with_actual_qdrant_koe5_clap_text_bm25": true,
+  "replay_policy": "Frozen current-run analyses, actual Qdrant/KoE5/CLAP/Text BM25, reranking disabled; not fresh or blind.",
+  "replay_ranks": {
+    "c701": {
+      "off": {
+        "candidate_rank": 30,
+        "top10_rank": null
+      },
+      "before": {
+        "candidate_rank": null,
+        "top10_rank": null
+      },
+      "after": {
+        "candidate_rank": 30,
+        "top10_rank": null
+      }
+    },
+    "c705": {
+      "off": {
+        "candidate_rank": 24,
+        "top10_rank": null
+      },
+      "before": {
+        "candidate_rank": null,
+        "top10_rank": null
+      },
+      "after": {
+        "candidate_rank": 24,
+        "top10_rank": null
+      }
+    },
+    "m104": {
+      "off": {
+        "candidate_rank": 3,
+        "top10_rank": 3
+      },
+      "before": {
+        "candidate_rank": 4,
+        "top10_rank": 4
+      },
+      "after": {
+        "candidate_rank": 3,
+        "top10_rank": 3
+      }
+    },
+    "c703": {
+      "off": {
+        "candidate_rank": 10,
+        "top10_rank": 10
+      },
+      "before": {
+        "candidate_rank": 10,
+        "top10_rank": 10
+      },
+      "after": {
+        "candidate_rank": 10,
+        "top10_rank": 10
+      }
+    },
+    "nw001": {
+      "off": {
+        "candidate_rank": null,
+        "top10_rank": null
+      },
+      "before": {
+        "candidate_rank": 8,
+        "top10_rank": 8
+      },
+      "after": {
+        "candidate_rank": 7,
+        "top10_rank": 7
+      }
+    },
+    "q203": {
+      "off": {
+        "candidate_rank": null,
+        "top10_rank": null
+      },
+      "before": {
+        "candidate_rank": 28,
+        "top10_rank": null
+      },
+      "after": {
+        "candidate_rank": 22,
+        "top10_rank": null
+      }
+    },
+    "nw008": {
+      "off": {
+        "candidate_rank": null,
+        "top10_rank": null
+      },
+      "before": {
+        "candidate_rank": null,
+        "top10_rank": null
+      },
+      "after": {
+        "candidate_rank": null,
+        "top10_rank": null
+      }
+    }
+  },
+  "fresh_gemini_whole_evaluation_run_locally": false,
+  "inputs_or_weights_changed": false,
+  "merged_router_and_backend_changed": false
+}

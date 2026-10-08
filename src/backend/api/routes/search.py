@@ -24,6 +24,8 @@ from src.backend.schemas.search import (
 from src.retrieval import timing
 from src.retrieval.analysis_cache import looks_like_fallback
 from src.retrieval.clarify import pick_question
+from src.retrieval.context_evidence import context_evidence_for_result
+from src.retrieval.context_route import ContextRouteHit
 from src.retrieval.explain import NULL_RECORDER, ExplainRecorder, SongExplain
 from src.retrieval.lyrics_exact_search import (
     LyricsExactSearchService,
@@ -35,6 +37,22 @@ from src.retrieval.search_router import SearchRouter
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/search", tags=["Search"])
+
+def _attach_context_evidence(
+    track: MatchingTrack, context_by_id: dict[str, ContextRouteHit],
+    analysis: QueryAnalysis,
+) -> MatchingTrack:
+    hit = context_by_id.get(track.id)
+    if hit is None:
+        return track
+    try:
+        evidence = context_evidence_for_result(hit, query_clues=analysis.context_clues)
+    except Exception:
+        # A damaged citation must not take the search result down with it.
+        logger.exception("[context] fact verification failed for song %s", track.id)
+        return track
+    return track.model_copy(update={"context_evidence": evidence}) if evidence else track
+
 
 def _can_ask_another(
     turn: int,
@@ -229,6 +247,7 @@ async def search(
         candidate_tracks: list[MatchingTrack] = []
         # 가사 경로가 **무슨 판을 봤는지**. 인용이 그 판에서만 뜨게 하려고 받는다.
         lyrics_snapshot: list[LyricsSnapshot] = []
+        context_hits: list[ContextRouteHit] = []
 
         # 끄면 아무것도 기록하지 않는 null object가 들어간다. 라우터에 `if` 분기가
         # 없으므로 "기록을 켰을 때만 지나가는 코드"가 생기지 않는다.
@@ -253,10 +272,16 @@ async def search(
                 candidate_ids_out=candidate_ids,
                 candidate_tracks_out=candidate_tracks,
                 lyrics_snapshot_out=lyrics_snapshot,
+                context_hits_out=context_hits,
                 answers=request.answers,
                 recorder=recorder,
                 timer=timer,
             )
+
+        # Decide citations only for the final, possibly reranked results.
+        # These facts came from the same Context search snapshot as ranking.
+        context_by_id = {hit.song_id: hit for hit in context_hits}
+        results = [_attach_context_evidence(track, context_by_id, analysis) for track in results]
 
         explain_summary = None
         if request.explain:
