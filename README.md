@@ -6,14 +6,14 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
 ![Gemini](https://img.shields.io/badge/Google%20Gemini-8E75B2?style=flat-square&logo=googlegemini&logoColor=white)
 ![Qdrant](https://img.shields.io/badge/Qdrant-DC244C?style=flat-square&logo=qdrant&logoColor=white)
-![Songs](https://img.shields.io/badge/corpus-952%20songs-555555?style=flat-square)
+![Songs](https://img.shields.io/badge/corpus-3%2C010%20songs-555555?style=flat-square)
 
 > "2000년대 후반에 싸이월드 배경음악으로 엄청 유행했던 곡인데, 여자애들 여러 명이 부르는 빠른 댄스곡이었어.
 > 제목이 알파벳 세 글자였던 것 같은데"
 
 키워드 검색은 제목이나 가수를 알아야 하고, 음악 인식은 소리를 들려줘야 한다. Vague-Finder는 그 사이를
 메운다. 분위기, 상황, 앨범 커버의 인상, 소리의 느낌, 어렴풋한 가사 한 구절처럼 **모호하고 불완전한 회상
-단서**를 자연어로 받아 후보 곡을 찾는다. 한국 대중음악 952곡을 대상으로 한 연구용 프로토타입이다.
+단서**를 자연어로 받아 후보 곡을 찾는다. 한국 대중음악 3,010곡을 대상으로 한 연구용 프로토타입이다.
 
 <p align="center">
   <img src="docs/images/map_demo.gif" width="880"
@@ -33,7 +33,7 @@
 - **리랭킹** — 한국어 Cross-Encoder가 상위 후보를 다시 정렬한다
 - **재질문** — 결과가 애매하면 보컬 성별이나 장르를 되묻고, "이 곡 아님"으로 거절하면 그 곡을 빼고 다시 찾는다
 - **선정 근거** — 어떤 검색 경로가 순위를 만들었는지 보여 주고, 가사가 근거일 때는 원문 구절을 인용한다
-- **노래 맵** — 952곡을 소리(CLAP)와 정서(KoE5) 두 기준의 2D 지도로 펼치고, 검색 결과를 지도 위에 표시한다.
+- **노래 맵** — 3,010곡을 소리(CLAP)와 정서(KoE5) 두 기준의 2D 지도로 펼치고, 검색 결과를 지도 위에 표시한다.
   재생은 YouTube 임베드로 한다
 
 ## 검색 구조
@@ -64,16 +64,24 @@ flowchart LR
 
 ## 성능
 
-평가 질의 세트 v06 (팀이 직접 쓴 회상형 질의, dev 57 · test 25)에서 현재 운영 설정으로 잰 결과다.
+평가 질의 세트 v06 (팀이 직접 쓴 회상형 질의, dev 57 · test 25)을 3,010곡 코퍼스에서 현재 운영 설정으로 잰 결과다.
+**엄격** 지표는 질의를 쓸 때 정한 원래 타깃만 정답으로 세고, **확장** 지표는 팀이 후보를 검토해 더한 허용 정답
+(v08 라벨, 질의 20개 · 82곡)까지 정답으로 센다 — 기획의 이중 정답 구조다.
 
-| split | Hit@1 | Hit@5 | Hit@10 | MRR@10 | nDCG@10 |
-| --- | --- | --- | --- | --- | --- |
-| dev (57) | 0.404 | 0.684 | 0.789 | 0.536 | 0.594 |
-| test (25) | 0.560 | 0.560 | 0.680 | 0.577 | 0.581 |
+| split | 라벨 | Hit@1 | Hit@5 | Hit@10 | MRR@10 | nDCG@10 |
+| --- | --- | --- | --- | --- | --- | --- |
+| dev (57) | 엄격 | 0.386 | 0.561 | 0.632 | 0.449 | 0.492 |
+| dev (57) | 확장 | 0.491 | 0.719 | 0.772 | 0.571 | – |
+| test (25) | 엄격 | 0.400 | 0.560 | 0.560 | 0.460 | 0.475 |
+| test (25) | 확장 | 0.480 | 0.680 | 0.680 | 0.551 | – |
 
-- 요청 한 번의 처리 시간 중앙값은 **4.21초**다 (dev 57건, 모델 예열 후)
+- 요청 한 번의 처리 시간은 중앙값 **4.2초**, p95 5.3초다 (dev 57건, 모델 예열 후)
+- 952곡 때(dev 엄격 Hit@10 0.789)보다 낮다. 곡 수만 늘린 것이 아니라 수집본·임베딩·색인을 함께 바꾼
+  코퍼스 교체 결과이며, 하락이 어디서 왔는지는 아직 나누어 재지 않았다
 - test는 여러 번 확인에 쓴 분할이라 새 홀드아웃 검증이 아니라 회귀 확인에 가깝다
-- 측정 방법과 근거: [`experiments/reranking/results_v21_ce_topn/RUN_INFO.md`](experiments/reranking/results_v21_ce_topn/RUN_INFO.md)
+- 측정 방법과 근거: [`experiments/reranking/results_v22_corpus3010/RUN_INFO.md`](experiments/reranking/results_v22_corpus3010/RUN_INFO.md)
+  · 처리 시간: [`experiments/latency/run_v04_hybrid_payload/RUN_INFO.md`](experiments/latency/run_v04_hybrid_payload/RUN_INFO.md)
+  · 952곡 기준선: [`experiments/reranking/results_v21_ce_topn/RUN_INFO.md`](experiments/reranking/results_v21_ce_topn/RUN_INFO.md)
 
 ## 기술 스택
 
