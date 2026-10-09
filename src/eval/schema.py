@@ -74,7 +74,8 @@ TARGET_SCOPES: tuple = ("specific", "categorical")
 #   v04         : 2026-08 3인 작성 60개 (v0.5 공식 기준선의 대상)
 #   modality_v1 : 2026-08-24 모달리티 분리 효과 + 나무위키 사전 기준선 14개
 #   clarify_v1  : 2026-09 재질문 측정용 신규 질의 (단계 2)
-QuerySet = Literal["v04", "modality_v1", "clarify_v1"]
+#   v09         : 2026-10 2차 세트 100개 — Claude 초안(메타데이터·표지만 참조) + 황찬혁 검토. dev 62 · test 38(봉인)
+QuerySet = Literal["v04", "modality_v1", "clarify_v1", "v09"]
 
 # 질의가 어떤 단서에 의존하는지. modality_v1의 type을 옮긴 것으로,
 # 나무위키 크롤링 전후 비교처럼 단서 유형별 효과를 볼 때 사용한다.

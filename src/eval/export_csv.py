@@ -19,10 +19,10 @@ from __future__ import annotations
 import argparse
 import csv
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, get_args
 
 from src.eval.loader import DEFAULT_EVAL_PATH, load_eval_set
-from src.eval.schema import EvalQuery
+from src.eval.schema import EvalQuery, QuerySet
 
 # 기준 세트. v05는 v11~v18 숫자의 기준이라 얼려 두었다 — 기본 출력이 그것을 덮어쓰면 안 된다.
 DEFAULT_OUT = Path("experiments/reranking/eval_queries_v06.csv")
@@ -83,7 +83,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--query-set",
         action="append",
-        choices=["v04", "modality_v1", "clarify_v1"],
+        choices=list(get_args(QuerySet)),
         help="특정 출처 세트만. 반복 지정 가능. 생략하면 전부",
     )
     p.add_argument(
