@@ -55,8 +55,9 @@ def test_answers_for_reranker_new_only_drops_confirming_answers(monkeypatch):
 def test_type_slot_label_switch(monkeypatch):
     from src.retrieval.gemini_listwise_reranker import _corrections_block
     monkeypatch.delenv("GEMINI_RERANK_TYPE_SLOT_LABEL", raising=False)
-    block = _corrections_block([ClarifyAnswer(slot="type", value="솔로")])
+    block = _corrections_block([ClarifyAnswer(slot="type", value="솔로"), ClarifyAnswer(slot="artist_type", value="그룹")])
     assert "- artist type (solo/group/duo/band): 솔로" in block
+    assert "- artist_type: 그룹" in block, "스위치를 끄면 artist_type 슬롯 문구도 전과 같아야 한다 (PR #27 리뷰)"
     monkeypatch.setenv("GEMINI_RERANK_TYPE_SLOT_LABEL", "artist type")
     block = _corrections_block([ClarifyAnswer(slot="type", value="솔로"), ClarifyAnswer(slot="artist_type", value="그룹")])
     assert "- artist type: 솔로" in block and "- artist type: 그룹" in block and "solo/group" not in block

@@ -162,7 +162,6 @@ _ANSWER_SLOT_LABELS = {
     "vocal_gender": "vocal gender",
     "genre": "genre",
     "type": "artist type (solo/group/duo/band)",
-    "artist_type": "artist type (solo/group/duo/band)",
     "release_era": "release era",
 }
 
@@ -185,7 +184,11 @@ def _corrections_block(answers: Optional[Sequence[ClarifyAnswer]]) -> str:
     '잘 모르겠어요'(skipped)는 정보가 없으므로 넣지 않는다.
     """
     labels = dict(_ANSWER_SLOT_LABELS)
-    labels["type"] = labels["artist_type"] = type_slot_label()
+    # 스위치를 켰을 때만 문구를 바꾼다(type과, 옛 클라이언트가 보내는 artist_type 둘 다). 끄면 전과 같다 —
+    # artist_type은 표에 없어 슬롯 이름 그대로("- artist_type: 솔로")다 (PR #27 리뷰: 기본값 동일 유지).
+    custom_type_label = os.getenv("GEMINI_RERANK_TYPE_SLOT_LABEL", "").strip()
+    if custom_type_label:
+        labels["type"] = labels["artist_type"] = custom_type_label
     lines = [
         f"- {labels.get(a.slot, a.slot)}: {a.value}"
         for a in answers or []
