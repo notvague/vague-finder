@@ -73,6 +73,7 @@ Oracle과 Noisy를 반드시 나눠 본다. Oracle만 제시하면 과대평가�
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import asyncio
 import csv
 import json
@@ -114,6 +115,7 @@ from src.retrieval.analysis_cache import (
     analyzer_fingerprint,
     load_cache,
 )
+from src.retrieval.explain import RERANK_APPLIED, RERANK_FAILED
 from src.retrieval.evaluate_search_accuracy import (
     collect_run_info,
     first_relevant_rank,
@@ -230,6 +232,10 @@ class TurnResult:
         return self.rank is not None
 
 
+# 실행 전체의 리랭커 상태 집계 — runinfo에 남긴다("실패 0건"을 로그 grep이 아니라 파일로 확인, 리뷰).
+RERANK_STATUS_COUNTS: Counter = Counter()
+
+
 async def run_search(
     router,
     reranker,
@@ -249,6 +255,7 @@ async def run_search(
     """
     pool: List[str] = []
     tracks: List = []
+    rerank_input: List = []
     candidates = await router.search(
         analysis,
         top_k=candidate_k,
@@ -257,6 +264,7 @@ async def run_search(
         exclude_ids=list(exclude_ids or []),
         candidate_ids_out=pool,
         candidate_tracks_out=tracks,
+        rerank_input_tracks_out=rerank_input,
         answers=list(answers or []),
         answer_multiplier=answer_multiplier,
     )
@@ -266,10 +274,22 @@ async def run_search(
 
     # 리랭크의 가사 exact 그룹 정렬은 질의의 성별·장르를 다시 본다. 원래 분석을
     # 넘기면 사용자가 정정한 답이 그 자리에서 무시된다(라우터와 같은 이유).
+    # 리랭커 입력은 라우터가 알려 준 목록(실험 스위치가 순서를 바꿨으면 그 순서). 후보 순위·Recall 지표는
+    # 보너스 순서의 candidates 기준 그대로다. 입력이 달랐는데 리랭킹이 실패/생략되면 서비스처럼 후보 순서로 돌아간다.
+    rerank_source = rerank_input if rerank_input else list(candidates)
+    input_differs = [str(t.id) for t in rerank_source] != [str(t.id) for t in candidates]
+    errors: List[str] = []
+    statuses: List[str] = []
     reranked_all = rerank_preserving_exact_lyrics(
-        reranker, analysis_with_answers(analysis, answers or []), candidates, candidate_k,
+        reranker, analysis_with_answers(analysis, answers or []), rerank_source, candidate_k,
         answers=answers_for_reranker(analysis, list(answers or [])),  # 라우터와 같은 선별
+        errors=errors, statuses=statuses,
     )
+    RERANK_STATUS_COUNTS.update(statuses or ["no_status"])
+    if errors:
+        RERANK_STATUS_COUNTS["exception"] += 1
+    if input_differs and (errors or RERANK_APPLIED not in statuses):
+        reranked_all = list(candidates)  # 라우터와 같은 조건: 적용된 실행이 없으면 후보(보너스) 순서
     shown = [str(t.id) for t in reranked_all[:top_k]]
     candidate_ids = [str(t.id) for t in candidates]
 
@@ -988,6 +1008,13 @@ async def evaluate(args: argparse.Namespace) -> None:
     print(f"\n질의 {len(queries)}개 · 개입 대상 {len(intervention_ids)}개 · "
           f"답변 보너스 ×{weight} · {elapsed:.0f}초")
     print_summaries(args.output_dir, summary, by_scope, intervention_ids)
+    # 리랭커 실행 상태 집계를 runinfo에 남긴다 — (a)에서는 적용 실패가 곧 보너스 순서 폴백이라 수가 중요하다 (리뷰)
+    run_info["clarify"]["rerank_status_counts"] = dict(RERANK_STATUS_COUNTS)
+    run_info["clarify"]["elapsed_seconds"] = round(elapsed, 1)
+    (args.output_dir / "clarify_runinfo.json").write_text(
+        json.dumps(run_info, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8"
+    )
+    print(f"리랭커 상태: {dict(RERANK_STATUS_COUNTS)}")
     print(f"상세: {args.output_dir / 'clarify_detail.csv'}")
     print(f"턴별: {args.output_dir / 'clarify_turns.csv'}")
 

@@ -8,6 +8,7 @@ dev 57에서 ①(`GEMINI_RERANK_CORRECTIONS=new_only`)+②(`GEMINI_RERANK_TYPE_S
   그런 행에서 flow:noisy가 바뀌면 변동이 아니라 ①의 효과다.
 - `type_label`: 답 중 type 슬롯이 있음 → ②가 문구를 바꾼다. 단 그 type 답이 분석과 같은 값이면 ①+② 측정에서는 ①이 먼저
   빼서 ②의 문구가 닿지 않으므로 `corrections`로만 센다(q205 솔로, q110·q112·q210 그룹).
+- `has_answer` 열: 답이 하나라도 있는 실행 행 — (a)(`CLARIFY_RERANK_INPUT_ORDER`)와 위약은 이 행 전부의 리랭커 입력을 바꾼다.
 - `both` / `unchanged` / `not_run`: ran=0 행(개입 대상이 아니거나 슬롯 값이 없어 다른 결과가 복사된 행)은 답을 보지 않고
   `not_run`이다 — 거기서 생기는 차이는 첫 검색의 실행 변동뿐이다.
 - `oracle:best`는 따로 검색하지 않고 그 질의의 oracle:* 중 가장 좋은 것을 고르므로(하네스 add_oracle_best), 같은 질의에서
@@ -80,7 +81,8 @@ def classify(rdir: Path, entries: dict, positives: dict, corpus: dict) -> list[d
     for r in csv.DictReader(open(rdir / "clarify_detail.csv", encoding="utf-8-sig")):
         qid, policy = r["query_id"], r["policy"]
         ran = r["ran"] in ("1", "1.0", "True")
-        row = {"query_id": qid, "policy": policy, "target_id": r["target_id"], "ran": int(ran), "answers": "", "confirming": "", "group": "not_run"}
+        row = {"query_id": qid, "policy": policy, "target_id": r["target_id"], "ran": int(ran), "answers": "", "confirming": "", "group": "not_run",
+               "has_answer": 0}  # (a)·위약은 답이 하나라도 있는 실행 행 전부의 리랭커 입력을 바꾼다 → 별도 열
         if ran and policy != "oracle:best":
             entry = entries.get(qid)
             analysis = QueryAnalysis(**(entry.get("analysis", entry))) if entry else None
@@ -93,6 +95,7 @@ def classify(rdir: Path, entries: dict, positives: dict, corpus: dict) -> list[d
             confirming = [a for a in answers if analysis is not None and answer_confirms_analysis(analysis, a)]
             typed = [a for a in answers if a.slot in ("type", "artist_type") and a not in confirming]
             row["answers"] = "|".join(f"{a.slot}={a.value}" for a in answers)
+            row["has_answer"] = int(bool(answers))
             row["confirming"] = "|".join(f"{a.slot}={a.value}" for a in confirming)
             row["group"] = "both" if confirming and typed else "corrections" if confirming else "type_label" if typed else "unchanged"
         rows_out.append(row)
@@ -102,8 +105,13 @@ def classify(rdir: Path, entries: dict, positives: dict, corpus: dict) -> list[d
     for x in rows_out:
         if x["policy"].startswith("oracle:") and x["policy"] != "oracle:best" and x["ran"]:
             by_query[x["query_id"]].add(x["group"])
+    by_query_ans: dict[str, int] = defaultdict(int)
+    for x in rows_out:
+        if x["policy"].startswith("oracle:") and x["policy"] != "oracle:best" and x["ran"]:
+            by_query_ans[x["query_id"]] |= x["has_answer"]
     for x in rows_out:
         if x["policy"] == "oracle:best" and x["ran"]:
+            x["has_answer"] = by_query_ans.get(x["query_id"], 0)
             g = by_query.get(x["query_id"], set())
             has_c = bool(g & {"corrections", "both"}); has_t = bool(g & {"type_label", "both"})
             x["group"] = "both" if has_c and has_t else "corrections" if has_c else "type_label" if has_t else "unchanged"
@@ -128,6 +136,7 @@ def main() -> None:
     executed = [x for x in rows_out if x["ran"]]
     changed = [x for x in executed if x["group"] in ("corrections", "type_label", "both")]
     print(f"저장: {out} ({len(rows_out)}행)  {dict(counts)}")
+    print(f"  실행된 행 {len(executed)} 중 (a)·위약이 입력을 바꾸는 행(답이 하나라도 있음) {sum(x['has_answer'] for x in executed)}")
     print(f"  실행된 행 {len(executed)} 중 ①·②가 입력을 바꾸는 행 {len(changed)} "
           f"(① {sum(x['group']=='corrections' for x in changed)} · ② {sum(x['group']=='type_label' for x in changed)} · 둘 다 {sum(x['group']=='both' for x in changed)})")
     for kind in ("oracle", "noisy"):

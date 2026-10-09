@@ -44,7 +44,7 @@ from src.retrieval.explain import (
 )
 from src.common.gemini_client import gemini_route_info
 from src.retrieval import search_router as _search_router
-from src.retrieval.clarify import reranker_corrections_mode
+from src.retrieval.clarify import reranker_corrections_mode, reranker_input_order_mode
 from src.retrieval.gemini_listwise_reranker import type_slot_label
 from src.retrieval.search_router import (
     call_reranker,
@@ -426,6 +426,7 @@ def _ranking_switches(config: Any) -> dict:
         # 재질문 답변이 LLM 리랭커 프롬프트에 들어가는 방식 (results_clarify_v10_corrections 리뷰)
         "gemini_rerank_corrections": reranker_corrections_mode(),
         "gemini_rerank_type_slot_label": type_slot_label(),
+        "clarify_rerank_input_order": reranker_input_order_mode(),
     }
 
 

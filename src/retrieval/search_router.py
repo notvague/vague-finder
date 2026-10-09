@@ -40,6 +40,7 @@ from src.retrieval.clarify import (
     analysis_with_answers,
     answers_for_reranker,
     apply_answer_bonus,
+    candidates_for_reranker,
     canonical_artist_types as _canonical_artist_types,
 )
 from src.retrieval.search_service import SearchService
@@ -837,6 +838,7 @@ class SearchRouter:
         exclude_ids: Optional[Iterable[str]] = None,
         candidate_ids_out: Optional[List[str]] = None,
         candidate_tracks_out: Optional[List[MatchingTrack]] = None,
+        rerank_input_tracks_out: Optional[List[MatchingTrack]] = None,
         lyrics_snapshot_out: Optional[List[Any]] = None,
         answers: Optional[Sequence[ClarifyAnswer]] = None,
         answer_multiplier: Optional[float] = None,
@@ -865,6 +867,8 @@ class SearchRouter:
         candidate_ids_out: 리스트를 넘기면 최종 후보 풀의 id가 순위 순으로 채워진다.
             반환 타입을 바꾸지 않고 후보 풀을 밖으로 내보내기 위한 통로다
             (호출부가 eval 스크립트 포함 3곳이라 반환 시그니처를 못 바꾼다).
+        rerank_input_tracks_out: 답을 쓰는 리랭커가 받은 후보 목록(실험 스위치 CLARIFY_RERANK_INPUT_ORDER가
+            바꾼 순서). 꺼져 있으면 후보 목록과 같다. 평가 하네스가 같은 입력으로 리랭킹하려고 쓴다.
         candidate_tracks_out: 같은 통로의 MatchingTrack 버전. 재질문 슬롯을 고르려면
             후보의 성별·장르 메타데이터가 필요한데 id만으로는 알 수 없다.
         answers: 재질문 답변. **질의를 바꾸지 않고** 후보 풀 안에서 재정렬만 한다.
@@ -1595,6 +1599,7 @@ class SearchRouter:
         boosted = _reject_and_trim(boosted, excluded, candidates)
 
         # 답변은 여기서만 반영한다 — 후보 풀은 그대로 두고 순위만 바꾼다.
+        pre_bonus = list(boosted)
         if answers:
             boosted = apply_answer_bonus(
                 boosted, meta_cache, answers, 1.0 / (_RRF_K + 1),
@@ -1604,6 +1609,12 @@ class SearchRouter:
 
         # LLM 리랭커 프롬프트에 넘길 답변. 보너스·가사 exact 묶음은 위처럼 전부 쓴다.
         reranker_answers = answers_for_reranker(analysis, answers) if answers else answers
+        # 실험 (a)·위약: **답을 쓰는 리랭커의 입력에만** 보너스 전(또는 섞은) 순서를 넘긴다. 후보 목록·기록·폴백·
+        # 리랭킹 생략·CE 경로는 보너스 순서(boosted) 그대로다 — 그러지 않으면 재질문 답이 통째로 사라진다(리뷰).
+        rerank_order: List[Tuple[str, float]] = list(boosted)
+        if answers and getattr(self._reranker, "uses_clarify_answers", False):
+            rerank_order = candidates_for_reranker(pre_bonus, boosted, answers)
+        rerank_input_differs = [sid for sid, _ in rerank_order] != [sid for sid, _ in boosted]
 
         for song_id, retrieval_score in boosted:
             recorder.set_retrieval(song_id, retrieval_score)
@@ -1612,30 +1623,39 @@ class SearchRouter:
         if candidate_ids_out is not None:
             candidate_ids_out.extend(song_id for song_id, _ in boosted)
 
-        candidate_tracks: List[MatchingTrack] = []
-        for song_id, retrieval_score in boosted:
-            base_track = meta_cache.get(song_id)
-            if base_track is None:
-                base_track = MatchingTrack(
-                    id=song_id,
-                    score=retrieval_score,
-                    title="Unknown",
-                    artist="Unknown",
+        def _tracks_from(order: Sequence[Tuple[str, float]]) -> List[MatchingTrack]:
+            tracks: List[MatchingTrack] = []
+            for song_id, retrieval_score in order:
+                base_track = meta_cache.get(song_id)
+                if base_track is None:
+                    base_track = MatchingTrack(
+                        id=song_id,
+                        score=retrieval_score,
+                        title="Unknown",
+                        artist="Unknown",
+                    )
+                    logger.debug("[SearchRouter] metadata 없는 id=%s", song_id)
+                tracks.append(
+                    base_track.model_copy(
+                        update={
+                            "score": float(retrieval_score),
+                            "retrieval_score": float(retrieval_score),
+                            "rerank_score": None,
+                        }
+                    )
                 )
-                logger.debug("[SearchRouter] metadata 없는 id=%s", song_id)
+            return tracks
 
-            candidate_tracks.append(
-                base_track.model_copy(
-                    update={
-                        "score": float(retrieval_score),
-                        "retrieval_score": float(retrieval_score),
-                        "rerank_score": None,
-                    }
-                )
-            )
+        candidate_tracks: List[MatchingTrack] = _tracks_from(boosted)
+        # 답을 쓰는 리랭커가 받을 목록. 스위치가 꺼져 있으면 후보 목록과 같다.
+        rerank_tracks: List[MatchingTrack] = (
+            _tracks_from(rerank_order) if rerank_input_differs else candidate_tracks
+        )
 
         if candidate_tracks_out is not None:
             candidate_tracks_out.extend(candidate_tracks)
+        if rerank_input_tracks_out is not None:
+            rerank_input_tracks_out.extend(rerank_tracks)
 
         # 보호 판정은 평가 스크립트와 **같은 함수**로 한다(사본이 갈리지 않게).
         protected_lyric_ids = select_protected_lyric_ids(candidate_tracks)
@@ -1662,14 +1682,17 @@ class SearchRouter:
                 # exact 그룹은 그룹 내부에서만 리랭킹하고 일반 후보 아래로는 내리지 않는다.
                 protected_tracks = [
                     track
-                    for track in candidate_tracks
+                    for track in rerank_tracks
                     if track.id in protected_lyric_ids
                 ]
                 other_tracks = [
                     track
-                    for track in candidate_tracks
+                    for track in rerank_tracks
                     if track.id not in protected_lyric_ids
                 ]
+                # 백엔드가 예외 없이 실패를 보고하면(Gemini) 입력 순서가 그대로 돌아온다. 입력이 보너스 전
+                # 순서였다면 그 폴백은 답을 버린 결과이므로 후보 목록(보너스 순서)으로 돌아간다.
+                run_statuses: List[str] = []
 
                 if protected_tracks:
                     # 같은 가사 구절이 여러 곡에 실제로 존재하면 명시된 성별/가수/
@@ -1700,6 +1723,7 @@ class SearchRouter:
                                 min(remaining_group_slots, len(group)),
                                 reranker_answers,
                                 recorder,
+                                run_statuses,
                             )
                             group = await loop.run_in_executor(
                                 self._pool,
@@ -1722,6 +1746,7 @@ class SearchRouter:
                             remaining,
                             reranker_answers,
                             recorder,
+                            run_statuses,
                         )
                         other_tracks = await loop.run_in_executor(
                             self._pool,
@@ -1752,6 +1777,9 @@ class SearchRouter:
                     )
                     recorder.note_order_rules_applied()
                     recorder.commit_reorder()
+                    if rerank_input_differs and self._rerank_reported_failure(run_statuses):
+                        recorder.revoke_reorder()
+                        final = candidate_tracks[:top_k]
                     recorder.set_rank_after([t.id for t in final])
                     for t in final:
                         recorder.set_rerank_score(t.id, t.rerank_score)
@@ -1762,17 +1790,21 @@ class SearchRouter:
                     call_reranker,
                     self._reranker,
                     analysis.original_query,
-                    candidate_tracks,
+                    rerank_tracks,
                     top_k,
                     reranker_answers,
                     recorder,
+                    run_statuses,
                 )
                 reranked = await loop.run_in_executor(
                     self._pool,
                     timer.job(
-                        "rerank.main", rerank_job, size=len(candidate_tracks)
+                        "rerank.main", rerank_job, size=len(rerank_tracks)
                     ),
                 )
+                if rerank_input_differs and self._rerank_reported_failure(run_statuses):
+                    recorder.revoke_reorder()
+                    reranked = candidate_tracks[:top_k]
                 recorder.commit_reorder()
                 recorder.set_rank_after([t.id for t in reranked])
                 for t in reranked:
@@ -1799,6 +1831,11 @@ class SearchRouter:
         final = candidate_tracks[:top_k]
         recorder.set_rank_after([t.id for t in final])
         return final
+
+    @staticmethod
+    def _rerank_reported_failure(statuses: Sequence[str]) -> bool:
+        """백엔드가 보고한 상태 중 적용된 것이 하나도 없으면 True(실패·생략·상태 없음 모두). 리뷰 — 조건 하나로."""
+        return RERANK_APPLIED not in statuses
 
     @staticmethod
     def _apply_explicit_boosts(
