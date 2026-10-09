@@ -441,9 +441,66 @@ def answers_for_reranker(
       the original query"로 받고 일반 속성을 과하게 따라 정답을 Top-10 밖으로 보낸 m402(남성·발라드)가 근거
       (results_clarify_v09). 답변 보너스·가사 exact 묶음은 이 함수를 거치지 않는다 — 거기서는 전부 쓴다.
     """
+    if reranker_input_order_mode().startswith("placebo"):
+        return []  # 위약 대조: 순서만 바꾸고 답은 프롬프트에 넣지 않는다
     if reranker_corrections_mode() != "new_only":
         return list(answers)
     return [a for a in answers if not answer_confirms_analysis(analysis, a)]
+
+
+def reranker_input_order_mode() -> str:
+    """`CLARIFY_RERANK_INPUT_ORDER`의 실제 적용값 — bonus(기본) / pre_bonus / placebo:<seed>. runinfo에도 이 함수로 적는다."""
+    mode = os.getenv("CLARIFY_RERANK_INPUT_ORDER", "bonus").strip().lower()
+    if mode in ("pre_bonus", "prebonus", "pre-bonus"):
+        return "pre_bonus"
+    if mode.startswith("placebo"):
+        seed = mode.split(":", 1)[1] if ":" in mode else "0"
+        return f"placebo:{int(seed) if seed.isdigit() else 0}"
+    return "bonus"
+
+
+def candidates_for_reranker(
+    pre_bonus: Sequence[tuple[str, float]],
+    boosted: Sequence[tuple[str, float]],
+    answers: Sequence[ClarifyAnswer],
+) -> list[tuple[str, float]]:
+    """**답을 쓰는 리랭커의 입력**으로 넘길 후보 순서. 실험 스위치 `CLARIFY_RERANK_INPUT_ORDER` (a).
+
+    - bonus(기본): 답변 보너스를 적용한 순서 — v09·v10까지의 동작
+    - pre_bonus: 답변이 있어도 리랭커에는 **보너스 전 순서·점수**를 넘긴다. listwise는 같은 후보 집합에서 순서만
+      바뀌어도 결과가 갈린다(results_clarify_v10_corrections: m402 발라드·솔로). 답이 후보 대부분과 맞을 때는 보너스가
+      정답과 경쟁곡에 같이 붙어 순서만 흔들고, 답이 정답을 가려내는 경우(m402 2000년대 7→3, c603 록/메탈 22→1)에는
+      정답만 올린다 — 그 이득이 리랭킹 경로에서 사라지는지가 측정 항목이다.
+    - placebo:<seed>: 위약 대조. 보너스가 바꾼 바로 그 자리들의 곡을 고정 시드(+후보 id)로 섞고, 답은 프롬프트에
+      넣지 않는다(`answers_for_reranker`가 빈 목록). 순서만 바뀌었을 때의 흔들림을 재서 (a)·①의 득실과 비교한다.
+
+    이 순서는 **답을 쓰는 리랭커가 실제로 돌 때 그 입력에만** 쓴다(라우터·하네스). 리랭킹 폴백·생략·use_rerank=False·
+    답을 안 받는 리랭커(CE) 경로는 보너스 순서를 그대로 쓴다 — 그러지 않으면 재질문 답이 서비스에서 통째로 사라진다(리뷰).
+    답변이 없으면 두 순서가 같다. 후보 풀(집합)은 어느 쪽이든 같다.
+    """
+    mode = reranker_input_order_mode()
+    if not answers or mode == "bonus":
+        return list(boosted)
+    if mode == "pre_bonus":
+        return list(pre_bonus)
+    # placebo: 보너스가 **바꾼 바로 그 자리들**의 곡을 고정 시드로 섞는다(같은 자리 수·같은 범위). 30자리 전체에서
+    # 고르면 보너스보다 2~4배 크게 흔들려(평균 이동 1.07 vs 2.4~4.2, 리뷰) 실제 효과가 노이즈처럼 보인다.
+    # 시드에 후보 id 목록을 섞어 행마다 독립된 표본이 되게 한다 — Random(seed)만 쓰면 k가 같은 행이 전부 같은 패턴이다.
+    import random
+
+    pre = list(pre_bonus)
+    changed = [i for i in range(min(len(pre), len(boosted))) if pre[i][0] != boosted[i][0]]
+    if len(changed) < 2:
+        return pre
+    rng = random.Random(f"{mode}|{','.join(sid for sid, _ in pre)}")
+    values = [pre[i] for i in changed]
+    for _ in range(10):  # 항등 순열이면 다시 섞는다(가능한 범위에서)
+        rng.shuffle(values)
+        if [v[0] for v in values] != [pre[i][0] for i in changed]:
+            break
+    for i, v in zip(changed, values):
+        pre[i] = v
+    return pre
 
 
 def reranker_corrections_mode() -> str:
