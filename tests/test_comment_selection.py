@@ -31,7 +31,7 @@ def comment(text, likes=0):
 @pytest.fixture
 def fake_gemini(monkeypatch):
     """배치마다 verdicts(list) 또는 예외를 순서대로 돌려준다."""
-    monkeypatch.setattr(llm_utils, "GEMINI_API_KEY", "dummy")
+    monkeypatch.setattr(llm_utils, "GEMINI_CONFIGURED", True)
     monkeypatch.setattr(llm_utils.time, "sleep", lambda s: None)
     calls = []
 
@@ -47,10 +47,11 @@ def fake_gemini(monkeypatch):
                 return types.SimpleNamespace(text=json.dumps(item, ensure_ascii=False))
 
         class _Client:
-            def __init__(self, api_key=None):
+            def __init__(self):
                 self.models = _Models()
 
-        monkeypatch.setattr(llm_utils.genai, "Client", _Client)
+        # 클라이언트는 공용 헬퍼가 만든다(Vertex·AI Studio 키) — 그 자리를 가짜로 바꾼다
+        monkeypatch.setattr(llm_utils, "make_genai_client", lambda **kwargs: _Client())
         return calls
     return install
 

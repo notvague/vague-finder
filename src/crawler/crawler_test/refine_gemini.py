@@ -18,14 +18,14 @@
 주의:
 - 네트워크/쿼터 문제로 실패할 수 있어 재시도 로직(3회)이 들어가 있음
 """
-import os
 import json
 import logging
 import time
 from typing import Dict, List, Optional, Any
 
-from google import genai
 from dotenv import load_dotenv
+
+from src.common.gemini_client import gemini_configured, make_genai_client
 
 # 로깅 설정
 # logging configured by main
@@ -34,12 +34,12 @@ logger = logging.getLogger(__name__)
 # .env 로드
 load_dotenv()
 
-# Gemini API 설정
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# Gemini 설정 — Vertex(GCP_PROJECT_ID) 또는 AI Studio 키(GEMINI_API_KEY) 중 하나라도 있으면 쓴다
+GEMINI_CONFIGURED = gemini_configured()
 
-# 키가 없으면 경고
-if not GEMINI_API_KEY:
-    logger.warning("GEMINI_API_KEY가 설정되지 않았습니다.")
+# 설정이 없으면 경고
+if not GEMINI_CONFIGURED:
+    logger.warning("Gemini 설정(GCP_PROJECT_ID·GEMINI_API_KEY)이 없습니다.")
 
 
 def _ensure_list(value: Any) -> List[str]:
@@ -354,17 +354,17 @@ def refine_data(metadata: Dict, lyrics: Optional[str], reaction: Optional[Dict])
     # 3) 프롬프트 생성
     prompt = generate_prompt(metadata, lyrics, melon_comments, youtube_comments)
     
-    # 4) API 키 없으면 즉시 실패
+    # 4) Gemini 설정 없으면 즉시 실패
     # === Gemini 모드 ===
-    if not GEMINI_API_KEY:
-        logger.error("Gemini API Key 누락! .env파일 확인요망")
+    if not GEMINI_CONFIGURED:
+        logger.error("Gemini 설정 누락! .env의 GCP_PROJECT_ID(Vertex) 또는 GEMINI_API_KEY 확인요망")
         return {}
-        
+
     # 5) 재시도 설정 (유료 플랜이므로 안정성을 위해 3회 재시도)
     max_retries = 3
 
-    # 6) Gemini 클라이언트 생성
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    # 6) Gemini 클라이언트 생성 (Vertex 또는 AI Studio 키 — src/common/gemini_client.py)
+    client = make_genai_client()
     
     # 7) 재시도 루프
     for attempt in range(max_retries):
@@ -550,14 +550,14 @@ def select_emotional_comments_with_llm(
     품질이 부족하면 20개 미만으로 끝날 수 있다.
     """
 
-    if not GEMINI_API_KEY:
-        logger.warning("GEMINI_API_KEY가 없어 댓글 LLM 선별을 수행할 수 없습니다.")
+    if not GEMINI_CONFIGURED:
+        logger.warning("Gemini 설정이 없어 댓글 LLM 선별을 수행할 수 없습니다.")
         return [c.get("text", "") for c in comments[:target_count]]
 
     if not comments:
         return []
 
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    client = make_genai_client()
 
     kept_items: List[Dict[str, Any]] = []
     reviewed_items: List[Dict[str, Any]] = []

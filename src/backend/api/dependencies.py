@@ -6,6 +6,7 @@ from pathlib import Path
 
 from typing import Any, Callable, TypeVar
 
+from src.common.gemini_client import gemini_configured
 from src.embedding.models.audio_clap import CLAPAudioEmbedder
 from src.embedding.models.image_siglip2 import SigLIP2Embedder
 from src.embedding.models.text_bm25 import BM25SparseEncoder
@@ -181,17 +182,17 @@ def get_reranker():
 
     CE로 돌리려면 RERANKER_BACKEND=cross_encoder. v22·v27~v31 기준선은 CE로 잰 것이라 재현에 필요하다.
 
-    **GEMINI_API_KEY가 없으면 CE로 내려간다.** 키 없는 listwise는 입력 순서를 그대로 돌려주므로
-    리랭킹이 사실상 꺼진 채 조용히 뜨게 된다 — 그보다는 로컬 CE가 낫고, 로그에 남긴다.
-    실행 중 Gemini 호출이 모두 실패하면 listwise가 검색 순서를 유지하고 상태를 failed로 남긴다
-    (`GeminiListwiseReranker.rerank_run`). 그때 CE로 바꿔 타지는 않는다 — 두 모델을 함께 올리지 않는다.
+    **Gemini 설정(GCP_PROJECT_ID 또는 GEMINI_API_KEY)이 없으면 CE로 내려간다.** 설정 없는 listwise는
+    입력 순서를 그대로 돌려주므로 리랭킹이 사실상 꺼진 채 조용히 뜨게 된다 — 그보다는 로컬 CE가 낫고,
+    로그에 남긴다. 실행 중 Gemini 호출이 모두 실패하면 listwise가 검색 순서를 유지하고 상태를 failed로
+    남긴다(`GeminiListwiseReranker.rerank_run`). 그때 CE로 바꿔 타지는 않는다 — 두 모델을 함께 올리지 않는다.
     """
     backend = os.getenv("RERANKER_BACKEND", DEFAULT_RERANKER_BACKEND).strip().lower()
     if backend in {"gemini_listwise", "gemini-listwise", "gemini"}:
-        if os.getenv("GEMINI_API_KEY", "").strip():
+        if gemini_configured():
             return GeminiListwiseReranker()
         logger.warning(
-            "[reranker] RERANKER_BACKEND=%s인데 GEMINI_API_KEY가 없다 — Cross-Encoder로 내려간다",
+            "[reranker] RERANKER_BACKEND=%s인데 Gemini 설정(GCP_PROJECT_ID·GEMINI_API_KEY)이 없다 — Cross-Encoder로 내려간다",
             backend,
         )
     # 기존 모델은 첫 요청 때 지연 로딩한다.

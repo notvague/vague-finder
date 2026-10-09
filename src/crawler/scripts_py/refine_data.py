@@ -22,15 +22,14 @@ NOTE:
 
 import json
 import logging
-import os
 import re
 import time
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
-from google import genai
 
 from src.common.emotion_vocab import canonical_emotion, vocab_prompt_line
+from src.common.gemini_client import gemini_configured, make_genai_client
 from src.embedding.fixtures.meta_validation import has_failure_marker
 
 # 로깅 설정
@@ -40,10 +39,10 @@ logger = logging.getLogger(__name__)
 # .env 로드
 load_dotenv()
 
-# Gemini API 설정
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    logger.warning("GEMINI_API_KEY가 설정되지 않았습니다.")
+# Gemini 설정 — Vertex(GCP_PROJECT_ID) 또는 AI Studio 키(GEMINI_API_KEY) 중 하나라도 있으면 쓴다
+GEMINI_CONFIGURED = gemini_configured()
+if not GEMINI_CONFIGURED:
+    logger.warning("Gemini 설정(GCP_PROJECT_ID·GEMINI_API_KEY)이 없습니다.")
 
 
 MAX_LYRICS_CHARS = 1000
@@ -481,13 +480,13 @@ def refine_data(
     )
 
     # === Gemini 모드 ===
-    if not GEMINI_API_KEY:
-        logger.error("Gemini API Key 누락! .env파일 확인요망")
+    if not GEMINI_CONFIGURED:
+        logger.error("Gemini 설정 누락! .env의 GCP_PROJECT_ID(Vertex) 또는 GEMINI_API_KEY 확인요망")
         return {}
 
     # 재시도 설정 (유료 플랜이므로 안정성을 위해 3회 재시도)
     max_retries = 3
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    client = make_genai_client()
 
     for attempt in range(max_retries):
         try:
