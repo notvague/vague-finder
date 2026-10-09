@@ -66,23 +66,28 @@ flowchart LR
 
 평가 질의는 두 세트다. **v06**(팀이 직접 쓴 회상형 질의, dev 57 · test 25)과 **v09**(2026-10 추가, Claude 초안 + 팀장 검토, dev 59 · 봉인 test 38).
 3,010곡 코퍼스, 원래 타깃만 정답으로 세는 엄격 지표다. 리랭커 두 백엔드를 같은 질의·같은 후보로 잰 결과다.
+Gemini listwise는 두 줄이다. 전환 근거가 된 측정(v32~v34)은 드라마·OST 질의에 웹 검색 교차검증을 켠 설정이었고, 현재 기본값은 그 검증을 끈 설정(v35)이다.
 
 | 세트 | 리랭커 | Hit@1 | Hit@5 | Hit@10 | MRR@10 |
 | --- | --- | --- | --- | --- | --- |
 | v06 dev (57) | Cross-Encoder | 0.386 | 0.561 | 0.649 | 0.451 |
-| v06 dev (57) | **Gemini listwise (기본)** | **0.491** | **0.702** | **0.737** | **0.560** |
+| v06 dev (57) | Gemini listwise, 교차검증 켬 (v32) | 0.491 | 0.702 | 0.737 | 0.560 |
+| v06 dev (57) | **Gemini listwise, 현재 기본 (v35)** | **0.474** | **0.702** | **0.754** | **0.556** |
 | v09 dev (59) | Cross-Encoder | 0.288 | 0.525 | 0.610 | 0.385 |
-| v09 dev (59) | **Gemini listwise (기본)** | **0.525** | **0.678** | **0.712** | **0.588** |
+| v09 dev (59) | Gemini listwise, 교차검증 켬 (v33) | 0.525 | 0.678 | 0.712 | 0.588 |
+| v09 dev (59) | **Gemini listwise, 현재 기본 (v35)** | **0.525** | **0.678** | **0.695** | **0.589** |
 | v09 test (38, 봉인·1회) | Cross-Encoder | 0.368 | 0.553 | 0.632 | 0.460 |
-| v09 test (38, 봉인·1회) | **Gemini listwise (기본)** | **0.500** | **0.737** | **0.789** | **0.609** |
+| v09 test (38, 봉인·1회) | **Gemini listwise, 교차검증 켬 (v34)** | **0.500** | **0.737** | **0.789** | **0.609** |
 
-- 세 세트 합산 154건에서 Top-10 진입 97 → 114, Top-10 이탈 0건. 튜닝에 쓰지 않은 봉인 test에서도 dev와 같은 크기다
-- 요청 전체 처리 시간(dev 57건, 예열 뒤): Cross-Encoder 중앙값 **4.2초** · p95 5.3초, Gemini listwise 중앙값 **6.8초** · p95 18.8초.
-  꼬리는 드라마·예능 같은 외부 맥락 질의에서 희소 사실 검증이 웹 검색을 도는 경우다
+- 교차검증 켠 설정 기준 세 세트 합산 154건에서 Top-10 진입 97 → 114, Top-10 이탈 0건. 튜닝에 쓰지 않은 봉인 test에서도 dev와 같은 크기다
+- 교차검증을 끈 현재 기본은 dev 116건에서 Hit@10 84 → 84(v06 +1, v09 −1)로 같고, 바뀐 질의는 실행 간 변동 범위다. 봉인 test는 한 번만 열기로 해 현재 기본으로 다시 재지 않았다.
+  검증은 구조 규칙(`gemini_rare_fact_rescue`)으로만 순서에 반영되는데 v34에서 발동 0회라, 끈 설정이어도 같은 결과가 나왔을 측정이다
+- 요청 전체 처리 시간(dev 57건, 예열 뒤): Cross-Encoder 중앙값 **4.2초** · p95 5.3초, Gemini listwise 중앙값 **7.0초** · p95 8.6초.
+  질의당 Gemini 호출은 2회(질의 분석 1 · 리랭킹 1)다. 교차검증을 켜면 외부 맥락 질의만 리랭킹이 약 11초 늘어 p95가 18.8초였다
 - 허용 정답(팀이 검토해 더한 유사 정답)까지 세는 확장 지표는 v06에만 있다: Cross-Encoder 기준 dev Hit@10 0.789 · test 0.680
-- 측정 방법과 근거: [`results_v32_gemini_listwise`](experiments/reranking/results_v32_gemini_listwise/RUN_INFO.md) ·
+- 측정 방법과 근거: [`results_v35_rare_verify_off`](experiments/reranking/results_v35_rare_verify_off/RUN_INFO.md)(현재 기본) · [`results_v32_gemini_listwise`](experiments/reranking/results_v32_gemini_listwise/RUN_INFO.md) ·
   [`results_v33_v09_dev`](experiments/reranking/results_v33_v09_dev/RUN_INFO.md) · [`results_v34_v09_test`](experiments/reranking/results_v34_v09_test/RUN_INFO.md) ·
-  Cross-Encoder 기준선 [`results_v22_corpus3010`](experiments/reranking/results_v22_corpus3010/RUN_INFO.md) · 처리 시간 [`run_v04_hybrid_payload`](experiments/latency/run_v04_hybrid_payload/RUN_INFO.md)(CE) · [`run_v05_listwise_default`](experiments/latency/run_v05_listwise_default/RUN_INFO.md)(listwise)
+  Cross-Encoder 기준선 [`results_v22_corpus3010`](experiments/reranking/results_v22_corpus3010/RUN_INFO.md) · 처리 시간 [`run_v04_hybrid_payload`](experiments/latency/run_v04_hybrid_payload/RUN_INFO.md)(CE) · [`run_v06_rare_verify_off`](experiments/latency/run_v06_rare_verify_off/RUN_INFO.md)(listwise)
 
 ## 기술 스택
 

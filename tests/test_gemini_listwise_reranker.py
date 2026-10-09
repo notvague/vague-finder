@@ -564,13 +564,13 @@ def test_every_rescue_rule_this_backend_emits_has_a_label():
 
 
 def test_default_config_is_single_pass_without_search(monkeypatch):
-    """2026-10-09 전환: 측정한 설정(1패스·Search 끔·희소 사실 검증 켬)이 기본값이어야 한다."""
+    """2026-10-09 전환: 1패스·Search 끔(results_v32~v34)에 희소 사실 검증 끔(results_v35)이 기본값이어야 한다."""
     for k in ("GEMINI_RERANK_PASSES", "GEMINI_RERANK_USE_SEARCH", "GEMINI_RERANK_RARE_FACT_VERIFY"):
         monkeypatch.delenv(k, raising=False)
     cfg = GeminiListwiseRerankerConfig.from_env()
     assert cfg.passes == 1
     assert cfg.use_search_grounding is False
-    assert cfg.rare_fact_verification is True
+    assert cfg.rare_fact_verification is False  # results_v35: 구조 규칙이 오답만 올렸고 외부 맥락 질의 +11초
     assert cfg.rerank_weight == 0.85 and cfg.max_candidates == 30
 
 
