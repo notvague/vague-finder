@@ -33,7 +33,8 @@ def test_vertex_when_project_is_set(monkeypatch, captured):
     gc.make_genai_client(http_options="opts")
     assert captured == [{"vertexai": True, "project": "proj-1", "location": "global", "http_options": "opts"}]
     assert gc.gemini_backend() == "vertex"
-    assert gc.gemini_route_info() == {"backend": "vertex", "project": "proj-1", "location": "global"}
+    # 프로젝트 ID는 runinfo(공개 레포)에 남으면 안 되는 식별자라 적지 않는다 — backend·location만
+    assert gc.gemini_route_info() == {"backend": "vertex", "location": "global"}
 
 
 def test_location_comes_from_env(monkeypatch, captured):
