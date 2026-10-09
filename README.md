@@ -127,8 +127,9 @@ Node.js는 수집 파이프라인(yt-dlp)을 돌릴 때만 필요하다.
 python3 -m venv venv
 venv/bin/pip install -r requirements.txt
 
-# 2. 환경 변수 — GEMINI_API_KEY를 채운다
+# 2. 환경 변수 — Gemini는 Vertex AI(GCP_PROJECT_ID + 로컬 ADC) 또는 GEMINI_API_KEY 중 하나
 cp .env.example .env
+gcloud auth application-default login   # Vertex를 쓸 때 한 번
 
 # 3. 벡터 DB 적재 (data/all_songs.jsonl과 artifacts/embeddings/가 있어야 한다)
 venv/bin/python -m src.vector_db.cli.qdrant_load --recreate
