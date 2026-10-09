@@ -347,4 +347,11 @@ def test_benchmark_runner_defaults_to_v05_sets_and_keeps_sealed_test_out(eval_se
     assert len(default) == sum(1 for q in eval_set.queries if q.query_set in V05_QUERY_SETS)
     v09_dev = select_queries(eval_set.queries, ["v09"], ["dev"])
     assert v09_dev and all(q.query_set == "v09" and q.split == "dev" for q in v09_dev)
-    assert select_queries(eval_set.queries, ["v09"], ["test"])  # 명시해야만 돈다
+    # v09를 고르고 split을 안 주면 dev만 — 경고만 남기고 test를 돌리면 봉인이 아니다 (리뷰)
+    v09_only = select_queries(eval_set.queries, ["v09"])
+    assert [q.query_id for q in v09_only] == [q.query_id for q in v09_dev]
+    assert not any(q.split == "test" for q in select_queries(eval_set.queries, ["v09", "v04"]) if q.query_set == "v09")
+    # --split test를 명시했을 때만 든다
+    v09_test = select_queries(eval_set.queries, ["v09"], ["test"])
+    assert v09_test and all(q.split == "test" for q in v09_test)
+    assert len(v09_test) == 38

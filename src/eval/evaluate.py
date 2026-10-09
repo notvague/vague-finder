@@ -411,13 +411,16 @@ def select_queries(
     """이 진입점이 돌릴 질의를 고른다. 세트를 안 주면 v0.5 세트(v04·modality_v1·clarify_v1)다.
 
     `queries.json` 전체를 기본으로 두면 v09 봉인 test 38건이 함께 돌아간다(PR #16~#22 리뷰).
-    봉인 세트는 최종 설정 하나로 한 번만 여는 것이므로 `--query-set v09 --split test`로 명시해야 돈다.
+    봉인 세트는 최종 설정 하나로 한 번만 여는 것이므로 **`--split test`를 명시했을 때만** v09 test가 든다.
+    v09를 고르고 split을 안 주면 dev만 고른다(리뷰: 경고만 남기고 돌면 봉인이 아니다).
     `export_csv.select`와 달리 정답 없는 질의도 남긴다 — 이 러너는 그 질의를 따로 집계한다.
     """
     chosen = tuple(query_sets) if query_sets else V05_QUERY_SETS
     picked = [q for q in queries if q.query_set in chosen]
     if splits:
         picked = [q for q in picked if q.split in splits]
+    else:
+        picked = [q for q in picked if not (q.query_set == "v09" and q.split == "test")]
     return picked
 
 
@@ -433,14 +436,14 @@ def main() -> None:
         action="append",
         choices=list(QuerySet.__args__),
         default=None,
-        help="질의 세트(반복 가능). 기본은 v0.5 세트. v09 봉인 test는 --query-set v09 --split test로만 돈다",
+        help="질의 세트(반복 가능). 기본은 v0.5 세트. v09는 split을 안 주면 dev만 돌고, 봉인 test는 --split test를 명시해야 든다",
     )
     p.add_argument(
         "--split",
         action="append",
         choices=("dev", "test"),
         default=None,
-        help="split(반복 가능). 기본은 고른 세트의 모든 split",
+        help="split(반복 가능). 기본은 고른 세트의 모든 split(단, v09 봉인 test 제외)",
     )
     p.add_argument(
         "--synthetic",
@@ -480,7 +483,8 @@ def main() -> None:
     catalog = load_song_catalog(args.catalog)
     logger.info("Eval set v%s, %d/%d queries (sets=%s, splits=%s) / Catalog %d songs",
                 eval_set.version, len(picked), len(full_set.queries),
-                ",".join(args.query_set or V05_QUERY_SETS), ",".join(args.split or ["all"]), len(catalog))
+                ",".join(args.query_set or V05_QUERY_SETS),
+                ",".join(args.split) if args.split else "dev,test(v09 test 제외)", len(catalog))
 
     if args.synthetic == "perfect":
         search_fn: SearchFn = make_perfect_search_fn(eval_set)
@@ -517,6 +521,9 @@ def main() -> None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "eval_set_version": eval_set.version,
+            "query_sets": list(args.query_set or V05_QUERY_SETS),
+            "splits": list(args.split or ["dev", "test"]),  # split을 안 주면 둘 다 — 단 v09 test는 select_queries가 뺀다
+            "v09_sealed_test_excluded": not (args.split and "test" in args.split),
             "top_k": args.top_k,
             "synthetic": args.synthetic,
             "ablation": {
