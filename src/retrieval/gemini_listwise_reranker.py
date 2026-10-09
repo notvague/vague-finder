@@ -213,8 +213,9 @@ class GeminiListwiseRerankerConfig:
 
     2패스는 Hit@10 +1에 리랭킹 10초, Search grounding은 Hit@1·MRR을 더 올리지만 13~15초가 든다.
     1패스·끔은 리랭킹 중앙값 4.5~5.4초에 이득의 대부분(세 세트 합산 Hit@10 +17, 손실 0)을 남긴다.
-    희소 사실 교차검증(rare_fact_verification)은 그대로 켜 둔다 — 측정한 설정이 그것이다.
-    GEMINI_RERANK_PASSES=2 · GEMINI_RERANK_USE_SEARCH=1로 되돌릴 수 있다.
+    희소 사실 교차검증(rare_fact_verification)도 **끈다** (results_v35). 3,010곡 listwise 기록 전부에서 구조 규칙이
+    3번 발동했고 셋 다 오답을 9위로 올렸다. 끄면 dev 116건 Hit@10 84 → 84, 외부 맥락 질의 리랭킹 15초 → 4~5초.
+    GEMINI_RERANK_PASSES=2 · GEMINI_RERANK_USE_SEARCH=1 · GEMINI_RERANK_RARE_FACT_VERIFY=1로 되돌릴 수 있다.
     """
     model_name: str = "gemini-3.1-flash-lite"
     enabled: bool = True
@@ -226,7 +227,7 @@ class GeminiListwiseRerankerConfig:
     low_confidence_threshold: float = 0.55
     use_search_grounding: bool = False
     search_evidence_chars: int = 7000
-    rare_fact_verification: bool = True
+    rare_fact_verification: bool = False
     rare_fact_batch_size: int = 15
     rare_fact_min_support: float = 0.86
     rare_fact_min_confidence: float = 0.78
@@ -270,7 +271,7 @@ class GeminiListwiseRerankerConfig:
                 2000,
                 min(12000, int(os.getenv("GEMINI_RERANK_SEARCH_EVIDENCE_CHARS", "7000"))),
             ),
-            rare_fact_verification=_env_bool("GEMINI_RERANK_RARE_FACT_VERIFY", True),
+            rare_fact_verification=_env_bool("GEMINI_RERANK_RARE_FACT_VERIFY", False),
             rare_fact_batch_size=max(5, min(20, int(os.getenv("GEMINI_RERANK_RARE_FACT_BATCH", "15")))),
             rare_fact_min_support=min(0.99, max(0.50, float(os.getenv("GEMINI_RERANK_RARE_FACT_MIN_SUPPORT", "0.86")))),
             rare_fact_min_confidence=min(0.99, max(0.50, float(os.getenv("GEMINI_RERANK_RARE_FACT_MIN_CONFIDENCE", "0.78")))),
