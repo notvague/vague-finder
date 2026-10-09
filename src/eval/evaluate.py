@@ -523,7 +523,7 @@ def main() -> None:
             "eval_set_version": eval_set.version,
             "query_sets": list(args.query_set or V05_QUERY_SETS),
             "splits": list(args.split or ["dev", "test"]),  # split을 안 주면 둘 다 — 단 v09 test는 select_queries가 뺀다
-            "v09_sealed_test_excluded": not (args.split and "test" in args.split),
+            "v09_sealed_test_excluded": not sealed,
             "top_k": args.top_k,
             "synthetic": args.synthetic,
             "ablation": {
