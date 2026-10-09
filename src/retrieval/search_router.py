@@ -38,6 +38,7 @@ from src.retrieval.lyrics_exact_search import LyricsExactSearchService
 from src.retrieval.lyrics_query import normalize_lyric_surface
 from src.retrieval.clarify import (
     analysis_with_answers,
+    answers_for_reranker,
     apply_answer_bonus,
     canonical_artist_types as _canonical_artist_types,
 )
@@ -1601,6 +1602,9 @@ class SearchRouter:
                 recorder=recorder,
             )
 
+        # LLM 리랭커 프롬프트에 넘길 답변. 보너스·가사 exact 묶음은 위처럼 전부 쓴다.
+        reranker_answers = answers_for_reranker(analysis, answers) if answers else answers
+
         for song_id, retrieval_score in boosted:
             recorder.set_retrieval(song_id, retrieval_score)
         recorder.set_rank_before([song_id for song_id, _ in boosted])
@@ -1694,7 +1698,7 @@ class SearchRouter:
                                 analysis.original_query,
                                 group,
                                 min(remaining_group_slots, len(group)),
-                                answers,
+                                reranker_answers,
                                 recorder,
                             )
                             group = await loop.run_in_executor(
@@ -1716,7 +1720,7 @@ class SearchRouter:
                             analysis.original_query,
                             other_tracks,
                             remaining,
-                            answers,
+                            reranker_answers,
                             recorder,
                         )
                         other_tracks = await loop.run_in_executor(
@@ -1760,7 +1764,7 @@ class SearchRouter:
                     analysis.original_query,
                     candidate_tracks,
                     top_k,
-                    answers,
+                    reranker_answers,
                     recorder,
                 )
                 reranked = await loop.run_in_executor(

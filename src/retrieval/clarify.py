@@ -57,6 +57,7 @@ q203이 그런 경우다 — 성별을 정확히 답해도 순위가 그대로�
 from __future__ import annotations
 
 import logging
+import os
 import re
 from collections import Counter
 from typing import Dict, Iterable, Optional, Sequence
@@ -392,6 +393,64 @@ def analysis_with_answers(
 # ---------------------------------------------------------------------------
 # 답변 병합 (구 방식 — 재검색 경로에서는 더 이상 쓰지 않는다)
 # ---------------------------------------------------------------------------
+
+def answer_confirms_analysis(analysis: QueryAnalysis, answer: ClarifyAnswer) -> bool:
+    """답이 원래 질의 분석과 **같은 값**인지 — 새 정보가 아니라 확인만 해 준 답인지.
+
+    병합해도 분석의 해당 슬롯 값이 바뀌지 않으면 확인용 답이다(확신도는 보지 않는다).
+    스킵·빈 값·모르는 슬롯은 정보가 없으므로 False다.
+    """
+    if answer.skipped or not answer.value.strip():
+        return False
+    value = answer.value.strip()
+    slot = answer.slot
+    # merge_answer가 무시하는 값(목록 밖 성별·유형, 연대로 못 읽는 값)은 분석을 안 바꾸지만 확인용이 아니라
+    # 정보 없음이다 — 리뷰. 그대로 두면 "같은 값"으로 분류돼 빠진다.
+    if slot == "vocal_gender" and value not in _VOCAL_GENDERS:
+        return False
+    if slot in ("type", "artist_type") and value not in _ARTIST_TYPES:
+        return False
+    if slot == "release_era" and _parse_decade(value) is None:
+        return False
+    if slot not in ("vocal_gender", "genre", "type", "artist_type", "release_era"):
+        return False  # merge_answer를 거치면 "알 수 없는 슬롯" 경고가 찍힌다 — 정보 없음으로 바로 처리
+    merged = merge_answer(analysis.model_copy(deep=True), answer)
+    if slot == "vocal_gender":
+        return bool(analysis.vocal_gender) and merged.vocal_gender == analysis.vocal_gender
+    if slot == "genre":
+        return bool(analysis.genre) and merged.genre == analysis.genre
+    if slot in ("type", "artist_type"):
+        return bool(analysis.artist_type.values) and list(merged.artist_type.values) == list(analysis.artist_type.values)
+    if slot == "release_era":
+        return (
+            analysis.release_era.start_year is not None
+            and merged.release_era.start_year == analysis.release_era.start_year
+            and merged.release_era.end_year == analysis.release_era.end_year
+        )
+    return False
+
+
+def answers_for_reranker(
+    analysis: QueryAnalysis,
+    answers: Sequence[ClarifyAnswer],
+) -> list[ClarifyAnswer]:
+    """LLM 리랭커 프롬프트에 넘길 답변. 실험 스위치 `GEMINI_RERANK_CORRECTIONS`.
+
+    - all(기본): 전부 넘긴다 — v09 재질문 측정까지의 동작
+    - new_only: 원래 분석과 같은 값을 확인해 준 답은 뺀다. listwise가 확인용 답을 "more reliable than
+      the original query"로 받고 일반 속성을 과하게 따라 정답을 Top-10 밖으로 보낸 m402(남성·발라드)가 근거
+      (results_clarify_v09). 답변 보너스·가사 exact 묶음은 이 함수를 거치지 않는다 — 거기서는 전부 쓴다.
+    """
+    if reranker_corrections_mode() != "new_only":
+        return list(answers)
+    return [a for a in answers if not answer_confirms_analysis(analysis, a)]
+
+
+def reranker_corrections_mode() -> str:
+    """`GEMINI_RERANK_CORRECTIONS`의 실제 적용값 — 측정 runinfo에도 이 함수로 적는다."""
+    mode = os.getenv("GEMINI_RERANK_CORRECTIONS", "all").strip().lower()
+    return "new_only" if mode == "new_only" else "all"
+
 
 def merge_answer(analysis: QueryAnalysis, answer: ClarifyAnswer) -> QueryAnalysis:
     """사용자 답변을 분석 객체의 해당 슬롯에 채운다.

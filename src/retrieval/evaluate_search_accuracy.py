@@ -43,6 +43,8 @@ from src.retrieval.explain import (
     render_ko,
 )
 from src.retrieval import search_router as _search_router
+from src.retrieval.clarify import reranker_corrections_mode
+from src.retrieval.gemini_listwise_reranker import type_slot_label
 from src.retrieval.search_router import (
     call_reranker,
     exact_lyric_constraint_score,
@@ -418,6 +420,9 @@ def _ranking_switches(config: Any) -> dict:
         "reranker_min_spread": float(getattr(config, "min_spread", 0.0) or 0.0)
         if config is not None
         else None,
+        # 재질문 답변이 LLM 리랭커 프롬프트에 들어가는 방식 (results_clarify_v10_corrections 리뷰)
+        "gemini_rerank_corrections": reranker_corrections_mode(),
+        "gemini_rerank_type_slot_label": type_slot_label(),
     }
 
 

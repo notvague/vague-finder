@@ -94,6 +94,7 @@ from src.backend.api.dependencies import (
 )
 from src.backend.api.routes.search import _can_ask_another
 from src.retrieval.clarify import (
+    answers_for_reranker,
     analysis_with_answers,
     answer_matches,
     canonical_artist_types,
@@ -267,7 +268,7 @@ async def run_search(
     # 넘기면 사용자가 정정한 답이 그 자리에서 무시된다(라우터와 같은 이유).
     reranked_all = rerank_preserving_exact_lyrics(
         reranker, analysis_with_answers(analysis, answers or []), candidates, candidate_k,
-        answers=list(answers or []),
+        answers=answers_for_reranker(analysis, list(answers or [])),  # 라우터와 같은 선별
     )
     shown = [str(t.id) for t in reranked_all[:top_k]]
     candidate_ids = [str(t.id) for t in candidates]
