@@ -162,8 +162,18 @@ _ANSWER_SLOT_LABELS = {
     "vocal_gender": "vocal gender",
     "genre": "genre",
     "type": "artist type (solo/group/duo/band)",
+    "artist_type": "artist type (solo/group/duo/band)",
     "release_era": "release era",
 }
+
+
+def type_slot_label() -> str:
+    """재질문 type 슬롯 문구의 실제 적용값. 실험 스위치 `GEMINI_RERANK_TYPE_SLOT_LABEL`(비우면 기본).
+
+    '솔로' 답 2건이 모두 정답을 Top-10 밖으로 보냈다(results_clarify_v09) — 괄호 "(solo/group/duo/band)"가
+    원인인지 본다(results_clarify_v10_corrections: c603은 고쳐짐). 측정 runinfo에도 이 함수로 적는다.
+    """
+    return os.getenv("GEMINI_RERANK_TYPE_SLOT_LABEL", "").strip() or _ANSWER_SLOT_LABELS["type"]
 
 
 def _corrections_block(answers: Optional[Sequence[ClarifyAnswer]]) -> str:
@@ -174,8 +184,10 @@ def _corrections_block(answers: Optional[Sequence[ClarifyAnswer]]) -> str:
     "남자가 부르는"을 "여성"으로 정정해 후보 2위까지 올라왔지만 Top-10 밖으로 밀렸다.
     '잘 모르겠어요'(skipped)는 정보가 없으므로 넣지 않는다.
     """
+    labels = dict(_ANSWER_SLOT_LABELS)
+    labels["type"] = labels["artist_type"] = type_slot_label()
     lines = [
-        f"- {_ANSWER_SLOT_LABELS.get(a.slot, a.slot)}: {a.value}"
+        f"- {labels.get(a.slot, a.slot)}: {a.value}"
         for a in answers or []
         if not a.skipped and a.value
     ]
