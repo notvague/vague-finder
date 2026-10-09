@@ -42,7 +42,7 @@ from src.eval.metrics import (
     negative_hit_rate_at_k,
     recall_at_k,
 )
-from src.eval.schema import EvalQuery, EvalSet
+from src.eval.schema import EvalQuery, EvalSet, QuerySet, V05_QUERY_SETS
 
 logger = logging.getLogger(__name__)
 
@@ -403,6 +403,24 @@ def build_real_search_fn(
     return fn
 
 
+def select_queries(
+    queries: List[EvalQuery],
+    query_sets: Optional[List[str]] = None,
+    splits: Optional[List[str]] = None,
+) -> List[EvalQuery]:
+    """이 진입점이 돌릴 질의를 고른다. 세트를 안 주면 v0.5 세트(v04·modality_v1·clarify_v1)다.
+
+    `queries.json` 전체를 기본으로 두면 v09 봉인 test 38건이 함께 돌아간다(PR #16~#22 리뷰).
+    봉인 세트는 최종 설정 하나로 한 번만 여는 것이므로 `--query-set v09 --split test`로 명시해야 돈다.
+    `export_csv.select`와 달리 정답 없는 질의도 남긴다 — 이 러너는 그 질의를 따로 집계한다.
+    """
+    chosen = tuple(query_sets) if query_sets else V05_QUERY_SETS
+    picked = [q for q in queries if q.query_set in chosen]
+    if splits:
+        picked = [q for q in picked if q.split in splits]
+    return picked
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
@@ -410,6 +428,20 @@ def main() -> None:
     p.add_argument("--queries", type=Path, default=Path("docs/eval/queries.json"))
     p.add_argument("--catalog", type=Path, default=Path("docs/eval/song_catalog.json"))
     p.add_argument("--top-k", type=int, default=10)
+    p.add_argument(
+        "--query-set",
+        action="append",
+        choices=list(QuerySet.__args__),
+        default=None,
+        help="질의 세트(반복 가능). 기본은 v0.5 세트. v09 봉인 test는 --query-set v09 --split test로만 돈다",
+    )
+    p.add_argument(
+        "--split",
+        action="append",
+        choices=("dev", "test"),
+        default=None,
+        help="split(반복 가능). 기본은 고른 세트의 모든 split",
+    )
     p.add_argument(
         "--synthetic",
         choices=("perfect", "random"),
@@ -437,10 +469,18 @@ def main() -> None:
     )
     args = p.parse_args()
 
-    eval_set = load_eval_set(args.queries)
+    full_set = load_eval_set(args.queries)
+    picked = select_queries(full_set.queries, args.query_set, args.split)
+    if not picked:
+        p.error("고른 세트·split에 질의가 없습니다")
+    sealed = [q.query_id for q in picked if q.query_set == "v09" and q.split == "test"]
+    if sealed:
+        logger.warning("v09 봉인 test %d건이 포함됐다 — 최종 설정 하나로 한 번만 연다", len(sealed))
+    eval_set = full_set.model_copy(update={"queries": picked})
     catalog = load_song_catalog(args.catalog)
-    logger.info("Eval set v%s, %d queries / Catalog %d songs",
-                eval_set.version, len(eval_set.queries), len(catalog))
+    logger.info("Eval set v%s, %d/%d queries (sets=%s, splits=%s) / Catalog %d songs",
+                eval_set.version, len(picked), len(full_set.queries),
+                ",".join(args.query_set or V05_QUERY_SETS), ",".join(args.split or ["all"]), len(catalog))
 
     if args.synthetic == "perfect":
         search_fn: SearchFn = make_perfect_search_fn(eval_set)

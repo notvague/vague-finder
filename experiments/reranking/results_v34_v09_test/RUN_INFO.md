@@ -5,6 +5,9 @@ v09 봉인 test 38건을 **처음이자 마지막으로** 열었다. 채택 설�
 
 **결과: Hit@10 24 → 30 / 38 (0.632 → 0.789), Hit@1 14 → 19, MRR 0.460 → 0.609, 손실 0.** dev 두 세트(v06 +5, v09 +6)와 같은 방향·같은 크기다.
 
+> **보정(2026-10-09, PR #16~#22 리뷰)**: "grounding 끔"은 일반 패스의 Google Search grounding만 끈 것이고, 희소 사실 교차검증은 희소 단서 질의(test 38 중 3건)에 Google Search 호출을 유지했다.
+> 검증까지 끈 대조군은 `results_v35_rare_verify_off`(dev 116건 Hit@10 동일). 봉인 test에서 검증의 구조 규칙은 발동 0회라 검증을 끈 설정이어도 같은 결과다. 자세한 설명은 `results_v32_gemini_listwise/RUN_INFO.md` 보정 문단.
+
 ## 조건
 
 | 항목 | 값 |
