@@ -29,7 +29,7 @@ from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
 
 from src.common.emotion_vocab import canonical_emotion, vocab_prompt_line
-from src.common.gemini_client import gemini_configured, make_genai_client
+from src.common.gemini_client import crawl_model_name, gemini_configured, make_genai_client
 from src.embedding.fixtures.meta_validation import has_failure_marker
 
 # 로깅 설정
@@ -491,7 +491,7 @@ def refine_data(
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
-                model="gemini-3.1-flash-lite",
+                model=crawl_model_name(),
                 contents=prompt,
                 config={"response_mime_type": "application/json"},
             )

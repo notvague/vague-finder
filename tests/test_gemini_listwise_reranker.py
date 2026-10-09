@@ -580,6 +580,7 @@ def test_get_reranker_defaults_to_listwise_and_falls_back_without_key(monkeypatc
 
     monkeypatch.delenv("RERANKER_BACKEND", raising=False)
     monkeypatch.delenv("GCP_PROJECT_ID", raising=False)
+    monkeypatch.delenv("GEMINI_RETRIEVAL_BACKEND", raising=False)  # 개발자 .env의 검색 경로 고정과 무관하게
     monkeypatch.setenv("GEMINI_API_KEY", "시험용")
     deps.get_reranker.cache_clear()
     assert isinstance(deps.get_reranker(), GeminiListwiseReranker)
@@ -592,6 +593,11 @@ def test_get_reranker_defaults_to_listwise_and_falls_back_without_key(monkeypatc
     monkeypatch.setenv("GCP_PROJECT_ID", "시험-프로젝트")
     deps.get_reranker.cache_clear()
     assert isinstance(deps.get_reranker(), GeminiListwiseReranker)
+    # 검색을 AI Studio로 고정했는데 키가 없으면 Vertex로 바꿔 타지 않고 CE로 내려간다(로그에 남는다)
+    monkeypatch.setenv("GEMINI_RETRIEVAL_BACKEND", "api_key")
+    deps.get_reranker.cache_clear()
+    assert isinstance(deps.get_reranker(), MusicReranker)
+    monkeypatch.delenv("GEMINI_RETRIEVAL_BACKEND", raising=False)
     monkeypatch.delenv("GCP_PROJECT_ID", raising=False)
 
     monkeypatch.setenv("GEMINI_API_KEY", "시험용")

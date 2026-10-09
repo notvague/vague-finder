@@ -128,6 +128,7 @@ python3 -m venv venv
 venv/bin/pip install -r requirements.txt
 
 # 2. 환경 변수 — Gemini는 Vertex AI(GCP_PROJECT_ID + 로컬 ADC) 또는 GEMINI_API_KEY 중 하나
+#    검색(질의 분석·리랭커)만 경로를 고정하려면 GEMINI_RETRIEVAL_BACKEND=api_key|vertex (.env.example 3-c)
 cp .env.example .env
 gcloud auth application-default login   # Vertex를 쓸 때 한 번
 
