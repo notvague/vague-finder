@@ -64,7 +64,9 @@ def backend_setting(purpose: Optional[str] = None) -> str:
     env = _PURPOSE_ENV[purpose]
     raw = os.getenv(env, "").strip().lower()
     if raw not in _SETTING_ALIASES:
-        raise ValueError(f"{env}={raw!r} — auto / api_key / vertex 중 하나여야 한다")
+        # 값은 메시지에 넣지 않는다 — 이 칸에 API 키를 잘못 넣으면 기동·측정 로그에 키가 그대로 남는다.
+        raise ValueError(f"{env} 값을 알 수 없다 — auto / api_key / vertex 중 하나여야 한다. "
+                         "키는 GEMINI_API_KEY에 넣고 이 칸에는 글자 그대로 api_key를 적는다")
     return _SETTING_ALIASES[raw]
 
 

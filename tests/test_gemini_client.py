@@ -135,6 +135,12 @@ def test_unknown_retrieval_setting_is_an_error(monkeypatch, captured):
     monkeypatch.setenv("GEMINI_RETRIEVAL_BACKEND", "aistudio")
     with pytest.raises(ValueError, match="auto / api_key / vertex"):
         gc.gemini_backend(purpose=gc.RETRIEVAL)
+
+    # API 키를 이 칸에 잘못 넣어도 에러 메시지(→ 기동·측정 로그)에 키가 남지 않는다
+    monkeypatch.setenv("GEMINI_RETRIEVAL_BACKEND", "AIzaSy-시험용-가짜-키")
+    with pytest.raises(ValueError) as err:
+        gc.gemini_backend(purpose=gc.RETRIEVAL)
+    assert "aizasy" not in str(err.value).lower() and "가짜" not in str(err.value)
     assert gc.gemini_backend() == "vertex", "용도 없는 호출(크롤링)은 이 설정을 읽지 않는다"
 
 
