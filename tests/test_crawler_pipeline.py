@@ -37,6 +37,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
+from src.common.gemini_client import crawl_model_name
 from src.crawler import main as crawler
 from src.crawler.scripts_py import crawl_state
 from src.crawler.scripts_py.collect_melon_data import (
@@ -212,6 +213,7 @@ def test_full_pipeline_writes_complete_folder_and_jsonl(pipeline) -> None:
     assert status["selection"]["melon"]["song_id"] == SONG_ID
     assert status["selection"]["youtube"]["video_url"] == "https://www.youtube.com/watch?v=abc"
     assert status["pipeline_version"] == crawl_state.PIPELINE_VERSION
+    assert status["refine_model"] == crawl_model_name(), "정제 모델이 곡마다 남아야 모델이 섞인 코퍼스를 가려낸다"
     issues = validate_meta_document(records[0], song_dir=folder, require_media_files=True)
     assert issues == [], [i.to_dict() for i in issues]
 

@@ -58,6 +58,7 @@ from src.crawler.scripts_py.refine_data import (
     blank_comment_fields_without_evidence,
     refine_data,
 )
+from src.common.gemini_client import crawl_model_name
 from src.crawler.scripts_py.collect_namuwiki_data import collect_namuwiki_data
 from src.crawler.scripts_py.llm_utils import CommentSelectionUnavailable
 from src.crawler.scripts_py.crawl_state import (
@@ -828,6 +829,11 @@ def stage_analysis(state: CrawlState, source: Dict) -> str:
         return "LLM Analysis Failed"
 
     record = build_record(source, final_meta, state)
+    # 정제 모델을 수집 이력에 남긴다. 정제 태그(mood_tags·emotion_tags 등)는 색인·검색·리랭커 입력이라, 모델이 바뀌면
+    # 그 뒤 정제한 곡만 다른 모델의 태그를 갖는다 — 곡마다 가려낼 수 있어야 한다(PR #31 리뷰).
+    # 이 필드가 없는 레코드는 2026-10-09 이전 정제(gemini-3.1-flash-lite 이하)다. refine_data와 같은 프로세스·같은 env라
+    # 방금 쓴 모델과 같다. build_record는 이 단계에서만 불린다(재색인은 meta.json을 그대로 쓴다).
+    record["crawl_status"]["refine_model"] = crawl_model_name()
     record = note_validation_gap(state, record)
 
     meta_path = state.folder / META_FILE
