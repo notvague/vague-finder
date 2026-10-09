@@ -224,6 +224,26 @@ def test_export_can_reproduce_a_single_query_set(eval_set) -> None:
     assert len(v04) == 55
 
 
+def test_export_defaults_to_v05_sets_and_needs_v09_explicitly(eval_set) -> None:
+    """--query-set 생략이 '전부'면 v06 CSV가 v09로 덮어써지고 봉인 test가 함께 나간다 (PR #20 리뷰)."""
+    default = select(eval_set.queries)
+    assert {q.query_set for q in default} == {"v04", "modality_v1", "clarify_v1"}
+    assert len(default) == 82  # v06 dev 57 + test 25
+    v09 = select(eval_set.queries, query_sets=["v09"])
+    assert len(v09) == 97 and all(q.query_set == "v09" for q in v09)
+
+
+def test_clarification_evaluator_defaults_to_v05_sets() -> None:
+    """재질문 평가기도 같은 기본값 — 기본 --labels(v06 CSV)와 맞아야 시작한다."""
+    from src.eval.loader import DEFAULT_EVAL_PATH
+    from src.retrieval.evaluate_clarification import select_queries
+    dev = select_queries(DEFAULT_EVAL_PATH, "dev")
+    assert dev and not any(q.query_id.startswith("n") for q in dev)
+    assert len(dev) == 57
+    v09_dev = select_queries(DEFAULT_EVAL_PATH, "dev", query_sets=["v09"])
+    assert len(v09_dev) == 59 and all(q.query_set == "v09" for q in v09_dev)
+
+
 def test_export_rows_match_runner_columns(eval_set) -> None:
     rows = to_rows(select(eval_set.queries)[:3])
     for row in rows:

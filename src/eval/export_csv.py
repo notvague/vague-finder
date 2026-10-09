@@ -9,6 +9,10 @@ queries.json 60개와 eval_queries_v04.csv 53개가 따로 놀았다).
   python -m src.eval.export_csv
   python -m src.eval.export_csv --query-set v04 --out experiments/reranking/eval_queries_v04_regen.csv
   python -m src.eval.export_csv --with-allowed --out experiments/reranking/eval_queries_v08.csv
+  python -m src.eval.export_csv --query-set v09 --out experiments/reranking/eval_queries_v09.csv
+
+--query-set을 생략하면 v0.5 세트(v06 기준선)만 나간다. v09(2차 세트, 봉인 test 포함)는
+명시해야 나간다 — 기본값이 "전부"면 위 첫 명령이 얼려 둔 v06 CSV를 183건으로 덮어쓴다.
 
 split 컬럼은 그대로 실어 보내므로, 실제 dev/test 선택은 평가 스크립트의
 `--split`이 맡는다. 내보내기 단계에서 미리 거르지 않는 이유는 한 파일로
@@ -22,7 +26,7 @@ from pathlib import Path
 from typing import List, Optional, get_args
 
 from src.eval.loader import DEFAULT_EVAL_PATH, load_eval_set
-from src.eval.schema import EvalQuery, QuerySet
+from src.eval.schema import V05_QUERY_SETS, EvalQuery, QuerySet
 
 # 기준 세트. v05는 v11~v18 숫자의 기준이라 얼려 두었다 — 기본 출력이 그것을 덮어쓰면 안 된다.
 DEFAULT_OUT = Path("experiments/reranking/eval_queries_v06.csv")
@@ -45,8 +49,10 @@ def select(
     (pending_cover인데 positives가 있는 경우)은 포함한다.
     """
     picked = [q for q in queries if q.is_scorable]
-    if query_sets:
-        picked = [q for q in picked if q.query_set in query_sets]
+    # 세트를 지정하지 않으면 v0.5 세트(v06 기준선)만 낸다. "전부"가 기본이면 v09가 섞여
+    # 얼려 둔 v06 CSV를 덮어쓰고 봉인 test까지 함께 내보내진다 (PR #20 리뷰).
+    chosen = tuple(query_sets) if query_sets else V05_QUERY_SETS
+    picked = [q for q in picked if q.query_set in chosen]
     if splits:
         picked = [q for q in picked if q.split in splits]
     return picked
@@ -84,7 +90,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--query-set",
         action="append",
         choices=list(get_args(QuerySet)),
-        help="특정 출처 세트만. 반복 지정 가능. 생략하면 전부",
+        help="특정 출처 세트만. 반복 지정 가능. 생략하면 v0.5 세트(v04·modality_v1·clarify_v1 = v06 기준선). v09는 명시해야 나간다",
     )
     p.add_argument(
         "--split",

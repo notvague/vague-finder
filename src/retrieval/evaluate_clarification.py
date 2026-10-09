@@ -80,7 +80,7 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple, get_args
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -107,7 +107,7 @@ from src.backend.schemas.search import (
     MatchingTrack,
 )
 from src.eval.loader import DEFAULT_EVAL_PATH, load_eval_set, load_target_scopes
-from src.eval.schema import TARGET_SCOPES, EvalQuery
+from src.eval.schema import TARGET_SCOPES, EvalQuery, V05_QUERY_SETS, QuerySet
 from src.retrieval.analysis_cache import (
     AnalysisCacheError,
     analyzer_fingerprint,
@@ -669,8 +669,18 @@ def select_queries(
     split: Optional[str],
     limit: Optional[int] = None,
     query_ids: Optional[Sequence[str]] = None,
+    query_sets: Optional[Sequence[str]] = None,
 ) -> List[EvalQuery]:
-    queries = [q for q in load_eval_set(path).queries if q.is_scorable]
+    """측정 대상 질의. query_sets를 주지 않으면 v0.5 세트(v06 기준선)만 고른다.
+
+    queries.json에는 v09(2차 세트)가 같은 split으로 들어 있다. split만으로 고르면 v09 dev가
+    섞여 기본 --labels(v06 CSV)와 맞지 않아 멈추고, --split test는 봉인 test 38건을 연다 (PR #20 리뷰).
+    """
+    chosen = tuple(query_sets) if query_sets else V05_QUERY_SETS
+    queries = [
+        q for q in load_eval_set(path).queries
+        if q.is_scorable and q.query_set in chosen
+    ]
     if split:
         queries = [q for q in queries if q.split == split]
     if query_ids:
@@ -856,6 +866,7 @@ async def evaluate(args: argparse.Namespace) -> None:
     queries = select_queries(
         args.queries, args.split, args.limit,
         args.query_ids.split(",") if args.query_ids else None,
+        query_sets=args.query_set,
     )
     if not queries:
         raise ValueError("평가할 질의가 없습니다. --split과 label_status를 확인하세요.")
@@ -1037,6 +1048,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
     p.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     p.add_argument("--split", choices=["dev", "test"], default="dev")
+    p.add_argument(
+        "--query-set", action="append", choices=list(get_args(QuerySet)), default=None,
+        help="질의 출처 세트. 반복 지정 가능. 생략하면 v0.5 세트(v04·modality_v1·clarify_v1 = v06 기준선). "
+             "v09를 재려면 명시하고 --labels도 eval_queries_v09.csv로 바꾼다",
+    )
     p.add_argument("--top-k", type=int, default=10)
     p.add_argument("--candidate-k", type=int, default=30)
     p.add_argument("--limit", type=int, default=None, help="앞에서 N개만 (스모크용)")

@@ -76,6 +76,9 @@ TARGET_SCOPES: tuple = ("specific", "categorical")
 #   clarify_v1  : 2026-09 재질문 측정용 신규 질의 (단계 2)
 #   v09         : 2026-10 2차 세트 100개 — Claude 초안(메타데이터·표지만 참조) + 황찬혁 검토. dev 62 · test 38(봉인)
 QuerySet = Literal["v04", "modality_v1", "clarify_v1", "v09"]
+# v06 기준선(dev 57 · test 25)을 이루는 세트. CSV 내보내기와 재질문 평가기의 **기본 선택**이다 —
+# v09를 넣으려면 명시해야 한다. 그래야 얼려 둔 v06 CSV가 덮어써지지 않고 봉인 test가 섞여 열리지 않는다.
+V05_QUERY_SETS: tuple = ("v04", "modality_v1", "clarify_v1")
 
 # 질의가 어떤 단서에 의존하는지. modality_v1의 type을 옮긴 것으로,
 # 나무위키 크롤링 전후 비교처럼 단서 유형별 효과를 볼 때 사용한다.
