@@ -310,3 +310,13 @@ def test_target_scope_defaults_to_specific() -> None:
     with pytest.raises(ValueError):
         EvalQuery(query_id="x", query="질의", category="mixed", split="dev", query_set="v04",
                   positives=["1"], target_scope="vague")
+
+
+def test_runinfo_records_actual_reranker_backend_not_env():
+    """키가 없어 CE로 내려가거나 기본값이 바뀌어도 기록은 실제 객체를 따라야 한다 (PR 리뷰 P2)."""
+    from src.retrieval.evaluate_search_accuracy import _actual_backend
+    from src.retrieval.reranker import MusicReranker
+    from src.retrieval.gemini_listwise_reranker import GeminiListwiseReranker
+    assert _actual_backend(MusicReranker()) == "cross_encoder"
+    assert _actual_backend(GeminiListwiseReranker(client=object())) == "gemini_listwise"
+

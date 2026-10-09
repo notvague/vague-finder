@@ -263,22 +263,6 @@ def _image_dominant_analysis():
     )
 
 
-def test_default_reranker_is_cross_encoder(monkeypatch):
-    # Gemini listwise는 느리고 재질문 답변을 덮어쓰므로 설정 없이 켜지면 안 된다.
-    from src.backend.api import dependencies
-    from src.retrieval.reranker import MusicReranker
-
-    monkeypatch.delenv("RERANKER_BACKEND", raising=False)
-    dependencies.get_reranker.cache_clear()
-    try:
-        assert isinstance(dependencies.get_reranker(), MusicReranker)
-        monkeypatch.setenv("RERANKER_BACKEND", "gemini_listwise")
-        dependencies.get_reranker.cache_clear()
-        assert isinstance(dependencies.get_reranker(), GeminiListwiseReranker)
-    finally:
-        dependencies.get_reranker.cache_clear()
-
-
 def test_image_dominant_skip_applies_only_to_gemini_listwise():
     # 기존 Cross-Encoder는 기준선부터 이미지 질의도 리랭킹해 왔다. 함께 끄면
     # 백엔드를 바꾸지 않은 사람의 결과까지 달라진다.
@@ -602,3 +586,158 @@ def test_every_rescue_rule_this_backend_emits_has_a_label():
     for rule in emitted:
         assert f'"{rule}"' in source, f"{rule}을 더 이상 쓰지 않으면 테스트도 지워야 한다"
         assert rule in RULE_LABELS, f"{rule}에 라벨이 없다"
+
+
+def test_default_config_is_single_pass_without_search(monkeypatch):
+    """2026-10-09 전환: 측정한 설정(1패스·Search 끔·희소 사실 검증 켬)이 기본값이어야 한다."""
+    for k in ("GEMINI_RERANK_PASSES", "GEMINI_RERANK_USE_SEARCH", "GEMINI_RERANK_RARE_FACT_VERIFY"):
+        monkeypatch.delenv(k, raising=False)
+    cfg = GeminiListwiseRerankerConfig.from_env()
+    assert cfg.passes == 1
+    assert cfg.use_search_grounding is False
+    assert cfg.rare_fact_verification is True
+    assert cfg.rerank_weight == 0.85 and cfg.max_candidates == 30
+
+
+def test_get_reranker_defaults_to_listwise_and_falls_back_without_key(monkeypatch):
+    from src.backend.api import dependencies as deps
+    from src.retrieval.reranker import MusicReranker
+
+    monkeypatch.delenv("RERANKER_BACKEND", raising=False)
+    monkeypatch.setenv("GEMINI_API_KEY", "시험용")
+    deps.get_reranker.cache_clear()
+    assert isinstance(deps.get_reranker(), GeminiListwiseReranker)
+
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    deps.get_reranker.cache_clear()
+    assert isinstance(deps.get_reranker(), MusicReranker), "키가 없으면 CE로 내려가야 한다"
+
+    monkeypatch.setenv("GEMINI_API_KEY", "시험용")
+    monkeypatch.setenv("RERANKER_BACKEND", "cross_encoder")
+    deps.get_reranker.cache_clear()
+    assert isinstance(deps.get_reranker(), MusicReranker)
+    deps.get_reranker.cache_clear()
+
+
+def test_default_config_has_request_timeout_and_budget(monkeypatch):
+    for k in ("GEMINI_RERANK_TIMEOUT_SECONDS", "GEMINI_RERANK_BUDGET_SECONDS"):
+        monkeypatch.delenv(k, raising=False)
+    cfg = GeminiListwiseRerankerConfig.from_env()
+    assert cfg.request_timeout_seconds == 20.0 and cfg.time_budget_seconds == 30.0
+
+
+def test_client_is_built_with_http_timeout(monkeypatch):
+    """HTTP 제한이 없으면 멈춘 응답을 무기한 기다린다 (PR 리뷰 P1)."""
+    import google.genai as genai_mod
+    captured = {}
+
+    def fake_client(api_key, http_options=None):
+        captured["timeout_ms"] = getattr(http_options, "timeout", None)
+        return object()
+
+    monkeypatch.setattr(genai_mod, "Client", fake_client)
+    reranker = GeminiListwiseReranker(
+        config=GeminiListwiseRerankerConfig(request_timeout_seconds=7.5), api_key="시험용",
+    )
+    reranker._gemini  # noqa: B018 — 클라이언트 생성
+    assert captured["timeout_ms"] == 7500
+
+
+class _CountingModels:
+    def __init__(self):
+        self.calls = 0
+
+    def generate_content(self, **kwargs):
+        self.calls += 1
+        raise AssertionError("예산을 넘긴 뒤에는 Gemini를 부르면 안 된다")
+
+
+def test_exhausted_budget_returns_retrieval_order_without_calling_gemini():
+    """전체 예산을 넘기면 남은 호출 없이 검색 순서를 돌려주고 상태는 failed다."""
+    from src.retrieval.gemini_listwise_reranker import RERANK_FAILED
+    models = _CountingModels()
+    client = type("Client", (), {"models": models})()
+    reranker = GeminiListwiseReranker(
+        config=GeminiListwiseRerankerConfig(
+            passes=2, use_search_grounding=True, rare_fact_verification=True,
+            time_budget_seconds=1.0,
+        ),
+        client=client,
+    )
+    # 예산이 이미 지난 것처럼 만든다.
+    reranker._over_budget = staticmethod(lambda deadline: True)
+    tracks = [_track(str(i), f"곡{i}", 1.0 / i) for i in range(1, 6)]
+    run = reranker.rerank_run("드라마에 나온 발라드", tracks, 5)
+    assert run.status == RERANK_FAILED
+    assert [t.id for t in run.tracks] == [t.id for t in tracks]
+    assert models.calls == 0
+
+
+def test_late_response_after_budget_is_discarded(monkeypatch):
+    """예산 뒤에 도착한 응답은 반영하지 않는다 — 검색 순서 + failed (PR 리뷰 P2)."""
+    import src.retrieval.gemini_listwise_reranker as mod
+    from src.retrieval.gemini_listwise_reranker import RERANK_FAILED
+    import json as _json
+
+    clock = {"now": 0.0}
+    monkeypatch.setattr(mod.time, "monotonic", lambda: clock["now"])
+
+    class _LateModels:
+        def generate_content(self, model, contents, config=None):
+            clock["now"] += 31.0  # 응답을 받는 데 31초 — 30초 예산을 넘겼다
+            tail = contents.split("Candidates (JSON):\n", 1)[1].split("\n\nReturn one JSON", 1)[0]
+            ids = [str(c["id"]) for c in _json.loads(tail)]
+            payload = {"query_confidence": 0.9,
+                       "ranking": [{"id": i, "relevance": 1.0 - 0.1 * k} for k, i in enumerate(reversed(ids))]}
+            return type("Response", (), {"text": _json.dumps(payload)})()
+
+    client = type("Client", (), {"models": _LateModels()})()
+    reranker = GeminiListwiseReranker(
+        config=GeminiListwiseRerankerConfig(passes=2, use_search_grounding=False,
+                                            rare_fact_verification=False, time_budget_seconds=30.0),
+        client=client,
+    )
+    tracks = [_track("a", "곡a", 1.0), _track("b", "곡b", 0.5)]
+    run = reranker.rerank_run("잔잔한 발라드", tracks, 2)
+    assert run.status == RERANK_FAILED
+    assert [t.id for t in run.tracks] == ["a", "b"], "뒤집힌 모델 순서가 반영되면 안 된다"
+
+
+def test_hung_async_call_is_cancelled_by_wall_clock():
+    """읽기 제한은 조각마다 초기화된다 — 벽시계 제한이 진행 중인 호출을 끊어야 한다 (PR 리뷰 P1)."""
+    import asyncio as _asyncio
+    import time as _time
+    from src.retrieval.gemini_listwise_reranker import RERANK_FAILED
+
+    state = {"cancelled": False, "closed": False}
+
+    class _HungAsyncModels:
+        async def generate_content(self, model, contents, config=None):
+            try:
+                await _asyncio.sleep(30)
+            except _asyncio.CancelledError:
+                state["cancelled"] = True
+                raise
+
+    class _Aio:
+        models = _HungAsyncModels()
+
+        async def aclose(self):
+            state["closed"] = True
+
+    client = type("Client", (), {"models": object(), "aio": _Aio()})()
+    reranker = GeminiListwiseReranker(
+        config=GeminiListwiseRerankerConfig(
+            passes=1, use_search_grounding=False, rare_fact_verification=False,
+            request_timeout_seconds=0.3, time_budget_seconds=0.5, max_retries=1,
+        ),
+        client=client,
+    )
+    tracks = [_track("a", "곡a", 1.0), _track("b", "곡b", 0.5)]
+    started = _time.monotonic()
+    run = reranker.rerank_run("잔잔한 발라드", tracks, 2)
+    elapsed = _time.monotonic() - started
+    assert run.status == RERANK_FAILED and [t.id for t in run.tracks] == ["a", "b"]
+    assert state["cancelled"], "wait_for가 진행 중인 호출을 취소해야 한다"
+    assert elapsed < 2.0, f"벽시계 제한을 넘겨 {elapsed:.2f}초 기다렸다"
+

@@ -1,4 +1,5 @@
 from functools import wraps
+import logging
 import os
 import threading
 from pathlib import Path
@@ -51,6 +52,8 @@ def singleton(factory: Callable[[], T]) -> Callable[[], T]:
     wrapper.peek = lambda: holder.get("value")  # type: ignore[attr-defined]
     return wrapper
 
+
+logger = logging.getLogger(__name__)
 
 @singleton
 def get_vector_client() -> Any:
@@ -164,18 +167,33 @@ def get_lyrics_exact_search_service() -> LyricsExactSearchService:
     )
 
 
+DEFAULT_RERANKER_BACKEND = "gemini_listwise"
+
+
 @singleton
 def get_reranker():
-    """환경변수로 listwise Gemini 또는 기존 Cross-Encoder를 선택한다.
+    """환경변수로 Gemini listwise 또는 Cross-Encoder를 선택한다. **기본은 Gemini listwise.**
 
-    기본값은 Cross-Encoder다. Gemini listwise는 RERANKER_BACKEND=gemini_listwise로
-    켤 때만 쓴다 — 리랭킹 한 번에 Gemini를 최대 5회(Google Search 포함) 호출해
-    평균 12~26초가 걸리고, 같은 입력에도 순위가 크게 흔들린다(dev c701: 1위 / 7위).
-    현재 평가 세트로 속도·안정성을 확인하기 전에는 설정 없이 켜지면 안 된다.
+    2026-10-09 전환. 세 질의 세트(v06 dev 57 · v09 dev 59 · v09 봉인 test 38 = 154건)에서
+    listwise 1패스·Google Search 끔이 CE 대비 엄격 Hit@10 97 → 114(0.630 → 0.740), Hit@1 53 → 78,
+    Top-10 이탈 0건이었다(experiments/reranking/results_v32~v34). CE는 이 질의 유형에서 점수
+    폭이 0.003 수준이라 후보를 가르지 못했다(results_v27 E4). 대가는 리랭킹 중앙값 1.8초 → 4.5~5.4초.
+
+    CE로 돌리려면 RERANKER_BACKEND=cross_encoder. v22·v27~v31 기준선은 CE로 잰 것이라 재현에 필요하다.
+
+    **GEMINI_API_KEY가 없으면 CE로 내려간다.** 키 없는 listwise는 입력 순서를 그대로 돌려주므로
+    리랭킹이 사실상 꺼진 채 조용히 뜨게 된다 — 그보다는 로컬 CE가 낫고, 로그에 남긴다.
+    실행 중 Gemini 호출이 모두 실패하면 listwise가 검색 순서를 유지하고 상태를 failed로 남긴다
+    (`GeminiListwiseReranker.rerank_run`). 그때 CE로 바꿔 타지는 않는다 — 두 모델을 함께 올리지 않는다.
     """
-    backend = os.getenv("RERANKER_BACKEND", "cross_encoder").strip().lower()
+    backend = os.getenv("RERANKER_BACKEND", DEFAULT_RERANKER_BACKEND).strip().lower()
     if backend in {"gemini_listwise", "gemini-listwise", "gemini"}:
-        return GeminiListwiseReranker()
+        if os.getenv("GEMINI_API_KEY", "").strip():
+            return GeminiListwiseReranker()
+        logger.warning(
+            "[reranker] RERANKER_BACKEND=%s인데 GEMINI_API_KEY가 없다 — Cross-Encoder로 내려간다",
+            backend,
+        )
     # 기존 모델은 첫 요청 때 지연 로딩한다.
     return MusicReranker()
 

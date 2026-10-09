@@ -44,6 +44,7 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
+from src.eval.schema import V05_QUERY_SETS
 from src.embedding.image.image_io import fetch_image
 from src.embedding.models.image_siglip2 import SigLIP2Embedder
 from src.retrieval.analysis_cache import load_cache
@@ -216,10 +217,12 @@ def main() -> None:
     p.add_argument("--seed", type=int, default=20261001)
     args = p.parse_args()
 
+    # v0.5 세트만 — 이 진단은 v22·v23 기록과 대조하므로 그 기록에 없는 v09(2026-10) 표지 질의는
+    # 대상이 아니다. v09를 보려면 VISUAL_ONLY 문장을 쓰고 기록을 새로 만든 뒤 여기를 넓힌다.
     queries = [
         q for q in json.load(open(QUERIES, encoding="utf-8"))["queries"]
         if q.get("modality_focus") in ("image", "multimodal") and q.get("positives")
-        and q.get("label_status") == "labeled"
+        and q.get("label_status") == "labeled" and q.get("query_set") in V05_QUERY_SETS
     ]
     missing = sorted(q["query_id"] for q in queries if q["query_id"] not in VISUAL_ONLY)
     if missing:

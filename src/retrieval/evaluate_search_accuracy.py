@@ -13,7 +13,7 @@ import sys
 import time
 from pathlib import Path
 from collections import Counter
-from typing import Iterable, Optional, Sequence
+from typing import Iterable, Optional, Sequence, Any
 
 # 이 파일을 retrieval/ 아래에 두고 실행하는 것을 기준으로
 # 프로젝트 루트를 Python import 경로에 추가한다.
@@ -23,6 +23,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.backend.api.dependencies import (
     get_query_analyzer,
+    DEFAULT_RERANKER_BACKEND,
     get_reranker,
     get_search_router,
 )
@@ -50,6 +51,12 @@ from src.retrieval.search_router import (
     should_skip_rerank_for_image,
 )
 
+
+
+def _actual_backend(reranker: Any) -> str:
+    """실제로 만들어진 리랭커의 백엔드 이름. 환경변수가 아니라 객체에서 읽는다."""
+    name = type(reranker).__name__
+    return {"GeminiListwiseReranker": "gemini_listwise", "MusicReranker": "cross_encoder"}.get(name, name)
 
 def parse_relevant_ids(raw: str) -> set[str]:
     """여러 정답 ID는 | 로 구분한다."""
@@ -371,7 +378,10 @@ def collect_run_info(args, *, reranker, analysis_source: dict) -> dict:
         # 조건 간 비교가 성립하려면 이것도 고정돼 있어야 하므로 지문을 남긴다.
         "lyrics_source": _lyrics_fingerprint(),
         "reranker": {
-            "backend": os.getenv("RERANKER_BACKEND", "cross_encoder"),
+            # 요청(환경변수)과 실제 선택을 구분해 적는다 — 키가 없어 CE로 내려가거나
+            # 기본값이 바뀌면 환경변수만으로는 무엇이 돌았는지 알 수 없다 (PR 리뷰 P2).
+            "backend": _actual_backend(reranker),
+            "requested_backend": os.getenv("RERANKER_BACKEND", DEFAULT_RERANKER_BACKEND),
             "class": type(reranker).__name__,
             "enabled": bool(getattr(reranker, "enabled", False)),
             "config": reranker_config,
