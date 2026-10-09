@@ -30,7 +30,7 @@
   단서로 나누고 모달리티별 가중치를 정한다
 - **멀티모달 병렬 검색** — 가사 표면 일치, 텍스트 하이브리드(BM25 + KoE5), 앨범 커버(SigLIP2), 오디오(CLAP)
   경로를 동시에 돌려 RRF로 합친다
-- **리랭킹** — 한국어 Cross-Encoder가 상위 후보를 다시 정렬한다
+- **리랭킹** — Gemini가 후보 30곡을 한 번에 보고 순서를 다시 정한다(listwise). 한국어 Cross-Encoder는 선택 백엔드로 남아 있다
 - **재질문** — 결과가 애매하면 보컬 성별이나 장르를 되묻고, "이 곡 아님"으로 거절하면 그 곡을 빼고 다시 찾는다
 - **선정 근거** — 어떤 검색 경로가 순위를 만들었는지 보여 주고, 가사가 근거일 때는 원문 구절을 인용한다
 - **노래 맵** — 3,010곡을 소리(CLAP)와 정서(KoE5) 두 기준의 2D 지도로 펼치고, 검색 결과를 지도 위에 표시한다.
@@ -46,7 +46,7 @@ flowchart LR
     A --> I["앨범 커버<br/>SigLIP2"]
     A --> S["오디오<br/>CLAP"]
     L & T & I & S --> F["RRF 통합<br/>+ 단서 부스팅"]
-    F --> R["Cross-Encoder 리랭킹<br/>bge-reranker-v2-m3-ko"]
+    F --> R["listwise 리랭킹<br/>Gemini (후보 30곡 비교)"]
     R --> O["Top-10 + 선정 근거"]
     O -.->|애매하면 재질문| C["보컬 성별 · 장르<br/>또는 거절"]
     C -.->|답변을 분석에 병합| A
@@ -58,30 +58,31 @@ flowchart LR
 | 텍스트 (dense / sparse) | [`nlpai-lab/KoE5`](https://huggingface.co/nlpai-lab/KoE5) / BM25 (Kiwi 형태소 분석) |
 | 이미지 | [`google/siglip2-base-patch16-224`](https://huggingface.co/google/siglip2-base-patch16-224) |
 | 오디오 | [`laion/clap-htsat-fused`](https://huggingface.co/laion/clap-htsat-fused) |
-| 리랭킹 | [`dragonkue/bge-reranker-v2-m3-ko`](https://huggingface.co/dragonkue/bge-reranker-v2-m3-ko) |
+| 리랭킹 | `gemini-3.1-flash-lite` listwise (1패스, Google Search 끔) · 선택: [`dragonkue/bge-reranker-v2-m3-ko`](https://huggingface.co/dragonkue/bge-reranker-v2-m3-ko) Cross-Encoder |
 | 벡터 DB | Qdrant (로컬 파일 모드 기본, 서버 모드 지원) |
 | 가사 정확 일치 | MongoDB (없으면 이 경로만 비고 나머지는 동작) |
 
 ## 성능
 
-평가 질의 세트 v06 (팀이 직접 쓴 회상형 질의, dev 57 · test 25)을 3,010곡 코퍼스에서 현재 운영 설정으로 잰 결과다.
-**엄격** 지표는 질의를 쓸 때 정한 원래 타깃만 정답으로 세고, **확장** 지표는 팀이 후보를 검토해 더한 허용 정답
-(v08 라벨, 질의 20개 · 82곡)까지 정답으로 센다 — 기획의 이중 정답 구조다.
+평가 질의는 두 세트다. **v06**(팀이 직접 쓴 회상형 질의, dev 57 · test 25)과 **v09**(2026-10 추가, Claude 초안 + 팀장 검토, dev 59 · 봉인 test 38).
+3,010곡 코퍼스, 원래 타깃만 정답으로 세는 엄격 지표다. 리랭커 두 백엔드를 같은 질의·같은 후보로 잰 결과다.
 
-| split | 라벨 | Hit@1 | Hit@5 | Hit@10 | MRR@10 | nDCG@10 |
-| --- | --- | --- | --- | --- | --- | --- |
-| dev (57) | 엄격 | 0.386 | 0.561 | 0.632 | 0.449 | 0.492 |
-| dev (57) | 확장 | 0.491 | 0.719 | 0.772 | 0.571 | – |
-| test (25) | 엄격 | 0.400 | 0.560 | 0.560 | 0.460 | 0.475 |
-| test (25) | 확장 | 0.480 | 0.680 | 0.680 | 0.551 | – |
+| 세트 | 리랭커 | Hit@1 | Hit@5 | Hit@10 | MRR@10 |
+| --- | --- | --- | --- | --- | --- |
+| v06 dev (57) | Cross-Encoder | 0.386 | 0.561 | 0.649 | 0.451 |
+| v06 dev (57) | **Gemini listwise (기본)** | **0.491** | **0.702** | **0.737** | **0.560** |
+| v09 dev (59) | Cross-Encoder | 0.288 | 0.525 | 0.610 | 0.385 |
+| v09 dev (59) | **Gemini listwise (기본)** | **0.525** | **0.678** | **0.712** | **0.588** |
+| v09 test (38, 봉인·1회) | Cross-Encoder | 0.368 | 0.553 | 0.632 | 0.460 |
+| v09 test (38, 봉인·1회) | **Gemini listwise (기본)** | **0.500** | **0.737** | **0.789** | **0.609** |
 
-- 요청 한 번의 처리 시간은 중앙값 **4.2초**, p95 5.3초다 (dev 57건, 모델 예열 후)
-- 952곡 때(dev 엄격 Hit@10 0.789)보다 낮다. 곡 수만 늘린 것이 아니라 수집본·임베딩·색인을 함께 바꾼
-  코퍼스 교체 결과이며, 하락이 어디서 왔는지는 아직 나누어 재지 않았다
-- test는 여러 번 확인에 쓴 분할이라 새 홀드아웃 검증이 아니라 회귀 확인에 가깝다
-- 측정 방법과 근거: [`experiments/reranking/results_v22_corpus3010/RUN_INFO.md`](experiments/reranking/results_v22_corpus3010/RUN_INFO.md)
-  · 처리 시간: [`experiments/latency/run_v04_hybrid_payload/RUN_INFO.md`](experiments/latency/run_v04_hybrid_payload/RUN_INFO.md)
-  · 952곡 기준선: [`experiments/reranking/results_v21_ce_topn/RUN_INFO.md`](experiments/reranking/results_v21_ce_topn/RUN_INFO.md)
+- 세 세트 합산 154건에서 Top-10 진입 97 → 114, Top-10 이탈 0건. 튜닝에 쓰지 않은 봉인 test에서도 dev와 같은 크기다
+- 요청 전체 처리 시간(dev 57건, 예열 뒤): Cross-Encoder 중앙값 **4.2초** · p95 5.3초, Gemini listwise 중앙값 **6.8초** · p95 18.8초.
+  꼬리는 드라마·예능 같은 외부 맥락 질의에서 희소 사실 검증이 웹 검색을 도는 경우다
+- 허용 정답(팀이 검토해 더한 유사 정답)까지 세는 확장 지표는 v06에만 있다: Cross-Encoder 기준 dev Hit@10 0.789 · test 0.680
+- 측정 방법과 근거: [`results_v32_gemini_listwise`](experiments/reranking/results_v32_gemini_listwise/RUN_INFO.md) ·
+  [`results_v33_v09_dev`](experiments/reranking/results_v33_v09_dev/RUN_INFO.md) · [`results_v34_v09_test`](experiments/reranking/results_v34_v09_test/RUN_INFO.md) ·
+  Cross-Encoder 기준선 [`results_v22_corpus3010`](experiments/reranking/results_v22_corpus3010/RUN_INFO.md) · 처리 시간 [`run_v04_hybrid_payload`](experiments/latency/run_v04_hybrid_payload/RUN_INFO.md)(CE) · [`run_v05_listwise_default`](experiments/latency/run_v05_listwise_default/RUN_INFO.md)(listwise)
 
 ## 기술 스택
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 
+from src.eval.schema import V05_QUERY_SETS
 from src.retrieval.diagnose_image_queries import QUERIES, VISUAL_ONLY, cover_hash, cover_key
 
 
@@ -18,10 +19,12 @@ def test_cover_key_ignores_size_and_resize_suffix() -> None:
 
 def test_every_image_query_has_a_visual_only_sentence() -> None:
     queries = json.load(open(QUERIES, encoding="utf-8"))["queries"]
+    # 진단(v25)은 v0.5 세트의 표지 질의를 v22·v23 기록과 대조한다. v09(2026-10)의 표지 질의는
+    # 그 기록에 없고 시각 조건 문장도 아직 쓰지 않았다 — 대상에서 뺀다.
     wanted = {
         q["query_id"] for q in queries
         if q.get("modality_focus") in ("image", "multimodal") and q.get("positives")
-        and q.get("label_status") == "labeled"
+        and q.get("label_status") == "labeled" and q.get("query_set") in V05_QUERY_SETS
     }
     assert wanted == set(VISUAL_ONLY)
 

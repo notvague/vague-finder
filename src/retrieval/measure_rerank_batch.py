@@ -36,7 +36,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.backend.api.dependencies import get_reranker, get_search_router
+from src.backend.api.dependencies import get_search_router
+from src.retrieval.reranker import MusicReranker
 from src.retrieval.analysis_cache import load_cache
 from src.retrieval.evaluate_search_accuracy import read_queries
 
@@ -170,7 +171,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("오류: 후보가 있는 질의가 없습니다.", file=sys.stderr)
         return 2
 
-    reranker = get_reranker()
+    # CE 전용 도구다. 공용 선택기(dependencies)는 기본이 Gemini listwise라 batch_size가 없다 —
+    # 여기서 CE를 직접 만든다. 후보 검색(use_rerank=False)은 리랭커를 부르지 않는다.
+    reranker = MusicReranker()
     reranker.load()
     original = reranker.config
     # 예열 — 첫 추론에 붙는 커널 컴파일 비용을 측정 밖으로 뺀다.
