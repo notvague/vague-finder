@@ -178,7 +178,9 @@ def test_a_spent_budget_stops_the_retries(monkeypatch):
 
 
 def test_no_api_key_falls_back_without_calling(monkeypatch):
+    # Vertex 설정(GCP_PROJECT_ID)도 지워야 한다 — 남아 있으면 .env를 따라 실제 Vertex를 부른다
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GCP_PROJECT_ID", raising=False)
     analyzer = qa.QueryAnalyzer(api_key="")
     assert analyzer.analyze(QUERY).confidence == 0.0
 

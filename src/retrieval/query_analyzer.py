@@ -17,6 +17,7 @@ from typing import Any, Optional
 from dotenv import load_dotenv
 from google import genai
 
+from src.common.gemini_client import gemini_configured, make_genai_client
 from src.retrieval import timing
 from src.backend.schemas.query import (
     QueryAnalysis,
@@ -577,7 +578,9 @@ class QueryAnalyzer:
     """
 
     def __init__(self, api_key: Optional[str] = None):
-        self._api_key = api_key or os.getenv("GEMINI_API_KEY", "")
+        # 직접 넘긴 키만 담는다. 없으면 환경(GCP_PROJECT_ID → Vertex, GEMINI_API_KEY → AI Studio)을 따른다.
+        self._api_key = api_key or ""
+        self._configured = gemini_configured(self._api_key)
         self._model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-3.1-flash-lite")
         # **분석 전체에 쓸 수 있는 시간.** 한 번의 호출이 아니라 재시도와 대기까지
         # 합친 값이다. 제한이 없으면 Gemini가 응답하지 않을 때 요청이 끝나지 않고,
@@ -593,8 +596,10 @@ class QueryAnalyzer:
         # analyze()가 스레드에서 돌기 시작하면 이 지연 생성이 겹칠 수 있다.
         # 잠그지 않으면 두 스레드가 모두 None을 보고 클라이언트를 두 벌 만든다.
         self._client_lock = threading.Lock()
-        if not self._api_key:
-            logger.warning("[QueryAnalyzer] GEMINI_API_KEY 미설정 — fallback 모드로 동작합니다.")
+        if not self._configured:
+            logger.warning(
+                "[QueryAnalyzer] Gemini 설정 없음(GCP_PROJECT_ID·GEMINI_API_KEY) — fallback 모드로 동작합니다."
+            )
 
     @property
     def _gemini(self) -> genai.Client:
@@ -606,7 +611,7 @@ class QueryAnalyzer:
         if self._client is None:
             with self._client_lock:
                 if self._client is None:
-                    self._client = genai.Client(api_key=self._api_key)
+                    self._client = make_genai_client(api_key=self._api_key or None)
         return self._client
 
     @property
@@ -724,7 +729,7 @@ class QueryAnalyzer:
         쓴다 — 시간이 다 됐을 때 **진행 중인 호출까지 끊으려면** 취소가 전파돼야
         하고, 동기 호출은 그게 안 된다(스레드를 버릴 수는 있어도 멈출 수는 없다).
         """
-        if not self._api_key:
+        if not self._configured:
             return _fallback(query)
 
         prompt, correction = self._prompt(query), ""
@@ -768,7 +773,7 @@ class QueryAnalyzer:
         취소된다. 동기판을 스레드에 얹어 놓고 기다림만 끊으면, 버려진 스레드가
         계속 돌면서 실행기 자리를 붙들고 결과는 버려진다.
         """
-        if not self._api_key:
+        if not self._configured:
             return _fallback(query)
 
         prompt, correction = self._prompt(query), ""
