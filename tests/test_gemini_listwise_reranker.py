@@ -202,32 +202,7 @@ class _FlowFakeClient:
 
 
 def test_full_rerank_flow_rare_fact_verifier_rescues_q200_shape(monkeypatch):
-    # 테스트 컨테이너에 google-genai가 없어도 Search tool 타입만 가짜로 주입한다.
-    import sys
-    import types as pytypes
-
-    class _GenerateContentConfig:
-        def __init__(self, **kwargs):
-            self.kwargs = kwargs
-
-    class _GoogleSearch:
-        pass
-
-    class _Tool:
-        def __init__(self, **kwargs):
-            self.kwargs = kwargs
-
-    fake_types = pytypes.SimpleNamespace(
-        GenerateContentConfig=_GenerateContentConfig,
-        GoogleSearch=_GoogleSearch,
-        Tool=_Tool,
-    )
-    fake_genai = pytypes.ModuleType("google.genai")
-    fake_genai.types = fake_types
-    fake_google = pytypes.ModuleType("google")
-    fake_google.genai = fake_genai
-    monkeypatch.setitem(sys.modules, "google", fake_google)
-    monkeypatch.setitem(sys.modules, "google.genai", fake_genai)
+    _install_fake_genai_types(monkeypatch)
 
     tracks = [_track(str(i), f"song-{i}", 1.0 / i) for i in range(1, 31)]
     reranker = GeminiListwiseReranker(
@@ -624,6 +599,11 @@ def test_default_config_has_request_timeout_and_budget(monkeypatch):
         monkeypatch.delenv(k, raising=False)
     cfg = GeminiListwiseRerankerConfig.from_env()
     assert cfg.request_timeout_seconds == 20.0 and cfg.time_budget_seconds == 30.0
+    assert cfg.pass_reserve_seconds == 10.0
+    assert GeminiListwiseReranker(config=cfg, client=object())._pass_reserve_seconds() == 10.0
+    # 예산이 작으면 절반까지만 남긴다 — 앞 단계가 0초가 되지 않는다
+    small = GeminiListwiseRerankerConfig(time_budget_seconds=4.0, pass_reserve_seconds=10.0)
+    assert GeminiListwiseReranker(config=small, client=object())._pass_reserve_seconds() == 2.0
 
 
 def test_client_is_built_with_http_timeout(monkeypatch):
@@ -741,3 +721,106 @@ def test_hung_async_call_is_cancelled_by_wall_clock():
     assert state["cancelled"], "wait_for가 진행 중인 호출을 취소해야 한다"
     assert elapsed < 2.0, f"벽시계 제한을 넘겨 {elapsed:.2f}초 기다렸다"
 
+
+
+def _install_fake_genai_types(monkeypatch):
+    """테스트 컨테이너에 google-genai가 없어도 Search tool 타입만 가짜로 주입한다."""
+    import sys
+    import types as pytypes
+
+    class _GenerateContentConfig:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    class _GoogleSearch:
+        pass
+
+    class _Tool:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    fake_genai = pytypes.ModuleType("google.genai")
+    fake_genai.types = pytypes.SimpleNamespace(
+        GenerateContentConfig=_GenerateContentConfig, GoogleSearch=_GoogleSearch, Tool=_Tool,
+    )
+    fake_google = pytypes.ModuleType("google")
+    fake_google.genai = fake_genai
+    monkeypatch.setitem(sys.modules, "google", fake_google)
+    monkeypatch.setitem(sys.modules, "google.genai", fake_genai)
+
+
+def test_rare_fact_verification_leaves_budget_for_the_main_pass(monkeypatch):
+    """검증 배치가 예산을 다 써도 본 패스는 한 번 돈다 (PR 리뷰 3차).
+
+    30곡 → 검증 배치 2회. 배치 하나가 12초씩이면 같은 마감으로는 24초가 지나 본 패스가
+    6초 안에 끝나야 하고, 더 느리면 0회가 된다. 앞 단계는 본 패스 몫 10초를 뺀 20초 마감을
+    받으므로 배치 2(24초 도착)는 버려지고, 배치 1의 판정은 남아 본 패스(3초)와 함께 반영된다.
+    """
+    import src.retrieval.gemini_listwise_reranker as mod
+    from src.retrieval.gemini_listwise_reranker import RERANK_APPLIED
+
+    _install_fake_genai_types(monkeypatch)
+    clock = {"now": 0.0}
+    monkeypatch.setattr(mod.time, "monotonic", lambda: clock["now"])
+    calls = {"verify": [], "listwise": []}
+    inner = _FlowFakeModels()
+
+    class _SlowVerifierModels:
+        def generate_content(self, **kwargs):
+            contents = kwargs.get("contents", "")
+            if "high-precision fact verifier" in contents:
+                calls["verify"].append(clock["now"])
+                clock["now"] += 12.0
+            else:
+                calls["listwise"].append(clock["now"])
+                clock["now"] += 3.0
+            return inner.generate_content(**kwargs)
+
+    client = type("Client", (), {"models": _SlowVerifierModels()})()
+    reranker = GeminiListwiseReranker(
+        config=GeminiListwiseRerankerConfig(
+            passes=1, use_search_grounding=False, rare_fact_verification=True,
+            rare_fact_batch_size=15, rare_fact_insert_rank=9,
+            request_timeout_seconds=20.0, time_budget_seconds=30.0, pass_reserve_seconds=10.0,
+        ),
+        client=client,
+    )
+    tracks = [_track(str(i), f"song-{i}", 1.0 / i) for i in range(1, 31)]
+    run = reranker.rerank_run("도입부에 휘파람이 나오고 남자는 랩, 여자는 노래하는 남녀 듀엣이었어", tracks, 30)
+
+    assert calls["verify"] == [0.0, 12.0], "배치 2는 앞 단계 마감(20초) 안에 시작한다"
+    assert calls["listwise"] == [24.0], "본 패스가 한 번 돌아야 한다"
+    assert run.status == RERANK_APPLIED
+    assert [t.id for t in run.tracks].index("14") == 8, "배치 1의 판정은 버려지지 않는다"
+
+
+def test_same_deadline_for_verification_would_starve_the_main_pass(monkeypatch):
+    """대조: 본 패스 몫이 0이면 검증 배치 2회가 예산을 다 써 결과가 failed로 끝난다."""
+    import src.retrieval.gemini_listwise_reranker as mod
+    from src.retrieval.gemini_listwise_reranker import RERANK_FAILED
+
+    _install_fake_genai_types(monkeypatch)
+    clock = {"now": 0.0}
+    monkeypatch.setattr(mod.time, "monotonic", lambda: clock["now"])
+    inner = _FlowFakeModels()
+    listwise_calls = []
+
+    class _SlowVerifierModels:
+        def generate_content(self, **kwargs):
+            if "high-precision fact verifier" in kwargs.get("contents", ""):
+                clock["now"] += 15.0
+            else:
+                listwise_calls.append(clock["now"])
+            return inner.generate_content(**kwargs)
+
+    client = type("Client", (), {"models": _SlowVerifierModels()})()
+    reranker = GeminiListwiseReranker(
+        config=GeminiListwiseRerankerConfig(
+            passes=1, use_search_grounding=False, rare_fact_verification=True,
+            rare_fact_batch_size=15, time_budget_seconds=30.0, pass_reserve_seconds=0.0,
+        ),
+        client=client,
+    )
+    tracks = [_track(str(i), f"song-{i}", 1.0 / i) for i in range(1, 31)]
+    run = reranker.rerank_run("드라마 OST였는데 남자는 랩, 여자는 노래하는 듀엣", tracks, 30)
+    assert listwise_calls == [] and run.status == RERANK_FAILED

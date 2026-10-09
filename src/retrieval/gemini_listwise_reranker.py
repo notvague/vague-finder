@@ -237,8 +237,12 @@ class GeminiListwiseRerankerConfig:
     #   time_budget_seconds: 리랭킹 한 번의 전체 예산. 넘으면 남은 호출(검증 배치·패스)을 하지 않고
     #                        검색 순서를 돌려준다. 호출 하나의 벽시계 제한 = min(요청 제한, 남은 예산)이고
     #                        넘기면 진행 중인 HTTP 연결까지 취소하므로 최악 대기 ≈ 예산
+    #   pass_reserve_seconds: 예산 중 본 패스 몫. 앞 단계(Search evidence·희소 사실 검증)는
+    #                        `deadline - 몫`을 마감으로 받아, 검증 배치가 예산을 다 써서 본 패스가
+    #                        0회 도는 일(PR 리뷰 3차)을 막는다. 실제 몫 = min(이 값, 요청 제한, 예산/2)
     request_timeout_seconds: float = 20.0
     time_budget_seconds: float = 30.0
+    pass_reserve_seconds: float = 10.0
 
     @classmethod
     def from_env(cls) -> "GeminiListwiseRerankerConfig":
@@ -274,6 +278,7 @@ class GeminiListwiseRerankerConfig:
             rare_fact_insert_rank=max(5, min(10, int(os.getenv("GEMINI_RERANK_RARE_FACT_INSERT_RANK", "9")))),
             request_timeout_seconds=max(1.0, float(os.getenv("GEMINI_RERANK_TIMEOUT_SECONDS", "20"))),
             time_budget_seconds=max(1.0, float(os.getenv("GEMINI_RERANK_BUDGET_SECONDS", "30"))),
+            pass_reserve_seconds=max(0.0, float(os.getenv("GEMINI_RERANK_PASS_RESERVE_SECONDS", "10"))),
         )
 
 
@@ -328,6 +333,22 @@ class GeminiListwiseReranker:
     @staticmethod
     def _over_budget(deadline: Optional[float]) -> bool:
         return deadline is not None and time.monotonic() >= deadline
+
+    def _pass_reserve_seconds(self) -> float:
+        """본 패스에 남겨 둘 예산. 앞 단계는 이만큼 이른 마감을 받는다.
+
+        검증 배치 하나의 제한이 min(요청 제한 20초, 남은 예산)이라, 30곡(배치 2회)이면 두 배치가
+        30초 예산을 다 쓰고 본 패스가 한 번도 못 돌 수 있다(PR 리뷰 3차). 기본 10초를 남기고,
+        예산이 작으면 절반까지만 남긴다 — 앞 단계가 0초가 되지는 않는다.
+        """
+        return max(
+            0.0,
+            min(
+                self.config.pass_reserve_seconds,
+                self.config.request_timeout_seconds,
+                self.config.time_budget_seconds / 2.0,
+            ),
+        )
 
     def _new_client(self):
         """호출마다 새 비동기 클라이언트. 주입된 클라이언트(테스트)가 있으면 그것을 쓴다.
@@ -1096,12 +1117,15 @@ Return:
         last_error: Optional[Exception] = None
         # 리랭킹 한 번의 전체 예산. 검증 배치·패스 사이마다 확인하고, 넘으면 더 부르지 않는다.
         deadline = time.monotonic() + self.config.time_budget_seconds
+        # 앞 단계(Search evidence·희소 사실 검증)는 본 패스 몫을 남긴 이른 마감을 받는다.
+        # 같은 마감을 주면 검증 배치 2회가 예산을 다 써 본 패스가 0회 돌고 결과가 failed로 끝난다.
+        pre_pass_deadline = deadline - self._pass_reserve_seconds()
 
         # 일반 Search evidence는 한 번만 수행하고 두 listwise pass가 공유한다.
-        external_evidence = self._collect_search_evidence(query, judged, deadline=deadline)
+        external_evidence = self._collect_search_evidence(query, judged, deadline=pre_pass_deadline)
         # 희소 사실이 있는 질의만 15곡 단위로 더 엄격하게 교차검증한다.
         rare_verdicts, rare_confidence, rare_reason = self._verify_rare_facts(
-            query, judged, answers, deadline=deadline
+            query, judged, answers, deadline=pre_pass_deadline
         )
 
         for pass_index in range(self.config.passes):
