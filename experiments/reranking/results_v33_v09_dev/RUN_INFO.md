@@ -7,7 +7,7 @@ E5(Gemini listwise 세 설정)를 쟀다. **v06 dev 57건의 결론이 새 세�
 listwise(2패스, grounding 끔)는 Hit@10 73 → 87(0.629 → 0.750), Hit@1 39 → 60.**
 
 > **보정(2026-10-09, PR #16~#22 리뷰)**: "grounding 끔"은 일반 패스의 Google Search grounding만 끈 것이고, 희소 사실 교차검증은 희소 단서 질의(dev 59 중 11건)에 Google Search 호출을 유지했다.
-> 검증까지 끈 대조군은 `results_v35_rare_verify_off`(Hit@10 동일). 자세한 설명은 `results_v32_gemini_listwise/RUN_INFO.md` 보정 문단.
+> 검증까지 끈 대조군은 `results_v35_rare_verify_off`(v09 dev Hit@10 42 → 41, v06 dev 42 → 43, 116건 합산 84 → 84). 자세한 설명은 `results_v32_gemini_listwise/RUN_INFO.md` 보정 문단.
 
 ## 조건
 
