@@ -389,14 +389,7 @@ def collect_run_info(args, *, reranker, analysis_source: dict) -> dict:
         # 실험 스위치. **실제로 적용된 값을 코드에서 읽는다** — 환경변수를 다시
         # 읽으면 기록과 적용이 갈릴 수 있고, 폴더명과 수기 문서에만 의존하면
         # 나중에 어느 조건의 결과인지 알 수 없다.
-        "ranking_switches": {
-            "lyric_protect_phonetic_top1": _search_router._protect_phonetic_top1(),
-            "lyric_protect_min_confidence": _search_router._lyric_protect_min_confidence(),
-            "lyric_boost_scale": _search_router._lyric_boost_scale(),
-            "reranker_min_spread": float(getattr(config, "min_spread", 0.0) or 0.0)
-            if config is not None
-            else None,
-        },
+        "ranking_switches": _ranking_switches(config),
         "search_reference_year_env": os.getenv("SEARCH_REFERENCE_YEAR", "").strip(),
     }
 
@@ -407,6 +400,25 @@ def collect_run_info(args, *, reranker, analysis_source: dict) -> dict:
     except Exception as exc:  # noqa: BLE001 - 기록용이므로 사유만 남긴다
         info["corpus"]["point_count_error"] = f"{type(exc).__name__}: {exc}"
     return info
+
+
+def _ranking_switches(config: Any) -> dict:
+    """순위를 바꾸는 스위치의 **실제 적용값**. 환경 변수 문자열이 아니라 search_router가 읽는 함수를 부른다.
+
+    가산 배율 세 개(`BOOST_SCALE`·`ATTR_BOOST_SCALE`·`GENDER_MISMATCH_SCALE`, PR #16~#18)가 빠져 있어
+    v27~v31의 runinfo로는 조건을 구분할 수 없었다(PR #16~#22 리뷰). 기본값이어도 적는다.
+    """
+    return {
+        "boost_scale": _search_router._explicit_boost_scale(),
+        "attr_boost_scale": _search_router._attr_boost_scale(),
+        "gender_mismatch_scale": _search_router._gender_mismatch_scale(),
+        "lyric_protect_phonetic_top1": _search_router._protect_phonetic_top1(),
+        "lyric_protect_min_confidence": _search_router._lyric_protect_min_confidence(),
+        "lyric_boost_scale": _search_router._lyric_boost_scale(),
+        "reranker_min_spread": float(getattr(config, "min_spread", 0.0) or 0.0)
+        if config is not None
+        else None,
+    }
 
 
 def _lyrics_fingerprint() -> dict:

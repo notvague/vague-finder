@@ -16,7 +16,7 @@ import pytest
 
 from src.eval.export_csv import COLUMNS, select, to_rows
 from src.eval.loader import cross_validate, load_eval_set
-from src.eval.schema import EvalQuery, EvalSet
+from src.eval.schema import V05_QUERY_SETS, EvalQuery, EvalSet
 
 CORPUS = Path("data/all_songs.jsonl")
 RANKS = Path("experiments/reranking/results_v05/search_eval_dev_ranks.csv")
@@ -320,3 +320,31 @@ def test_runinfo_records_actual_reranker_backend_not_env():
     assert _actual_backend(MusicReranker()) == "cross_encoder"
     assert _actual_backend(GeminiListwiseReranker(client=object())) == "gemini_listwise"
 
+
+
+def test_runinfo_records_the_boost_scales_actually_applied(monkeypatch):
+    """BOOST_SCALE·ATTR_BOOST_SCALE·GENDER_MISMATCH_SCALE이 runinfo에 실제 값으로 남아야 실험 조건을 구분한다 (PR #16~#22 리뷰)."""
+    from src.retrieval.evaluate_search_accuracy import _ranking_switches
+    for k in ("BOOST_SCALE", "ATTR_BOOST_SCALE", "GENDER_MISMATCH_SCALE"):
+        monkeypatch.delenv(k, raising=False)
+    default = _ranking_switches(None)
+    assert (default["boost_scale"], default["attr_boost_scale"], default["gender_mismatch_scale"]) == (1.0, 1.0, 0.0)
+    monkeypatch.setenv("BOOST_SCALE", "0.2")
+    monkeypatch.setenv("ATTR_BOOST_SCALE", "0.5")
+    monkeypatch.setenv("GENDER_MISMATCH_SCALE", "1")
+    changed = _ranking_switches(None)
+    assert (changed["boost_scale"], changed["attr_boost_scale"], changed["gender_mismatch_scale"]) == (0.2, 0.5, 1.0)
+    assert changed != default
+
+
+def test_benchmark_runner_defaults_to_v05_sets_and_keeps_sealed_test_out(eval_set) -> None:
+    """`python -m src.eval.evaluate`만 돌려도 v09 봉인 test가 열리면 안 된다 (PR #16~#22 리뷰)."""
+    from src.eval.evaluate import select_queries
+    default = select_queries(eval_set.queries)
+    assert default and all(q.query_set in V05_QUERY_SETS for q in default)
+    assert not any(q.query_set == "v09" for q in default)
+    # 정답 없는 질의도 남긴다 — 이 러너는 따로 집계한다
+    assert len(default) == sum(1 for q in eval_set.queries if q.query_set in V05_QUERY_SETS)
+    v09_dev = select_queries(eval_set.queries, ["v09"], ["dev"])
+    assert v09_dev and all(q.query_set == "v09" and q.split == "dev" for q in v09_dev)
+    assert select_queries(eval_set.queries, ["v09"], ["test"])  # 명시해야만 돈다
