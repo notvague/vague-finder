@@ -73,6 +73,9 @@ def gemini_backend(api_key: Optional[str] = None, purpose: Optional[str] = None)
 
     용도 설정으로 경로를 고정했는데 그 경로의 설정이 없으면 다른 경로로 바꿔 타지 않고 `none`이다 —
     "검색은 AI Studio"라고 정했는데 키가 빠져 Vertex로 돌면 기준선과 다른 경로에서 잰 숫자가 조용히 섞인다.
+
+    호출부가 키를 직접 넘기면(`api_key`) 용도 설정보다 우선한다 — `GEMINI_RETRIEVAL_BACKEND=vertex`여도 api_key다.
+    테스트·예비 키용이며, 지금 검색 호출부(분석기·리랭커)는 모두 키를 비워 넘긴다.
     """
     if api_key:
         return "api_key"

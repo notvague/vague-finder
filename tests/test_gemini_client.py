@@ -9,6 +9,7 @@ from src.common import gemini_client as gc
 # fixture가 env를 지운 뒤에 .env가 다시 읽혀 GEMINI_API_KEY 등이 되살아나고, monkeypatch가 되돌리지 못해 뒤 시험까지 샌다.
 from src.retrieval.gemini_listwise_reranker import GeminiListwiseReranker, GeminiListwiseRerankerConfig
 from src.retrieval.query_analyzer import QueryAnalyzer
+from src.backend import main as backend_main  # 같은 이유로 맨 위에서 — 서버 기동 시험용
 
 
 @pytest.fixture
@@ -152,3 +153,20 @@ def test_crawl_model_is_separate_from_retrieval_model(monkeypatch):
     assert gc.crawl_model_name() == gc.DEFAULT_CRAWL_MODEL == "gemini-3.5-flash-lite"
     monkeypatch.setenv("GEMINI_CRAWL_MODEL_NAME", " 다른-모델 ")
     assert gc.crawl_model_name() == "다른-모델"
+
+
+def test_server_refuses_to_start_on_retrieval_setting_typo(monkeypatch):
+    """오타는 기동에서 실패한다 — 서버가 정상으로 떠 있다가 첫 검색이 500으로 떨어지면 안 된다(PR #31 리뷰)."""
+    from fastapi.testclient import TestClient
+
+    opened = []
+    monkeypatch.setattr(backend_main, "get_vector_client", lambda: opened.append(1))
+    monkeypatch.setenv("GEMINI_RETRIEVAL_BACKEND", "aistudio")
+    with pytest.raises(ValueError, match="GEMINI_RETRIEVAL_BACKEND"):
+        with TestClient(backend_main.app):
+            pass
+    assert opened == [], "설정 검사가 벡터 DB를 열기 전에 끝나야 한다"
+
+    monkeypatch.setenv("GEMINI_RETRIEVAL_BACKEND", "api_key")
+    with TestClient(backend_main.app) as client:
+        assert client.get("/health").status_code == 200
