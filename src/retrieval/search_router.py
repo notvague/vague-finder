@@ -1725,6 +1725,8 @@ class SearchRouter:
                                 recorder,
                                 run_statuses,
                             )
+                            n_before = len(run_statuses)
+                            group_in = group
                             group = await loop.run_in_executor(
                                 self._pool,
                                 timer.job(
@@ -1733,6 +1735,9 @@ class SearchRouter:
                                     size=len(group),
                                 ),
                             )
+                            if rerank_input_differs and not self._call_applied(run_statuses, n_before):
+                                # 이 그룹만 적용 실패 — 입력(보너스 전) 순서 대신 그 그룹의 보너스 순서로
+                                group = self._bonus_order(candidate_tracks, group_in)
                         ordered_protected.extend(group[:remaining_group_slots])
                     protected_tracks = ordered_protected
 
@@ -1748,6 +1753,8 @@ class SearchRouter:
                             recorder,
                             run_statuses,
                         )
+                        n_before = len(run_statuses)
+                        others_in = other_tracks
                         other_tracks = await loop.run_in_executor(
                             self._pool,
                             timer.job(
@@ -1756,6 +1763,8 @@ class SearchRouter:
                                 size=len(other_tracks),
                             ),
                         )
+                        if rerank_input_differs and not self._call_applied(run_statuses, n_before):
+                            other_tracks = self._bonus_order(candidate_tracks, others_in)[:remaining]
                     else:
                         other_tracks = []
                     final = [*protected_tracks, *other_tracks][:top_k]
@@ -1778,8 +1787,8 @@ class SearchRouter:
                     recorder.note_order_rules_applied()
                     recorder.commit_reorder()
                     if rerank_input_differs and self._rerank_reported_failure(run_statuses):
+                        # 모든 호출이 실패 — 그룹별 폴백으로 이미 보너스 순서지만, 반영 표시는 취소한다(설명 단계 = 실패)
                         recorder.revoke_reorder()
-                        final = candidate_tracks[:top_k]
                     recorder.set_rank_after([t.id for t in final])
                     for t in final:
                         recorder.set_rerank_score(t.id, t.rerank_score)
@@ -1802,10 +1811,12 @@ class SearchRouter:
                         "rerank.main", rerank_job, size=len(rerank_tracks)
                     ),
                 )
+                recorder.commit_reorder()
                 if rerank_input_differs and self._rerank_reported_failure(run_statuses):
+                    # 보호 경로와 같은 순서 — commit 다음에 revoke. 반대로 두면 폴백했는데도 reorder_committed가
+                    # 다시 True가 돼 설명 단계가 MODEL_FAILED 대신 다른 값을 보고한다(PR #30 리뷰).
                     recorder.revoke_reorder()
                     reranked = candidate_tracks[:top_k]
-                recorder.commit_reorder()
                 recorder.set_rank_after([t.id for t in reranked])
                 for t in reranked:
                     recorder.set_rerank_score(t.id, t.rerank_score)
@@ -1831,6 +1842,17 @@ class SearchRouter:
         final = candidate_tracks[:top_k]
         recorder.set_rank_after([t.id for t in final])
         return final
+
+    @staticmethod
+    def _call_applied(statuses: Sequence[str], n_before: int) -> bool:
+        """n_before 뒤에 더해진 상태(= 방금 한 호출) 중 적용된 것이 있으면 True."""
+        return RERANK_APPLIED in statuses[n_before:]
+
+    @staticmethod
+    def _bonus_order(candidate_tracks: Sequence[MatchingTrack], subset: Sequence[MatchingTrack]) -> List[MatchingTrack]:
+        """subset의 곡들을 후보 목록(보너스 순서)의 순서로. 그룹 하나만 적용 실패했을 때 그 그룹의 폴백 순서."""
+        ids = {t.id for t in subset}
+        return [t for t in candidate_tracks if t.id in ids]
 
     @staticmethod
     def _rerank_reported_failure(statuses: Sequence[str]) -> bool:

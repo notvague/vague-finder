@@ -84,3 +84,44 @@ def test_runinfo_records_the_two_clarify_prompt_switches(monkeypatch):
     monkeypatch.setenv("GEMINI_RERANK_TYPE_SLOT_LABEL", "artist type")
     d = _ranking_switches(None)
     assert (d["gemini_rerank_corrections"], d["gemini_rerank_type_slot_label"]) == ("new_only", "artist type")
+
+
+def test_candidates_for_reranker_pre_bonus_switch(monkeypatch):
+    """(a) 스위치: 답변이 있을 때만 보너스 전 순서를 넘기고, 기본은 보너스 순서다."""
+    from src.retrieval.clarify import candidates_for_reranker, reranker_input_order_mode
+    pre = [("a", 0.3), ("b", 0.2), ("c", 0.1)]
+    post = [("b", 0.5), ("a", 0.3), ("c", 0.1)]
+    answers = [ClarifyAnswer(slot="genre", value="발라드")]
+    monkeypatch.delenv("CLARIFY_RERANK_INPUT_ORDER", raising=False)
+    assert reranker_input_order_mode() == "bonus"
+    assert candidates_for_reranker(pre, post, answers) == post
+    monkeypatch.setenv("CLARIFY_RERANK_INPUT_ORDER", "pre_bonus")
+    assert reranker_input_order_mode() == "pre_bonus"
+    assert candidates_for_reranker(pre, post, answers) == pre
+    assert candidates_for_reranker(pre, post, []) == post, "답변이 없으면 바꿀 것이 없다"
+
+
+def test_runinfo_records_the_input_order_switch(monkeypatch):
+    from src.retrieval.evaluate_search_accuracy import _ranking_switches
+    monkeypatch.delenv("CLARIFY_RERANK_INPUT_ORDER", raising=False)
+    assert _ranking_switches(None)["clarify_rerank_input_order"] == "bonus"
+    monkeypatch.setenv("CLARIFY_RERANK_INPUT_ORDER", "pre_bonus")
+    assert _ranking_switches(None)["clarify_rerank_input_order"] == "pre_bonus"
+
+
+def test_placebo_mode_shuffles_as_many_positions_as_the_bonus_changed_and_drops_answers(monkeypatch):
+    """위약 대조: 보너스가 바꾼 자리 수만큼 고정 시드로 섞고, 답은 프롬프트에 넣지 않는다."""
+    from src.retrieval.clarify import candidates_for_reranker, reranker_input_order_mode
+    pre = [(str(i), 1.0 - i / 10) for i in range(10)]
+    post = list(pre); post[2], post[5], post[7] = pre[5], pre[7], pre[2]  # 보너스가 3자리를 바꿨다
+    answers = [ClarifyAnswer(slot="genre", value="발라드")]
+    monkeypatch.setenv("CLARIFY_RERANK_INPUT_ORDER", "placebo:3")
+    assert reranker_input_order_mode() == "placebo:3"
+    out = candidates_for_reranker(pre, post, answers)
+    assert set(out) == set(pre) and out != pre, "같은 집합에서 순서만 바뀐다"
+    assert sum(1 for a, b in zip(out, pre) if a != b) <= 3
+    assert out == candidates_for_reranker(pre, post, answers), "같은 시드면 같은 순서"
+    monkeypatch.setenv("CLARIFY_RERANK_INPUT_ORDER", "placebo:4")
+    assert candidates_for_reranker(pre, post, answers) != out, "시드가 다르면 다른 순서"
+    assert answers_for_reranker(_analysis(), answers) == [], "위약에서는 답을 프롬프트에 넣지 않는다"
+    assert candidates_for_reranker(pre, post, []) == post, "답이 없으면 바꿀 것이 없다"

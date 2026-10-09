@@ -284,12 +284,13 @@ async def run_search(
         reranker, analysis_with_answers(analysis, answers or []), rerank_source, candidate_k,
         answers=answers_for_reranker(analysis, list(answers or [])),  # 라우터와 같은 선별
         errors=errors, statuses=statuses,
+        fallback_candidates=list(candidates) if input_differs else None,  # 적용 안 된 호출의 그룹은 보너스 순서로(라우터와 같은 호출 단위 폴백)
     )
     RERANK_STATUS_COUNTS.update(statuses or ["no_status"])
     if errors:
         RERANK_STATUS_COUNTS["exception"] += 1
-    if input_differs and (errors or RERANK_APPLIED not in statuses):
-        reranked_all = list(candidates)  # 라우터와 같은 조건: 적용된 실행이 없으면 후보(보너스) 순서
+    if input_differs and errors:
+        reranked_all = list(candidates)  # 예외 폴백도 보너스 순서(라우터와 동일)
     shown = [str(t.id) for t in reranked_all[:top_k]]
     candidate_ids = [str(t.id) for t in candidates]
 

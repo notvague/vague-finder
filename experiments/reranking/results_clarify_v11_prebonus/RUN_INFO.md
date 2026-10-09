@@ -23,7 +23,7 @@ Vertex는 같은 설정을 두 번 돌려도 Top-10이 다른 행이 나오고(5
 | 스위치 | 값 | 뜻 |
 |---|---|---|
 | `CLARIFY_RERANK_INPUT_ORDER` | `bonus`(기본) | 답변 보너스 순서 — v09·v10까지의 동작 |
-| | `pre_bonus` | (a) 답이 있을 때 **답을 쓰는 리랭커(listwise)의 입력에만** 보너스 전 순서·점수(`clarify.candidates_for_reranker`, 라우터 `search` 한 곳 + `rerank_input_tracks_out`으로 하네스 전달). 후보 목록·기록·`candidate_rank@30`·리랭킹 폴백/생략·`use_rerank=False`·CE 경로는 보너스 순서 그대로. 적용된 실행이 없으면(`RERANK_APPLIED not in statuses`) 후보 순서로 복귀 |
+| | `pre_bonus` | (a) 답이 있을 때 **답을 쓰는 리랭커(listwise)의 입력에만** 보너스 전 순서·점수(`clarify.candidates_for_reranker`, 라우터 `search` 한 곳 + `rerank_input_tracks_out`으로 하네스 전달). 후보 목록·기록·`candidate_rank@30`·리랭킹 폴백/생략·`use_rerank=False`·CE 경로는 보너스 순서 그대로. 폴백은 **호출 단위** — 적용되지 않은 호출(실패·unknown·skipped)의 그룹만 그 그룹의 보너스 순서로 돌아간다(라우터·하네스 동일, PR #30 리뷰 뒤). 이 폴더의 측정은 전체 단위 폴백 코드로 돌았지만 실패가 있던 실행은 (a)+①+② r1 하나뿐이고 비교에서 뺐으므로 숫자는 바뀌지 않는다 |
 | | `placebo:<seed>` | 위약. **보너스가 바꾼 바로 그 자리들**의 곡을 고정 시드(+후보 id, 행마다 독립)로 섞고 답은 프롬프트에 넣지 않는다 |
 
 폴더: `base_rerun_r1`, `prebonus`((a)) · `prebonus_both`((a)+①+②) 각 `_r1` · `_r2`, `placebo_s1~s4_r1`. 명령 `run.sh [all|base|prebonus|placebo]`. 비교 `compare.py`.

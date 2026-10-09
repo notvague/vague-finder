@@ -13,7 +13,8 @@ import sys
 import time
 from pathlib import Path
 from collections import Counter
-from typing import Iterable, Optional, Sequence, Any
+from typing import Any, Iterable, List, Optional, Sequence
+from src.backend.schemas.search import MatchingTrack
 
 # 이 파일을 retrieval/ 아래에 두고 실행하는 것을 기준으로
 # 프로젝트 루트를 Python import 경로에 추가한다.
@@ -130,6 +131,7 @@ def rerank_preserving_exact_lyrics(
     recorder=NULL_RECORDER,
     errors=None,
     statuses=None,
+    fallback_candidates=None,
 ):
     """실서비스와 동일하게 이미지 지배/가사 exact 보호 규칙을 적용한다.
 
@@ -156,7 +158,7 @@ def rerank_preserving_exact_lyrics(
     recorder.set_reorder_attempted(True)
     try:
         return _rerank_with_lyric_protection(
-            reranker, analysis, candidates, top_k, answers, recorder, statuses
+            reranker, analysis, candidates, top_k, answers, recorder, statuses, fallback_candidates
         )
     except Exception as exc:
         # 라우터와 같은 순서로 취소한다 — 잠정 기록을 남기면 반영되지 않은 처리가
@@ -173,19 +175,39 @@ def rerank_preserving_exact_lyrics(
         return final
 
 
+def _bonus_order(fallback: Sequence[MatchingTrack], subset: Sequence[MatchingTrack]) -> List[MatchingTrack]:
+    ids = {t.id for t in subset}
+    return [t for t in fallback if t.id in ids]
+
+
 def _rerank_with_lyric_protection(
-    reranker, analysis, candidates, top_k: int, answers, recorder, statuses=None
+    reranker, analysis, candidates, top_k: int, answers, recorder, statuses=None, fallback_candidates=None
 ):
-    """보호 규칙 본체. 예외는 호출부가 폴백으로 처리한다."""
+    """보호 규칙 본체. 예외는 호출부가 폴백으로 처리한다.
+
+    fallback_candidates는 라우터의 후보 목록(보너스 순서). 실험 스위치로 리랭커 입력(candidates)이 그와 다를 때,
+    **적용되지 않은 호출의 그룹**은 입력 순서 대신 이 순서로 돌아간다 — 라우터와 같은 호출 단위 폴백.
+    """
+    if statuses is None:
+        statuses = []
+
+    def _after_call(result, subset):
+        n_before = _after_call.n_before
+        if fallback_candidates is not None and RERANK_APPLIED not in statuses[n_before:]:
+            return _bonus_order(fallback_candidates, subset)
+        return result
+
     # 보호 판정은 라우터와 **같은 함수**로 한다. 규칙을 바꿀 때 한쪽만 고치면
     # 평가와 서비스가 다른 규칙으로 동작한다.
     protected_ids = select_protected_lyric_ids(candidates)
     protected = [track for track in candidates if track.id in protected_ids]
     if not protected:
+        _after_call.n_before = len(statuses)
         reranked = call_reranker(
             reranker, analysis.original_query, candidates, top_k, answers, recorder,
             runs_out=statuses,
         )
+        reranked = _after_call(reranked, candidates)[:top_k]
         recorder.commit_reorder()
         recorder.set_rank_after([track.id for track in reranked])
         for track in reranked:
@@ -203,6 +225,8 @@ def _rerank_with_lyric_protection(
         if slots <= 0:
             break
         if len(group) > 1:
+            _after_call.n_before = len(statuses)
+            group_in = group
             group = call_reranker(
                 reranker,
                 analysis.original_query,
@@ -212,11 +236,14 @@ def _rerank_with_lyric_protection(
                 recorder,
                 runs_out=statuses,
             )
+            group = _after_call(group, group_in)
         ordered_protected.extend(group[:slots])
     protected = ordered_protected
     remaining = max(0, top_k - len(protected))
-    reranked_others = (
-        call_reranker(
+    reranked_others: List[MatchingTrack] = []
+    if remaining and others:
+        _after_call.n_before = len(statuses)
+        reranked_others = call_reranker(
             reranker,
             analysis.original_query,
             others,
@@ -225,9 +252,7 @@ def _rerank_with_lyric_protection(
             recorder,
             runs_out=statuses,
         )
-        if remaining and others
-        else []
-    )
+        reranked_others = _after_call(reranked_others, others)[:remaining]
     final = [*protected, *reranked_others][:top_k]
     # 보호 배치가 실제로 성사된 뒤에만 기록한다(라우터와 동일).
     final_ids = {track.id for track in final}
