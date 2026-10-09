@@ -42,6 +42,7 @@ from src.retrieval.explain import (
     ExplainRecorder,
     render_ko,
 )
+from src.common.gemini_client import gemini_route_info
 from src.retrieval import search_router as _search_router
 from src.retrieval.search_router import (
     call_reranker,
@@ -386,6 +387,8 @@ def collect_run_info(args, *, reranker, analysis_source: dict) -> dict:
             "enabled": bool(getattr(reranker, "enabled", False)),
             "config": reranker_config,
         },
+        # Gemini를 어느 경로로 불렀는지(vertex·api_key). 같은 모델이어도 경로가 바뀌면 출력이 달라질 수 있다.
+        "gemini": gemini_route_info(),
         # 실험 스위치. **실제로 적용된 값을 코드에서 읽는다** — 환경변수를 다시
         # 읽으면 기록과 적용이 갈릴 수 있고, 폴더명과 수기 문서에만 의존하면
         # 나중에 어느 조건의 결과인지 알 수 없다.

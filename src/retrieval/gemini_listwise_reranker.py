@@ -30,6 +30,7 @@ from src.retrieval.explain import (
     RerankRun,
     ScoreMix,
 )
+from src.common.gemini_client import gemini_configured, make_genai_client
 from src.common.title_features import analyze_title_structure, base_title
 
 logger = logging.getLogger(__name__)
@@ -300,16 +301,18 @@ class GeminiListwiseReranker:
         client: Any = None,
     ):
         self.config = config or GeminiListwiseRerankerConfig.from_env()
-        self._api_key = api_key or os.getenv("GEMINI_API_KEY", "")
+        # 직접 넘긴 키만 담는다. 없으면 환경(GCP_PROJECT_ID → Vertex, GEMINI_API_KEY → AI Studio)을 따른다.
+        self._api_key = api_key or ""
+        self._configured = gemini_configured(self._api_key)
         self._client = client
-        if not self._api_key and client is None:
+        if not self._configured and client is None:
             logger.warning(
-                "[GeminiListwiseReranker] GEMINI_API_KEY 미설정 — retrieval 순서를 유지합니다."
+                "[GeminiListwiseReranker] Gemini 설정 없음(GCP_PROJECT_ID·GEMINI_API_KEY) — retrieval 순서를 유지합니다."
             )
 
     @property
     def enabled(self) -> bool:
-        return bool(self.config.enabled and (self._api_key or self._client is not None))
+        return bool(self.config.enabled and (self._configured or self._client is not None))
 
     def load(self) -> "GeminiListwiseReranker":
         return self
@@ -317,14 +320,12 @@ class GeminiListwiseReranker:
     @property
     def _gemini(self):
         if self._client is None:
-            from google import genai
-
             from google.genai import types
 
             # 연결·읽기 제한. 없으면 멈춘 응답을 무기한 기다리고, 스레드에 wait_for를 씌워도
             # 진행 중인 HTTP 요청은 끝나지 않는다.
-            self._client = genai.Client(
-                api_key=self._api_key,
+            self._client = make_genai_client(
+                api_key=self._api_key or None,
                 http_options=types.HttpOptions(
                     timeout=int(self.config.request_timeout_seconds * 1000)
                 ),
@@ -359,11 +360,10 @@ class GeminiListwiseReranker:
         """
         if self._client is not None:
             return self._client
-        from google import genai
         from google.genai import types
 
-        return genai.Client(
-            api_key=self._api_key,
+        return make_genai_client(
+            api_key=self._api_key or None,
             http_options=types.HttpOptions(timeout=int(self.config.request_timeout_seconds * 1000)),
         )
 

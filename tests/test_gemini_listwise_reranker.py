@@ -579,6 +579,7 @@ def test_get_reranker_defaults_to_listwise_and_falls_back_without_key(monkeypatc
     from src.retrieval.reranker import MusicReranker
 
     monkeypatch.delenv("RERANKER_BACKEND", raising=False)
+    monkeypatch.delenv("GCP_PROJECT_ID", raising=False)
     monkeypatch.setenv("GEMINI_API_KEY", "시험용")
     deps.get_reranker.cache_clear()
     assert isinstance(deps.get_reranker(), GeminiListwiseReranker)
@@ -586,6 +587,12 @@ def test_get_reranker_defaults_to_listwise_and_falls_back_without_key(monkeypatc
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     deps.get_reranker.cache_clear()
     assert isinstance(deps.get_reranker(), MusicReranker), "키가 없으면 CE로 내려가야 한다"
+
+    # Vertex 설정만 있어도 listwise다 — 키를 주석 처리하고 Vertex로 옮긴 뒤 CE로 조용히 내려가면 안 된다
+    monkeypatch.setenv("GCP_PROJECT_ID", "시험-프로젝트")
+    deps.get_reranker.cache_clear()
+    assert isinstance(deps.get_reranker(), GeminiListwiseReranker)
+    monkeypatch.delenv("GCP_PROJECT_ID", raising=False)
 
     monkeypatch.setenv("GEMINI_API_KEY", "시험용")
     monkeypatch.setenv("RERANKER_BACKEND", "cross_encoder")
