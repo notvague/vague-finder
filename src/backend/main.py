@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from src.backend.api.dependencies import close_vector_client, get_vector_client
+from src.common.gemini_client import RETRIEVAL, backend_setting
 from src.backend.api.routes import search
 from src.backend import warmup
 from src.retrieval import timing
@@ -32,6 +33,11 @@ async def lifespan(app: FastAPI):
     내리면 뒤쪽 vector_db 단계가 종료 처리 뒤에 실행되어 방금 닫은 저장소를 다시 연다.
     로컬 Qdrant는 폴더를 한 번에 하나만 열 수 있으므로 그 핸들이 다음 기동을 막는다.
     """
+    # 검색 Gemini 경로 설정(GEMINI_RETRIEVAL_BACKEND)의 오타는 **기동에서** 실패시킨다. 분석기는 첫 요청에서 만들어지고
+    # 예열은 리랭커 예외를 로그로만 남겨, 그대로 두면 서버가 정상으로 떠 있다가 첫 검색이 500으로 떨어진다(PR #31 리뷰).
+    # 벡터 DB 실패와 달리 다시 시도해도 낫지 않는 설정 오류라 서버를 띄우지 않는다.
+    backend_setting(RETRIEVAL)
+
     try:
         get_vector_client()
     except Exception as exc:

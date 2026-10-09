@@ -30,7 +30,7 @@ from src.retrieval.explain import (
     RerankRun,
     ScoreMix,
 )
-from src.common.gemini_client import gemini_configured, make_genai_client
+from src.common.gemini_client import RETRIEVAL, gemini_configured, make_genai_client
 from src.common.title_features import analyze_title_structure, base_title
 
 logger = logging.getLogger(__name__)
@@ -316,13 +316,14 @@ class GeminiListwiseReranker:
         client: Any = None,
     ):
         self.config = config or GeminiListwiseRerankerConfig.from_env()
-        # 직접 넘긴 키만 담는다. 없으면 환경(GCP_PROJECT_ID → Vertex, GEMINI_API_KEY → AI Studio)을 따른다.
+        # 직접 넘긴 키만 담는다. 없으면 환경(GCP_PROJECT_ID → Vertex, GEMINI_API_KEY → AI Studio)을 따르고,
+        # GEMINI_RETRIEVAL_BACKEND가 있으면 그 경로로 고정한다(검색 용도 — 질의 분석과 같은 경로).
         self._api_key = api_key or ""
-        self._configured = gemini_configured(self._api_key)
+        self._configured = gemini_configured(self._api_key, purpose=RETRIEVAL)
         self._client = client
         if not self._configured and client is None:
             logger.warning(
-                "[GeminiListwiseReranker] Gemini 설정 없음(GCP_PROJECT_ID·GEMINI_API_KEY) — retrieval 순서를 유지합니다."
+                "[GeminiListwiseReranker] Gemini 설정 없음(GCP_PROJECT_ID·GEMINI_API_KEY, GEMINI_RETRIEVAL_BACKEND) — retrieval 순서를 유지합니다."
             )
 
     @property
@@ -341,6 +342,7 @@ class GeminiListwiseReranker:
             # 진행 중인 HTTP 요청은 끝나지 않는다.
             self._client = make_genai_client(
                 api_key=self._api_key or None,
+                purpose=RETRIEVAL,
                 http_options=types.HttpOptions(
                     timeout=int(self.config.request_timeout_seconds * 1000)
                 ),
@@ -379,6 +381,7 @@ class GeminiListwiseReranker:
 
         return make_genai_client(
             api_key=self._api_key or None,
+            purpose=RETRIEVAL,
             http_options=types.HttpOptions(timeout=int(self.config.request_timeout_seconds * 1000)),
         )
 

@@ -17,7 +17,7 @@ from typing import Any, Optional
 from dotenv import load_dotenv
 from google import genai
 
-from src.common.gemini_client import gemini_configured, make_genai_client
+from src.common.gemini_client import RETRIEVAL, gemini_configured, make_genai_client
 from src.retrieval import timing
 from src.backend.schemas.query import (
     QueryAnalysis,
@@ -578,9 +578,10 @@ class QueryAnalyzer:
     """
 
     def __init__(self, api_key: Optional[str] = None):
-        # 직접 넘긴 키만 담는다. 없으면 환경(GCP_PROJECT_ID → Vertex, GEMINI_API_KEY → AI Studio)을 따른다.
+        # 직접 넘긴 키만 담는다. 없으면 환경(GCP_PROJECT_ID → Vertex, GEMINI_API_KEY → AI Studio)을 따르고,
+        # GEMINI_RETRIEVAL_BACKEND가 있으면 그 경로로 고정한다(검색 용도 — 리랭커와 같은 경로).
         self._api_key = api_key or ""
-        self._configured = gemini_configured(self._api_key)
+        self._configured = gemini_configured(self._api_key, purpose=RETRIEVAL)
         self._model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-3.1-flash-lite")
         # **분석 전체에 쓸 수 있는 시간.** 한 번의 호출이 아니라 재시도와 대기까지
         # 합친 값이다. 제한이 없으면 Gemini가 응답하지 않을 때 요청이 끝나지 않고,
@@ -598,7 +599,7 @@ class QueryAnalyzer:
         self._client_lock = threading.Lock()
         if not self._configured:
             logger.warning(
-                "[QueryAnalyzer] Gemini 설정 없음(GCP_PROJECT_ID·GEMINI_API_KEY) — fallback 모드로 동작합니다."
+                "[QueryAnalyzer] Gemini 설정 없음(GCP_PROJECT_ID·GEMINI_API_KEY, GEMINI_RETRIEVAL_BACKEND) — fallback 모드로 동작합니다."
             )
 
     @property
@@ -611,7 +612,7 @@ class QueryAnalyzer:
         if self._client is None:
             with self._client_lock:
                 if self._client is None:
-                    self._client = make_genai_client(api_key=self._api_key or None)
+                    self._client = make_genai_client(api_key=self._api_key or None, purpose=RETRIEVAL)
         return self._client
 
     @property

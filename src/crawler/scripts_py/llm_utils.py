@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
 
-from src.common.gemini_client import gemini_configured, make_genai_client
+from src.common.gemini_client import crawl_model_name, gemini_configured, make_genai_client
 
 logger = logging.getLogger(__name__)
 
@@ -194,7 +194,7 @@ def _evaluate_batch(client, batch: List[Dict[str, Any]], source_name: str) -> Li
     """배치 하나를 LLM에 보내 판정 레코드로 바꾼다. 실패는 예외로 올린다."""
     prompt = build_comment_selection_prompt(batch, source_name=source_name)
     response = client.models.generate_content(
-        model="gemini-3.1-flash-lite",
+        model=crawl_model_name(),
         contents=prompt,
         config={"response_mime_type": "application/json"},
     )

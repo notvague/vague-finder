@@ -3,14 +3,14 @@ import csv, json, os, sys, time
 from pathlib import Path
 from src.backend.api.dependencies import get_query_analyzer
 from src.backend.schemas.query import QueryAnalysis
-from src.common.gemini_client import gemini_configured
+from src.common.gemini_client import RETRIEVAL, gemini_configured
 
 rows = list(csv.DictReader(open("experiments/reranking/eval_queries_v05.csv", encoding="utf-8-sig")))
 out_path = Path(sys.argv[1])
 cache = json.loads(out_path.read_text(encoding="utf-8")) if out_path.exists() else {}
 # Gemini 설정이 없으면 분석기가 예외 없이 fallback(confidence=0.0)을 돌려줘서, 그대로 저장하면
 # 두 조건에 Gemini 분석이 아닌 값이 주입된다. 먼저 막는다.
-if not gemini_configured():
+if not gemini_configured(purpose=RETRIEVAL):
     raise SystemExit("Gemini 설정(GCP_PROJECT_ID·GEMINI_API_KEY) 없음: $REPO/.env를 읽은 뒤 실행할 것 (fallback 분석 저장 방지)")
 analyzer = get_query_analyzer()
 for i, r in enumerate(rows, 1):

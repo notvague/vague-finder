@@ -25,7 +25,7 @@ from typing import Dict, List, Optional, Any
 
 from dotenv import load_dotenv
 
-from src.common.gemini_client import gemini_configured, make_genai_client
+from src.common.gemini_client import crawl_model_name, gemini_configured, make_genai_client
 
 # 로깅 설정
 # logging configured by main
@@ -370,7 +370,7 @@ def refine_data(metadata: Dict, lyrics: Optional[str], reaction: Optional[Dict])
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
-                model="gemini-3.1-flash-lite",
+                model=crawl_model_name(),
                 contents=prompt,
                 config={"response_mime_type": "application/json"}
             )
@@ -577,7 +577,7 @@ def select_emotional_comments_with_llm(
 
         try:
             response = client.models.generate_content(
-                model="gemini-3.1-flash-lite",
+                model=crawl_model_name(),
                 contents=prompt,
                 config={"response_mime_type": "application/json"},
             )
