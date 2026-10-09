@@ -59,6 +59,8 @@ artifacts/*
 # 팀 드라이브에서 받거나 src/pipelines/build_map.py로 다시 만든다.
 src/frontend/static/map_data.json
 *.csv
+# 질의 작성 양식은 예시 2행뿐이라 곡 목록 노출이 없다
+!docs/eval/query_writing_template.csv
 cookies.txt
 logs/
 

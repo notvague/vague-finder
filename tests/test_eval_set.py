@@ -33,7 +33,7 @@ def eval_set() -> EvalSet:
 
 def test_eval_set_loads(eval_set) -> None:
     """이게 깨지면 src/eval/evaluate.py가 통째로 못 돈다."""
-    assert len(eval_set.queries) == 89
+    assert len(eval_set.queries) == 189  # v0.5 89 + v09 100
 
 
 def test_labeled_queries_have_positives(eval_set) -> None:
@@ -116,6 +116,7 @@ def test_query_set_provenance_is_preserved(eval_set) -> None:
     assert dist["v04"] == 60
     assert dist["modality_v1"] == 14
     assert dist["clarify_v1"] == 15
+    assert dist["v09"] == 100
 
 
 # ---------------------------------------------------------------------------
@@ -223,6 +224,26 @@ def test_export_can_reproduce_a_single_query_set(eval_set) -> None:
     assert len(v04) == 55
 
 
+def test_export_defaults_to_v05_sets_and_needs_v09_explicitly(eval_set) -> None:
+    """--query-set 생략이 '전부'면 v06 CSV가 v09로 덮어써지고 봉인 test가 함께 나간다 (PR #20 리뷰)."""
+    default = select(eval_set.queries)
+    assert {q.query_set for q in default} == {"v04", "modality_v1", "clarify_v1"}
+    assert len(default) == 82  # v06 dev 57 + test 25
+    v09 = select(eval_set.queries, query_sets=["v09"])
+    assert len(v09) == 97 and all(q.query_set == "v09" for q in v09)
+
+
+def test_clarification_evaluator_defaults_to_v05_sets() -> None:
+    """재질문 평가기도 같은 기본값 — 기본 --labels(v06 CSV)와 맞아야 시작한다."""
+    from src.eval.loader import DEFAULT_EVAL_PATH
+    from src.retrieval.evaluate_clarification import select_queries
+    dev = select_queries(DEFAULT_EVAL_PATH, "dev")
+    assert dev and not any(q.query_id.startswith("n") for q in dev)
+    assert len(dev) == 57
+    v09_dev = select_queries(DEFAULT_EVAL_PATH, "dev", query_sets=["v09"])
+    assert len(v09_dev) == 59 and all(q.query_set == "v09" for q in v09_dev)
+
+
 def test_export_rows_match_runner_columns(eval_set) -> None:
     rows = to_rows(select(eval_set.queries)[:3])
     for row in rows:
@@ -275,7 +296,11 @@ def test_sparse_passage_keeps_album_context_but_not_namuwiki():
 def test_categorical_queries_are_the_general_cover_queries(eval_set) -> None:
     """질의만으로 원래 타깃을 특정할 수 없는 일반 속성 표지 질의. 바꾸면 범주형 집계 숫자가 바뀐다."""
     categorical = {q.query_id for q in eval_set.queries if q.target_scope == "categorical"}
-    assert categorical == {"q116", "q117", "m301", "m302", "m303", "m401", "m402", "m403"}
+    # v0.5 세트의 8건은 범주형 집계(relaxed_metrics scope_summary)의 기준이라 바꾸지 않는다.
+    v05 = {q for q in categorical if not q.startswith("n")}
+    assert v05 == {"q116", "q117", "m301", "m302", "m303", "m401", "m402", "m403"}
+    # v09(2026-10)에서 작성 단계에 범주형으로 표시한 표지 질의 3건.
+    assert categorical - v05 == {"n072", "n076", "n080"}
     assert all(q.is_scorable for q in eval_set.queries if q.query_id in categorical)
 
 

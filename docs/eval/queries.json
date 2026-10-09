@@ -1,7 +1,7 @@
 {
-  "version": "0.5.4",
+  "version": "0.6.0",
   "created_at": "2026-09-17",
-  "description": "eval set v0.5 — 통합 SSOT (905곡 코퍼스). v0.4 60개 + modality_v1 14개 + 재질문 측정용 clarify_v1 15개 = 89개. query_set으로 출처를 보존하므로 v0.5 공식 기준선과의 비교는 query_set='v04' 부분집합으로 수행한다. split은 층화 70:30이며 튜닝은 dev, 최종 보고는 test로만 한다. label_status가 labeled가 아닌 질의는 정확도 집계에서 제외한다. clarify_v1은 2026-09-15 재작성본 — 초안 26개는 v0.6 측정에서 18/18이 Top-10 안에 들어와 폐기했다(정답의 희소 sound_tags 토큰을 질의에 그대로 썼다). 재작성본은 앨범명에만 있는 외부맥락과 오정보 tier로만 구성했다. 2026-10-01: 3,010곡 코퍼스 기준 팀 라벨 검토로 vague 질의 20개에 허용 정답(allowed) 80곡을 더했다. positives는 그대로이며, 엄격 지표는 positives만, 확장 지표는 positives+allowed로 잰다. 같은 날 경로 깊이·CE 채점 실험에서 새로 top-10에 든 후보를 추가 검토해 2곡을 더했다(질의 20개 · 82곡). 2026-10-08: 표지의 일반 속성만 말해 원래 타깃을 질의만으로 특정할 수 없는 질의 8개(q116·q117·m301·m302·m303·m401·m402·m403)에 target_scope=categorical을 표시했다(results_v25_cover_diag). 정답·허용 정답은 그대로이며 전체 지표에도 그대로 들어간다.",
+  "description": "eval set v0.5 — 통합 SSOT (905곡 코퍼스). v0.4 60개 + modality_v1 14개 + 재질문 측정용 clarify_v1 15개 = 89개. query_set으로 출처를 보존하므로 v0.5 공식 기준선과의 비교는 query_set='v04' 부분집합으로 수행한다. split은 층화 70:30이며 튜닝은 dev, 최종 보고는 test로만 한다. label_status가 labeled가 아닌 질의는 정확도 집계에서 제외한다. clarify_v1은 2026-09-15 재작성본 — 초안 26개는 v0.6 측정에서 18/18이 Top-10 안에 들어와 폐기했다(정답의 희소 sound_tags 토큰을 질의에 그대로 썼다). 재작성본은 앨범명에만 있는 외부맥락과 오정보 tier로만 구성했다. 2026-10-01: 3,010곡 코퍼스 기준 팀 라벨 검토로 vague 질의 20개에 허용 정답(allowed) 80곡을 더했다. positives는 그대로이며, 엄격 지표는 positives만, 확장 지표는 positives+allowed로 잰다. 같은 날 경로 깊이·CE 채점 실험에서 새로 top-10에 든 후보를 추가 검토해 2곡을 더했다(질의 20개 · 82곡). 2026-10-08: 표지의 일반 속성만 말해 원래 타깃을 질의만으로 특정할 수 없는 질의 8개(q116·q117·m301·m302·m303·m401·m402·m403)에 target_scope=categorical을 표시했다(results_v25_cover_diag). 정답·허용 정답은 그대로이며 전체 지표에도 그대로 들어간다. 2026-10-09 v0.6.0: 2차 세트 v09 100개 추가(n001~n100). Claude가 곡 메타데이터·표지만 보고 초안을 쓰고(태그·요약·가사 미참조) 황찬혁이 검토·10곡 교체했다. 층화 무작위로 dev 62 · test 38을 배정했고 test 38은 봉인이다 — 최종 설정 하나로 한 번만 잰다. 단서 부족 3개는 no_target(dev). 확장 지표용 allowed는 아직 없다(채택 설정의 top-10 검토 뒤 추가).",
   "queries": [
     {
       "query_id": "q101",
@@ -1547,6 +1547,1797 @@
       ],
       "notes": "틀린 기억 테스트 — 실제는 로꼬 「우연히 봄」(냄새를 보는 소녀, 2015)으로 남녀가 함께 부른다. 2026-09-15 수정 — 계절·정서와 랩 구성을 맞는 단서로 보강했다. 2026-09-17 수정 — sparse 색인에 앨범명·앨범 요약이 복원되면서(#52 필드 복구) 질의 단어가 색인 텍스트와 그대로 겹쳐 표면 매칭으로 풀리게 됐다. 뜻은 두고 표현만 바꿨다.",
       "negatives": []
+    },
+    {
+      "query_id": "n001",
+      "query": "어릴 때 집이 어려워서 엄마가 짜장면이 싫다고 했다는 얘기 나오는 노래 뭐였지?",
+      "category": "lyrics",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "lyric_fragment",
+      "target_scope": "specific",
+      "positives": [
+        "91309"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: god - 어머님께 (1999) · 작성 근거: 곡을 알고 있음 — 가난했던 어린 시절과 짜장면 가사 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n002",
+      "query": "90년대 초반 록밴드 노래인데, 원래 보컬이 앨범 준비하다가 사고로 세상을 떠나서 그 동생이 대신 불렀다는 사연이 있었어.",
+      "category": "artist",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "era_group",
+      "target_scope": "specific",
+      "positives": [
+        "55991"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 부활 - 사랑할수록 (1993) · 작성 근거: 곡을 알고 있음 — 보컬이 사고로 떠난 뒤 동생이 대신 부른 3집 곡이라는 사연, 90년대 초 록밴드 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n003",
+      "query": "90년대 말에 얼굴 안 보여주고 신비주의로 나왔던 남자 가수가 있었는데, 나중에 알고 보니 배우였던 걸로 기억해. 그 사람이 부른 발라드 찾고 싶어",
+      "category": "artist",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "era_group",
+      "target_scope": "specific",
+      "positives": [
+        "85674"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 스카이 - 영원 (1999) · 동명곡 '영원' 핑클 862035(2002) — 제목만 같은 다른 곡 · 작성 근거: 곡을 알고 있음 — 배우가 정체를 숨기고 가수로 데뷔했다가 밝혀진 1999년 곡 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n004",
+      "query": "새끼손가락에 작은 마이크 끼고 부채 펼치면서 춤추던 여자 가수 노래. 테크노인데 동양풍 느낌이 났던 것 같아.",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "era_group",
+      "target_scope": "specific",
+      "positives": [
+        "85258"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 이정현 - 와 (1999) · 같은 앨범·같은 표지 '바꿔' 85257(cc066 정답) · 작성 근거: 곡을 알고 있음 — 손가락 마이크·부채 무대, 동양풍 테크노 여성 솔로 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n005",
+      "query": "청순한 이미지였던 여자 가수가 확 성숙한 콘셉트로 바뀌어서 난리 났던 곡. '이제 소녀가 아니에요' 이런 가사였던 거 같고 2000년쯤이었어",
+      "category": "lyrics",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "lyric_fragment",
+      "target_scope": "specific",
+      "positives": [
+        "27638"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 박지윤 - 성인식 (2000) · 작성 근거: 곡을 알고 있음 — 2000년 이미지 변신 곡, '더 이상 소녀가 아니에요' 가사를 일부러 조금 다르게 기억한 형태로 씀 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n006",
+      "query": "통기타 치면서 가볍게 부르는 남자 노래인데 꽃 피는 철에 맞춰 나왔던 거. 2013년쯤이었고 표절 얘기가 좀 돌았던 걸로 기억해",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "era_group",
+      "target_scope": "specific",
+      "positives": [
+        "4091105"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 로이킴 - 봄봄봄 (2013) · 봄 시즌 곡 다수(벚꽃 엔딩 3753304 등)와 헷갈릴 수 있음 · 작성 근거: 곡을 알고 있음 — 2013년 봄 시즌송, 통기타, 표절 논란 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n007",
+      "query": "술 마시고 헤어진 사람한테 전화 거는 내용인데 마지막에 '여보세요 뭐뭐' 하면서 끝나는 남자 발라드. 회식 끝나고 노래방 가면 꼭 누가 불렀어",
+      "category": "lyrics",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "lyric_fragment",
+      "target_scope": "specific",
+      "positives": [
+        "460396"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 임창정 - 소주 한 잔 (2003) · 작성 근거: 곡을 알고 있음 — 취중 전화 내용, 끝부분 '여보세요' 가사, 노래방 단골 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n008",
+      "query": "교과서에 나오는 시를 그대로 가사로 쓴 록 노래였어. 여자 보컬이 엄청 시원하게 질렀던 게 기억나",
+      "category": "lyrics",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "496405"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 마야 - 진달래꽃 (2003) · 작성 근거: 곡을 알고 있음 — 김소월 시를 가사로 쓴 여성 록 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n009",
+      "query": "'네 방 침대가 되고 싶다' 비슷한 가사 나오는 노래 찾아. 남자 아이돌이 화음 쌓아서 부른 데뷔곡이었던 거 같아",
+      "category": "lyrics",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "lyric_fragment",
+      "target_scope": "specific",
+      "positives": [
+        "507874"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 동방신기 (TVXQ!) - Hug (포옹) (2004) · 작성 근거: 곡을 알고 있음 — 남성 아이돌 데뷔곡, '하루만 너의 방 침대가 되고 싶어' 가사, 아카펠라풍 화음 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n010",
+      "query": "싸이월드 미니홈피 배경음악으로 한번쯤은 걸어놨던 힙합 발라드. 남자가 랩하고 여자가 노래 불러.",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "era_group",
+      "target_scope": "specific",
+      "positives": [
+        "531840"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 프리스타일 - Y (Please Tell Me Why) (2004) · 동명 'Y' 엠블랙 2684461(2010). 비슷한 구성: 에픽하이 'Love Love Love' 1556553 등 · 작성 근거: 곡을 알고 있음 — 싸이월드 BGM으로 유행한 힙합 발라드, 남성 랩+여성 보컬 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n011",
+      "query": "데뷔 무대부터 덤블링이랑 공중제비 막 하던 남자 아이돌 데뷔곡 있잖아. 2008년쯤이었어",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "era_group",
+      "target_scope": "specific",
+      "positives": [
+        "1921365"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 2PM - 10점 만점에 10점 (2008) · 같은 그룹 곡 6곡(Again&Again 2135469, 니가 밉다 2135470 등) — 데뷔곡 단서로 구분 · 작성 근거: 곡을 알고 있음 — 2008년 남성 아이돌 데뷔곡, 데뷔 무대의 아크로바틱 퍼포먼스 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n012",
+      "query": "\"난 너를 사랑해~\" 라는 가사가 있고 되게 신나는 노래야. 예전 원곡 발라드 가수가 있다고 들었어.",
+      "category": "lyrics",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "lyric_fragment",
+      "target_scope": "specific",
+      "positives": [
+        "1951550"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: BIGBANG (빅뱅) - 붉은 노을 (2008) · 원곡(이문세)은 코퍼스에 없음 · 작성 근거: 곡을 알고 있음 — '난 너를 사랑해' 가사, 80년대 발라드 원곡을 신나게 리메이크 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n013",
+      "query": "'내꺼인 듯 내꺼 아닌' 이 가사 나오는 남녀 듀엣 뭐였더라. 여자는 걸그룹 멤버였고 남자는 래퍼였나 R&B 가수였나 그랬던 것 같아.",
+      "category": "lyrics",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "lyric_fragment",
+      "target_scope": "specific",
+      "positives": [
+        "4433490"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 소유 (SOYOU) - 썸 (Feat. 릴보이 Of 긱스) (2014) · 실제 곡은 여성 보컬+남성 보컬+피처링 래퍼 구성(메타는 여성 솔로 표기) · 작성 근거: 곡을 알고 있음 — 남녀 듀엣, '내꺼인 듯 내꺼 아닌 내꺼 같은 너' 가사 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n014",
+      "query": "수능 금지곡 얘기 나오면 꼭 끼는 노래, 고양이 발처럼 손 오므리고 추는 안무였어. 여자 그룹이고 2000년도 초에 나왔을걸",
+      "category": "scene",
+      "tier": "misinformation",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "era_group",
+      "target_scope": "specific",
+      "positives": [
+        "2371262"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 티아라 - Bo Peep Bo Peep (2009) · 틀린 기억 테스트 — 시대: 실제 2009년 곡인데 '2000년도 초'로 씀 · 수능 금지곡으로 자주 묶이는 Ring Ding Dong 2320988(기존 세트 정답), Gee 2012282(cc070 정답)와 겹침 · 작성 근거: 곡을 알고 있음 — 수능 금지곡 목록 단골, 고양이 손 안무, 2009 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n015",
+      "query": "제목이 숫자인 여자 듀오 노래. 전화 좀 하라고 조르는 가사였고, 발라드만 하던 팀이 갑자기 신나는 댄스로 나와서 의외였던 기억이 나",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "title_structure",
+      "target_scope": "specific",
+      "positives": [
+        "2093360"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 다비치 - 8282 (2009) · 숫자 제목 '1440' 허각 4027904(남성)와 구분 · 작성 근거: 곡을 알고 있음 — 숫자 제목, 'Give me a call' 가사, 발라드 듀오의 댄스곡(2009) · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n016",
+      "query": "삼단 고음으로 유명한 발라드. 그때 십대였던 여자 솔로 가수였고 2010년쯤 엄청 유명했어.",
+      "category": "mixed",
+      "tier": "misinformation",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "composition",
+      "target_scope": "specific",
+      "positives": [
+        "3051244"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 아이유 - 좋은 날 (2010) · 틀린 기억 테스트 — 장르: 실제 댄스곡(메타 장르 댄스)인데 '발라드'로 씀 · 동명곡 '좋은날' 유리상자 418814(2002) · 작성 근거: 곡을 알고 있음 — '3단 고음'으로 유명한 2010년 12월 곡 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n017",
+      "query": "옛날 노래인데, '우연이 아니야' 하는 가사. 여자 가수가 굵고 힘 있는 목소리로 불렀어",
+      "category": "lyrics",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "lyric_fragment",
+      "target_scope": "specific",
+      "positives": [
+        "1777980"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 노사연 - 만남 (2007) · 원곡은 1989년. 코퍼스 버전은 2007 컴필레이션(release_year 2007) · 작성 근거: 곡을 알고 있음 — '우리 만남은 우연이 아니야' 가사, 여성 가수 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n018",
+      "query": "인트로에 물흐르는 소리가 나오는 옛날 민요풍 트로트?",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "2570038"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 주병선 - 칠갑산 (2010) · 원곡 발표는 1989년. 코퍼스 버전은 2010 컴필레이션(release_year 2010) · 작성 근거: 곡을 알고 있음 — 민요풍 가요. 도입부 물소리는 수정된 질의의 단서로, 직접 확인하지 못함 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n019",
+      "query": "헤어진 사람이랑 맨날 같이 가던 동네를 이제 못 가겠다는 남자 발라드. 동네 이름이 나왔던 것 같은데 기억이 안 나",
+      "category": "lyrics",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "lyric_fragment",
+      "target_scope": "specific",
+      "positives": [
+        "4016085"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 포스트맨 (POSTMEN) - 신촌을 못가 (2013) · 작성 근거: 곡을 알고 있음 — 이별 뒤 함께 다니던 동네를 피한다는 가사, 남성 듀오 발라드(2013) · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n020",
+      "query": "남자친구가 딴 여자 만나는 것 같다고 의심하는 가사였던 걸그룹 노래, 그룹이 밝은 콘셉트 하다가 처음으로 확 섹시하게 바꿨던 때였어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "era_group",
+      "target_scope": "specific",
+      "positives": [
+        "4383773"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 걸스데이 - Something (2014) · 작성 근거: 곡을 알고 있음 — 애인의 바람을 의심하는 가사, 섹시 콘셉트 전환 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n021",
+      "query": "꽃 피고 커플들 쏟아져 나오는 계절이 싫다고 대놓고 투덜대는 노래. 남자 둘 인디 듀오였고 목소리가 높고 좀 얇은 느낌이었어",
+      "category": "mood",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "era_group",
+      "target_scope": "specific",
+      "positives": [
+        "8124417"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 10CM - 봄이 좋냐?? (2016) · 같은 가수 '아메리카노' 2793050(cc050 정답) · 작성 근거: 곡을 알고 있음 — 2016년 봄 커플을 비꼬는 노래, 남성 인디 듀오 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n022",
+      "query": "'샤샤샤' 하는 부분이 유행어처럼 번졌던 걸그룹 노래. 엄청 밝고 상큼한 곡이야",
+      "category": "lyrics",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "lyric_fragment",
+      "target_scope": "specific",
+      "positives": [
+        "8158031"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: TWICE (트와이스) - CHEER UP (2016) · 작성 근거: 곡을 알고 있음 — 'shy shy shy'를 '샤샤샤'로 부른 부분이 유행, 밝은 걸그룹 곡 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n023",
+      "query": "tv 오디션 프로그램 나와서 떴던 남자 가수 노랜데, 가사에 운전을 안배우는게 나았다? 이런 내용이 있었던 것 같아. 밝고 신나는 노래야",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "33480898"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 이무진 - 신호등 (2021) · 작성 근거: 곡을 알고 있음 — TV 오디션 출신 남성 가수의 2021년 곡, 신호등 노란불을 사회 초년생에 빗댄 가사 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n024",
+      "query": "'달디달고 달디단' 이 부분이 계속 귀에 맴도는 노래. 여자 가수가 불렀는데 아마 래퍼일걸?",
+      "category": "lyrics",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "lyric_fragment",
+      "target_scope": "specific",
+      "positives": [
+        "37194943"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 비비 (BIBI) - 밤양갱 (2024) · 작성 근거: 곡을 알고 있음 — '달디달고 달디단' 반복, 여성 싱어송라이터 곡 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n025",
+      "query": "술자리 게임 이름을 그대로 후렴에서 반복하는 노래, 걸그룹 멤버가 외국 남자 팝스타랑 같이 불렀어. 진짜 어딜 가나 나왔던 것 같아",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "era_group",
+      "target_scope": "specific",
+      "positives": [
+        "38120327"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 로제 (ROSÉ) - APT. (2024) · 작성 근거: 곡을 알고 있음 — 술게임 이름이 제목·후렴, 걸그룹 멤버와 해외 팝스타 듀엣 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n026",
+      "query": "키가 너무 커서 연애할 때 고민이라는 여자 시점 노래였던 것 같아. 랩 하던 여자가 이번엔 노래 위주로 불렀고 남자 아이돌 보컬이 같이 했어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "era_group",
+      "target_scope": "specific",
+      "positives": [
+        "37657039"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 이영지 - Small girl (feat. 도경수(D.O.)) (2024) · 작성 근거: 곡을 알고 있음 — 키 큰 여성 화자 가사, 래퍼의 보컬곡, 남성 아이돌 피처링 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n027",
+      "query": "꽤나 최근에 데뷔한 남자 아이돌 노래인데 제목이 길었어. 새 학기 첫날 같은 풋풋하고 청량한 분위기였고 멤버가 꽤 많았던 것 같아",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "title_structure",
+      "target_scope": "specific",
+      "positives": [
+        "37140709"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: TWS (투어스) - 첫 만남은 계획대로 되지 않아 (2024) · 작성 근거: 곡을 알고 있음 — 최근 남성 아이돌 데뷔곡, 긴 제목, 청량한 소년 콘셉트 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n028",
+      "query": "트로트 붐 때 뜬 남자 가수의 신나는 곡이었어. 후렴에서 요즘 말 같은 짧은 단어를 계속 반복해서 애들까지 따라 불렀던 걸로 기억해",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "era_group",
+      "target_scope": "specific",
+      "positives": [
+        "32457751"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 영탁 - 찐이야 (2020) · 같은 해 트로트 '이제 나만 믿어요' 임영웅 32508053(발라드풍) · 작성 근거: 곡을 알고 있음 — 트로트 오디션 붐 시기의 신나는 곡, 신조어 후렴 반복 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n029",
+      "query": "지친 사람 다독여주는 노래. 여자 가수가 낮고 허스키하게 불렀고, 가사는 다른 그룹 남자 아이돌이 써줬다고 들었어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "era_group",
+      "target_scope": "specific",
+      "positives": [
+        "8086947"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 이하이 - 한숨 (2016) · 작성 근거: 곡을 알고 있음 — 위로하는 노래, 저음 허스키 여성 보컬, 남성 아이돌 멤버가 작사·작곡 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n030",
+      "query": "아이돌인데 직접 악기 치는 남자 밴드 노래, 2019년 초에 음원 1위까지 갔던 거. 데뷔하고 몇 년 만에 처음 크게 뜬 곡이라 화제였어, 신나고 좋아",
+      "category": "artist",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "era_group",
+      "target_scope": "specific",
+      "positives": [
+        "31532656"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 엔플라잉 (N.Flying) - 옥탑방 (Rooftop) (2019) · DAY6 '한 페이지가 될 수 있게' 31927275(cc090 정답)와 아이돌 밴드로 겹침 · 작성 근거: 곡을 알고 있음 — 아이돌 밴드의 2019년 초 차트 1위 곡 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n031",
+      "query": "드라마 천국의 계단 보면 계속 깔리던 남자 발라드, 목소리가 엄청 애절하고 고음이 길게 뻗었어",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "418253"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 김범수 - 보고 싶다 (2002) · 곡 발표는 2002년 앨범, 드라마는 2003~04년 · 작성 근거: 곡을 알고 있음 — 드라마 '천국의 계단' 삽입곡으로 유명한 남성 발라드 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n032",
+      "query": "엽기적인 그녀 영화에 나온 노래 찾는데, 남자 발라드 가수 거였어. 2001년쯤이고 잔잔하게 시작해서 점점 커지는 곡",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "1116679"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 신승훈 - I Believe (2001) · 동명곡 'I Believe' 이수영 1564057(cc091 정답) — 제목만 같은 다른 곡 · 작성 근거: 곡을 알고 있음 — 영화 '엽기적인 그녀' 삽입곡, 남성 발라드 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n033",
+      "query": "재벌집 딸이랑 시골 출신 남편 나오는 드라마, 2024년 봄에 한 거 있잖아. 거기 OST로 남자 R&B 가수가 부른 노래가 계속 나왔어",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "37344905"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: Crush - 미안해 미워해 사랑해 (2024) · 같은 가수 'Rush Hour' 35665282(cc058 정답) · 작성 근거: 곡을 알고 있음 — 2024 드라마 '눈물의 여왕' OST, 남성 R&B 가수 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n034",
+      "query": "명성황후 드라마 주제가였던 노래. 성악 하는 여자 소프라노가 불렀는데 웅장하고 비장했어",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "621079"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 조수미 (Sumi Jo) - If I Leave (나 가거든) (2001) · 작성 근거: 곡을 알고 있음 — 2001 드라마 '명성황후' 주제가, 소프라노 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n035",
+      "query": "김삼순 드라마에서 나오던 노래 중에 일렉트로닉 느낌 나는 거. 남녀 보컬이 같이 나오고 세련된 라운지 음악 같았어",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "855659"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 클래지콰이 - She Is (2005) · 같은 가수 다른 곡 'Sweety' 525066 · 작성 근거: 곡을 알고 있음 — 2005 드라마 '내 이름은 김삼순' 삽입곡, 혼성 일렉트로니카 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n036",
+      "query": "응팔에 나왔던 옛날 록 노래 리메이크인데, 원곡 부른 아저씨가 직접 같이 불렀던 버전. 젊은 남자 목소리가 담담하게 시작해",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "7909196"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 김필 - 청춘 (Feat. 김창완) (2015) · 원곡(산울림, 1981)은 코퍼스에 없음. 같은 드라마 OST '소녀' 오혁 7942948 · 작성 근거: 곡을 알고 있음 — 응팔 OST, 산울림 곡 리메이크에 원곡자 피처링 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n037",
+      "query": "옛날 여자 아이돌 데뷔곡인데 최근 정치 집회에서도 나온다고 들었어.",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "1683050"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 소녀시대 (GIRLS' GENERATION) - 다시 만난 세계 (Into The New World) (2007) · 같은 그룹 'Gee' 2012282(cc070 정답) · 작성 근거: 곡을 알고 있음 — 2007년 여성 아이돌 데뷔곡, 최근 정치 집회에서 다시 불림 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n038",
+      "query": "군인이랑 의사 나오는 드라마 OST였는데, 랩 잘하는 여자 가수가 이번엔 랩 없이 노래만 했던 거. 2016년 초에 엄청 들었어",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "8053157"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 윤미래 - ALWAYS (2016) · 같은 드라마 OST 'You Are My Everything' 거미 8089568 — 여성 보컬로 겹침 · 작성 근거: 곡을 알고 있음 — 2016 드라마 '태양의 후예' OST, 래퍼로 알려진 여성 가수의 보컬곡 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n039",
+      "query": "무한도전에서 MC랑 가수가 팀 짜서 진지하게 불렀던 노래. '나 스무 살 적에' 이런 가사로 시작했던 것 같은데 피아노 반주였나",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "3471644"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 처진 달팽이 (유재석 & 이적) - 말하는 대로 (2011) · 작성 근거: 곡을 알고 있음 — 2011 무한도전 가요제 곡, 첫 소절 '나 스무 살 적에' · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n040",
+      "query": "남자 가수 이별 노래가 크게 뜨고 나서 그 노래 답가로 나온 여자 버전 노래 있잖아. 2017년 겨울쯤",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "30729198"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 민서 (MINSEO) - 좋아 (2017) · 답가 원곡 '좋니' 윤종신 30486509는 기존 세트 정답 — 헷갈릴 수 있음 · 작성 근거: 곡을 알고 있음 — 2017년 11월, 남성 가수의 이별 발라드에 대한 답가로 신인 여성 가수가 부른 곡 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n041",
+      "query": "군부대 위문공연 영상 모음이 유튜브에서 터지면서 몇 년 만에 역주행한 걸그룹 노래. 해체 직전이었다는 얘기도 있었고 여름 느낌 나는 곡이야",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "30287019"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 브레이브걸스 - 롤린 (Rollin') (2017) · 작성 근거: 곡을 알고 있음 — 2017 발매, 2021 군 위문공연 영상으로 역주행 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n042",
+      "query": "2020년 초에 연예인들이 춤 영상 찍어 올리던 챌린지 노래. 남자 래퍼 솔로 곡이었고 리듬이 가볍고 흥겨웠어",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "32313543"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 지코 (ZICO) - 아무노래 (2020) · 작성 근거: 곡을 알고 있음 — 2020년 1월 댄스 챌린지 유행곡, 남성 래퍼 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n043",
+      "query": "의사 다섯 명이 밴드 하는 드라마에서 배우가 기타 치면서 부른 노래. 원래는 2000년대 초 혼성 그룹 노래였대, 2020년에 다시 부른 걸로 찾고 싶어",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "32491274"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 조정석 - 아로하 (2020) · 원곡 '아로하' 쿨 521747(메타 2004) · 작성 근거: 곡을 알고 있음 — '슬기로운 의사생활' 배우 리메이크, 원곡은 혼성 3인조 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n044",
+      "query": "분노의 질주 스핀오프 영화에 나온 노래를 걸그룹이 리메이크한 거 중간에 곡 분위기가 확 바뀌어",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "33487342"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: aespa - Next Level (2021) · 작성 근거: 곡을 알고 있음 — '홉스 & 쇼' 삽입곡 리메이크, 걸그룹, 곡 전개 전환 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n045",
+      "query": "펜싱 선수 나오는 청춘 드라마 제목이랑 노래 제목이 똑같았던 거. 노래가 드라마보다 훨씬 먼저 나왔고 여자 보컬 밴드 곡이었어",
+      "category": "scene",
+      "tier": "vague",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "4276080"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 자우림 - 스물다섯, 스물하나 (2013) · 작성 근거: 곡을 알고 있음 — 2013년 곡, 2022 동명 드라마로 재조명, 여성 보컬 밴드 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n046",
+      "query": "기타가 엄청 무겁게 긁히고 남자가 거의 소리 지르듯이 랩이랑 노래를 섞는 곡. 중간에 턴테이블 긁는 소리 같은 것도 들어갔던 거 같아",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "audio_only",
+      "target_scope": "specific",
+      "positives": [
+        "88794"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 서태지 - 울트라맨이야 (2000) · 작성 근거: 곡을 알고 있음 — 2000년 뉴메탈 컴백곡, 헤비 기타·샤우팅 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n047",
+      "query": "여자 목소리인데 남자 록커처럼 쇳소리 섞어서 끝까지 내지르는 하드록. 드럼이 묵직하게 쿵쿵 치고 기타 솔로도 길게 나왔던 거 같아",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "audio_only",
+      "target_scope": "specific",
+      "positives": [
+        "27561"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 서문탁 - 사슬 (2000) · 작성 근거: 곡을 알고 있음 — 2000년 전후 여성 하드록 보컬 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n048",
+      "query": "여자 R&B 발라드인데 노래가 엄청 길었어. 중간에 노래를 멈추고 혼잣말처럼 대사를 하는 부분이 있었고, 현악이랑 피아노가 잔잔하게 깔려",
+      "category": "mood",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "composition",
+      "target_scope": "specific",
+      "positives": [
+        "432309"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 박정현 - 꿈에 (2002) · 동명곡 '꿈에' 이수영 507484(2004) · 작성 근거: 곡을 알고 있음 — 2002년 곡, 긴 러닝타임과 중간 독백 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n049",
+      "query": "남자 셋이 소몰이 창법으로 목을 꺾어서 부르는 R&B 발라드. 피아노로 시작해서 후렴에 화음이 쌓이고 고음 애드리브가 길게 나와",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "1944399"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: SG 워너비 - Timeless (2004) · 동명곡 'Timeless' 장리인 1374075(2006) · 작성 근거: 곡을 알고 있음 — 2004년 데뷔곡, 소몰이 창법 남성 3인조 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n050",
+      "query": "통기타랑 손으로 치는 젬베 소리만 있는 단출한 곡. 남자 목소리가 높고 얇은데 같은 말을 계속 반복해서 중독성 있었어",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "2793050"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 10CM - 아메리카노 (2010) · 같은 가수 '봄이 좋냐??' 8124417(cc021 정답) · 작성 근거: 곡을 알고 있음 — 2010년 인디 듀오, 통기타+젬베 편성 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n051",
+      "query": "도입부터 행진하는 마칭 드럼이 두두두 쏟아지는 걸그룹 댄스곡. 호루라기 소리 같은 것도 들렸던 것 같고 엄청 파워풀했어",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "2621364"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 애프터스쿨 - 뱅(Bang) ! (2010) · 작성 근거: 곡을 알고 있음 — 2010년 마칭 드럼 퍼포먼스 곡 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n052",
+      "query": "기타가 뒷박에 툭툭 끊어 치는 레게 리듬인데 여자 그룹 목소리로 나오는 곡. 밴드가 직접 연주하는 느낌이고 몽롱하게 늘어지는 분위기",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "8254545"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 원더걸스 - Why So Lonely (2016) · 같은 그룹 'Tell me' 1724693(cc011 정답) · 작성 근거: 곡을 알고 있음 — 2016년 밴드 편성 레게 팝 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n053",
+      "query": "디스코 반주에 남자랑 여자가 번갈아 주고받는 듀엣곡. 남자 쪽이 숨소리 섞어서 능글맞게 불렀어",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "32853712"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 박진영 - When We Disco (Duet with 선미) (2020) · 같은 가수 곡 4곡('어머님이 누구니' 5658708 등). 복고풍 소리는 Rush Hour 35665282(cc058 정답)와 겹칠 수 있음 · 작성 근거: 곡을 알고 있음 — 2020년 레트로 디스코 남녀 듀엣 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n054",
+      "query": "디스코처럼 베이스가 통통 튀고 브라스가 빵빵 터지는 신나는 곡, 유명한 남자 아이돌이 영어로 불렀어. 손뼉 소리랑 밝은 코러스가 계속 나와",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "32872978"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 방탄소년단 - Dynamite (2020) · 같은 그룹 '봄날' 30244931(cc073 정답) · 작성 근거: 곡을 알고 있음 — 2020년 영어 디스코 팝 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n055",
+      "query": "남자 목소리가 쇳소리 섞여서 거칠게 갈라지는데 그걸로 끝까지 절규하듯 내지르는 발라드. 오케스트라가 뒤에서 점점 커지다가 마지막에 폭발해",
+      "category": "mood",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "612040"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 임재범 - 너를 위해 (2000) · 동명곡 '너를 위해' 첸 9611490(2016) · 작성 근거: 곡을 알고 있음 — 2000년 허스키 록 보컬 발라드 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n056",
+      "query": "남자 밴드 곡인데 일렉기타 리프로 강하게 시작하고, 메인 보컬이 벌스에선 랩을 하다가 후렴에서 시원하게 질러. 드럼이 빠르고 신나",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "2540268"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: CNBLUE (씨엔블루) - 외톨이야 (2010) · 작성 근거: 곡을 알고 있음 — 2010년 아이돌 밴드 데뷔곡, 보컬의 랩 벌스 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n057",
+      "query": "부드러운 남자 목소리로 시작해서 후렴에 노래 대신 신스 멜로디가 터지는 EDM. 잘게 자른 목소리 샘플이 반복되고 아련한 느낌이었어",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "31151836"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 숀 (SHAUN) - Way Back Home (2018) · 작성 근거: 곡을 알고 있음 — 2018년 EDM 팝, 보컬 찹 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n058",
+      "query": "옛날 80년대 노래처럼 베이스가 통통 튀고 뿅뿅거리는 전자음이 깔리는 곡. 남자 보컬이 부드럽게 부르다가 중간에 다른 남자가 랩으로 들어와",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "35665282"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: Crush - Rush Hour (Feat. j-hope of BTS) (2022) · 같은 가수 '미안해 미워해 사랑해' 37344905(cc033 정답) · 작성 근거: 곡을 알고 있음 — 2022년 레트로 펑크, 남성 보컬+피처링 랩 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n059",
+      "query": "레트로 디스코 기타 커팅이랑 신스 소리가 반짝이는 밝은 곡, 여자 솔로 목소리가 맑고 가볍게 튀어. 시티팝처럼 산뜻한 느낌이었어",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "33372781"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 아이유 - 라일락 (2021) · 같은 가수 '좋은 날' 3051244(cc016 정답). 동명곡 '라일락' dodree 602267642 · 작성 근거: 곡을 알고 있음 — 2021년 레트로 디스코 팝 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n060",
+      "query": "옛날 스윙 재즈처럼 브라스가 빵빵 터지는 걸그룹 노래. 다들 가창력이 세서 애드리브를 막 던지고 중간에 걸걸한 랩도 나와",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "5743804"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 마마무 (Mamamoo) - 음오아예 (Um Oh Ah Yeh) (2015) · 작성 근거: 곡을 알고 있음 — 2015년 레트로 스윙 펑키 걸그룹 곡 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n061",
+      "query": "라틴 타악기 같은 둥둥 리듬에 베이스가 낮게 깔리는 걸그룹 곡. 후렴에서 단어를 잘게 끊어서 따다다다 반복하는 부분이 중독적이었어",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "35729104"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: LE SSERAFIM (르세라핌) - ANTIFRAGILE (2022) · 작성 근거: 곡을 알고 있음 — 2022년 라틴 리듬 걸그룹 곡, 단어 끊어 반복하는 후렴 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n062",
+      "query": "중국 노래 같은 멜로디가 깔리는 뽕짝 느낌 댄스곡. 여자들이 일부러 콧소리 내면서 귀엽게 불렀어",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "3570725"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 오렌지 캬라멜 - 샹하이 로맨스 (上海之戀) (2011) · 같은 그룹 마법소녀 2719683, 립스틱 3903316, 까탈레나 4503810 · 작성 근거: 곡을 알고 있음 — 2011년 중국풍 멜로디의 복고 댄스곡, 여성 유닛 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n063",
+      "query": "목소리가 독특하게 가늘고 코 맹맹한 남자 R&B 가수, 비트가 느긋하게 늘어지고 건반이 따뜻하게 깔리는 곡. 힘 빼고 속삭이듯 불렀어",
+      "category": "mood",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "5702706"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: Zion.T - 꺼내 먹어요 (2015) · 같은 가수 '양화대교' 5389475(cc019 정답) · 작성 근거: 곡을 알고 있음 — 2015년 느슨한 그루브의 R&B · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n064",
+      "query": "펑크록처럼 일렉기타가 거칠게 긁히는 걸그룹 곡. 후렴 끝에 '라라라' 하는 떼창 같은 부분이 나오고 보컬이 좀 건방지게 툭툭 던져",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "34754292"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: i-dle (아이들) - TOMBOY (2022) · 동명곡 'TOMBOY' 혁오 30383949(2017) · 작성 근거: 곡을 알고 있음 — 2022년 팝펑크 걸그룹 곡 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n065",
+      "query": "걸그룹 노래인데 밴드처럼 전기기타가 시원하게 달리는 록 느낌이었어. 보컬들이 힘 있게 쭉 내질러",
+      "category": "genre",
+      "tier": "vague",
+      "modality_focus": "audio",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "36001290"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: H1-KEY (하이키) - 건물 사이에 피어난 장미 (Rose Blossom) (2023) · 걸밴드 록 '고민중독' QWER 37373234(cc086 정답)와 소리가 비슷할 수 있음 · 작성 근거: 곡을 알고 있음 — 2023년 걸그룹 팝 록, 기타 중심 편곡 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n066",
+      "query": "새빨간 배경에 사람 눈 하나만 엄청 크게 클로즈업된 앨범 표지였어. 눈동자가 초록빛이었던 것 같고 속눈썹이 길게 뻗어 있었어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "image",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "specific",
+      "positives": [
+        "85257"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 이정현 - 바꿔 (1999) · 같은 앨범·같은 표지 '와' 85258(cc004 정답) — 허용 정답 후보 · 작성 근거: cover.jpg 확인 — 빨간 배경, 초록 눈동자의 눈 하나 클로즈업 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n067",
+      "query": "흰 바탕에 흑백 얼굴 사진이 위에 세 장, 아래에 세 장 정사각형으로 남자 얼굴이 그려져있던 것 같아.",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "image",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "specific",
+      "positives": [
+        "81013"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 젝스키스 - 커플 (1998) · 동명곡 '커플' 김용준 2195885(2009) · 작성 근거: cover.jpg 확인 — 흰 바탕, 흑백 남성 얼굴 사진 6장(위 3·아래 3) · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n068",
+      "query": "활주로 같은 데에 옛날 프로펠러 비행기가 서 있고, 여자 한 명이 가운데, 남자 둘이 양쪽에 멀찍이 서 있는 사진 표지. 하늘이 맑았어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "image",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "specific",
+      "positives": [
+        "37100"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 롤러 코스터 - 힘을 내요, 미스터 김 (2000) · 같은 가수 Last Scene 489210·무지개 518217(다른 앨범) · 작성 근거: cover.jpg 확인 — 활주로, 복엽 프로펠러기, 가운데 여성, 양옆 남성 2인, 맑은 하늘 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n069",
+      "query": "파란 하늘 아래 들판에서 여자가 인디언 같은 갈색 의상에 머리띠 하고 서 있는 표지였어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "image",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "specific",
+      "positives": [
+        "608151"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 보아 (BoA) - 아틀란티스 소녀 (Atlantis Princess) (2003) · 작성 근거: cover.jpg 확인 — 파란 하늘, 들판, 갈색 원주민풍 의상·머리띠 여성 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n070",
+      "query": "여자 여러명이 흰 티에 청바지 입고 일렬로 서 있는 표지. 배경도 하얗고 위에 분홍색 필기체 글씨가 있었어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "image",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "specific",
+      "positives": [
+        "2012282"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 소녀시대 (GIRLS' GENERATION) - Gee (2009) · 같은 그룹 '다시 만난 세계' 1683050(cc037 정답) · 작성 근거: cover.jpg 확인 — 흰 배경, 흰 티·청바지 여성 여럿 일렬, 분홍 필기체 로고 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n071",
+      "query": "하얀 바탕에 먹으로 그린 것 같은 검은 용 한 마리가 세로로 꿈틀대는 표지. 옆에 빨간 한자가 하나 들어가 있었어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "image",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "specific",
+      "positives": [
+        "4148967"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 크레용팝 - 빠빠빠 (2013) · 작성 근거: cover.jpg 확인 — 흰 바탕, 먹 붓터치의 검은 용, 빨간 한자 '龍' · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n072",
+      "query": "우주랑 행성이 나오는 앨범 표지 찾아줘. 어두운 남색 배경이었던 것 같아",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "image",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "categorical",
+      "positives": [
+        "9620469"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 볼빨간사춘기 - 우주를 줄게 (2016) · 범주형 의도 — 우주·행성 표지 여럿 예상. 정답 표지는 흰 셔츠 여자 둘이 등을 맞대고 있음; 같은 표지: 'You(=I)' 9620471, '나만 안되는 연애' 9620473 · 작성 근거: cover.jpg 확인 — 짙은 남색 우주 배경, 줄에 매달린 행성 구슬, 흰 셔츠 여성 2인 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n073",
+      "query": "바닷가에 낡은 버스 정류장 하나만 덩그러니 있는 사진 표지. 하늘이 희뿌옜어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "image",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "specific",
+      "positives": [
+        "30244931"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 방탄소년단 - 봄날 (2017) · 동명곡 '봄날' 아이 667278(2005) · 작성 근거: cover.jpg 확인 — 바닷가 빈 버스 정류장, 흐린 하늘 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n074",
+      "query": "빨간 하늘에 커다란 오렌지 단면이 해처럼 떠 있고, 파란 파인애플이랑 과일이 잔뜩 있는 들판 표지",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "image",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "specific",
+      "positives": [
+        "30512671"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: Red Velvet (레드벨벳) - 빨간 맛 (Red Flavor) (2017) · 작성 근거: cover.jpg 확인 — 빨간 하늘, 오렌지 단면, 파란 파인애플, 과일 들판 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n075",
+      "query": "샛노란 배경에 남자애 얼굴을 파란색으로 유화처럼 거칠게 그린 표지. 표정이 좀 시무룩했어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "image",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "specific",
+      "positives": [
+        "31666417"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 잔나비 - 주저하는 연인들을 위해 (2019) · 작성 근거: cover.jpg 확인 — 노란 배경, 파란 톤 유화풍 소년 얼굴 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n076",
+      "query": "별이 쏟아지는 밤하늘 사진 표지였는데, 다른 건 기억이 잘 안 나",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "image",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "categorical",
+      "positives": [
+        "32224272"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 창모 (CHANGMO) - METEOR (2019) · 범주형 의도 — 밤하늘·별 표지 다수. 정답 표지엔 별똥별과 차 지붕에 앉은 사람도 있음; 같은 표지: '빌었어' 32224271 · 작성 근거: cover.jpg 확인 — 별 가득한 밤하늘, 별똥별, 차 위에 앉은 사람 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n077",
+      "query": "위에서 내려다본 구도로 여자애들이 아스팔트 위에서 손잡고 동그랗게 원을 만든 표지.",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "image",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "specific",
+      "positives": [
+        "37347911"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 아일릿(ILLIT) - Magnetic (2024) · 작성 근거: cover.jpg 확인 — 부감, 아스팔트, 여자애들이 손잡고 원형 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n078",
+      "query": "파란 페인트가 벗겨진 계단에서 노란 머리 여자가 연두색 가디건 입고 걸어가는 표지",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "image",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "specific",
+      "positives": [
+        "34943312"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 경서 - 나의 X에게 (2022) · 같은 가수 '밤하늘의 별을(2020)' 33061995 등 · 작성 근거: cover.jpg 확인 — 낡은 파란 계단, 노란 머리 여성, 연두색 가디건·꽃무늬 치마 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n079",
+      "query": "빨간 벽 앞 바닥에 긴 생머리 여자가 쭈구려 앉아 있고, 옆에 해바라기가 꽂혀 있는 표지",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "image",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "specific",
+      "positives": [
+        "81926"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 백지영 - 부담 (1999) · 작성 근거: cover.jpg 확인 — 빨간 벽, 바닥에 쪼그려 앉은 긴 생머리 여성, 해바라기 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n080",
+      "query": "교복 입은 여자애들 여러 명이 잔디밭에 같이 있는 앨범 표지 찾고 싶어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "image",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "categorical",
+      "positives": [
+        "5791706"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 여자친구 (GFRIEND) - 오늘부터 우리는 (Me Gustas Tu) (2015) · 범주형 의도 — 교복 콘셉트 걸그룹 표지 다수 · 작성 근거: cover.jpg 확인 — 잔디 위 무지개 줄무늬 돗자리에 엎드린 교복 차림 6인 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n081",
+      "query": "갈색 느낌의 옷을 입은남자 셋이 크게 나오고 가운데 사람이 두 손을 모은 표지였어. 노래는 90년대 R&B인데 그루브가 통통 튀고 셋이 화음을 쌓았어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "multimodal",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "mixed_av",
+      "target_scope": "specific",
+      "positives": [
+        "70602"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 솔리드 - 천생연분 (1996) · 작성 근거: cover.jpg 확인 — 갈색 계열 줄무늬 정장 남성 3인이 화면을 크게 채움, 가운데 합장 / 곡을 알고 있음 — 1996년 R&B 남성 3인조 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n082",
+      "query": "분홍색 바탕에 하얀 동그라미 선이 얇게 겹쳐 그려진 표지였어. 노래는 여자 보컬이 독특하게 내지르는 경쾌한 록이었고 기타가 신나게 달렸어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "multimodal",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "mixed_av",
+      "target_scope": "specific",
+      "positives": [
+        "430051"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 체리필터 (cherryfilter) - 낭만고양이 (2002) · 작성 근거: cover.jpg 확인 — 분홍 바탕, 흰 원형 선, 밴드 로고 / 곡을 알고 있음 — 2002년 여성 보컬 밴드 록 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n083",
+      "query": "낙서 가득한 골목에서 빨간 쓰레기통 옆에 남녀가 쪼그려 앉아 있는 표지였는데, 노래는 일본 노래를 번안한 남자 발라드였어. 피아노로 시작하고 눈 오는 장면이랑 잘 어울렸어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "multimodal",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "mixed_av",
+      "target_scope": "specific",
+      "positives": [
+        "623902"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 박효신 - 눈의 꽃 (2004) · 표지는 드라마 '미안하다 사랑한다' OST. 원곡(나카시마 미카)은 코퍼스 외 · 작성 근거: cover.jpg 확인 — 그래피티 골목, 빨간 쓰레기통 옆 남녀 / 곡을 알고 있음 — 일본 곡 번안, 2004 드라마 OST · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n084",
+      "query": "흰 셔츠 입은 남자가 활짝 웃으면서 손가락으로 정면을 딱 가리키고, 뒤에 반짝이 빛이 터지는 표지. 노래는 뽕짝 리듬에 아이돌 목소리가 얹힌 신나는 트로트였어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "multimodal",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "mixed_av",
+      "target_scope": "specific",
+      "positives": [
+        "1888933"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 대성 - 날 봐, 귀순 (2008) · 작성 근거: cover.jpg 확인 — 흰 셔츠 남성이 정면을 가리킴, 반짝이 배경 / 곡을 알고 있음 — 2008년 아이돌 멤버의 트로트 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n085",
+      "query": "흰 정장 입은 셋이 빨간 오픈카 앞에 서 있는 표지였고, 노래는 90년대 여름 댄스 느낌 그대로 신스랑 랩이 들어간 신나는 곡. 남자 둘 여자 하나였어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "multimodal",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "mixed_av",
+      "target_scope": "specific",
+      "positives": [
+        "32790516"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 싹쓰리 (유두래곤, 린다G, 비룡) - 다시 여기 바닷가 (2020) · 같은 그룹 '그 여름을 틀어줘' 32814383, '여름 안에서' 32768945 · 작성 근거: cover.jpg 확인 — 흰 정장 3인, 빨간 클래식 오픈카, 파란 하늘 / 곡을 알고 있음 — 2020 예능 프로젝트 혼성 그룹의 90년대풍 여름 댄스 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n086",
+      "query": "하늘색 구름 배경에 분홍색 종이접기 같은 게 떠 있고 별이 흩뿌려진 표지. 노래는 여자들이 직접 악기 치는 밴드 사운드로 빠르고 청량했어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "multimodal",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "mixed_av",
+      "target_scope": "specific",
+      "positives": [
+        "37373234"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: QWER - 고민중독 (2024) · 작성 근거: cover.jpg 확인 — 하늘색 구름, 분홍 종이접기형 물체, 별 / 곡을 알고 있음 — 2024년 걸밴드 곡 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n087",
+      "query": "검은 하늘에 하얀 나무들이 서 있고, 머리에 불 붙은 것 같은 아이들이 잔뜩 뛰어노는 그림 표지였어. 노래는 느릿하게 시작하는 밴드 곡이고 남자 목소리가 허스키하고 나른했어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "multimodal",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "mixed_av",
+      "target_scope": "specific",
+      "positives": [
+        "30383949"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 혁오 (HYUKOH) - TOMBOY (2017) · 동명곡 'TOMBOY' i-dle 34754292(cc064 정답). 같은 밴드 와리가리 5713422 등 · 작성 근거: cover.jpg 확인 — 검은 배경, 흰 나무, 불꽃 머리 아이들, 상자 가면 쓴 인물 그림 / 곡을 알고 있음 — 2017년 밴드 록, 허스키한 남성 보컬 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n088",
+      "query": "검은 드레스 등이 깊게 파여서 진주 목걸이가 등 뒤로 늘어진 여자 뒷모습 표지. 노래는 의자에 앉았다 일어났다 하는 안무로 엄청 유행했던 여자 솔로 댄스곡이야",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "multimodal",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "mixed_av",
+      "target_scope": "specific",
+      "positives": [
+        "1928044"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 손담비 - 미쳤어 (Feat. 에릭) (2008) · 작성 근거: cover.jpg 확인 — 검은 드레스, 등 뒤 진주 목걸이, 의자에 앉은 뒷모습 / 곡을 알고 있음 — 2008년 의자 안무 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n089",
+      "query": "초록색 바탕 가운데에 동그랗게 파란 하늘이랑 구름이 뚫려 있는 표지였어. 노래는 남매 듀오 목소리에 여자 솔로 가수가 같이 들어와서 셋이 주고받는 밝은 곡",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "multimodal",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "mixed_av",
+      "target_scope": "specific",
+      "positives": [
+        "33725775"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: AKMU (악뮤) - 낙하 (with 아이유) (2021) · 작성 근거: cover.jpg 확인 — 초록 바탕, 가운데 원형 하늘·구름 / 곡을 알고 있음 — 2021년 남매 듀오와 여성 솔로 협업 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n090",
+      "query": "짙은 초록 격자무늬 배경에 알록달록한 영어 글씨가 크게 박힌 표지. 노래는 남자 밴드가 시원하게 달리는 곡인데, 몇 년 지나서 대학 축제 영상 때문에 다시 떴어",
+      "category": "mixed",
+      "tier": "vague",
+      "modality_focus": "multimodal",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "mixed_av",
+      "target_scope": "specific",
+      "positives": [
+        "31927275"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: DAY6 (데이식스) - 한 페이지가 될 수 있게 (2019) · 아이돌 밴드 '옥탑방' 31532656(cc030 정답)과 겹침 · 작성 근거: cover.jpg 확인 — 짙은 초록 격자, 다색 영문 앨범명 / 곡을 알고 있음 — 2019년 곡, 2024 대학 축제 역주행 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n091",
+      "query": "바닷가에서 긴 머리가 바람에 날려서 얼굴을 반쯤 덮은 남자 사진 표지였어. 회색 니트 입고 있었고 옆에 세로로 영어 이름이 길게 써 있었던 것 같아",
+      "category": "mixed",
+      "tier": "misinformation",
+      "modality_focus": "image",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "image_only",
+      "target_scope": "specific",
+      "positives": [
+        "1564057"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 이수영 - I Believe (1999) · 틀린 기억 테스트 — 성별: 표지 인물은 여성인데 '남자'로 씀 · 동명곡 'I Believe' 신승훈 1116679(cc032 정답) · 작성 근거: cover.jpg 확인 — 바닷가, 바람에 날리는 긴 머리로 얼굴 가린 여성, 회색 니트, 세로 영문 이름 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n092",
+      "query": "대학가요제에서 대상 받고 광고에도 나왔던 노래 있잖아. 잔잔한 발라드였던 것 같아, 2005년쯤",
+      "category": "scene",
+      "tier": "misinformation",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "979391"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 익스 - 잘 부탁드립니다 (CF - 한국야쿠르트 산타페 EX편) (2005) · 틀린 기억 테스트 — 장르: 실제 록(메타 장르 록/메탈)인데 '잔잔한 발라드'로 씀 · 작성 근거: 곡을 알고 있음 — 2005년 대학가요제 대상곡, 음료 광고 삽입, 여성 보컬 밴드의 밝은 록 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n093",
+      "query": "작은 기획사 신인 보이그룹이 빌보드 차트에 오래 붙어 있어서 뉴스까지 났던 노래, 2023년이야. 틱톡에서 영어 버전이 먼저 터졌고 노래는 가볍고 달달했어",
+      "category": "scene",
+      "tier": "misinformation",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "36206259"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: FIFTY FIFTY - Cupid (2023) · 틀린 기억 테스트 — 성별: 실제 걸그룹인데 '보이그룹'으로 씀 · 작성 근거: 곡을 알고 있음 — 2023년 중소 기획사 걸그룹의 빌보드 핫100 장기 진입, 영어 버전 틱톡 유행 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n094",
+      "query": "휴대폰 광고 노래였는데 남자 솔로 가수랑 데뷔 직전 여자 그룹이 같이 불렀던 거, 2009년 봄쯤. 알록달록 형광색 옷 입고 다 같이 춤췄어",
+      "category": "scene",
+      "tier": "misinformation",
+      "modality_focus": "text",
+      "split": "test",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "2117748"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: BIGBANG (빅뱅) - Lollipop (2009) · 틀린 기억 테스트 — 솔로/그룹: 실제로는 남자 그룹인데 '남자 솔로 가수'로 씀 · 같은 그룹 '붉은 노을' 1951550(cc012 정답) · 작성 근거: 곡을 알고 있음 — 2009년 휴대폰 CF 곡, 남자 그룹과 데뷔 전 여자 그룹 합동 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n095",
+      "query": "남자 둘이 하는 팀인데 한 명은 통기타만 치고 한 명은 노래하는 구성이었어. 맑고 높은 남자 목소리가 통통 튀는 반주 위에서 밝게 고백하듯 불러",
+      "category": "mood",
+      "tier": "misinformation",
+      "modality_focus": "audio",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "sound_texture",
+      "target_scope": "specific",
+      "positives": [
+        "30514366"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 멜로망스 - 선물 (2017) · 틀린 기억 테스트 — 악기: 실제 반주는 피아노인데 '통기타'로 씀 · 동명곡 '선물' 케이윌 2601592, 유엔 503342 · 작성 근거: 곡을 알고 있음 — 2017년 반주자+보컬 2인조의 밝은 곡 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n096",
+      "query": "'라면 먹을래요?' 대사로 유명한 그 영화 주제가, 90년대 후반 영화였던 걸로 기억해. 록밴드 여자 보컬이 솔로로 불렀고 쓸쓸한 노래였어",
+      "category": "scene",
+      "tier": "misinformation",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "external_context",
+      "target_scope": "specific",
+      "positives": [
+        "106172"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 김윤아 - 봄날은 간다 (2001) · 틀린 기억 테스트 — 시대: 영화·곡은 2001년인데 '90년대 후반'으로 씀 · 작성 근거: 곡을 알고 있음 — 2001년 영화 주제가, 밴드 보컬의 솔로곡 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n097",
+      "query": "노래방에서 고음 도전할 때 꼭 고르는 2000년 노래, 여자 록밴드 보컬이 부른 거였던 것 같은데. 빠른 댄스 비트에 후렴 고음이 진짜 미친 듯이 높아",
+      "category": "mixed",
+      "tier": "misinformation",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "labeled",
+      "clue_type": "era_group",
+      "target_scope": "specific",
+      "positives": [
+        "8983"
+      ],
+      "allowed": [],
+      "negatives": [],
+      "notes": "타깃: 소찬휘 - Tears (2000) · 틀린 기억 테스트 — 솔로/그룹: 실제 여성 솔로 가수인데 '록밴드 보컬'로 씀 · 작성 근거: 곡을 알고 있음 — 2000년 고음 댄스곡, 노래방 고음 도전 단골 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n098",
+      "query": "슬픈데 듣다 보면 좋은 노래 있잖아, 이별 노래였던 것 같은데 뭐였지",
+      "category": "mood",
+      "tier": "low_signal",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "no_target",
+      "target_scope": "specific",
+      "positives": [],
+      "allowed": [],
+      "negatives": [],
+      "notes": "정답 없음(no_target). clue_type은 맞는 값이 없어 비움(스키마상 선택값) · 작성 근거: 특정 곡 없음 — 단서 부족 질의로 작성 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n099",
+      "query": "요즘 카페 가면 자주 나오는 잔잔한 노래 하나 찾아줘",
+      "category": "mood",
+      "tier": "low_signal",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "no_target",
+      "target_scope": "specific",
+      "positives": [],
+      "allowed": [],
+      "negatives": [],
+      "notes": "정답 없음(no_target) · 작성 근거: 특정 곡 없음 — 단서 부족 질의로 작성 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
+    },
+    {
+      "query_id": "n100",
+      "query": "여름에 드라이브할 때 틀기 좋은 신나는 노래",
+      "category": "mood",
+      "tier": "low_signal",
+      "modality_focus": "text",
+      "split": "dev",
+      "query_set": "v09",
+      "label_status": "no_target",
+      "target_scope": "specific",
+      "positives": [],
+      "allowed": [],
+      "negatives": [],
+      "notes": "정답 없음(no_target) · 작성 근거: 특정 곡 없음 — 단서 부족 질의로 작성 · v09: Claude 초안(곡 메타데이터·표지만 참조, 태그·요약 미참조) → 황찬혁 검토·교체 2026-10-09"
     }
   ]
 }
