@@ -14,7 +14,6 @@ import time
 from pathlib import Path
 from collections import Counter
 from typing import Any, Iterable, List, Optional, Sequence
-from src.backend.schemas.search import MatchingTrack
 
 # 이 파일을 retrieval/ 아래에 두고 실행하는 것을 기준으로
 # 프로젝트 루트를 Python import 경로에 추가한다.
@@ -29,6 +28,7 @@ from src.backend.api.dependencies import (
     get_search_router,
 )
 from src.backend.schemas.explain import to_track_explain
+from src.backend.schemas.search import MatchingTrack
 from src.eval.relaxed_metrics import top10_path, write_top10
 from src.retrieval.analysis_cache import (
     AnalysisCacheError,
