@@ -69,9 +69,13 @@ def make_genai_client(*, api_key: Optional[str] = None, http_options: Any = None
 
 
 def gemini_route_info() -> dict:
-    """측정 runinfo용 — 어느 경로·프로젝트·위치로 불렀는지. 키 값은 적지 않는다."""
+    """측정 runinfo용 — 어느 경로·위치로 불렀는지. 키 값도, GCP 프로젝트 ID도 적지 않는다.
+
+    프로젝트 ID는 공개 레포에 올라가는 runinfo에 남으면 안 되는 식별자다(10/9 v11 runinfo 9개에서 손으로 지웠다).
+    비교 조건으로 필요한 것은 backend(api_key / vertex)와 location뿐이다.
+    """
     backend = gemini_backend()
     info = {"backend": backend}
     if backend == "vertex":
-        info.update(project=gcp_project_id(), location=gcp_location())
+        info["location"] = gcp_location()
     return info
