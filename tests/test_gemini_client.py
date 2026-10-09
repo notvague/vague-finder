@@ -5,6 +5,10 @@
 import pytest
 
 from src.common import gemini_client as gc
+# 모듈 맨 위에서 import한다 — 두 모듈은 import될 때 load_dotenv()를 부른다. 시험 함수 안에서 처음 import하면
+# fixture가 env를 지운 뒤에 .env가 다시 읽혀 GEMINI_API_KEY 등이 되살아나고, monkeypatch가 되돌리지 못해 뒤 시험까지 샌다.
+from src.retrieval.gemini_listwise_reranker import GeminiListwiseReranker, GeminiListwiseRerankerConfig
+from src.retrieval.query_analyzer import QueryAnalyzer
 
 
 @pytest.fixture
@@ -65,9 +69,6 @@ def test_nothing_configured(captured):
 
 def test_vertex_only_counts_as_configured_for_analyzer_and_reranker(monkeypatch, captured):
     """키를 주석 처리하고 Vertex만 남겨도 분석기·리랭커가 규칙 폴백·꺼짐으로 내려가지 않는다."""
-    from src.retrieval.gemini_listwise_reranker import GeminiListwiseReranker, GeminiListwiseRerankerConfig
-    from src.retrieval.query_analyzer import QueryAnalyzer
-
     monkeypatch.setenv("GCP_PROJECT_ID", "proj-1")
     assert QueryAnalyzer()._configured
     assert GeminiListwiseReranker(config=GeminiListwiseRerankerConfig()).enabled
