@@ -125,6 +125,10 @@ Title meaning clues are also memories, not exact titles. Keep them separate:
 - "신곡/막 나온 곡" may use {reference_year_minus_one}-{reference_year} with medium confidence.
 - "최근/요즘 나온/근래" may use a broad {recent_start_year}-{reference_year}
   range with low confidence. Never narrow a vague relative memory to one year.
+- Life-stage memories ("중학교 때 듣던", "어릴 때 자주 나오던", "대학 신입생 때 유행한", "군대에서 듣던")
+  depend on the user's age, which you do not know. Leave release_era EMPTY (nulls, confidence 0) for them,
+  and do NOT turn them into korean_tags such as "추억", "어린시절", "학창시절", "수학여행", "신입생" — they are
+  time clues about the listener, not the song's content. Keep genuine content words (genre, mood, vocal).
 - Do not convert timeless expressions such as "옛날" or "예전" alone.
 - "솔로 가수" -> artist_type.values=["솔로"]
 - "아이돌 그룹", "걸그룹", "보이그룹", "3인조 그룹" -> ["그룹"]
@@ -846,6 +850,7 @@ def _fallback(query: str) -> QueryAnalysis:
             **raw["title_meaning_clue"]
         ),
         release_era=raw["release_era"],
+        life_stage=raw["life_stage"],
         artist_type=raw["artist_type"],
         performance_clues=raw["performance_clues"],
         artist_name="",
@@ -1119,6 +1124,87 @@ _KOREAN_NUMBER = {
     "아홉": 9,
     "열": 10,
 }
+
+
+# 생애 단계 표현 — 사용자 나이에 걸린 시간 단서. (stage, 정규식, 나이 범위, confidence).
+# 표현 뒤 20자 안에 "들었다/유행했다/나왔다"류 동사가 있어야 시간 단서로 본다 — 가사 내용
+# ("어릴 때 집이 어려워서 … 얘기 나오는 노래", "'나 스무 살 적에' 이런 가사")이나 곡의 사건
+# ("군대 가 있는 동안 역주행")은 잡지 않는다. 폭이 좁은 단계일수록 confidence가 높다.
+_LIFE_STAGE_CORE = (
+    ("middle", r"중학(?:교|생)?\s*(?:[1-3]학년\s*)?(?:때|시절|무렵)|중딩\s*(?:때|시절)|중[1-3]\s*때", 13, 15, 0.6),
+    ("high", r"고등학(?:교|생)?\s*(?:[1-3]학년\s*)?(?:때|시절|무렵|수학여행)|고딩\s*(?:때|시절)|고[1-3]\s*때|수능\s*(?:때|준비할\s*때|보던\s*때)|야자\s*(?:때|끝나고|하고)", 16, 18, 0.6),
+    ("elementary", r"초등학(?:교|생)?\s*(?:[1-6]학년\s*)?(?:때|시절|무렵)|초딩\s*(?:때|시절)|국민학교\s*(?:때|시절)", 7, 12, 0.5),
+    ("freshman", r"(?:대학(?:교)?\s*)?(?:신입생|새내기)\s*(?:때|시절|무렵)", 19, 20, 0.6),
+    ("college", r"대학(?:교|생|\s*시절)?\s*(?:때|시절|다닐\s*때|무렵)|캠퍼스\s*(?:때|시절)", 19, 24, 0.5),
+    ("military", r"군대(?:에서|\s*있을\s*때|\s*시절|\s*때)|군\s*복무\s*(?:때|중|시절)|군\s*생활\s*(?:때|중|할\s*때)|훈련소(?:에서|\s*때)|입대\s*(?:했을\s*때|전에|직전)", 20, 23, 0.5),
+    ("first_job", r"신입\s*사원\s*(?:때|시절)|첫\s*직장\s*(?:때|다닐\s*때)|취직\s*(?:하고|했을\s*때)", 23, 28, 0.4),
+    ("school", r"학창\s*시절|학교\s*다닐\s*때|학생\s*때|(?:중학교\s*)?수학여행\s*(?:때|가서|버스|에서|갔을\s*때)", 7, 18, 0.3),
+    ("childhood", r"어릴\s*(?:때|적)|어렸을\s*(?:때|적)|어린\s*시절|꼬마\s*(?:때|시절)|유치원\s*(?:때|다닐\s*때)|유년\s*시절", 4, 12, 0.3),
+)
+_AGE_RE = re.compile(
+    r"(?P<age>(?:[1-5]\d)|(?:스무|스물\s*(?:한|두|세|네|다섯|여섯|일곱|여덟|아홉)?|서른|마흔)\s*(?:한|두|세|네|다섯|여섯|일곱|여덟|아홉)?)"
+    r"\s*(?:살|세)\s*(?:때|적|무렵)"
+)
+_KOREAN_TENS = {"스무": 20, "스물": 20, "서른": 30, "마흔": 40}
+# 시간 단서로 보는 동사 — 표현 뒤 이 범위 안에 있어야 한다.
+_LIFE_STAGE_VERB_RE = re.compile(
+    r"(?:듣|들었|들으|유행|나왔|나온|떴|뜬|히트|좋아했|좋아하|즐겨|틀어|틀었|불렀|부르|불러|따라|인기|많이|자주|맨날|한창|엄청)"
+)
+_LIFE_STAGE_VERB_WINDOW = 20
+# 생애 단계가 잡힌 질의에서 korean_tags로 새지 않게 하는 말 — 곡 내용이 아니라 듣는 사람의 시간이다.
+_LIFE_STAGE_TAG_RE = re.compile(
+    r"추억|회상|향수|어린\s*시절|어릴\s*때|유년|학창|학생\s*시절|초등|중학|고등|중딩|고딩|초딩|대학|신입생|새내기|캠퍼스|"
+    r"군대|군\s*생활|훈련소|수학여행|야자|수능|신입\s*사원|직장|꼬마|유치원|그\s*시절|그때|옛날|옛\s*추억"
+)
+
+
+def _parse_age(text: str) -> Optional[int]:
+    digits = re.search(r"\d{1,2}", text)
+    if digits:
+        return int(digits.group(0))
+    total = 0
+    for word, value in _KOREAN_TENS.items():
+        if word in text:
+            total += value
+            break
+    unit = re.search(r"(한|두|세|네|다섯|여섯|일곱|여덟|아홉)", text.replace("스물", "").replace("스무", ""))
+    if unit:
+        total += _KOREAN_NUMBER[unit.group(1)]
+    return total or None
+
+
+def _extract_life_stage(query: str) -> dict | None:
+    """생애 단계 시간 단서. 규칙이 먼저고 모델 출력은 보지 않는다(모델은 시기를 임의로 찍었다 — 10/10 "중학교 때" → 2000~2015)."""
+    found: list[tuple[int, dict]] = []
+    for stage, pattern, age_from, age_to, confidence in _LIFE_STAGE_CORE:
+        for m in re.finditer(pattern, query):
+            found.append((m.start(), {"stage": stage, "text": m.group(0), "age_from": age_from, "age_to": age_to,
+                                      "confidence": confidence, "_end": m.end()}))
+    for m in _AGE_RE.finditer(query):
+        age = _parse_age(m.group("age"))
+        if age is not None and 5 <= age <= 59:
+            found.append((m.start(), {"stage": "age", "text": m.group(0), "age_from": age, "age_to": age,
+                                      "confidence": 0.6, "_end": m.end()}))
+    for _, item in sorted(found, key=lambda kv: kv[0]):
+        tail = query[item["_end"]: item["_end"] + _LIFE_STAGE_VERB_WINDOW]
+        if _LIFE_STAGE_VERB_RE.search(tail):
+            item.pop("_end")
+            return item
+    return None
+
+
+def release_era_from_birth_year(life_stage: dict, birth_year: int, pad_years: int = 1) -> dict | None:
+    """출생 연도 + 단계 나이 범위 → 발매 시기 창. 만 나이/세는 나이 차이를 앞뒤 pad_years로 흡수한다.
+
+    가산(soft boost)용이다 — confidence는 단계의 confidence를 그대로 써서 폭이 넓은 "어릴 때"는 약하게 민다.
+    """
+    if not life_stage or life_stage.get("age_from") is None or life_stage.get("age_to") is None:
+        return None
+    if not (1900 <= int(birth_year) <= 2100):
+        return None
+    start = int(birth_year) + int(life_stage["age_from"]) - pad_years
+    end = int(birth_year) + int(life_stage["age_to"]) + pad_years
+    return _release_era_dict(start, end, float(life_stage.get("confidence") or 0.3))
 
 
 def _release_era_dict(
@@ -1472,9 +1558,20 @@ def _apply_metadata_safeguards(
     enriched = dict(raw)
 
     rule_era = _extract_release_era(query)
+    life_stage = _extract_life_stage(query)
+    enriched["life_stage"] = life_stage or {"stage": None, "text": "", "age_from": None, "age_to": None, "confidence": 0.0}
 
     if rule_era is not None:
         enriched["release_era"] = rule_era
+
+    elif life_stage is not None:
+        # 생애 단계만 있고 절대·상대 연도가 없다 — 모델이 찍은 시기는 사용자 나이를 모르는 추측이라 버린다.
+        # 기준점(출생 연도)을 받으면 release_era_from_birth_year로 채운다.
+        enriched["release_era"] = {
+            "start_year": None,
+            "end_year": None,
+            "confidence": 0.0,
+        }
 
     elif not isinstance(
         enriched.get("release_era"),
@@ -1646,6 +1743,11 @@ def _apply_metadata_safeguards(
     for tag, pattern in audio_tag_rules:
         if re.search(pattern, audio_evidence_text, re.IGNORECASE):
             korean_tags.append(tag)
+
+    if (enriched.get("life_stage") or {}).get("stage"):
+        # 시간 단서가 내용 태그로 새면 BM25가 "학창 시절 추억" 댓글 요약이 든 곡(2000년대에 몰림)을 찾는다.
+        # 생애 단계가 잡힌 질의에서만 뺀다 — "어린 시절" 이야기를 담은 가사를 찾는 질의는 그대로다.
+        korean_tags = [t for t in korean_tags if not _LIFE_STAGE_TAG_RE.search(t)]
 
     enriched["korean_tags"] = list(
         dict.fromkeys(korean_tags)

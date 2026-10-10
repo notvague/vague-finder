@@ -2135,10 +2135,10 @@ class SearchRouter:
         # 메타데이터 표기 형태 모두 결합 — 인덱스 토큰과 매칭 가능성 ↑
         sparse_terms.extend(a for a in analysis.artist_name_alt if a)
         sparse_query = " ".join(sparse_terms) if sparse_terms else None
-        dense_query = analysis.original_query
+        dense_query = analysis.search_text
         if analysis.lyric_semantic_query and not exact_lyric_terms:
             dense_query = (
-                f"{analysis.original_query}\n"
+                f"{analysis.search_text}\n"
                 f"가사 의미: {analysis.lyric_semantic_query}"
             )
         if phonetic_lyric_terms and not exact_lyric_terms:
@@ -2187,7 +2187,7 @@ class SearchRouter:
         ]
         clue_terms = [term for term in clue_terms if term]
         dense_parts = [
-            analysis.original_query,
+            analysis.search_text,
             f"곡에서 들리는 단서: {' / '.join(clue_terms)}",
         ]
         if analysis.lyric_semantic_query:
@@ -2231,7 +2231,7 @@ class SearchRouter:
             *clue.sound_ensemble,
         ]
         dense_parts = [
-            analysis.original_query,
+            analysis.search_text,
             "구조적 공연 단서: "
             + " / ".join(term for term in clue_terms if term),
         ]
@@ -2267,7 +2267,7 @@ class SearchRouter:
             [*analysis.korean_tags, analysis.genre]
         )
         dense_query = (
-            f"{analysis.original_query}\n"
+            f"{analysis.search_text}\n"
             f"제목 의미 단서: {analysis.title_meaning_clue.text}"
         )
         logger.debug(
@@ -2358,11 +2358,11 @@ class SearchRouter:
             top_k,
         )
 
-        dense_query = analysis.original_query
+        dense_query = analysis.search_text
         alpha = analysis.text_alpha
         if phonetic_lyric_terms and not exact_lyric_terms:
             dense_query = (
-                f"{analysis.original_query}\n"
+                f"{analysis.search_text}\n"
                 f"들리는 가사의 가능한 표기: {' / '.join(phonetic_lyric_terms)}"
             )
             alpha = min(0.60, max(alpha, 0.50))
@@ -2400,11 +2400,11 @@ class SearchRouter:
             sparse_terms.append(analysis.artist_name)
         sparse_terms.extend(a for a in analysis.artist_name_alt if a)
 
-        dense_query = analysis.original_query
+        dense_query = analysis.search_text
         alpha = analysis.text_alpha
         if phonetic_lyric_terms and not exact_lyric_terms:
             dense_query = (
-                f"{analysis.original_query}\n"
+                f"{analysis.search_text}\n"
                 f"들리는 가사의 가능한 표기: {' / '.join(phonetic_lyric_terms)}"
             )
             alpha = min(0.60, max(alpha, 0.50))
