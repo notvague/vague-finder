@@ -790,6 +790,73 @@ function dismissBirthYearQuestion() {
   renderPanel();
 }
 
+/*
+ * 출생 연도 휠 — 슬롯처럼 세로로 돌려 한 해를 고른다. 스크롤 스냅으로 가운데 줄에 멈추고(마우스 휠·트랙패드·터치·
+ * 방향키·클릭 모두 네이티브 스크롤), 가운데 줄의 연도가 값이다. 처음 열릴 때 위에서 기본 연도까지 굴러 내려온다.
+ * 줄 높이는 style.css의 .wheel li와 같아야 한다.
+ */
+const WHEEL_ROW = 36;
+const WHEEL_PAD = 2;                 // 가운데 줄이 첫·끝 연도도 가리킬 수 있게 위아래 빈 줄
+const WHEEL_DEFAULT_YEAR = 2000;
+
+function yearWheel(options) {
+  const seen = (options || []).flatMap((o) => (String(o.value || "").match(/(?:19|20)\d{2}/g) || []).map(Number));
+  const first = seen.length ? Math.min(...seen) : 1970;
+  const last = seen.length ? Math.max(...seen) : 2015;
+  const years = [];
+  for (let y = first; y <= last; y += 1) years.push(y);
+  const clamp = (y) => Math.min(last, Math.max(first, y));
+  const start = clamp(convo.wheelYear || loadBirthYear() || WHEEL_DEFAULT_YEAR);
+
+  const el = makeEl("div", "wheel");
+  el.setAttribute("role", "group");
+  el.setAttribute("aria-label", "출생 연도 고르기");
+  const list = makeEl("ul", "wheellist");
+  list.tabIndex = 0;
+  list.setAttribute("aria-label", "연도를 돌려서 고르세요");
+  for (let i = 0; i < WHEEL_PAD; i += 1) list.append(makeEl("li", "wheelpad"));
+  for (const y of years) {
+    const li = makeEl("li", "", String(y));
+    li.dataset.year = String(y);
+    li.addEventListener("click", () => list.scrollTo({ top: (y - first) * WHEEL_ROW, behavior: "smooth" }));
+    list.append(li);
+  }
+  for (let i = 0; i < WHEEL_PAD; i += 1) list.append(makeEl("li", "wheelpad"));
+  const label = makeEl("div", "wheelvalue");
+  el.append(list, label);
+
+  const index = () => Math.min(years.length - 1, Math.max(0, Math.round(list.scrollTop / WHEEL_ROW)));
+  const value = () => years[index()];
+  let raf = 0;
+  const paint = () => {
+    raf = 0;
+    const y = value();
+    convo.wheelYear = y; // 다시 그려져도(로딩 등) 돌려 둔 자리를 잃지 않게
+    label.textContent = `${y}년생`;
+    list.querySelectorAll("li[data-year]").forEach((li) => li.classList.toggle("active", Number(li.dataset.year) === y));
+  };
+  list.addEventListener("scroll", () => {
+    if (!raf) raf = requestAnimationFrame(paint);
+  });
+  list.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    e.preventDefault();
+    list.scrollTo({ top: (index() + (e.key === "ArrowDown" ? 1 : -1)) * WHEEL_ROW, behavior: "smooth" });
+  });
+  // 붙은 뒤에 위치를 잡는다 — 처음엔 맨 위에서 기본 연도까지 굴러 내려오고, 이미 돌려 둔 값이면 바로 그 자리
+  requestAnimationFrame(() => {
+    const top = (start - first) * WHEEL_ROW;
+    if (convo.wheelYear) {
+      list.scrollTop = top;
+    } else {
+      list.scrollTop = 0;
+      requestAnimationFrame(() => list.scrollTo({ top, behavior: "smooth" }));
+    }
+    paint();
+  });
+  return { el, value };
+}
+
 /* 출생 연도 답 — 저장하고 같은 질의를 기존 분석 + birth_year로 다시 검색한다. 거절할 곡이 없으므로 턴을 쌓지 않고,
    실패하면 앞의 결과·대화를 그대로 둔다(답은 저장됐으므로 다음 검색부터 반영된다) */
 async function answerBirthYear(value) {
@@ -926,16 +993,19 @@ function clarifyContent() {
     bubble.append(makeEl("p", "bubbleq", q.question));
     const options = makeEl("div", "options");
     const aboutUser = q.slot === "birth_year"; // 곡이 아니라 사용자에 대한 질문 — 후보 수가 없고, 거절 없이 바로 다시 검색한다
-    for (const opt of q.options) {
-      const b = button("option", "", () =>
-        aboutUser ? answerBirthYear(opt.value) : submitTurn({ slot: q.slot, value: opt.value, skipped: false })
-      );
-      b.append(makeEl("span", "", opt.value));
-      if (!aboutUser) b.append(makeEl("span", "optioncount", `${opt.count}곡`));
-      options.append(b);
-    }
     if (aboutUser) {
+      // 밴드 버튼 대신 돌려서 고르는 연도 휠. 서버의 밴드 목록은 연도 범위로만 쓴다(답은 '1998' 한 해로 보낸다)
+      const wheel = yearWheel(q.options);
+      bubble.append(wheel.el);
       bubble.append(makeEl("p", "clarifynote", "답하면 그 시기의 곡을 먼저 보여드려요. 이 브라우저에만 저장돼요. 다음부터는 묻지 않아요."));
+      options.append(button("option primary", "이 연도로 찾기", () => answerBirthYear(String(wheel.value()))));
+    } else {
+      for (const opt of q.options) {
+        const b = button("option", "", () => submitTurn({ slot: q.slot, value: opt.value, skipped: false }));
+        b.append(makeEl("span", "", opt.value));
+        b.append(makeEl("span", "optioncount", `${opt.count}곡`));
+        options.append(b);
+      }
     }
     options.append(
       button("option skip", "잘 모르겠어요", () =>

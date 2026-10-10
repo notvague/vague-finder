@@ -765,6 +765,76 @@ body.listmode .sitefooter { min-width: 0; }
   cursor: pointer;
 }
 .rejectbtn:disabled, .option:disabled, .linkbtn:disabled { opacity: 0.5; cursor: default; }
+.option.primary { color: #fff; background: #2258a5; border-color: #2258a5; font-weight: 600; }
+.option.primary:hover { background: #1b478a; color: #fff; }
+
+/* 출생 연도 휠 — 가운데 줄이 값이다. 줄 높이 36px은 map.js의 WHEEL_ROW와 같아야 한다 */
+.wheel {
+  position: relative;
+  height: 180px;             /* 5줄 */
+  margin: 0 0 9px;
+  background: #fff;
+  border: 1px solid #d6dce6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.wheellist {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  outline: none;
+}
+.wheellist::-webkit-scrollbar { display: none; }
+.wheellist:focus-visible { box-shadow: inset 0 0 0 2px #2258a5; }
+.wheel li {
+  height: 36px;
+  line-height: 36px;
+  text-align: center;
+  font-size: 15px;
+  color: #b5bcc8;
+  scroll-snap-align: center;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.12s, transform 0.12s;
+}
+.wheel li.wheelpad { pointer-events: none; }
+.wheel li.active { color: #222; font-weight: 700; font-size: 18px; }
+/* 가운데 선택 줄과 위아래 흐림 — 스크롤을 막지 않게 pointer-events 없음 */
+.wheel::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 72px;                 /* (180 - 36) / 2 */
+  height: 36px;
+  border-top: 1px solid #2258a5;
+  border-bottom: 1px solid #2258a5;
+  background: rgba(34, 88, 165, 0.06);
+  border-radius: 4px;
+  pointer-events: none;
+}
+.wheel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(#fff 0, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0) 60%, #fff 100%);
+  pointer-events: none;
+}
+.wheelvalue {
+  position: absolute;
+  right: 12px;
+  top: 72px;
+  height: 36px;
+  line-height: 36px;
+  font-size: 11px;
+  color: #2258a5;
+  pointer-events: none;
+  z-index: 1;
+}
 
 /*
  * 좁은 화면 — 레일을 위로 눕힌다. 지도는 가로 스크롤이 전제라 폭을 다 준다.
