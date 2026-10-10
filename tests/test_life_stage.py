@@ -37,6 +37,8 @@ from src.retrieval import query_analyzer as qa
     ("중학교 때 유명했던 아이돌 노래", "middle", "중학교 때"),
     ("고등학교 때 들리던 그 노래", "high", "고등학교 때"),
     ("어릴 때 엄마가 들려주던 자장가", "childhood", "어릴 때"),
+    ("중학교 때 좋아하던 곡이야", "middle", "중학교 때"),
+    ("고등학교 때 유명했던 가요 중에 발라드", "high", "고등학교 때"),
 ])
 def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     found = qa._extract_life_stage(query)
@@ -63,6 +65,11 @@ def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     "어릴 때 엄마가 들려주던 옛날 이야기 같은 가사",
     "중학교 때 유명했던 가요제 얘기하는 가사",          # '가요제'는 곡이 아니다
     "고등학교 때 좋아하던 노래방 친구 얘기하는 가사",   # '노래방'도
+    # 곡 명사가 어절 중간·끝에 있거나 동사·다른 명사의 일부 — 리뷰 4차
+    "중학교 때 좋아했던 사람한테 가요 하고 말하는 가사",
+    "고등학교 때 좋아하던 남자애가 노래 잘했다는 가사",
+    "고등학교 때 좋아하던 애가 노래하는 모습 얘기하는 가사",
+    "중학교 때 유명했던 왜곡 보도 얘기하는 가사",
 ])
 def test_lyric_content_and_song_events_are_not_life_stage(query):
     assert qa._extract_life_stage(query) is None
