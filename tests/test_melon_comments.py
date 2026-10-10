@@ -261,7 +261,7 @@ class _StatusResponse:
         return self._payload
 
 
-@pytest.mark.parametrize("status", [403, 429])
+@pytest.mark.parametrize("status", [403, 406, 429])
 def test_comment_api_block_stops_the_batch(monkeypatch, status) -> None:
     monkeypatch.setattr(cmd.time, "sleep", lambda s: None)
     monkeypatch.setattr(cmd.requests, "get", lambda *a, **k: _StatusResponse(status))
