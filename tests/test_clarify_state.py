@@ -306,7 +306,7 @@ def test_duplicate_rejections_are_rejected() -> None:
     [
         ("rejected_ids", [f"s{i}" for i in range(21)]),
         ("previous_candidate_ids", [f"s{i}" for i in range(31)]),
-        ("asked_slots", ["genre", "type", "vocal_gender"]),
+        ("asked_slots", ["genre", "type", "vocal_gender", "birth_year"]),  # MAX_ASKED_SLOTS=3 (데이터 2 + 출생 연도 1)
     ],
 )
 def test_state_field_limits(field: str, value: List[str]) -> None:
@@ -314,17 +314,19 @@ def test_state_field_limits(field: str, value: List[str]) -> None:
         SearchRequest(**{"query": "아무 노래", field: value})
 
 
-def test_answers_capped_at_two_turns() -> None:
+def test_answers_capped_at_max_asked_slots() -> None:
+    """데이터 슬롯 2 + 출생 연도 1 = MAX_ASKED_SLOTS(3). 넘으면 거부."""
+    from src.backend.schemas.search import MAX_ASKED_SLOTS
+    answers = [
+        ClarifyAnswer(slot="birth_year", value="1996~2000년생"),
+        ClarifyAnswer(slot="genre", value="발라드"),
+        ClarifyAnswer(slot="type", value="솔로"),
+        ClarifyAnswer(slot="vocal_gender", value="여성"),
+    ]
+    assert len(answers) == MAX_ASKED_SLOTS + 1
+    SearchRequest(query="아무 노래", prior_analysis=_analysis(), answers=answers[:MAX_ASKED_SLOTS])
     with pytest.raises(ValidationError):
-        SearchRequest(
-            query="아무 노래",
-            prior_analysis=_analysis(),
-            answers=[
-                ClarifyAnswer(slot="genre", value="발라드"),
-                ClarifyAnswer(slot="type", value="솔로"),
-                ClarifyAnswer(slot="vocal_gender", value="여성"),
-            ],
-        )
+        SearchRequest(query="아무 노래", prior_analysis=_analysis(), answers=answers)
 
 
 # ---------------------------------------------------------------------------
@@ -622,7 +624,7 @@ def test_termination_check_covers_all_three_limits() -> None:
     assert _can_ask_another(turn=1, asked_slots=[], rejected_ids=[], top_k=10)
     # 슬롯을 다 물었다
     assert not _can_ask_another(
-        turn=1, asked_slots=["vocal_gender", "genre"][:MAX_ASKED_SLOTS],
+        turn=1, asked_slots=["birth_year", "vocal_gender", "genre"][:MAX_ASKED_SLOTS],
         rejected_ids=[], top_k=10)
     # 2턴 응답까지는 질문을 싣는다 (그 질문은 3턴에 답한다)
     assert _can_ask_another(turn=2, asked_slots=[], rejected_ids=[], top_k=10)

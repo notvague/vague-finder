@@ -23,7 +23,7 @@ from src.backend.schemas.search import (
 )
 from src.retrieval import timing
 from src.retrieval.analysis_cache import looks_like_fallback
-from src.retrieval.clarify import pick_question
+from src.retrieval.clarify import pick_question, with_birth_year
 from src.retrieval.explain import NULL_RECORDER, ExplainRecorder, SongExplain
 from src.retrieval.lyrics_exact_search import (
     LyricsExactSearchService,
@@ -211,7 +211,16 @@ async def search(
             with timer.step("analysis", mode="gemini"):
                 analysis = await _analyze(query_analyzer, request.query)
 
-        turn = request.turn + 1 if carries_state else 1
+        # 턴은 거절이나 답이 있을 때만 는다. prior_analysis만 보내는 재검색(출생 연도 답 뒤 화면이 같은 질의를
+        # 기존 분석 + 프로필로 다시 찾는 것)은 재분석만 아끼는 것이지 대화가 진행된 게 아니다
+        turn = request.turn + 1 if (request.rejected_ids or request.answers) else (request.turn if carries_state else 1)
+
+        # 브라우저에 저장된 출생 연도(프로필). 생애 단계 질의("중학교 때")에 시기가 없을 때만 창을 만든다.
+        # 검색과 질문 선택에는 창을 넣은 사본을 쓰고, **응답의 analysis는 원본**이다 — 클라이언트가 다음 턴에
+        # 되돌려주는 분석에 프로필이 굳어 들어가지 않게(프로필을 지우면 바로 빠져야 한다).
+        analysis_for_search = with_birth_year(analysis, request.birth_year)
+        if analysis_for_search is not analysis:
+            timer.note(birth_year_window=f"{analysis_for_search.release_era.start_year}-{analysis_for_search.release_era.end_year}")
 
         # 물어본 슬롯 누적 — 다음 턴에서 같은 것을 다시 묻지 않기 위해.
         asked_slots = list(request.asked_slots)
@@ -245,7 +254,7 @@ async def search(
         # 이 구간 안에서 시작된 검색 경로들이 이 구간의 자식으로 붙는다.
         with timer.step("search"):
             results = await search_router.search(
-                analysis,
+                analysis_for_search,
                 top_k=request.top_k,
                 use_rerank=request.use_rerank,
                 candidate_k=request.candidate_k,
@@ -291,7 +300,7 @@ async def search(
             shown = {track.id for track in results}
             remaining = [t for t in candidate_tracks if t.id not in shown]
             clarify = (
-                pick_question(analysis, remaining, asked_slots)
+                pick_question(analysis_for_search, remaining, asked_slots)
                 if _can_ask_another(
                     turn, asked_slots, request.rejected_ids, request.top_k
                 )

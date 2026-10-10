@@ -12,7 +12,7 @@ from src.backend.schemas.query import QueryAnalysis
 # 숫자가 두 곳에 흩어지면 스키마는 거부하는데 라우트는 질문을 계속 내주는
 # 상태가 된다 — 실제로 그렇게 422가 났다.
 MAX_REJECTED_IDS = 20
-MAX_ASKED_SLOTS = 2
+MAX_ASKED_SLOTS = 3  # 생애 단계 질의는 출생 연도(birth_year) 하나가 데이터 슬롯 앞에 더 붙는다
 MAX_TURNS = 2
 
 
@@ -81,7 +81,7 @@ class SearchRequest(BaseModel):
     )
     answers: List[ClarifyAnswer] = Field(
         default_factory=list,
-        max_length=2,
+        max_length=MAX_ASKED_SLOTS,
         description=(
             "지금까지의 재질문 응답 누적. 2턴 누적 호환도 계산에 답변 이력이 "
             "모두 필요해서 단수 answer가 아니라 리스트다"
@@ -89,7 +89,7 @@ class SearchRequest(BaseModel):
     )
     asked_slots: List[str] = Field(
         default_factory=list,
-        max_length=2,
+        max_length=MAX_ASKED_SLOTS,
         description="직전 응답의 asked_slots를 그대로 되돌려준다. 같은 슬롯 재질문 방지",
     )
     previous_candidate_ids: List[str] = Field(
@@ -109,6 +109,16 @@ class SearchRequest(BaseModel):
         default=1,
         ge=1,
         description="직전 응답의 turn을 그대로 되돌려준다. 서버가 +1해서 내려보낸다",
+    )
+    birth_year: Optional[int] = Field(
+        default=None,
+        ge=1900,
+        le=2100,
+        description=(
+            "사용자 출생 연도(브라우저에 저장된 프로필, 5년 밴드면 중앙값). 질의에 생애 단계 표현"
+            "(\"중학교 때\")이 있고 발매 시기가 없을 때만 쓴다 — 출생 연도 + 단계 나이 범위로 시기 가산 창을"
+            " 만든다. 없으면 서버가 birth_year 슬롯으로 한 번 묻는다"
+        ),
     )
 
     @model_validator(mode="after")
