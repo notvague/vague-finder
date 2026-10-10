@@ -24,6 +24,12 @@ from src.retrieval import query_analyzer as qa
     ("25살 때 자주 들었던 힙합", "age", "25살 때"),
     ("중학교 때 좋아하던 노래인데 여자 솔로였어", "middle", "중학교 때"),   # 곡을 목적어로 받는 '좋아하던'은 시간 단서
     ("고등학교 때 반에서 인기 있던 댄스곡", "high", "고등학교 때"),
+    # 활용형 — 리뷰 2차
+    ("어릴 때 자주 나오던 여자 가수 노래", "childhood", "어릴 때"),
+    ("고등학교 때 제일 좋아했던 노래", "high", "고등학교 때"),
+    ("초등학교 다닐 때 듣던 발라드", "elementary", "초등학교 다닐 때"),
+    ("고등학교 다닐 때 듣던 발라드", "high", "고등학교 다닐 때"),
+    ("중학교 다녔을 때 유행하던 걸그룹 노래", "middle", "중학교 다녔을 때"),
 ])
 def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     found = qa._extract_life_stage(query)
@@ -66,7 +72,9 @@ def test_safeguards_drop_guessed_era_and_leaked_tags_when_life_stage_present():
     out = qa._apply_metadata_safeguards("중학교 때 많이 듣던 남자 발라드", _model_raw())
     assert out["life_stage"]["stage"] == "middle"
     assert out["release_era"] == {"start_year": None, "end_year": None, "confidence": 0.0}
-    assert out["korean_tags"] == ["발라드", "남성보컬"]
+    # '추억'(일반 회상어)·'어린시절'(생애 단계 질의마다 모델이 다는 회상어)은 빠지고, '수학여행'은 잡힌 단계(중학교)의 말이
+    # 아니라 남는다 — 장면 단서일 수 있다
+    assert out["korean_tags"] == ["발라드", "남성보컬", "수학여행"]
 
 
 def test_absolute_era_wins_over_life_stage():
@@ -113,6 +121,27 @@ def test_context_words_next_to_the_phrase_stay_in_search_text():
     analysis = qa._fallback("고등학교 수학여행 버스에서 틀었던 신나는 노래, 남자 그룹")
     assert analysis.life_stage.stage == "high"
     assert analysis.search_text == "버스에서 틀었던 신나는 노래, 남자 그룹"
+
+
+def test_school_name_with_danil_ttae_is_removed_whole():
+    a = qa._fallback("초등학교 다닐 때 듣던 발라드")
+    assert (a.life_stage.age_from, a.life_stage.age_to) == (7, 12)
+    assert a.search_text == "듣던 발라드"
+
+
+def test_detached_phrase_without_a_listening_verb_is_lyric_content_and_stays():
+    """대표('중학교 때 듣던')가 잡혀도 떨어져 있는 '어릴 때 집이 어려웠다는'은 가사 내용 — 검색문·태그 모두 남긴다(리뷰)."""
+    q = "중학교 때 듣던 노래인데 어릴 때 집이 어려웠다는 가사가 나와"
+    a = qa._fallback(q)
+    assert a.life_stage.stage == "middle" and a.life_stage.spans == [[0, 5]]
+    assert a.search_text == "듣던 노래인데 어릴 때 집이 어려웠다는 가사가 나와"
+    out = qa._apply_metadata_safeguards(q, _model_raw(korean_tags=["발라드", "어린시절", "중학교", "추억", "가난"]))
+    assert out["korean_tags"] == ["발라드", "어린시절", "가난"]
+
+
+def test_adjacent_phrase_is_still_removed_with_the_representative():
+    a = qa._fallback("고3 때 야자 끝나고 듣던 노래")
+    assert len(a.life_stage.spans) == 2 and a.search_text == "듣던 노래"
 
 
 def test_search_text_strips_the_phrase_but_original_query_stays():

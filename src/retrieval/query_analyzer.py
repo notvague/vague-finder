@@ -1127,15 +1127,15 @@ _KOREAN_NUMBER = {
 # ("어릴 때 집이 어려워서 … 얘기 나오는 노래", "'나 스무 살 적에' 이런 가사")이나 곡의 사건
 # ("군대 가 있는 동안 역주행")은 잡지 않는다. 폭이 좁은 단계일수록 confidence가 높다.
 _LIFE_STAGE_CORE = (
-    ("middle", r"중학(?:교|생)?\s*(?:[1-3]학년\s*)?(?:때|시절|무렵)|중딩\s*(?:때|시절)|중[1-3]\s*때", 13, 15, 0.6),
-    ("high", r"고등학(?:교|생)?\s*(?:[1-3]학년\s*)?(?:때|시절|무렵|수학여행)|고딩\s*(?:때|시절)|고[1-3]\s*때|수능\s*(?:때|준비할\s*때|보던\s*때)|야자\s*(?:때|끝나고|하고)", 16, 18, 0.6),
-    ("elementary", r"초등학(?:교|생)?\s*(?:[1-6]학년\s*)?(?:때|시절|무렵)|초딩\s*(?:때|시절)|국민학교\s*(?:때|시절)", 7, 12, 0.5),
+    ("middle", r"중학(?:교|생)?\s*(?:[1-3]학년\s*)?(?:때|시절|무렵|다닐\s*때|다녔을\s*때|다닐\s*적|다니던\s*때)|중딩\s*(?:때|시절)|중[1-3]\s*때", 13, 15, 0.6),
+    ("high", r"고등학(?:교|생)?\s*(?:[1-3]학년\s*)?(?:(?:때|시절|무렵|다닐\s*때|다녔을\s*때|다닐\s*적|다니던\s*때)|수학여행)|고딩\s*(?:때|시절)|고[1-3]\s*때|수능\s*(?:때|준비할\s*때|보던\s*때)|야자\s*(?:때|끝나고|하고)", 16, 18, 0.6),
+    ("elementary", r"초등학(?:교|생)?\s*(?:[1-6]학년\s*)?(?:때|시절|무렵|다닐\s*때|다녔을\s*때|다닐\s*적|다니던\s*때)|초딩\s*(?:때|시절)|국민학교\s*(?:때|시절|무렵|다닐\s*때|다녔을\s*때|다닐\s*적|다니던\s*때)", 7, 12, 0.5),
     ("freshman", r"(?:대학(?:교)?\s*)?(?:신입생|새내기)\s*(?:때|시절|무렵)", 19, 20, 0.6),
-    ("college", r"대학(?:교|생|\s*시절)?\s*(?:때|시절|다닐\s*때|무렵)|캠퍼스\s*(?:때|시절)", 19, 24, 0.5),
+    ("college", r"대학(?:교|생|\s*시절)?\s*(?:때|시절|무렵|다닐\s*때|다녔을\s*때|다닐\s*적|다니던\s*때)|캠퍼스\s*(?:때|시절)", 19, 24, 0.5),
     ("military", r"군대(?:에서|\s*있을\s*때|\s*시절|\s*때)|군\s*복무\s*(?:때|중|시절)|군\s*생활\s*(?:때|중|할\s*때)|훈련소(?:에서|\s*때)|입대\s*(?:했을\s*때|전에|직전)", 20, 23, 0.5),
     ("first_job", r"신입\s*사원\s*(?:때|시절)|첫\s*직장\s*(?:때|다닐\s*때)|취직\s*(?:하고|했을\s*때)", 23, 28, 0.4),
     ("school", r"학창\s*시절|학교\s*다닐\s*때|학생\s*때|(?:중학교\s*)?수학여행\s*(?:때|가서|갔을\s*때)", 7, 18, 0.3),
-    ("childhood", r"어릴\s*(?:때|적)|어렸을\s*(?:때|적)|어린\s*시절|꼬마\s*(?:때|시절)|유치원\s*(?:때|다닐\s*때)|유년\s*시절", 4, 12, 0.3),
+    ("childhood", r"어릴\s*(?:때|적)|어렸을\s*(?:때|적)|어린\s*시절|꼬마\s*(?:때|시절)|유치원\s*(?:때|시절|무렵|다닐\s*때|다녔을\s*때|다닐\s*적|다니던\s*때)|유년\s*시절", 4, 12, 0.3),
 )
 _AGE_RE = re.compile(
     r"(?P<age>(?:[1-5]\d)|(?:스무|스물\s*(?:한|두|세|네|다섯|여섯|일곱|여덟|아홉)?|서른|마흔)\s*(?:한|두|세|네|다섯|여섯|일곱|여덟|아홉)?)"
@@ -1145,18 +1145,42 @@ _KOREAN_TENS = {"스무": 20, "스물": 20, "서른": 30, "마흔": 40}
 # 시간 단서로 보는 말 — 표현 뒤 이 범위 안에 **청취·유행 동사**가 있어야 한다. 부사(자주·많이·한창)와 '좋아하다'만으로는
 # 안 된다(리뷰): "어릴 때 엄마가 자주 아팠다는 가사", "중학교 때 좋아하던 사람 얘기하는 가사"는 가사 내용이다.
 # '좋아하던 노래/곡'처럼 곡을 목적어로 받을 때만 인정한다.
+# 활용형은 어간으로 받는다(리뷰: '나오던'·'좋아했던'이 빠져 있었다) — 듣/들었/들으/들려/들리, 나오/나왔/나온, 틀어/틀었/틀던, 불렀/부르/불러,
+# 흘러나오, 유행/유명, 뜬/떴/히트, 좋아하/좋아했 + 노래·곡·음악, 즐겨·따라·돌려 + 동사, 인기 있/많, 빠져 있/살.
 _LIFE_STAGE_VERB_RE = re.compile(
-    r"(?:듣|들었|들으|유행|나왔|나온|떴|뜬|히트|틀어|틀었|불렀|부르|불러|즐겨\s*(?:듣|들|부르)|따라\s*(?:부르|불렀|불러)|인기\s*(?:있|많|였|끌)"
-    r"|좋아하\S*\s*(?:노래|곡|음악)|빠져\s*(?:있|살|지냈)|돌려\s*(?:듣|들))"
+    r"(?:듣|들었|들으|들려|들리|흘러\s*나|유행|유명|나오(?:던|곤)|나왔|나온|떴|뜬|히트|틀어|틀었|틀던|불렀|부르|불러|흥얼"
+    r"|즐겨\s*(?:듣|들|부르)|따라\s*(?:부르|불렀|불러)|돌려\s*(?:듣|들)|인기\s*(?:있|많|였|끌|좋)"
+    r"|좋아(?:하|했)\S*\s*(?:노래|곡|음악)|빠져\s*(?:있|살|지냈|듣))"
 )
 _LIFE_STAGE_VERB_WINDOW = 20
+_LIFE_STAGE_ADJACENT_GAP = 3   # 대표(또는 동사가 붙은 표현) 끝에서 이만큼 안에 시작하면 붙어 있는 것으로 본다
 # 생애 단계가 잡힌 질의에서 korean_tags로 새지 않게 하는 말 — 곡 내용이 아니라 듣는 사람의 시간이다.
 # **태그 전체가 이 말일 때만** 뺀다(부분 일치가 아니다): "대학가요제"·"군대 가요제"·"수학여행송" 같은 곡 정보는 남아야 한다(리뷰).
-_LIFE_STAGE_TAG_RE = re.compile(
-    r"^(?:추억|회상|향수|어린시절|어릴때|어렸을때|유년|유년시절|학창시절|학생시절|초등학교|초등학생|초딩|중학교|중학생|중딩|"
-    r"고등학교|고등학생|고딩|대학교|대학생|대학시절|신입생|새내기|캠퍼스|군대|군생활|군복무|군시절|훈련소|수학여행|야자|수능|"
-    r"신입사원|첫직장|꼬마|유치원|그시절|그때|옛날|옛추억|어린이|청소년기|사춘기)(?:시절|때|추억)?$"
-)
+# 일반 회상어는 늘 빼고, 단계별 말은 **그 단계가 잡혔을 때만** 뺀다 — "중학교 때 듣던 노래인데 어릴 때 집이 어려웠다는 가사"에서
+# '어린시절'은 가사 내용이라 남아야 한다(리뷰).
+_LIFE_STAGE_TAG_GENERIC = r"추억|회상|향수|그시절|그때|옛날|옛추억"
+_LIFE_STAGE_TAG_BY_STAGE = {
+    "childhood": r"어린시절|어릴때|어렸을때|유년|유년시절|꼬마|유치원|어린이",
+    "elementary": r"초등학교|초등학생|초딩|국민학교",
+    "middle": r"중학교|중학생|중딩",
+    "high": r"고등학교|고등학생|고딩|야자|수능|수학여행",
+    "school": r"학창시절|학생시절|학교|수학여행|청소년기|사춘기",
+    "freshman": r"대학교|대학생|대학시절|신입생|새내기|캠퍼스",
+    "college": r"대학교|대학생|대학시절|캠퍼스",
+    "military": r"군대|군생활|군복무|군시절|훈련소|군인",
+    "first_job": r"신입사원|첫직장|직장",
+    "age": r"",
+}
+
+
+# 모델이 생애 단계 질의마다 습관처럼 다는 회상어 — 그 단계 표현이 질의에 '내용'으로 따로 있지 않으면 뺀다.
+_LIFE_STAGE_TAG_NOSTALGIA = {"childhood": r"어린시절|유년|유년시절", "school": r"학창시절|학생시절"}
+
+
+def _life_stage_tag_re(stages: list[str], content_stages: list[str] = ()) -> "re.Pattern[str]":
+    words = [_LIFE_STAGE_TAG_GENERIC] + [_LIFE_STAGE_TAG_BY_STAGE.get(s, "") for s in stages]
+    words += [w for s, w in _LIFE_STAGE_TAG_NOSTALGIA.items() if s not in content_stages]
+    return re.compile(r"^(?:" + "|".join(w for w in words if w) + r")(?:시절|때|추억)?$")
 # 따옴표 안은 가사 인용이다 — 그 안의 "중학교 때"는 시간 단서도 아니고 검색문에서 지울 구간도 아니다(리뷰).
 _QUOTE_RE = re.compile(r"[\"“”'‘’「」『』][^\"“”'‘’「」『』]{1,80}[\"“”'‘’「」『』]")
 
@@ -1207,18 +1231,29 @@ def _extract_life_stage(query: str) -> dict | None:
             found.append({"stage": "age", "text": m.group(0), "age_from": age, "age_to": age,
                           "confidence": 0.6, "_start": m.start(), "_end": m.end()})
     found.sort(key=lambda d: (d["_start"], -d["_end"]))
-    head = next((d for d in found
-                 if _LIFE_STAGE_VERB_RE.search(query[d["_end"]: d["_end"] + _LIFE_STAGE_VERB_WINDOW])), None)
+    for d in found:
+        d["_verb"] = bool(_LIFE_STAGE_VERB_RE.search(query[d["_end"]: d["_end"] + _LIFE_STAGE_VERB_WINDOW]))
+    head = next((d for d in found if d["_verb"]), None)
     if head is None:
         return None
-    spans: list[list[int]] = []
+    # 검색문에서 뺄 구간: 자기 뒤에 청취 동사가 있는 표현 + 그런 표현과 **붙어 있는** 표현('고3 때 야자 끝나고').
+    # 떨어져 있고 동사도 없는 표현은 가사 내용일 수 있어 남긴다 — "중학교 때 듣던 노래인데 어릴 때 집이 어려웠다는 가사"(리뷰).
+    keep: list[dict] = []
     for d in found:
+        adjacent = bool(keep) and d["_start"] <= keep[-1]["_end"] + _LIFE_STAGE_ADJACENT_GAP \
+            and not query[keep[-1]["_end"]:d["_start"]].strip(" ,·")
+        if d["_verb"] or adjacent:
+            keep.append(d)
+    spans: list[list[int]] = []
+    for d in keep:
         if spans and d["_start"] < spans[-1][1]:
             spans[-1][1] = max(spans[-1][1], d["_end"])  # 겹치면 합친다
         else:
             spans.append([d["_start"], d["_end"]])
     return {"stage": head["stage"], "text": head["text"], "age_from": head["age_from"], "age_to": head["age_to"],
-            "confidence": head["confidence"], "spans": spans}
+            "confidence": head["confidence"], "spans": spans,
+            "_stages": sorted({d["stage"] for d in keep}),
+            "_content_stages": sorted({d["stage"] for d in found if d not in keep})}
 
 
 def release_era_from_birth_year(life_stage: dict, birth_year: int, pad_years: int = 1) -> dict | None:
@@ -1587,6 +1622,8 @@ def _apply_metadata_safeguards(
 
     rule_era = _extract_release_era(query)
     life_stage = _extract_life_stage(query)
+    life_stages = (life_stage or {}).pop("_stages", [])   # 태그 제거에만 쓴다. 분석 객체에는 싣지 않는다
+    content_stages = (life_stage or {}).pop("_content_stages", [])
     enriched["life_stage"] = life_stage or {"stage": None, "text": "", "age_from": None, "age_to": None, "confidence": 0.0, "spans": []}
 
     if rule_era is not None:
@@ -1775,7 +1812,8 @@ def _apply_metadata_safeguards(
     if (enriched.get("life_stage") or {}).get("stage"):
         # 시간 단서가 내용 태그로 새면 BM25가 "학창 시절 추억" 댓글 요약이 든 곡(2000년대에 몰림)을 찾는다.
         # 생애 단계가 잡힌 질의에서만 뺀다 — "어린 시절" 이야기를 담은 가사를 찾는 질의는 그대로다.
-        korean_tags = [t for t in korean_tags if not _LIFE_STAGE_TAG_RE.match("".join(str(t).split()))]
+        tag_re = _life_stage_tag_re(life_stages or [enriched["life_stage"]["stage"]], content_stages)
+        korean_tags = [t for t in korean_tags if not tag_re.match("".join(str(t).split()))]
 
     enriched["korean_tags"] = list(
         dict.fromkeys(korean_tags)
