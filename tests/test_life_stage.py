@@ -39,6 +39,14 @@ from src.retrieval import query_analyzer as qa
     ("어릴 때 엄마가 들려주던 자장가", "childhood", "어릴 때"),
     ("중학교 때 좋아하던 곡이야", "middle", "중학교 때"),
     ("고등학교 때 유명했던 가요 중에 발라드", "high", "고등학교 때"),
+    # 뒤 제한이 흔한 표현을 막지 않는다 — 리뷰 5차
+    ("고등학교 때 좋아하던 노래 하나 찾고 싶어요", "high", "고등학교 때"),
+    ("중학교 때 유명했던 가요 하나", "middle", "중학교 때"),
+    ("중학교 때 좋아했던 곡이에요", "middle", "중학교 때"),
+    ("중학교 때 좋아했던 곡으로 기억해요", "middle", "중학교 때"),
+    ("중학교 때 좋아했던 곡이다", "middle", "중학교 때"),
+    ("중학교 때 좋아했던 곡이고 여자 솔로", "middle", "중학교 때"),
+    ("중학교 때 좋아했던 곡이랑 비슷한 느낌", "middle", "중학교 때"),
 ])
 def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     found = qa._extract_life_stage(query)
