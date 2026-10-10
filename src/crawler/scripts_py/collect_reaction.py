@@ -10,7 +10,9 @@
 import re
 import logging
 import os
+import random
 import shutil
+import time
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 from difflib import SequenceMatcher
@@ -556,6 +558,11 @@ def ffmpeg_available() -> bool:
     return shutil.which("ffmpeg") is not None
 
 
+# 403일 때 같은 영상을 다시 받는 횟수(첫 시도 포함)와 그 사이 대기.
+AUDIO_DOWNLOAD_ATTEMPTS = 3
+AUDIO_RETRY_DELAY_SEC = (5.0, 10.0)
+
+
 def audio_download_options(output_stem: str) -> Dict:
     """ffmpeg가 있으면 어떤 포맷이든 받아 m4a로 변환하고, 없으면 m4a만 받는다."""
     opts = {
@@ -563,6 +570,9 @@ def audio_download_options(output_stem: str) -> Dict:
         'quiet': True,
         'no_warnings': True,
         'overwrites': True,
+        # 댓글 수집(fetch_youtube_reaction)과 같은 JS 엔진. 없으면 yt-dlp가 'JS 엔진 없는 추출은
+        # 지원 중단'이라 경고하고 예비 클라이언트로만 받는다(2026-10-10 확인).
+        'js_runtimes': {'node': {}},
     }
     if ffmpeg_available():
         opts['format'] = 'bestaudio[ext=m4a]/bestaudio'
@@ -598,14 +608,24 @@ def download_youtube_audio(video_url: str, save_path: str) -> bool:
     if os.path.exists("cookies.txt"):
         ydl_opts['cookiefile'] = "cookies.txt"
 
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            logger.info(f"오디오 다운로드 시작: {video_url}")
-            ydl.download([video_url])
-    except Exception as e:
-        logger.error(f"오디오 다운로드 실패: {e}")
-        _remove_partial_audio(path_obj)
-        return False
+    # 영상 서버(googlevideo)의 403은 무작위다 — 2026-10-10 707회 중 74회, 같은 영상을 다시 받으면
+    # 대부분 성공했다. 403일 때만 잠시 쉬고 다시 받는다. 매번 새로 추출하므로 다운로드 주소도 새것이다.
+    for attempt in range(1, AUDIO_DOWNLOAD_ATTEMPTS + 1):
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                logger.info(f"오디오 다운로드 시작: {video_url}"
+                            + (f" (재시도 {attempt - 1}/{AUDIO_DOWNLOAD_ATTEMPTS - 1})" if attempt > 1 else ""))
+                ydl.download([video_url])
+            break
+        except Exception as e:
+            _remove_partial_audio(path_obj)
+            if "HTTP Error 403" in str(e) and attempt < AUDIO_DOWNLOAD_ATTEMPTS:
+                wait = random.uniform(*AUDIO_RETRY_DELAY_SEC)
+                logger.warning(f"오디오 다운로드 403 -> {wait:.1f}초 뒤 다시 받는다: {e}")
+                time.sleep(wait)
+                continue
+            logger.error(f"오디오 다운로드 실패: {e}")
+            return False
 
     if not path_obj.is_file() or path_obj.stat().st_size == 0 or not looks_like_m4a(path_obj):
         leftovers = [p.name for p in path_obj.parent.glob(path_obj.stem + ".*")]

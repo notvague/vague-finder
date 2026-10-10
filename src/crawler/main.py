@@ -44,10 +44,11 @@ from src.crawler.scripts_py.collect_melon_data import (
     AlreadyCollected,
     MelonAccessError,
     MelonTransientError,
+    SongCandidate,
     collect_melon_data,
     fetch_melon_song_candidates,
 )
-from src.crawler.scripts_py.melon_match import title_conflict
+from src.crawler.scripts_py.melon_match import EXACT_TITLE_BONUS, MatchScore, title_conflict
 from src.crawler.scripts_py.collect_reaction import (
     download_youtube_audio,
     fetch_youtube_reaction,
@@ -998,9 +999,14 @@ def resume_incomplete(registry: Registry) -> Tuple[int, int]:
     return ok, failed
 
 
-def process_song(artist: str, title: str, registry: Registry) -> str:
+def process_song(artist: str, title: str, registry: Registry, song_id: Optional[str] = None) -> str:
     """
     한 곡에 대해 4단계 파이프라인(Melon -> YouTube -> Namuwiki -> LLM)을 실행.
+
+    song_id: CSV에 멜론 곡 ID가 있으면 검색하지 않고 그 곡을 쓴다. 상세 페이지 검사(19금·장르·
+        가사)는 그대로 거친다. 아티스트 인기곡 목록(build_expansion_list)은 곡 ID를 이미 알고
+        있는데, '엔플라잉 (N.Flying) 잔불 (Still)'처럼 괄호가 든 검색어는 멜론 결과가 0건이라
+        2026-10-10 첫 798곡 중 292곡이 검색에서 실패했다.
 
     Returns:
         "done" | "skipped" | "failed" | "blocked"
@@ -1023,7 +1029,12 @@ def process_song(artist: str, title: str, registry: Registry) -> str:
         # 검색은 한 번만 한다. 예전에는 중복 체크와 collect_melon_data가 각각 검색해서
         # 곡당 멜론 요청이 두 번 나갔고, 두 호출이 다른 답을 낼 여지도 있었다.
         registry.made_requests = True
-        candidates = fetch_melon_song_candidates(artist, title)
+        if song_id:
+            logger.info(f"멜론 ID 지정({song_id}) → 검색 생략")
+            candidates = [SongCandidate(song_id=str(song_id), title=title, artists=[artist],
+                                        match=MatchScore(score=EXACT_TITLE_BONUS, reasons=["멜론 ID 지정"]))]
+        else:
+            candidates = fetch_melon_song_candidates(artist, title)
         if not candidates:
             save_failed_song(artist, title, "Melon Search Failed")
             logger.warning(f"검증 통과 후보 없음 → 스킵: {query}")
@@ -1215,7 +1226,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     counts = {"done": 0, "skipped": 0, "failed": 0, "blocked": 0}
     for s in songs:
-        result = process_song(s["artist"], s["title"], registry)
+        result = process_song(s["artist"], s["title"], registry,
+                              song_id=(s.get("song_id") or "").strip() or None)
         counts[result] = counts.get(result, 0) + 1
         if result == "blocked":
             logger.error("멜론 접근이 막혀 배치를 중단합니다. 잠시 뒤 다시 실행하세요.")

@@ -346,6 +346,59 @@ def test_download_format_depends_on_ffmpeg(monkeypatch) -> None:
     assert opts["postprocessors"] == [{"key": "FFmpegExtractAudio", "preferredcodec": "m4a"}]
 
 
+def test_download_uses_node_runtime() -> None:
+    """댓글 수집과 같은 JS 엔진을 쓴다. 없으면 yt-dlp가 지원 중단된 방식으로만 받는다."""
+    assert cr.audio_download_options("/tmp/audio")["js_runtimes"] == {"node": {}}
+
+
+class FlakyYDL(DownloadYDL):
+    """앞의 fail_times번은 403을 내고 그다음 정상으로 받는다."""
+
+    fail_times = 0
+    error = "ERROR: unable to download video data: HTTP Error 403: Forbidden"
+    calls = 0
+
+    def download(self, urls):
+        type(self).calls += 1
+        if type(self).calls <= type(self).fail_times:
+            stem = self.opts["outtmpl"].replace(".%(ext)s", "")
+            Path(stem + ".m4a.part").write_bytes(b"partial")
+            raise cr.yt_dlp.utils.DownloadError(type(self).error)
+        super().download(urls)
+
+
+@pytest.fixture
+def flaky(monkeypatch):
+    monkeypatch.setattr(cr.yt_dlp, "YoutubeDL", FlakyYDL)
+    monkeypatch.setattr(cr.time, "sleep", lambda s: None)
+    monkeypatch.setattr(FlakyYDL, "calls", 0)
+    return FlakyYDL
+
+
+def test_403_is_retried_then_succeeds(tmp_path, flaky, monkeypatch) -> None:
+    monkeypatch.setattr(flaky, "fail_times", 2)
+    target = tmp_path / "audio.m4a"
+    assert cr.download_youtube_audio("https://www.youtube.com/watch?v=x", str(target)) is True
+    assert flaky.calls == 3
+    assert [p.name for p in tmp_path.iterdir()] == ["audio.m4a"]   # 실패 조각은 남지 않는다
+
+
+def test_403_gives_up_after_attempts(tmp_path, flaky, monkeypatch) -> None:
+    monkeypatch.setattr(flaky, "fail_times", 99)
+    target = tmp_path / "audio.m4a"
+    assert cr.download_youtube_audio("https://www.youtube.com/watch?v=x", str(target)) is False
+    assert flaky.calls == cr.AUDIO_DOWNLOAD_ATTEMPTS
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_non_403_error_is_not_retried(tmp_path, flaky, monkeypatch) -> None:
+    monkeypatch.setattr(flaky, "fail_times", 99)
+    monkeypatch.setattr(flaky, "error", "ERROR: [youtube] x: Video unavailable")
+    target = tmp_path / "audio.m4a"
+    assert cr.download_youtube_audio("https://www.youtube.com/watch?v=x", str(target)) is False
+    assert flaky.calls == 1
+
+
 # --- 제목이 비슷한 다른 곡의 영상 --------------------------------------------------------
 # 멜론을 맞게 골라도 유튜브에서 다른 곡을 선택할 수 있었다. 곡 이름을 부분 문자열로 비교해서
 # '좋은날'이 '사랑하기 좋은날'에, '니 소식'이 '니 소식2'에, 'Love'가 'Love Wins'에 들어

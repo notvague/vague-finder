@@ -1577,3 +1577,43 @@ def test_startup_reads_folders_and_jsonl_once(pipeline, monkeypatch) -> None:
     assert crawler.main([str(songs)]) == 0
     assert len(scans) == 1, scans
     assert len(reads) == 1, reads
+
+
+# --- 멜론 ID 지정 (build_expansion_list 목록) ------------------------------------------------
+
+def test_song_id_skips_search_and_uses_that_song(pipeline, monkeypatch) -> None:
+    """CSV에 song_id가 있으면 검색하지 않는다. 괄호가 든 검색어는 멜론 결과가 0건이었다."""
+    crawler, state, calls, tmp = pipeline
+    seen = {}
+
+    def no_search(artist, title):
+        raise AssertionError("song_id가 있는데 검색했다")
+
+    original_collect = crawler.collect_melon_data
+
+    def spy_collect(artist, title, candidates=None, already_collected=None):
+        seen["ids"] = [c.song_id for c in candidates]
+        seen["reasons"] = candidates[0].match.reasons
+        return original_collect(artist, title, candidates=candidates, already_collected=already_collected)
+
+    monkeypatch.setattr(crawler, "fetch_melon_song_candidates", no_search)
+    monkeypatch.setattr(crawler, "collect_melon_data", spy_collect)
+
+    song_id = str(state["melon"]["id"])
+    assert crawler.process_song("엔플라잉 (N.Flying)", "잔불 (Still)", crawler.Registry(), song_id=song_id) == "done"
+    assert seen["ids"] == [song_id]
+    assert seen["reasons"] == ["멜론 ID 지정"]
+
+
+def test_without_song_id_still_searches(pipeline, monkeypatch) -> None:
+    crawler, state, calls, tmp = pipeline
+    searched = []
+    original = crawler.fetch_melon_song_candidates
+
+    def spy(artist, title):
+        searched.append((artist, title))
+        return original(artist, title)
+
+    monkeypatch.setattr(crawler, "fetch_melon_song_candidates", spy)
+    assert crawler.process_song("가수", "밤편지", crawler.Registry(), song_id=None) == "done"
+    assert searched == [("가수", "밤편지")]
