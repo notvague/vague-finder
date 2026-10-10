@@ -120,6 +120,52 @@ function clearHeard() {
 window.clearHeard = clearHeard; // 콘솔에서 기록 초기화용
 
 /*
+ * 출생 연도 — "중학교 때 듣던" 같은 생애 단계 질의를 연도로 바꾸는 기준점. 서버가 birth_year 슬롯으로
+ * 한 번 묻고, 답은 여기 저장해 다음 검색부터 요청의 birth_year로 보낸다(같은 사람에게 다시 묻지 않는다).
+ * 서버는 저장하지 않는다. 지우려면 콘솔에서 clearBirthYear().
+ */
+const BIRTH_YEAR_KEY = "vf.birthYear";
+let sessionBirthYear = null; // 저장소를 못 쓰는 브라우저(사생활 창 등)에서도 이 탭 안에서는 다시 묻지 않게
+
+function loadBirthYear() {
+  try {
+    const raw = localStorage.getItem(BIRTH_YEAR_KEY);
+    const year = raw ? Number(raw) : NaN;
+    if (Number.isInteger(year) && year >= 1900 && year <= 2100) return year;
+  } catch {
+    /* 저장소를 못 읽으면 이 탭의 값으로 */
+  }
+  return sessionBirthYear;
+}
+
+function saveBirthYear(year) {
+  sessionBirthYear = year;
+  try {
+    localStorage.setItem(BIRTH_YEAR_KEY, String(year));
+  } catch {
+    /* 저장 못 해도 이 탭 안에서는 sessionBirthYear로 보낸다 */
+  }
+}
+
+function clearBirthYear() {
+  sessionBirthYear = null;
+  try {
+    localStorage.removeItem(BIRTH_YEAR_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+window.clearBirthYear = clearBirthYear;
+
+/* '1996~2000년생' → 1998(밴드 중앙). 서버 parse_birth_year와 같은 규칙 */
+function parseBirthYear(value) {
+  const years = String(value || "").match(/(?:19|20)\d{2}/g);
+  if (!years) return null;
+  const nums = years.slice(0, 2).map(Number);
+  return Math.round(nums.reduce((a, b) => a + b, 0) / nums.length);
+}
+
+/*
  * 맵은 두 종류다. 두 임베딩의 이웃 집합이 3.3%밖에 겹치지 않아
  * (소리가 닮은 곡과 정서가 닮은 곡은 서로 다른 집합) 한 장에 합치지 않고
  * 탭으로 나눈다. 곡 목록은 그대로 두고 좌표만 바꿔 끼운다.
@@ -681,6 +727,11 @@ function searchFailureText(err) {
  *   "이 중에는 없어요" → 질문이 있으면 보여주고, 없으면 거절만 해서 다시 검색
  *   답 선택 / "잘 모르겠어요" → 보여준 10곡을 거절 + 답변을 실어 다시 검색
  *
+ * 예외 — 출생 연도(birth_year) 질문은 곡이 아니라 사용자에 대한 것이라 거절을 기다리지 않고 **결과와 함께 바로** 묻는다.
+ * 답하면 저장하고 같은 질의를 **기존 분석 + birth_year로** 다시 검색한다(재분석 없음·거절 없음·턴 그대로 — 첫 결과부터
+ * 시기 창이 들어가야 한다). 실패하면 앞의 결과를 그대로 둔다. 답은 저장돼 있으니 다음 검색부터 반영된다.
+ * "잘 모르겠어요"·닫기는 이 검색에서는 다시 묻지 않고, 그 뒤 "이 중에는 없어요"를 누르면 건너뛴 답을 실어 서버가 다음 질문으로 넘어간다.
+ *
  * 질문을 더 할지는 서버가 정한다(clarify가 null이면 끝). 화면은 거절 한도만
  * 따로 확인한다 — 질문 없이 거절만 하는 경로가 있어서다.
  */
@@ -701,7 +752,7 @@ let panelMode = "idle"; // idle | asking | loading
 let searchSeq = 0;      // 늦게 도착한 옛 응답이 새 검색 결과를 덮지 않게
 
 function startConvo(query, data) {
-  convo = { query, answers: [] };
+  convo = { query, answers: [], birthYearSkipped: false };
   // 좁은 화면은 접힌 상태에서도 검색줄이 보인다. 거기서 검색했으면 펼쳐 준다
   setRailClosed(false);
   applyResponse(data);
@@ -717,7 +768,8 @@ function applyResponse(data) {
   convo.clarify = data.clarify || null;
   convo.explain = data.explain || null;
   explainOpen.clear(); // 새 결과다 — 앞 목록에서 펼쳐 둔 곡은 여기 없다
-  panelMode = "idle";
+  // 출생 연도 질문은 결과와 함께 바로 띄운다(위 '예외'). 건너뛴 뒤에는 거절 버튼만 보인다
+  panelMode = isBirthYearQuestion() && !convo.birthYearSkipped && convo.results.length > 0 ? "asking" : "idle";
   markHits(convo.results.map((r) => String(r.id)));
   renderPanel();
   resultList.scrollTop = 0; // 새 결과는 1위부터 보이게
@@ -725,6 +777,46 @@ function applyResponse(data) {
 
 function shownIds() {
   return convo ? convo.results.map((r) => String(r.id)) : [];
+}
+
+function isBirthYearQuestion() {
+  return Boolean(convo && convo.clarify && convo.clarify.slot === "birth_year");
+}
+
+/* 출생 연도 질문을 이 검색에서는 더 묻지 않는다 — "잘 모르겠어요"·닫기·Esc */
+function dismissBirthYearQuestion() {
+  convo.birthYearSkipped = true;
+  panelMode = "idle";
+  renderPanel();
+}
+
+/* 출생 연도 답 — 저장하고 같은 질의를 기존 분석 + birth_year로 다시 검색한다. 거절할 곡이 없으므로 턴을 쌓지 않고,
+   실패하면 앞의 결과·대화를 그대로 둔다(답은 저장됐으므로 다음 검색부터 반영된다) */
+async function answerBirthYear(value) {
+  const year = parseBirthYear(value);
+  if (!year) {
+    dismissBirthYearQuestion();
+    return;
+  }
+  saveBirthYear(year);
+  const seq = searchSeq;
+  const current = convo;
+  current.birthYearSkipped = true; // 성공하든 실패하든 이 검색에서 다시 묻지 않는다
+  panelMode = "loading";
+  renderPanel();
+  const body = { query: current.query, top_k: TOP_K, explain: true, birth_year: year, turn: current.turn };
+  if (current.analysis) body.prior_analysis = current.analysis; // 재분석(Gemini 호출) 없이 창만 넣어 다시 찾는다
+  try {
+    const data = await requestSearch(body);
+    if (seq !== searchSeq || convo !== current) return; // 그 사이 새 검색을 했다
+    showStatus("");
+    applyResponse(data);
+  } catch (err) {
+    if (seq !== searchSeq || convo !== current) return;
+    panelMode = "idle";
+    renderPanel(); // 앞의 결과를 그대로 보여준다
+    showStatus(`${searchFailureText(err)} 시기를 반영한 재검색은 실패해 앞의 결과를 그대로 둡니다.`, "warn");
+  }
 }
 
 function canRejectMore() {
@@ -833,16 +925,29 @@ function clarifyContent() {
     const bubble = makeEl("div", "bubble");
     bubble.append(makeEl("p", "bubbleq", q.question));
     const options = makeEl("div", "options");
+    const aboutUser = q.slot === "birth_year"; // 곡이 아니라 사용자에 대한 질문 — 후보 수가 없고, 거절 없이 바로 다시 검색한다
     for (const opt of q.options) {
-      const b = button("option", "", () => submitTurn({ slot: q.slot, value: opt.value, skipped: false }));
-      b.append(makeEl("span", "", opt.value), makeEl("span", "optioncount", `${opt.count}곡`));
+      const b = button("option", "", () =>
+        aboutUser ? answerBirthYear(opt.value) : submitTurn({ slot: q.slot, value: opt.value, skipped: false })
+      );
+      b.append(makeEl("span", "", opt.value));
+      if (!aboutUser) b.append(makeEl("span", "optioncount", `${opt.count}곡`));
       options.append(b);
     }
+    if (aboutUser) {
+      bubble.append(makeEl("p", "clarifynote", "답하면 그 시기의 곡을 먼저 보여드려요. 이 브라우저에만 저장돼요. 다음부터는 묻지 않아요."));
+    }
     options.append(
-      button("option skip", "잘 모르겠어요", () => submitTurn({ slot: q.slot, value: "", skipped: true }))
+      button("option skip", "잘 모르겠어요", () =>
+        aboutUser ? dismissBirthYearQuestion() : submitTurn({ slot: q.slot, value: "", skipped: true })
+      )
     );
     bubble.append(options);
-    const cancel = button("linkbtn", "결과로 돌아가기", () => {
+    const cancel = button("linkbtn", aboutUser ? "그냥 결과 볼게요" : "결과로 돌아가기", () => {
+      if (aboutUser) {
+        dismissBirthYearQuestion();
+        return;
+      }
       panelMode = "idle";
       renderPanel();
     });
@@ -1247,6 +1352,11 @@ try {
 
 function onReject() {
   if (!canRejectMore()) return;
+  if (isBirthYearQuestion()) {
+    // 출생 연도는 이미 결과와 함께 물었고 사용자가 건너뛰었다 — 건너뛴 답을 실어 서버가 다음(데이터) 질문으로 넘어가게 한다
+    submitTurn({ slot: "birth_year", value: "", skipped: true });
+    return;
+  }
   if (convo.clarify) {
     // 질문은 이미 응답에 실려 있다 — 모델을 다시 부르지 않고 바로 보여준다
     panelMode = "asking";
@@ -1262,6 +1372,11 @@ async function submitTurn(answer) {
   let answers = answer ? [...convo.answers, answer] : convo.answers;
   if (!convo.analysis) answers = []; // 서버는 prior_analysis 없는 answers를 거부한다
 
+  if (answer && answer.slot === "birth_year" && !answer.skipped) {
+    const year = parseBirthYear(answer.value);
+    if (year) saveBirthYear(year); // 다음 검색부터는 묻지 않고 요청에 실어 보낸다
+  }
+
   const body = {
     query: convo.query,
     top_k: TOP_K,
@@ -1272,6 +1387,7 @@ async function submitTurn(answer) {
     rejected_ids: rejected,
     turn: convo.turn,
     explain: true,
+    birth_year: loadBirthYear(),
   };
 
   const seq = searchSeq;
@@ -1305,20 +1421,25 @@ resultList.addEventListener("click", (e) => {
 });
 rail.addEventListener("click", (e) => e.stopPropagation());
 
-searchForm.addEventListener("submit", async (e) => {
+searchForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const q = searchInput.value.trim();
   if (!q) {
     clearSearch();
     return;
   }
+  runSearch(q);
+});
+
+/* 처음부터 검색한다(검색줄 제출). 출생 연도 답 뒤의 재검색은 answerBirthYear가 기존 분석으로 따로 한다 */
+async function runSearch(q) {
   const seq = ++searchSeq;
   convo = null;
   renderPanel();
   clearBtn.hidden = false;
   showStatus("검색 중…");
   try {
-    const data = await requestSearch({ query: q, top_k: TOP_K, explain: true });
+    const data = await requestSearch({ query: q, top_k: TOP_K, explain: true, birth_year: loadBirthYear() });
     if (seq !== searchSeq) return;
     showStatus("");
     startConvo(q, data);
@@ -1335,7 +1456,7 @@ searchForm.addEventListener("submit", async (e) => {
       "warn"
     );
   }
-});
+}
 
 clearBtn.addEventListener("click", clearSearch);
 document.addEventListener("keydown", (e) => {
@@ -1351,6 +1472,10 @@ document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
   if (panelMode === "asking") {
     // 질문 중 Esc는 검색 전체가 아니라 질문만 닫는다
+    if (isBirthYearQuestion()) {
+      dismissBirthYearQuestion();
+      return;
+    }
     panelMode = "idle";
     renderPanel();
     return;

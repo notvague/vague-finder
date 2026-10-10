@@ -64,6 +64,7 @@ from typing import Dict, Iterable, Optional, Sequence
 
 from src.backend.schemas.query import QueryAnalysis
 from src.backend.schemas.search import ClarifyAnswer, ClarifyOption, ClarifyQuestion, MatchingTrack
+from src.retrieval.query_analyzer import _extract_release_era, release_era_from_birth_year
 
 logger = logging.getLogger(__name__)
 
@@ -80,10 +81,75 @@ ANSWER_CONFIDENCE = 0.8
 # 그 경우는 성별이 skip 조건에 걸려 자연히 장르로 넘어간다.
 ALLOWED_SLOTS: Sequence[str] = ("vocal_gender", "genre")
 
+# 생애 단계 질의("중학교 때 듣던")의 기준점. 데이터 슬롯이 아니라 **사용자에 대한** 질문이라
+# ALLOWED_SLOTS 밖에 두고, 생애 단계가 있는데 발매 시기를 모를 때만 데이터 슬롯보다 먼저 묻는다.
+# 답은 후보 재정렬 보너스(answer_matches)가 아니라 분석의 release_era 창(출생 연도 + 단계 나이 범위,
+# query_analyzer.release_era_from_birth_year)으로 들어가 검색의 시기 soft boost가 된다 — NEXT_WORK §2-13.
+# 화면은 답을 브라우저에 저장해 두고 다음 검색부터 요청의 birth_year로 보내므로 같은 사람에게는 한 번만 묻는다.
+BIRTH_YEAR_SLOT = "birth_year"
+# 5년 밴드 — 10년 연령대는 단계 폭(중학교 3년)을 더하면 13년 창이 돼 가산 의미가 없다.
+BIRTH_YEAR_BAND_STARTS: Sequence[int] = (1971, 1976, 1981, 1986, 1991, 1996, 2001, 2006, 2011)
+
 QUESTION_TEXT: Dict[str, str] = {
     "vocal_gender": "부른 사람 목소리는 어느 쪽이었나요?",
     "genre": "어떤 장르에 가까웠나요?",
+    BIRTH_YEAR_SLOT: "그 시절을 연도로 바꾸려고요 — 몇 년생이세요?",
 }
+
+
+def birth_year_band(start: int) -> str:
+    return f"{start}~{start + 4}년생"
+
+
+def parse_birth_year(value: str) -> Optional[int]:
+    """'1996~2000년생' → 1998(밴드 중앙), '1998' / '1998년생' → 1998. 못 읽으면 None."""
+    years = [int(y) for y in re.findall(r"(?<!\d)(19\d{2}|20\d{2})(?!\d)", str(value or ""))]
+    if not years:
+        return None
+    year = round(sum(years[:2]) / len(years[:2]))
+    return year if 1900 <= year <= 2100 else None
+
+
+def with_birth_year(analysis: QueryAnalysis, birth_year: Optional[int]) -> QueryAnalysis:
+    """출생 연도로 생애 단계를 발매 시기 창으로 바꾼 분석 사본. 바꿀 게 없으면 원본 그대로.
+
+    생애 단계가 없거나 이미 발매 시기가 있으면(절대 연도·연대 답변) 손대지 않는다.
+    창은 가산(soft boost)에만 쓰인다 — 필터가 아니라 틀려도 정답이 후보에서 사라지지 않는다.
+    """
+    if birth_year is None or not analysis.has_life_stage or analysis.has_release_era:
+        return analysis
+    era = release_era_from_birth_year(analysis.life_stage.model_dump(), int(birth_year))
+    if era is None:
+        return analysis
+    merged = analysis.model_copy(deep=True)
+    merged.release_era.start_year = era["start_year"]
+    merged.release_era.end_year = era["end_year"]
+    merged.release_era.confidence = era["confidence"]
+    return merged
+
+
+def birth_year_from_answers(answers: Sequence[ClarifyAnswer]) -> Optional[int]:
+    for answer in answers or ():
+        if answer.slot == BIRTH_YEAR_SLOT and not answer.skipped:
+            year = parse_birth_year(answer.value)
+            if year is not None:
+                return year
+    return None
+
+
+def apply_birth_year_answers(analysis: QueryAnalysis, answers: Optional[Sequence[ClarifyAnswer]]) -> QueryAnalysis:
+    """라우터 입구용 — birth_year 답이 있으면 그 창을 넣은 분석으로 검색한다(없으면 원본)."""
+    return with_birth_year(analysis, birth_year_from_answers(answers or ()))
+
+
+def build_birth_year_question(analysis: QueryAnalysis) -> ClarifyQuestion:
+    stage_text = analysis.life_stage.text or "그때"
+    return ClarifyQuestion(
+        slot=BIRTH_YEAR_SLOT,
+        question=QUESTION_TEXT[BIRTH_YEAR_SLOT],
+        options=[ClarifyOption(value=birth_year_band(start), count=0) for start in BIRTH_YEAR_BAND_STARTS],
+        reason=f"'{stage_text}'가 몇 년도인지는 나이에 따라 달라서",
+    )
 
 # 남은 후보 중 이 비율 이상이 값을 갖고 있어야 묻는다. 메타데이터가 비어 있는
 # 후보가 많으면 답변을 받아도 대부분을 판별할 수 없다.
@@ -232,10 +298,14 @@ def pick_question(
     None을 돌려주는 것은 실패가 아니라 정상 동작이다. 호출부는 질문 없이
     Reject-only로 진행하면 된다.
     """
+    asked = set(asked_slots)
+    # 생애 단계 질의인데 시기를 모른다 — 데이터 슬롯보다 먼저 기준점을 묻는다. 프로필(요청의 birth_year)이
+    # 있으면 라우트가 이미 창을 넣어 has_release_era라 여기 오지 않는다.
+    # 남은 후보가 없어도 묻는다 — 출생 연도는 곡을 고르는 질문이 아니라 **지금 보이는 결과에도** 적용되는 정보다(리뷰).
+    if analysis.has_life_stage and not analysis.has_release_era and BIRTH_YEAR_SLOT not in asked:
+        return build_birth_year_question(analysis)
     if not candidates:
         return None
-
-    asked = set(asked_slots)
     for slot in ALLOWED_SLOTS:          # 우선순위 순서 — 앞엣것부터 본다
         if slot in asked:
             continue
@@ -310,6 +380,10 @@ def answer_matches(track: MatchingTrack, answer: ClarifyAnswer) -> bool:
         want = _parse_decade(value)
         actual = _parse_decade(track.release_date or "")
         return want is not None and want == actual
+
+    if answer.slot == BIRTH_YEAR_SLOT:
+        # 곡 혼자서는 판정할 수 없다(질의의 생애 단계가 필요). 보너스가 아니라 분석의 시기 창으로 반영된다.
+        return False
 
     return slot_value(track, answer.slot) == value
 
@@ -413,7 +487,7 @@ def answer_confirms_analysis(analysis: QueryAnalysis, answer: ClarifyAnswer) -> 
     if slot == "release_era" and _parse_decade(value) is None:
         return False
     if slot not in ("vocal_gender", "genre", "type", "artist_type", "release_era"):
-        return False  # merge_answer를 거치면 "알 수 없는 슬롯" 경고가 찍힌다 — 정보 없음으로 바로 처리
+        return False  # birth_year 포함 — 분석에 있던 값을 확인해 주는 답이 아니다. 모르는 슬롯은 정보 없음
     merged = merge_answer(analysis.model_copy(deep=True), answer)
     if slot == "vocal_gender":
         return bool(analysis.vocal_gender) and merged.vocal_gender == analysis.vocal_gender
@@ -443,9 +517,32 @@ def answers_for_reranker(
     """
     if reranker_input_order_mode().startswith("placebo"):
         return []  # 위약 대조: 순서만 바꾸고 답은 프롬프트에 넣지 않는다
+    answers = _birth_year_as_era_answers(analysis, answers)
     if reranker_corrections_mode() != "new_only":
         return list(answers)
     return [a for a in answers if not answer_confirms_analysis(analysis, a)]
+
+
+def birth_year_window_answer(analysis: QueryAnalysis, answers: Sequence[ClarifyAnswer] = ()) -> Optional[ClarifyAnswer]:
+    """출생 연도로 만든 발매 시기 창을 리랭커용 답 하나로. 창은 두 길로 들어온다 — 프로필·라우터 입구가 **분석에 이미 넣은** 창,
+    또는 answers의 birth_year 답. 둘 다 없으면 None. 질의 자체에 시기가 있는 분석("2000년대 중학교 때")은 프롬프트의 질의가
+    이미 말하므로 보내지 않는다."""
+    windowed = analysis if analysis.has_release_era else with_birth_year(analysis, birth_year_from_answers(answers))
+    if not windowed.has_life_stage or not windowed.has_release_era:
+        return None
+    if _extract_release_era(windowed.original_query) is not None:
+        return None
+    return ClarifyAnswer(slot="release_era", value=f"{windowed.release_era.start_year}~{windowed.release_era.end_year}년쯤")
+
+
+def _birth_year_as_era_answers(analysis: QueryAnalysis, answers: Sequence[ClarifyAnswer]) -> list[ClarifyAnswer]:
+    """리랭커 프롬프트에는 출생 연도가 아니라 그것으로 만든 발매 시기 창을 보낸다 — 출생 연도 자체는
+    곡과 무관한 사용자 정보라 프롬프트에 넣지 않는다. 분석에 창이 이미 들어 있어도(라우터 입구·프로필) 창은 간다(리뷰)."""
+    out = [a for a in answers if a.slot != BIRTH_YEAR_SLOT]
+    era = birth_year_window_answer(analysis, answers)
+    if era is not None and not any(a.slot == era.slot for a in out):
+        out.insert(0, era)
+    return out
 
 
 def reranker_input_order_mode() -> str:
@@ -559,6 +656,17 @@ def merge_answer(analysis: QueryAnalysis, answer: ClarifyAnswer) -> QueryAnalysi
         analysis.release_era.start_year = start
         analysis.release_era.end_year = start + 9
         analysis.release_era.confidence = ANSWER_CONFIDENCE
+
+    elif slot == BIRTH_YEAR_SLOT:
+        year = parse_birth_year(value)
+        if year is None:
+            logger.warning("[clarify] 출생 연도로 해석할 수 없는 값 무시: %r", value)
+            return analysis
+        merged = with_birth_year(analysis, year)
+        if merged is analysis:
+            logger.info("[clarify] 생애 단계가 없거나 시기가 이미 있어 출생 연도를 쓰지 않는다")
+            return analysis
+        analysis.release_era = merged.release_era
 
     else:
         # 모르는 슬롯을 조용히 무시하면 원인 추적이 어려워진다.

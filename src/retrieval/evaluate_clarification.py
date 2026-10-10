@@ -100,6 +100,9 @@ from src.retrieval.clarify import (
     answer_matches,
     canonical_artist_types,
     pick_question,
+    BIRTH_YEAR_SLOT,
+    BIRTH_YEAR_BAND_STARTS,
+    birth_year_band,
 )
 from src.backend.schemas.query import QueryAnalysis
 from src.backend.schemas.search import (
@@ -163,8 +166,41 @@ def _first(value) -> Optional[str]:
     return text or None
 
 
-def oracle_value(song: dict, slot: str) -> Optional[str]:
+def _release_year(song: dict) -> Optional[int]:
+    year = str(song.get("metadata", {}).get("release_date") or "")[:4]
+    return int(year) if year.isdigit() else None
+
+
+def _band_for(year: int) -> Optional[str]:
+    for start in BIRTH_YEAR_BAND_STARTS:
+        if start <= year <= start + 4:
+            return birth_year_band(start)
+    return None
+
+
+def oracle_birth_year(song: dict, analysis: Optional[QueryAnalysis]) -> Optional[str]:
+    """정답 곡 발매 연도에서 역산한 출생 연도 밴드 — 질의의 생애 단계 나이 범위 중앙을 뺀다.
+    생애 단계가 없으면(질의가 그런 표현을 안 썼으면) 물을 일도 없다 → None."""
+    year = _release_year(song)
+    if year is None or analysis is None or not analysis.has_life_stage:
+        return None
+    ls = analysis.life_stage
+    return _band_for(year - round((ls.age_from + ls.age_to) / 2))
+
+
+def noisy_birth_year(song: dict, analysis: Optional[QueryAnalysis]) -> Optional[str]:
+    """10년 어긋난 밴드 — 사용자가 아니라 다른 세대의 기억으로 답한 셈."""
+    truth = oracle_birth_year(song, analysis)
+    if truth is None:
+        return None
+    start = int(truth[:4])
+    return _band_for(start + 10) or _band_for(start - 10)
+
+
+def oracle_value(song: dict, slot: str, analysis: Optional[QueryAnalysis] = None) -> Optional[str]:
     """정답 곡의 실제 값. 사용자가 정확히 기억한 경우의 답변."""
+    if slot == BIRTH_YEAR_SLOT:
+        return oracle_birth_year(song, analysis)
     md = song.get("metadata", {})
     if slot == "vocal_gender":
         value = _first(md.get("vocal_gender"))
@@ -183,11 +219,13 @@ def oracle_value(song: dict, slot: str) -> Optional[str]:
     raise ValueError(f"알 수 없는 슬롯: {slot}")
 
 
-def noisy_value(song: dict, slot: str) -> Optional[str]:
+def noisy_value(song: dict, slot: str, analysis: Optional[QueryAnalysis] = None) -> Optional[str]:
     """틀린 답변. 사용자가 잘못 기억한 경우.
 
     무작위가 아니라 결정적으로 고른다 — 재측정 때 같은 값이 나와야 비교가 된다.
     """
+    if slot == BIRTH_YEAR_SLOT:
+        return noisy_birth_year(song, analysis)
     truth = oracle_value(song, slot)
     if truth is None:
         return None
@@ -380,7 +418,7 @@ async def evaluate_query(
         results["rule:skip"] = results["skip"]
         if song is not None:
             for mode, getter in (("oracle", oracle_value), ("noisy", noisy_value)):
-                value = getter(song, picked)
+                value = getter(song, picked, analysis)
                 if not value:
                     results[f"rule:{mode}"] = reject_only
                     continue
@@ -438,16 +476,24 @@ def choose_answer(
     mode: str,
     target: Optional[MatchingTrack],
     song: Optional[dict],
+    analysis: Optional[QueryAnalysis] = None,
 ) -> Tuple[ClarifyAnswer, str]:
     """화면에서 고를 수 있는 답만 고른다 — 선택지 하나 또는 "잘 모르겠어요".
 
     맞는지는 서비스의 판정기(`answer_matches`)로 본다. 정답 곡은 후보와 같은
     출처(벡터 DB 페이로드)에서 읽은 MatchingTrack이어야 한다.
+    birth_year 질문은 곡 혼자 판정할 수 없어(질의의 생애 단계가 필요) 정답 곡 발매 연도에서 역산한
+    밴드(`oracle_birth_year`)를 고른다.
     """
     skip = ClarifyAnswer(slot=question.slot, skipped=True)
     if mode == "skip" or target is None:
         return skip, "skip"
     values = [option.value for option in question.options]
+    if question.slot == BIRTH_YEAR_SLOT:
+        truth = oracle_birth_year(song, analysis) if song is not None else None
+        wrong = noisy_birth_year(song, analysis) if song is not None else None
+        pick = truth if mode == "oracle" else wrong
+        return (as_answer(question.slot, pick), mode) if pick in values else (skip, "skip")
     matching = [v for v in values if answer_matches(target, as_answer(question.slot, v))]
     if mode == "oracle":
         return (as_answer(question.slot, matching[0]), "oracle") if matching else (skip, "skip")
@@ -507,7 +553,7 @@ async def run_flow(
             break
         step = FlowStep(turn=turn + 1, result=current, answer_kind="none")
         if question is not None:
-            answer, kind = choose_answer(question, mode, target, song)
+            answer, kind = choose_answer(question, mode, target, song, analysis)
             answers = [*answers, answer]
             if answer.slot not in asked:
                 asked.append(answer.slot)

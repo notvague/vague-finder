@@ -40,6 +40,7 @@ from src.retrieval.clarify import (
     analysis_with_answers,
     answers_for_reranker,
     apply_answer_bonus,
+    apply_birth_year_answers,
     candidates_for_reranker,
     canonical_artist_types as _canonical_artist_types,
 )
@@ -888,6 +889,10 @@ class SearchRouter:
         5) top_k 반환
         """
         loop = asyncio.get_running_loop()
+        # 출생 연도 답(birth_year 슬롯)은 후보 재정렬 보너스가 아니라 분석의 발매 시기 창이다 — 생애 단계
+        # ("중학교 때")가 있고 시기를 모를 때만 바뀌고, 그 외에는 같은 객체라 기존 동작과 같다.
+        # 시기는 sparse 질의에 안 들어가므로 q200(장르 병합이 보조 경로를 흔든 문제)과 다르다.
+        analysis = apply_birth_year_answers(analysis, answers)
         candidates = candidate_k or max(top_k * 3, 30)
         candidates = min(100, max(top_k, candidates))
         excluded = set(exclude_ids) if exclude_ids else None
@@ -1608,7 +1613,8 @@ class SearchRouter:
             )
 
         # LLM 리랭커 프롬프트에 넘길 답변. 보너스·가사 exact 묶음은 위처럼 전부 쓴다.
-        reranker_answers = answers_for_reranker(analysis, answers) if answers else answers
+        # 답이 없어도 부른다 — 프로필 출생 연도로 분석에 들어온 시기 창은 answers가 아니라 분석에 있다(리뷰)
+        reranker_answers = answers_for_reranker(analysis, list(answers or [])) or None
         # 실험 (a)·위약: **답을 쓰는 리랭커의 입력에만** 보너스 전(또는 섞은) 순서를 넘긴다. 후보 목록·기록·폴백·
         # 리랭킹 생략·CE 경로는 보너스 순서(boosted) 그대로다 — 그러지 않으면 재질문 답이 통째로 사라진다(리뷰).
         rerank_order: List[Tuple[str, float]] = list(boosted)
