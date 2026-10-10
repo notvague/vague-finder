@@ -33,6 +33,10 @@ from src.retrieval import query_analyzer as qa
     ("중학교 때 유명했던 노래", "middle", "중학교 때"),             # 곡을 목적어로 받으면 시간 단서
     ("어릴 때 엄마가 들려주던 노래", "childhood", "어릴 때"),
     ("고등학교 때 교실에서 자주 들리던 발라드", "high", "고등학교 때"),
+    # 동사와 곡 명사 사이의 수식어, 다른 곡 명사 — 리뷰 참고
+    ("중학교 때 유명했던 아이돌 노래", "middle", "중학교 때"),
+    ("고등학교 때 들리던 그 노래", "high", "고등학교 때"),
+    ("어릴 때 엄마가 들려주던 자장가", "childhood", "어릴 때"),
 ])
 def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     found = qa._extract_life_stage(query)
@@ -57,6 +61,8 @@ def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     # 목적어 없는 유명·들려·들리는 가사 내용 — 리뷰 3차
     "중학교 때 유명했던 일진 얘기하는 가사",
     "어릴 때 엄마가 들려주던 옛날 이야기 같은 가사",
+    "중학교 때 유명했던 가요제 얘기하는 가사",          # '가요제'는 곡이 아니다
+    "고등학교 때 좋아하던 노래방 친구 얘기하는 가사",   # '노래방'도
 ])
 def test_lyric_content_and_song_events_are_not_life_stage(query):
     assert qa._extract_life_stage(query) is None
