@@ -30,6 +30,9 @@ from src.retrieval import query_analyzer as qa
     ("초등학교 다닐 때 듣던 발라드", "elementary", "초등학교 다닐 때"),
     ("고등학교 다닐 때 듣던 발라드", "high", "고등학교 다닐 때"),
     ("중학교 다녔을 때 유행하던 걸그룹 노래", "middle", "중학교 다녔을 때"),
+    ("중학교 때 유명했던 노래", "middle", "중학교 때"),             # 곡을 목적어로 받으면 시간 단서
+    ("어릴 때 엄마가 들려주던 노래", "childhood", "어릴 때"),
+    ("고등학교 때 교실에서 자주 들리던 발라드", "high", "고등학교 때"),
 ])
 def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     found = qa._extract_life_stage(query)
@@ -51,6 +54,9 @@ def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     "어릴 때 엄마가 자주 아팠다는 가사 나오는 노래",
     "중학교 때 좋아하던 사람 얘기하는 가사",
     "고등학교 때 많이 싸웠던 친구한테 사과하는 내용의 노래",
+    # 목적어 없는 유명·들려·들리는 가사 내용 — 리뷰 3차
+    "중학교 때 유명했던 일진 얘기하는 가사",
+    "어릴 때 엄마가 들려주던 옛날 이야기 같은 가사",
 ])
 def test_lyric_content_and_song_events_are_not_life_stage(query):
     assert qa._extract_life_stage(query) is None
@@ -136,6 +142,16 @@ def test_detached_phrase_without_a_listening_verb_is_lyric_content_and_stays():
     assert a.life_stage.stage == "middle" and a.life_stage.spans == [[0, 5]]
     assert a.search_text == "듣던 노래인데 어릴 때 집이 어려웠다는 가사가 나와"
     out = qa._apply_metadata_safeguards(q, _model_raw(korean_tags=["발라드", "어린시절", "중학교", "추억", "가난"]))
+    assert out["korean_tags"] == ["발라드", "어린시절", "가난"]
+
+
+@pytest.mark.parametrize("query", [
+    '중학교 때 듣던 노래인데 "어릴 때 집이 어려웠다"는 가사가 나와',   # 인용 안의 표현도 내용 단계
+    "어릴 때 듣던 노래인데 어린 시절 집이 어려웠다는 가사가 나와",      # 청취 단계와 내용 단계가 같아도 내용 태그는 남긴다
+])
+def test_content_tags_survive_when_the_stage_is_also_quoted_or_equals_the_listening_stage(query):
+    out = qa._apply_metadata_safeguards(query, _model_raw(korean_tags=["발라드", "어린시절", "추억", "가난"]))
+    assert out["life_stage"]["stage"] in ("middle", "childhood")
     assert out["korean_tags"] == ["발라드", "어린시절", "가난"]
 
 

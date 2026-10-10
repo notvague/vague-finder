@@ -1147,10 +1147,12 @@ _KOREAN_TENS = {"스무": 20, "스물": 20, "서른": 30, "마흔": 40}
 # '좋아하던 노래/곡'처럼 곡을 목적어로 받을 때만 인정한다.
 # 활용형은 어간으로 받는다(리뷰: '나오던'·'좋아했던'이 빠져 있었다) — 듣/들었/들으/들려/들리, 나오/나왔/나온, 틀어/틀었/틀던, 불렀/부르/불러,
 # 흘러나오, 유행/유명, 뜬/떴/히트, 좋아하/좋아했 + 노래·곡·음악, 즐겨·따라·돌려 + 동사, 인기 있/많, 빠져 있/살.
+# '유명·들려·들리·흥얼'은 가사 내용에도 흔해("유명했던 일진 얘기", "엄마가 들려주던 옛날 이야기") 곡을 목적어로 받을 때만 인정한다(리뷰).
+_SONG_OBJ = r"\S*\s*(?:노래|곡|음악|발라드|댄스곡|가요)"
 _LIFE_STAGE_VERB_RE = re.compile(
-    r"(?:듣|들었|들으|들려|들리|흘러\s*나|유행|유명|나오(?:던|곤)|나왔|나온|떴|뜬|히트|틀어|틀었|틀던|불렀|부르|불러|흥얼"
+    r"(?:듣|들었|들으|흘러\s*나|유행|나오(?:던|곤)|나왔|나온|떴|뜬|히트|틀어|틀었|틀던|불렀|부르|불러"
     r"|즐겨\s*(?:듣|들|부르)|따라\s*(?:부르|불렀|불러)|돌려\s*(?:듣|들)|인기\s*(?:있|많|였|끌|좋)"
-    r"|좋아(?:하|했)\S*\s*(?:노래|곡|음악)|빠져\s*(?:있|살|지냈|듣))"
+    r"|(?:좋아(?:하|했)|유명(?:하|했)|들려\s*주|들리|흥얼)" + _SONG_OBJ + r"|빠져\s*(?:있|살|지냈|듣))"
 )
 _LIFE_STAGE_VERB_WINDOW = 20
 _LIFE_STAGE_ADJACENT_GAP = 3   # 대표(또는 동사가 붙은 표현) 끝에서 이만큼 안에 시작하면 붙어 있는 것으로 본다
@@ -1178,8 +1180,11 @@ _LIFE_STAGE_TAG_NOSTALGIA = {"childhood": r"어린시절|유년|유년시절", "
 
 
 def _life_stage_tag_re(stages: list[str], content_stages: list[str] = ()) -> "re.Pattern[str]":
-    words = [_LIFE_STAGE_TAG_GENERIC] + [_LIFE_STAGE_TAG_BY_STAGE.get(s, "") for s in stages]
-    words += [w for s, w in _LIFE_STAGE_TAG_NOSTALGIA.items() if s not in content_stages]
+    """뺄 태그: 일반 회상어 + 청취 단계의 말 + 습관적 회상어. 단 **내용으로도 쓰인 단계**(떨어진 표현·따옴표 인용)의 말은
+    청취 단계와 겹치더라도 남긴다 — "어릴 때 듣던 노래인데 어린 시절 집이 어려웠다는 가사"의 '어린시절'(리뷰)."""
+    content = set(content_stages)
+    words = [_LIFE_STAGE_TAG_GENERIC] + [_LIFE_STAGE_TAG_BY_STAGE.get(s, "") for s in stages if s not in content]
+    words += [w for s, w in _LIFE_STAGE_TAG_NOSTALGIA.items() if s not in content]
     return re.compile(r"^(?:" + "|".join(w for w in words if w) + r")(?:시절|때|추억)?$")
 # 따옴표 안은 가사 인용이다 — 그 안의 "중학교 때"는 시간 단서도 아니고 검색문에서 지울 구간도 아니다(리뷰).
 _QUOTE_RE = re.compile(r"[\"“”'‘’「」『』][^\"“”'‘’「」『』]{1,80}[\"“”'‘’「」『』]")
@@ -1220,11 +1225,14 @@ def _extract_life_stage(query: str) -> dict | None:
     """
     quoted = _quoted_ranges(query)
     found: list[dict] = []
+    quoted_stages: set[str] = set()   # 따옴표 안(가사 인용)의 표현 — 시간 단서는 아니지만 **내용**이라 태그 보존 판단에는 쓴다(리뷰)
     for stage, pattern, age_from, age_to, confidence in _LIFE_STAGE_CORE:
         for m in re.finditer(pattern, query):
-            if not _inside(m.start(), quoted):
-                found.append({"stage": stage, "text": m.group(0), "age_from": age_from, "age_to": age_to,
-                              "confidence": confidence, "_start": m.start(), "_end": m.end()})
+            if _inside(m.start(), quoted):
+                quoted_stages.add(stage)
+                continue
+            found.append({"stage": stage, "text": m.group(0), "age_from": age_from, "age_to": age_to,
+                          "confidence": confidence, "_start": m.start(), "_end": m.end()})
     for m in _AGE_RE.finditer(query):
         age = _parse_age(m.group("age"))
         if age is not None and 5 <= age <= 59 and not _inside(m.start(), quoted):
@@ -1253,7 +1261,7 @@ def _extract_life_stage(query: str) -> dict | None:
     return {"stage": head["stage"], "text": head["text"], "age_from": head["age_from"], "age_to": head["age_to"],
             "confidence": head["confidence"], "spans": spans,
             "_stages": sorted({d["stage"] for d in keep}),
-            "_content_stages": sorted({d["stage"] for d in found if d not in keep})}
+            "_content_stages": sorted({d["stage"] for d in found if d not in keep} | quoted_stages)}
 
 
 def release_era_from_birth_year(life_stage: dict, birth_year: int, pad_years: int = 1) -> dict | None:
