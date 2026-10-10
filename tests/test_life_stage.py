@@ -53,6 +53,23 @@ from src.retrieval import query_analyzer as qa
     ("중학교 때 노래였어, 여자 솔로", "middle", "중학교 때"),
     ("고등학교 때 노래 중에 제일 슬픈 거", "high", "고등학교 때"),
     ("고등학교 때 그 노래", "high", "고등학교 때"),
+    # 동사가 무엇을 꾸미는지로 판정 — 리뷰 8차(0b921cf). 내용 표지가 동사 앞 목적어면 막지 않는다
+    ("중학교 때 가사를 외우면서 듣던 노래", "middle", "중학교 때"),
+    ("어릴 때 즐겨 듣던 노래", "childhood", "어릴 때"),                     # 즐겨 먹던(비감지)과 짝
+    ("중학교 때 돌려 듣던 시디", "middle", "중학교 때"),                     # 돌려 받은 편지(비감지)와 짝
+    ("어릴 때 엄마가 불러주던 노래", "childhood", "어릴 때"),                # 부르던 내 이름(비감지)과 짝
+    ("어릴 때 아빠가 차에서 틀어주던 올드팝", "childhood", "어릴 때"),      # 틀어주던 만화(비감지)와 짝
+    ("중학교 때 많이 들었는데 제목이 기억 안 나", "middle", "중학교 때"),   # 종결·연결형은 청취가 서술
+    ("중학교 때 많이 들었던 것 같아", "middle", "중학교 때"),               # 대명사 머리
+    ("중학교 때 듣던 건데 여자 솔로", "middle", "중학교 때"),
+    ("중학교 때 듣던 노래 제목이 기억 안 나", "middle", "중학교 때"),
+    ("중학교 때 듣던 노래 가사에 비 얘기가 나와", "middle", "중학교 때"),   # 곡 명사가 내용 표지보다 먼저
+    ("중학교 때 자주 듣던 가수인데 이름이 기억 안 나", "middle", "중학교 때"),
+    ("중학교 때 듣던 추억을 회상하는 가사의 노래", "middle", "중학교 때"),  # '듣던 추억'은 청취의 기억
+    ("중학교 때 좋아하던 애가 부르던 노래", "middle", "중학교 때"),
+    ("7살 때 듣던 노래", "age", "7살 때"),                                  # 숫자 나이 5~9살도 받는다(리뷰 P3)
+    ("일곱 살 때 듣던 노래", "age", "일곱 살 때"),
+    ("I don't know 어릴 때 듣던 노래 I can't remember", "childhood", "어릴 때"),   # 어깨점은 따옴표가 아니다
 ])
 def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     found = qa._extract_life_stage(query)
@@ -93,6 +110,23 @@ def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     "어릴 때 노래 대회 나갔던 이야기",
     "어릴 때 살던 동네에 다시 가요 라는 가사",
     "중학교 때 좋아하던 친구랑 매일 같이 놀러 가던 노래방 얘기하는 가사",
+    # 동사가 꾸미는 머리 명사가 곡이 아니면 애매 — 잡지 않는다(검색문에서 지우지 않는다). 리뷰 8차(0b921cf), 음악 용법과 짝으로 검증
+    "가사에 어릴 때 라디오를 듣던 엄마 이야기가 나와",     # 표현 앞 '가사에' + 머리 '이야기'
+    "가사가 어릴 때 듣던 노래 같은 느낌이야",
+    "어릴 때 즐겨 먹던 음식 얘기하는 가사",               # ↔ 즐겨 듣던 노래
+    "중학교 때 돌려 받은 편지 얘기하는 가사",             # ↔ 돌려 듣던 시디
+    "어릴 때 엄마가 부르던 내 이름 얘기하는 가사",        # ↔ 불러주던 노래
+    "어릴 때 유행했던 놀이 얘기하는 가사",                # ↔ 유행했던 동요
+    "어릴 때 유행했던 놀이",
+    "어릴 때 틀어주던 만화 얘기",                         # ↔ 틀어주던 올드팝
+    "어릴 때 틀어주던 게임 얘기",                         # '게임'은 대명사 '게'가 아니다
+    "어릴 때 할머니한테 듣던 옛날 이야기 같은 가사",
+    "어릴 때 듣던 라디오 사연 얘기하는 가사",             # 곡 명사 아닌 머리(라디오) → 애매
+    "어릴 때 얘기 나오는 노래",                           # '얘기'가 주어인 나오는
+    "어릴 때 집에서 나온 뒤 얘기하는 가사",
+    "중학교 때 진짜 좋아했어",                            # 좋아하다는 곡 목적어가 있어야
+    "어릴 때 좋아하던 걸 잃어버린 얘기 가사",
+    "중학교 때 좋아하던 기억 얘기하는 가사",              # '좋아하던 기억'은 청취의 기억이 아니다
 ])
 def test_lyric_content_and_song_events_are_not_life_stage(query):
     assert qa._extract_life_stage(query) is None
@@ -189,6 +223,30 @@ def test_content_tags_survive_when_the_stage_is_also_quoted_or_equals_the_listen
     out = qa._apply_metadata_safeguards(query, _model_raw(korean_tags=["발라드", "어린시절", "추억", "가난"]))
     assert out["life_stage"]["stage"] in ("middle", "childhood")
     assert out["korean_tags"] == ["발라드", "어린시절", "가난"]
+
+
+_LONG_LYRIC = ("어릴 때 우리 집 앞마당에 피어 있던 꽃들이 하나둘 시들어 가고 엄마는 매일 밤 라디오를 틀어 놓고 "
+               "조용히 울었지 나는 그 소리를 들으며 잠이 들곤 했어")
+
+
+@pytest.mark.parametrize("open_q, close_q", [('"', '"'), ("“", "”"), ("'", "'"), ("「", "」")])
+def test_long_quoted_lyric_is_protected_whatever_its_length(open_q, close_q):
+    """인용은 짝이 맞는 닫는 따옴표까지다 — 80자 제한 때문에 109자 인용 안의 '어릴 때'가 지워졌다(리뷰)."""
+    q = f"어릴 때 듣던 노래인데 가사가 {open_q}{_LONG_LYRIC}{close_q}로 시작해"
+    assert len(_LONG_LYRIC) > 80
+    a = qa._fallback(q)
+    assert a.life_stage.stage == "childhood" and a.life_stage.spans == [[0, 4]]
+    assert a.search_text == f"듣던 노래인데 가사가 {open_q}{_LONG_LYRIC}{close_q}로 시작해"
+
+
+def test_tags_written_in_the_query_as_content_are_kept():
+    """'중학교 때 듣던 추억을 회상하는 가사' — 추억·회상은 질의에 내용으로 적혀 있다. 모델이 시간 단서에서 지어낸 회상어만 뺀다(리뷰)."""
+    tags = ["추억", "회상", "발라드", "중학교", "어린시절"]
+    out = qa._apply_metadata_safeguards("중학교 때 듣던 추억을 회상하는 가사의 노래", _model_raw(korean_tags=tags))
+    assert out["life_stage"]["stage"] == "middle"
+    assert out["korean_tags"] == ["추억", "회상", "발라드"]
+    out = qa._apply_metadata_safeguards("중학교 때 많이 듣던 남자 발라드", _model_raw(korean_tags=tags))
+    assert out["korean_tags"] == ["발라드"]
 
 
 def test_adjacent_phrase_is_still_removed_with_the_representative():
