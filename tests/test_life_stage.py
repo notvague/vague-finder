@@ -22,6 +22,8 @@ from src.retrieval import query_analyzer as qa
     ("학창 시절에 맨날 듣던 노래", "school", "학창 시절"),
     ("스무 살 때 한창 듣던 노래", "age", "스무 살 때"),
     ("25살 때 자주 들었던 힙합", "age", "25살 때"),
+    ("중학교 때 좋아하던 노래인데 여자 솔로였어", "middle", "중학교 때"),   # 곡을 목적어로 받는 '좋아하던'은 시간 단서
+    ("고등학교 때 반에서 인기 있던 댄스곡", "high", "고등학교 때"),
 ])
 def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     found = qa._extract_life_stage(query)
@@ -39,6 +41,10 @@ def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     "대학가요제에서 대상 받고 광고에도 나왔던 노래 있잖아. 잔잔한 발라드였던 것 같아, 2005년쯤",
     "몇 년 지나서 대학 축제 영상 때문에 다시 떴어",
     "비 오는 날 듣기 좋은 재즈",
+    # 부사·'좋아하다'만으로는 시간 단서가 아니다 — 리뷰(#35)
+    "어릴 때 엄마가 자주 아팠다는 가사 나오는 노래",
+    "중학교 때 좋아하던 사람 얘기하는 가사",
+    "고등학교 때 많이 싸웠던 친구한테 사과하는 내용의 노래",
 ])
 def test_lyric_content_and_song_events_are_not_life_stage(query):
     assert qa._extract_life_stage(query) is None
@@ -75,6 +81,38 @@ def test_without_life_stage_tags_and_model_era_are_kept():
     assert out["life_stage"]["stage"] is None
     assert "어린시절" in out["korean_tags"]
     assert out["release_era"]["start_year"] == 2010
+
+
+def test_tags_naming_song_facts_survive_even_if_they_contain_a_life_stage_word():
+    """'대학가요제'는 곡 정보다 — '대학' 부분 일치로 지우면 안 된다(리뷰)."""
+    out = qa._apply_metadata_safeguards("중학교 때 듣던 대학가요제 대상 받은 노래",
+                                        _model_raw(korean_tags=["대학가요제", "대상", "중학교", "추억", "학창시절", "수학여행송"]))
+    assert out["life_stage"]["stage"] == "middle"
+    assert out["korean_tags"] == ["대학가요제", "대상", "수학여행송"]
+
+
+def test_every_life_stage_phrase_outside_quotes_is_removed_from_search_text():
+    """대표는 '고3 때'지만 '야자 끝나고'도 시간 표현이라 검색문에서 빠진다(리뷰)."""
+    analysis = qa._fallback("고3 때 야자 끝나고 듣던 노래")
+    assert analysis.life_stage.text == "고3 때" and len(analysis.life_stage.spans) == 2
+    assert analysis.search_text == "듣던 노래"
+
+
+def test_quoted_lyric_with_the_same_phrase_is_kept():
+    """따옴표 안의 '중학교 때'는 가사다 — 위치로 지우므로 남는다(리뷰)."""
+    q = '중학교 때 듣던 노래인데 가사에 "중학교 때 널 만났지"가 나와'
+    analysis = qa._fallback(q)
+    assert analysis.life_stage.stage == "middle" and analysis.life_stage.spans == [[0, 5]]
+    assert analysis.search_text == '듣던 노래인데 가사에 "중학교 때 널 만났지"가 나와'
+    # 따옴표 안에만 있으면 시간 단서가 아니다
+    assert qa._extract_life_stage('가사에 "중학교 때 널 만났지"가 나오는 노래') is None
+
+
+def test_context_words_next_to_the_phrase_stay_in_search_text():
+    """'버스에서 틀었던'은 장면 단서다 — 시간 표현만 빼고 조사가 매달린 채 남지 않게 한다."""
+    analysis = qa._fallback("고등학교 수학여행 버스에서 틀었던 신나는 노래, 남자 그룹")
+    assert analysis.life_stage.stage == "high"
+    assert analysis.search_text == "버스에서 틀었던 신나는 노래, 남자 그룹"
 
 
 def test_search_text_strips_the_phrase_but_original_query_stays():

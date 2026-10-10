@@ -110,7 +110,11 @@ class LifeStageClue(BaseModel):
     stage: Optional[
         Literal["childhood", "elementary", "middle", "high", "school", "freshman", "college", "military", "age", "first_job"]
     ] = Field(default=None, description="생애 단계")
-    text: str = Field(default="", description="질의에서 잡힌 표현 그대로(검색 문장에서 뺄 구간)")
+    text: str = Field(default="", description="대표 표현 그대로(시간 단서로 판정된 첫 구간)")
+    spans: List[List[int]] = Field(
+        default_factory=list,
+        description="original_query에서 뺄 [시작, 끝) 구간들 — 따옴표 밖의 생애 단계 표현 전부. 위치로 지우므로 가사에 같은 말이 있어도 가사는 남는다",
+    )
     age_from: Optional[int] = Field(default=None, ge=0, le=100, description="그 단계의 나이 범위 시작(만 나이 기준, 대략)")
     age_to: Optional[int] = Field(default=None, ge=0, le=100)
     confidence: float = Field(default=0.0, ge=0.0, le=1.0, description="단계 폭이 좁을수록 높다")
@@ -341,9 +345,16 @@ class QueryAnalysis(BaseModel):
         original_query는 그대로 둔다 — 설명·캐시 대조·리랭커 프롬프트는 사용자 원문을 쓴다.
         """
         text = self.original_query
-        if self.has_life_stage and self.life_stage.text:
-            text = text.replace(self.life_stage.text, " ")
-            text = re.sub(r"\s{2,}", " ", text).strip(" ,.")
+        if not self.has_life_stage:
+            return text
+        # 위치로 지운다 — str.replace는 따옴표 속 가사("중학교 때 널 만났지")까지 지운다(리뷰).
+        spans = sorted((s, e) for s, e in self.life_stage.spans if 0 <= s < e <= len(text))
+        if not spans and self.life_stage.text:
+            spans = [(text.find(self.life_stage.text), text.find(self.life_stage.text) + len(self.life_stage.text))] \
+                if self.life_stage.text in text else []
+        for s, e in reversed(spans):
+            text = text[:s] + " " + text[e:]
+        text = re.sub(r"\s{2,}", " ", text).strip(" ,.")
         return text or self.original_query
 
     @model_validator(mode="after")

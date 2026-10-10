@@ -1,0 +1,105 @@
+{
+  "created_at": "2026-10-10T18:18:59+0900",
+  "args": {
+    "input": "experiments/reranking/eval_queries_v06.csv",
+    "output_dir": "experiments/reranking/results_v36_life_stage_prompt/ctrl_test",
+    "split": "test",
+    "top_k": 10,
+    "candidate_k": 30,
+    "path_k": null,
+    "query_ids": "",
+    "exclude_query_ids": "",
+    "analysis_cache": "experiments/reranking/results_v36_life_stage_prompt/analysis_cache_v06_test_ctrl.json",
+    "allow_fallback_analysis": false,
+    "explain": true
+  },
+  "analysis": {
+    "mode": "cache",
+    "path": "experiments/reranking/results_v36_life_stage_prompt/analysis_cache_v06_test_ctrl.json",
+    "meta": {
+      "created_at": "2026-10-10T18:02:33+0900",
+      "query_source": "experiments/reranking/eval_queries_v06.csv",
+      "split": "test",
+      "analyzer": {
+        "model_name": "gemini-3.1-flash-lite",
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "reference_year": 2026,
+        "reference_year_env": "2026",
+        "prompt_sha": "08f0b3bc4c37",
+        "postprocess_sha": "0d8468f0b6ea"
+      }
+    },
+    "fallback_query_ids": [],
+    "fingerprint_drift": [
+      "postprocess_sha"
+    ]
+  },
+  "corpus": {
+    "vector_backend": "qdrant",
+    "namespace": "dev",
+    "text_index": "vaguefinder-text-1024-koe5",
+    "image_index": "vaguefinder-image-768",
+    "audio_index": "vaguefinder-audio-512",
+    "qdrant_path": "artifacts/qdrant",
+    "point_count": 3010
+  },
+  "bm25": {
+    "path": "artifacts/bm25_params.json",
+    "exists": true,
+    "sha256_12": "8f0038a47cbc",
+    "bytes": 580148
+  },
+  "lyrics_source": {
+    "db": "vaguefinder",
+    "collection": "songs",
+    "document_count": 3010,
+    "full_lyrics_songs": 3010,
+    "full_lyrics_total_chars": 2511346,
+    "content_sha256_16": "6997069a68d3da63"
+  },
+  "reranker": {
+    "backend": "gemini_listwise",
+    "requested_backend": "gemini_listwise",
+    "class": "GeminiListwiseReranker",
+    "enabled": true,
+    "config": {
+      "model_name": "gemini-3.1-flash-lite",
+      "enabled": true,
+      "rerank_weight": 0.85,
+      "spread_ref": 0.0,
+      "max_candidates": 30,
+      "max_retries": 3,
+      "passes": 1,
+      "low_confidence_threshold": 0.55,
+      "use_search_grounding": false,
+      "search_evidence_chars": 7000,
+      "rare_fact_verification": false,
+      "rare_fact_batch_size": 15,
+      "rare_fact_min_support": 0.86,
+      "rare_fact_min_confidence": 0.78,
+      "rare_fact_min_margin": 0.06,
+      "rare_fact_insert_rank": 9,
+      "request_timeout_seconds": 20.0,
+      "time_budget_seconds": 30.0,
+      "pass_reserve_seconds": 10.0
+    }
+  },
+  "gemini": {
+    "backend": "api_key",
+    "setting": "api_key"
+  },
+  "ranking_switches": {
+    "boost_scale": 1.0,
+    "attr_boost_scale": 1.0,
+    "gender_mismatch_scale": 0.0,
+    "lyric_protect_phonetic_top1": false,
+    "lyric_protect_min_confidence": 0.8,
+    "lyric_boost_scale": 1.0,
+    "reranker_min_spread": 0.0,
+    "gemini_rerank_corrections": "all",
+    "gemini_rerank_type_slot_label": "artist type (solo/group/duo/band)",
+    "clarify_rerank_input_order": "bonus"
+  },
+  "search_reference_year_env": "2026"
+}
