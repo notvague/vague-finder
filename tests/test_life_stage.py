@@ -70,6 +70,46 @@ from src.retrieval import query_analyzer as qa
     ("7살 때 듣던 노래", "age", "7살 때"),                                  # 숫자 나이 5~9살도 받는다(리뷰 P3)
     ("일곱 살 때 듣던 노래", "age", "일곱 살 때"),
     ("I don't know 어릴 때 듣던 노래 I can't remember", "childhood", "어릴 때"),   # 어깨점은 따옴표가 아니다
+    # 11차 — 10차에서 넣은 검사가 넓어 놓치던 흔한 문장. 조건을 좁혀서 되살린다
+    # ① 'X가 나오는'은 부사(많이)·곡 명사 주어(노래가·신곡이·앨범이)에는 적용하지 않는다
+    ("중학교 때 길거리에서 많이 나오던 노래", "middle", "중학교 때"),
+    ("중학교 때 라디오에 많이 나왔던 노래", "middle", "중학교 때"),
+    ("중학교 때 이 노래가 나왔는데 진짜 좋아했어", "middle", "중학교 때"),
+    ("중학교 때 신곡이 나왔는데 맨날 들었어", "middle", "중학교 때"),
+    ("고등학교 때 그 앨범이 나왔어", "high", "고등학교 때"),
+    # ② 보조 용언 검사는 -어·-지·-다 뒤에서만, 다음 어절이 보조 용언 활용형일 때만(보컬·주변·말이야·못 찾겠어는 아니다)
+    ("중학교 때 많이 들었는데 못 찾겠어", "middle", "중학교 때"),
+    ("중학교 때 많이 들었는데 보컬이 여자였어", "middle", "중학교 때"),
+    ("중학교 때 엄청 유행했는데 주변에 아는 사람이 없어", "middle", "중학교 때"),
+    ("중학교 때 많이 들었는데 말이야", "middle", "중학교 때"),
+    ("어릴 때 엄마가 틀어 주던 노래", "childhood", "어릴 때"),
+    # ④ 절 경계로 보는 내용 표지는 계사·인용 꼴(가사인데·얘긴데·이야기야)뿐 — 가사가·가사도·가사는 뒤의 청취 동사는 본다
+    ("중학교 때 가사가 좋아서 계속 듣던 노래", "middle", "중학교 때"),
+    ("중학교 때 가사도 모르고 따라 부르던 노래", "middle", "중학교 때"),
+    ("중학교 때 가사는 모르고 멜로디만 흥얼거리던 노래", "middle", "중학교 때"),
+    # 깨지면 안 되는 문장(11차 확인)
+    ("열일곱 살 때 듣던 노래", "age", "열일곱 살 때"),
+    ("열 살 때 듣던 노래", "age", "열 살 때"),
+    ("고등학교 때 유행했던", "high", "고등학교 때"),
+    ("어릴 때 TV에서 자주 나오던 노래", "childhood", "어릴 때"),
+    ("중학교 때 엄청 유행했다. 제목이 뭐였지", "middle", "중학교 때"),
+    # 12차 — 곡 명사 뒤 '한'은 한다·한단·한대·한답일 때만 '하다'(한번·한때·한국·한참·한 곡은 아니다)
+    ("중학교 때 듣던 노래 한번만 다시 듣고 싶다", "middle", "중학교 때"),
+    ("어릴 때 듣던 노래 한때 유명했던", "childhood", "어릴 때"),
+    ("중학교 때 좋아하던 노래 한국 여자 가수", "middle", "중학교 때"),
+    ("중학교 때 유행했던 노래 한참 찾았어", "middle", "중학교 때"),
+    ("중학교 때 노래 한 곡만 계속 들었어", "middle", "중학교 때"),
+    # 12차 — 곡 명사 주어 + 나오-계열은 '내용 아님'까지만, 청취 여부는 종결형·머리 명사가 정한다
+    ("중학교 때 이 노래가 나왔는데 진짜 좋아했어", "middle", "중학교 때"),
+    ("중학교 때 신곡이 나왔는데 맨날 들었어", "middle", "중학교 때"),
+    ("고등학교 때 그 앨범이 나왔어", "high", "고등학교 때"),
+    ("중학교 때 길거리에서 많이 나오던 노래", "middle", "중학교 때"),
+    # 13차 — 들은·들어본·들어봤·들어보 어간('들어' 통째는 들어가다·들어오다와 겹쳐 넣지 않는다)
+    ("중학교 때 많이 들은 노래", "middle", "중학교 때"),
+    ("중학교 때 처음 들은 노래", "middle", "중학교 때"),
+    ("어릴 때 들은 노래인데 제목이 기억 안 나", "childhood", "어릴 때"),
+    ("중학교 때 많이 들어본 노래", "middle", "중학교 때"),
+    ("중학교 때 들어봤던 노래", "middle", "중학교 때"),
 ])
 def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     found = qa._extract_life_stage(query)
@@ -127,6 +167,43 @@ def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     "중학교 때 진짜 좋아했어",                            # 좋아하다는 곡 목적어가 있어야
     "어릴 때 좋아하던 걸 잃어버린 얘기 가사",
     "중학교 때 좋아하던 기억 얘기하는 가사",              # '좋아하던 기억'은 청취의 기억이 아니다
+    # 11차 — ①~④를 좁혀도 계속 안 잡혀야 하는 짝
+    "어릴 때 엄마가 부르던 내 이름이 나오는 노래",
+    "어릴 때 유행했던 놀이가 나오는 노래",
+    "어릴 때 듣던 라디오가 나오는 노래",
+    "어릴 때 엄마가 나오던 꿈 얘기 가사",
+    "어릴 때 얘기 나오는 노래",
+    "어릴 때 차마 부르지 못한 이름 얘기 가사",
+    "어릴 때 듣지 못했던 말 얘기하는 가사",
+    "어릴 때 엄마가 틀어 놓던 만화 얘기",
+    "어릴 때 잔소리 듣다 지쳐 집 나간 얘기 가사",
+    "어릴 때 집이 가난했다는 가사인데 최근에 나온 노래야",
+    "어릴 때 엄마가 돌아가셨다는 가사인데 요즘 유행하는 노래",
+    "어릴 때 헤어진 친구 얘긴데 요즘 좋아하는 노래",
+    "어릴 때 살던 동네 이야기야 작년에 나온 노래",
+    "가사에 어릴 때 라디오를 듣던 엄마 이야기가 나와",
+    "어릴 때 음악가가 되고 싶었다는 가사",
+    "어릴 때 유행어 따라 하던 얘기 가사",
+    "어릴 때 엄마가 틀어주던 만화 생각이 난다는 가사",
+    # 12차 — '노래/음악/랩 한다·한대·한답·하면서'는 동사구
+    "중학교 때 노래 한다고 설치던 친구 얘기 가사",
+    "중학교 때 음악 한다고 집 나간 형 이야기",
+    "중학교 때 노래 하면서 놀던 얘기 가사",
+    "중학교 때 노래 한다는 애 얘기 가사",
+    "중학교 때 음악 한대서 놀림받던 얘기",
+    "중학교 때 랩 한답시고 까불던 얘기 가사",
+    # 12차 — 곡 명사 주어 + 나오-계열이어도 꾸미는 머리가 곡이 아니면 내용
+    "중학교 때 노래가 나오는 인형 선물 받은 얘기 가사",
+    "어릴 때 음악이 나오던 오르골 얘기 가사",
+    "중학교 때 음악이 나오면 춤추던 친구 얘기 가사",
+    "어릴 때 엄마가 부르던 내 이름이 나오는 노래",
+    "어릴 때 듣던 라디오가 나오는 노래",
+    # 13차 — '들은'의 머리가 곡이 아니거나, 들어오다·들어가다
+    "어릴 때 엄마한테 들은 이야기 같은 가사",
+    "어릴 때 들은 말이 생각나는 가사",
+    "어릴 때 소문으로 들은 얘기 가사",
+    "어릴 때 집에 들어온 강아지 얘기 가사",
+    "어릴 때 들어가던 골목 얘기 가사",
 ])
 def test_lyric_content_and_song_events_are_not_life_stage(query):
     assert qa._extract_life_stage(query) is None
@@ -283,3 +360,164 @@ def test_release_era_from_birth_year(life, birth, expected):
 def test_release_era_from_birth_year_rejects_missing_or_absurd_input():
     assert qa.release_era_from_birth_year({"stage": None}, 2001) is None
     assert qa.release_era_from_birth_year({"age_from": 13, "age_to": 15, "confidence": 0.6}, 1800) is None
+
+
+# ---------------------------------------------------------------------------
+# 9차 리뷰(0ddc833): 확실한 청취 시기만 분리하고 가사 내용은 건드리지 않는다. 감지/비감지를 짝으로, 최종 검색 입력까지 확인한다.
+# ---------------------------------------------------------------------------
+def _assert_untouched(query, tags=("어린시절", "추억", "발라드")):
+    """비감지 질의는 원문·내용 태그가 그대로다."""
+    a = qa._fallback(query)
+    assert not a.has_life_stage and a.search_text == query
+    out = qa._apply_metadata_safeguards(query, _model_raw(korean_tags=list(tags)))
+    assert out["life_stage"]["stage"] is None and out["korean_tags"] == list(tags)
+
+
+@pytest.mark.parametrize("query", [
+    # 1. 곡 명사 + 격조사는 뒤 서술어의 논항이다 — 계사(인데·였어)와 다르다
+    "어릴 때 음악이 유일한 친구였다는 가사",
+    "어릴 때 노래가 꿈이었다는 이야기",
+    # 3. 어간 접두 + 비관형형이 곧 청취는 아니다(뜨겁게·듣기·불러도)
+    "어릴 때 뜨겁게 사랑했던 사람 이야기하는 가사",
+    "어릴 때 듣기 싫던 잔소리 얘기 가사",
+    "어릴 때 불러도 대답 없던 이름 이야기",
+    # 5. 동사가 꾸미는 명사구의 머리(사람을·놀이를·이름을)에서 멈춘다 — 절을 넘어 뒤의 '노래'를 가져오지 않는다
+    "중학교 때 좋아하던 사람을 그리워하는 노래",
+    "어릴 때 유행했던 놀이를 소개하는 노래",
+    "어릴 때 부르던 내 이름을 그리워하는 노래",
+])
+def test_review9_content_is_not_a_listening_memory(query):
+    _assert_untouched(query)
+
+
+@pytest.mark.parametrize("query, stage, search_text", [
+    ("중학교 때 노래인데 가사가 슬퍼", "middle", "노래인데 가사가 슬퍼"),              # 계사는 그대로 감지
+    ("고등학교 때 그 노래", "high", "그 노래"),
+    ("중학교 때 좋아하던 사람이 부르던 노래", "middle", "좋아하던 사람이 부르던 노래"),   # 뒤의 독립된 '부르던 노래'
+    ("중학교 때 많이 들었는데 제목이 기억 안 나", "middle", "많이 들었는데 제목이 기억 안 나"),
+    ("중학교 때 많이 들었던 것 같아", "middle", "많이 들었던 것 같아"),
+    ("어릴 때 엄마가 불러주던 노래", "childhood", "엄마가 불러주던 노래"),
+    ("어릴 때 듣고 자란 노래", "childhood", "듣고 자란 노래"),                          # 연결형도 꾸미는 머리를 본다
+])
+def test_review9_positive_controls_reach_search_text(query, stage, search_text):
+    a = qa._fallback(query)
+    assert a.life_stage.stage == stage and a.search_text == search_text and a.original_query == query
+    assert QueryAnalysis.model_validate_json(a.model_dump_json()).search_text == search_text
+
+
+@pytest.mark.parametrize("open_q, close_q", [('"', '"'), ("'", "'"), ("“", "”"), ("‘", "’"), ("「", "」"), ("『", "』")])
+def test_review9_words_inside_quotes_are_not_evidence_for_the_outside_phrase(open_q, close_q):
+    query = f"어릴 때 엄마가 {open_q}듣고 있니{close_q}라고 묻는 가사"
+    assert qa._quoted_ranges(query)
+    _assert_untouched(query)
+
+
+def test_review9_same_stage_inside_and_outside_quotes():
+    q = '어릴 때 듣던 노래인데 "어릴 때 그 골목"이라는 가사가 나와'
+    a = qa._fallback(q)
+    assert a.life_stage.stage == "childhood" and a.life_stage.spans == [[0, 4]]
+    assert a.search_text == '듣던 노래인데 "어릴 때 그 골목"이라는 가사가 나와'
+    out = qa._apply_metadata_safeguards(q, _model_raw(korean_tags=["어린시절", "추억", "골목"]))
+    assert out["korean_tags"] == ["어린시절", "골목"]           # 인용 안의 같은 단계는 내용 → 어린시절 보존, 추억은 모델 회상어
+
+
+@pytest.mark.parametrize("number, expected", [
+    ("열다섯", 15), ("열 다섯", 15), ("열일곱", 17), ("열아홉", 19), ("쉰다섯", 55), ("쉰 다섯", 55),
+    ("다섯", 5), ("일곱", 7), ("스물 다섯", 25), ("서른 다섯", 35), ("5", 5), ("7", 7), ("9", 9), ("15", 15), ("59", 59),
+])
+def test_review9_numerals_are_read_whole(number, expected):
+    """'열다섯'을 5살로 읽고 '열'을 검색문에 남기면 안 된다 — 전체를 읽거나 전체를 미지원."""
+    query = f"{number} 살 때 듣던 노래" if not number.isdigit() else f"{number}살 때 듣던 노래"
+    life = qa._extract_life_stage(query)
+    assert life is not None and life["age_from"] == life["age_to"] == expected
+    assert life["text"] == (f"{number} 살 때" if not number.isdigit() else f"{number}살 때")
+    assert qa._fallback(query).search_text == "듣던 노래"
+
+
+@pytest.mark.parametrize("query", ["예순다섯 살 때 듣던 노래", "예순 다섯 살 때 듣던 노래", "60살 때 듣던 노래", "네 살 때 듣던 노래"])
+def test_review9_ages_outside_support_are_not_truncated_to_the_unit(query):
+    _assert_untouched(query)
+
+
+@pytest.mark.parametrize("query, tags, expected", [
+    ("중학교 때 듣던 추억의 노래", ["추억", "발라드"], ["발라드"]),            # 곡을 꾸미는 시간 수식어
+    ("고등학교 때 듣던 옛날 노래", ["옛날", "발라드"], ["발라드"]),
+    ("중학교 때 듣던 추억을 회상하는 가사의 노래", ["추억", "회상", "발라드"], ["추억", "회상", "발라드"]),   # 내용 근거(가사) 있음
+    ("중학교 때 듣던 노래인데 가사는 고향에 대한 향수를 담았어", ["향수", "고향", "발라드"], ["향수", "고향", "발라드"]),
+])
+def test_review9_temporal_modifiers_are_stripped_but_described_content_is_kept(query, tags, expected):
+    out = qa._apply_metadata_safeguards(query, _model_raw(korean_tags=tags))
+    assert out["life_stage"]["stage"] is not None
+    assert out["korean_tags"] == expected
+
+
+# ---------------------------------------------------------------------------
+# 10차 리뷰: 9차에서 생긴 회귀(격조사 머리에서 멈춤·창 끝 동사), 절 경계, 'X가 나오는', 보조 용언, 태그 근거 엄격화
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("query, stage, search_text", [
+    # 2-① 뜻이 하나뿐인 청취 동사(듣·들었·들으) 뒤는 격조사 머리에서 멈추지 않고 곡 명사까지 간다
+    ("중학교 때 듣던 제목이 기억 안 나는 노래", "middle", "듣던 제목이 기억 안 나는 노래"),
+    ("중학교 때 듣던 여자가 부른 노래", "middle", "듣던 여자가 부른 노래"),
+    ("중학교 때 듣던 뮤비가 유명한 노래", "middle", "듣던 뮤비가 유명한 노래"),
+    ("고등학교 때 유행했던 춤이 유명한 노래", "high", "유행했던 춤이 유명한 노래"),    # 뒤의 독립된 '유명한 노래'
+    ("중학교 때 많이 듣던 가사가 슬픈 노래", "middle", "많이 듣던 가사가 슬픈 노래"),
+    # 2-② 동사가 질의의 마지막 어절
+    ("그 노래 중학교 때 많이 들었던", "middle", "그 노래 많이 들었던"),
+    ("이 노래 중학교 때 엄청 유행했던", "middle", "이 노래 엄청 유행했던"),
+    ("중학교 때 많이 듣던", "middle", "많이 듣던"),
+    # 3 놓치던 것 — 곡 명사가 내용 표지보다 먼저, 보조 용언 '하다', 연결 어미 '지만'
+    ("어릴 때 듣던 만화 주제가", "childhood", "듣던 만화 주제가"),
+    ("어릴 때 따라 부르던 주제곡", "childhood", "따라 부르던 주제곡"),
+    ("어릴 때 자주 듣곤 했어", "childhood", "자주 듣곤 했어"),
+    ("어릴 때 많이 들었지만 지금은 안 들어", "childhood", "많이 들었지만 지금은 안 들어"),
+    ("어릴 때 유행가 따라 부르던 거", "childhood", "유행가 따라 부르던 거"),
+    ("어릴 때 라디오에서 나오던 노래", "childhood", "라디오에서 나오던 노래"),            # 'X에서 나오던'은 청취
+])
+def test_review10_detected(query, stage, search_text):
+    a = qa._fallback(query)
+    assert a.life_stage.stage == stage and a.search_text == search_text
+
+
+@pytest.mark.parametrize("query", [
+    # 절 경계 — 앞 절이 가사 내용으로 끝났으면 뒤 절의 동사는 근거가 아니다
+    "어릴 때 집이 가난했다는 가사인데 최근에 나온 노래야",
+    "중학교 때 좋아하던 친구 얘긴데 요즘 좋아하는 노래",
+    "어릴 때 집이 가난했는데 요즘 나온 노래",
+    # 'X가 나오는 노래' — 나오는 것은 X다
+    "어릴 때 부르던 내 이름이 나오는 노래",
+    "어릴 때 유행했던 놀이가 나오는 노래",
+    "어릴 때 듣던 라디오가 나오는 노래",
+    # 종결 어미처럼 보이지만 부정·보조 용언·연결
+    "어릴 때 부르지 못한 이름",
+    "어릴 때 듣지 못했던 말",
+    "어릴 때 틀어 놓던 만화",
+    "어릴 때 잔소리 듣다 지쳐",
+    "어릴 때 유행어 따라 하던 친구 얘기",
+    "어릴 때 뜬금없이 울던 얘기 가사",
+    "어릴 때 듣기 평가 망친 얘기",
+    "어릴 때 방에 틀어박혀 울던 가사",
+    # 머리 명사가 아닌 '생각'·'노래 한다'
+    "어릴 때 틀어주던 만화 생각이 난다는 가사",
+    "중학교 때 노래 한다고 설치던 친구 얘기 가사",
+    "중학교 때 많이 들었거든 근데 제목을 모르겠어",   # 10차 재확인 — '-거든'은 종결
+])
+def test_review10_not_detected(query):
+    if query.endswith("제목을 모르겠어"):
+        a = qa._fallback(query)
+        assert a.life_stage.stage == "middle" and a.search_text == "많이 들었거든 근데 제목을 모르겠어"
+        return
+    _assert_untouched(query)
+
+
+@pytest.mark.parametrize("query, tags, expected", [
+    ("중학교 때 듣던 추억의 노래 가사가 기억 안 나", ["추억", "발라드"], ["발라드"]),     # 3어절 안에 '가사가'가 있어도 추억은 노래를 꾸민다
+    ("중학교 때 듣던 추억의 노래 그리고 발라드", ["추억", "발라드"], ["발라드"]),        # '그리고'는 그리워하다가 아니다
+    ("고등학교 때 듣던 옛날 노래인데 담임 선생님이 틀어줬어", ["옛날", "발라드"], ["발라드"]),
+    ("고등학교 때 듣던 옛날 노래 라디오에 나오는", ["옛날", "발라드"], ["발라드"]),
+    ("중학교 때 듣던 노래인데 추억이 담긴 가사", ["추억", "발라드"], ["추억", "발라드"]),
+    ("중학교 때 듣던 노래인데 옛날 얘기 나오는 가사", ["옛날", "발라드"], ["옛날", "발라드"]),
+    ("중학교 때 듣던 노래인데 고향에 대한 향수를 그리워하는 가사", ["향수", "고향", "발라드"], ["향수", "고향", "발라드"]),
+])
+def test_review10_tag_evidence_requires_the_word_to_be_the_content_argument(query, tags, expected):
+    out = qa._apply_metadata_safeguards(query, _model_raw(korean_tags=tags))
+    assert out["life_stage"]["stage"] is not None and out["korean_tags"] == expected

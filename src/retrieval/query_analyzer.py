@@ -1137,64 +1137,115 @@ _LIFE_STAGE_CORE = (
     ("school", r"학창\s*시절|학교\s*다닐\s*때|학생\s*때|(?:중학교\s*)?수학여행\s*(?:때|가서|갔을\s*때)", 7, 18, 0.3),
     ("childhood", r"어릴\s*(?:때|적)|어렸을\s*(?:때|적)|어린\s*시절|꼬마\s*(?:때|시절)|유치원\s*(?:때|시절|무렵|다닐\s*때|다녔을\s*때|다닐\s*적|다니던\s*때)|유년\s*시절", 4, 12, 0.3),
 )
-# 숫자 5~59살(아래 _extract_life_stage의 범위와 같다 — 7살 때도 받는다), 또는 한글 수사(다섯~아홉 · 스무/스물N · 서른N · 마흔N)
+# 숫자 5~59살(아래 _extract_life_stage의 범위와 같다 — 7살 때도 받는다), 또는 한글 수사 **전체**(열다섯·열 다섯·쉰 다섯·스무·서른 둘).
+# 십 단위 뒤의 단위 수사까지 한 표현이다 — '열다섯'을 5살로 읽고 '열'을 검색문에 남기면 안 된다(리뷰). 범위 밖(예순다섯)은 통째로 버린다.
+_AGE_UNIT = r"(?:한|두|세|네|다섯|여섯|일곱|여덟|아홉)"
+_AGE_TENS = r"(?:열|스무|스물|서른|마흔|쉰|예순|일흔|여든|아흔)"
 _AGE_RE = re.compile(
-    r"(?P<age>(?<!\d)(?:[1-5]\d|[5-9])(?!\d)|(?:스무|스물\s*(?:한|두|세|네|다섯|여섯|일곱|여덟|아홉)?|서른|마흔)\s*(?:한|두|세|네|다섯|여섯|일곱|여덟|아홉)?|다섯|여섯|일곱|여덟|아홉)"
+    r"(?P<age>(?<!\d)(?:[1-9]\d?)(?!\d)|(?<![가-힣])(?:" + _AGE_TENS + r"\s*" + _AGE_UNIT + r"?|" + _AGE_UNIT + r"))"
     r"\s*(?:살|세)\s*(?:때|적|무렵)"
 )
-_KOREAN_TENS = {"스무": 20, "스물": 20, "서른": 30, "마흔": 40}
+_KOREAN_TENS = {"열": 10, "스무": 20, "스물": 20, "서른": 30, "마흔": 40, "쉰": 50, "예순": 60, "일흔": 70, "여든": 80, "아흔": 90}
 # ---------------------------------------------------------------------------
 # 생애 단계 표현이 "들은 시기"인지 "가사 내용"인지 — 어절 단위 판정
 #
 # 질의는 [시간 표현] [부사·목적어 …] [동사] [수식어 …] [머리 명사] … 꼴이다. 단어 하나가 아니라 **동사가 무엇을 꾸미는지**로 판정한다.
 # 확실한 청취 구간만 시간 단서로 보고, 애매하면 잡지 않는다(검색문에서 지우지 않는다) — 리뷰(0b921cf).
 #   0. 표현 **앞** 어절이 '가사에·가사가·노랫말에·내용이' 같은 내용 표지면 표현은 가사 안의 시간이다 → 아님
-#   1. 청취·유행 동사 어간(듣·틀어·부르·유행·나오·뜨·히트·흘러나·따라부르)으로 시작하는 어절
-#      - 관형형(끝 받침 ㄴ/ㄹ — 듣던·들은·유행했던·나오는·뜬)이면 뒤 _HEAD_SCAN_TOKENS 어절 안의 **머리 명사**를 본다:
+#   1. 청취·유행 동사 어간(듣·들었·들으·들은·들어본/봤/보·틀어·부르·유행·나오·떴·히트·흘러나·따라부르)으로 시작하는 어절
+#      - 종결형(들었어·들었는데·유행했지)이면 청취 자체가 그 절의 서술이다 → 시간 단서. 끝 받침은 증거가 아니다(리뷰)
+#      - 그 밖(관형형 듣던·들은·나오는, 연결형 듣고·들으면서, 명사형 듣기, 양보 불러도)은 뒤 _HEAD_SCAN_TOKENS 어절에서 **꾸미는 명사구의 머리**를 본다:
 #        곡·장르·음반·가수 명사(노래·발라드·올드팝·앨범·가수·밴드 …)·대명사(거·것·건데)·청취의 기억(추억·기억) → 시간 단서,
-#        내용 표지(얘기·이야기·가사·모습 …) → 아님,
-#        둘 다 아니면 애매(듣던 라디오 사연, 부르던 내 이름, 유행했던 놀이, 틀어주던 만화) → 아님
-#      - 종결·연결형(들었어·들었는데·유행했고)이거나 창 끝이면 청취 자체가 서술이다 → 시간 단서
+#        내용 표지(얘기·이야기·가사·모습 …) → 아님. 격조사·계사·문장 부호가 붙은 첫 어절에서 명사구가 끝나므로 거기서 멈춘다 —
+#        '좋아하던 사람을 그리워하는 노래'의 '노래'는 다른 서술어의 대상이다(리뷰). 곡도 내용도 아니면 애매(듣던 라디오 사연, 부르던 내 이름, 듣기 싫던 잔소리) → 아님.
+#        애매하면 그 동사는 버리고 뒤의 독립된 근거('사람이 부르던 노래')를 계속 본다
 #      - 바로 앞 어절이 내용 표지 주어(얘기 나오는·가사가 나오던)면 그 동사는 내용의 것 → 아님
 #   2. 좋아하·유명하·들려주·들리·인기·흥얼·빠지·꽂히는 **곡 명사**를 받을 때만 청취다(좋아하던 사람·유명했던 가수·들려주던 이야기는 아님)
-#      → 뒤 _HEAD_SCAN_TOKENS 어절 안에 곡 명사가 있어야 한다. 대명사·가수 명사는 안 친다
-#   3. 동사 없이 곡 명사가 표현 **바로 다음**(지시어 하나 허용)에 오고 그 어절이 구의 머리(조사·어미 부착, 마지막 어절, '하나·중에·찾…'로 이어짐)면
-#      시간 단서("중학교 때 노래인데", "고등학교 때 그 노래"). '음악 선생님이'·'노래 대회'처럼 다른 명사를 꾸미면 아니다
-#   - '즐겨·돌려·자주·많이' 같은 부사는 신호가 아니다(즐겨 듣던 / 즐겨 먹던 — 뒤 동사가 정한다)
+#      → 같은 머리 찾기로 곡 명사가 있어야 한다. 대명사·가수 명사는 안 친다
+#   3. 동사 없이 곡 명사가 표현 **바로 다음**(지시어 하나 허용)에 오고 그 곡이 화제(계사 부착 '노래인데·곡이에요', 마지막 어절 '그 노래', '하나·중에·찾…'로 이어짐)면
+#      시간 단서. **격조사만 붙은 '노래가·음악이'는 뒤 서술어의 논항이라 근거가 아니다**('노래가 꿈이었다는 이야기', 리뷰).
+#      '음악 선생님이'·'노래 대회'처럼 다른 명사를 꾸미면 아니다
+#   - 인용 안("듣고 있니"라고 묻는 가사)의 어절은 바깥 표현의 근거로 쓰지 않는다 — 판정 전에 인용 구간을 지운다(위치는 보존)
+#
+# 의도적 미지원(11차, PR #35 마감) — 규칙을 더 넣으면 옆의 흔한 문장이 깨진다. 원칙: 틀린 시간 단서를 넣는 것이 놓치는 것보다 나쁘다.
+#   놓치는 쪽(표현이 검색문에 남을 뿐이다)
+#   - '-는데·-지만' 절 뒤에 오는 청취: "중학교 때 친구가 추천해줬는데 진짜 많이 들었어", "중학교 때 학원 다녔는데 버스에서 맨날 듣던 노래"
+#   - "듣던 가사 좋은 발라드" (내용 표지가 수식어 자리), "그때 그 노래" (동사·곡 명사 없음)
+#   - 태그: "추억에 잠기는 내용", "가사에 추억이라는 말이 나와", "옛날 생각나는 가사"에서 회상어 태그가 빠진다
+#   잘못 잡는 쪽('듣다'가 음악이 아닌 경우 등 — 머리가 곡이 아닌데 뒤에 곡 명사가 온다)
+#   - "어릴 때 듣던 잔소리가 그리워진다는 노래", "어릴 때 듣던 엄마 잔소리를 떠올리는 노래", "어릴 때 들었던 말이 생각나는 노래"
+#   - "어릴 때 듣던 옛날 이야기가 생각나는 노래", "어릴 때 듣던 빗소리 같은 노래"
+#   - "어릴 때 TV에 나오지 않던 가수 얘기", "어릴 때 틀어주던 만화 거의 다 기억난다는 얘기"
+#   - "어릴 때 친구 이야기가 담긴 노래 요즘 듣는" (내용 표지가 앞 절의 주어인데 뒤의 '듣는'이 청취로 잡힌다)
+#   - '즐겨·돌려·자주·많이' 같은 부사는 신호가 아니다(즐겨 듣던 / 즐겨 먹던 — 뒤 동사가 정한다). 어간 접두가 맞아도('뜨겁게'의 뜨) 어간이 아니면 아니다
 #   - 곡 명사 뒤가 '하다' 활용(하면서·해주던)이나 잘/못/부르면 동사구('노래하다·노래 잘하다')라 곡이 아니다. '하나·하루'는 예외
 #   - 창은 글자가 아니라 어절 수다(글자로 자르면 '노래방'→'노래'로 잘린다). 동사는 표현 뒤 _LIFE_STAGE_WINDOW_TOKENS 어절 안에 있어야 하고,
 #     머리 명사는 동사 뒤 _HEAD_SCAN_TOKENS 어절까지 본다("틀어주던 여자 가수 노래")
 # 새 표현은 어간·명사 목록에 더하면 된다. 활용형·조사는 "어절 시작"·"조사 떼기"·"끝 받침"이 처리한다.
 # ---------------------------------------------------------------------------
 _LIFE_STAGE_WINDOW_TOKENS = 6   # 표현 뒤 이만큼의 어절 안에 동사·곡 명사가 있어야 한다
-_HEAD_SCAN_TOKENS = 4           # 동사 뒤 이만큼의 어절 안에서 머리 명사를 찾는다
-_LISTEN_STEMS = ("듣", "들었", "들으", "틀어", "틀었", "틀던", "불렀", "부르", "불러", "유행", "나왔", "나온", "나오", "떴", "뜬", "뜨",
-                 "히트", "흘러나", "따라부르", "따라불")
-_SONG_REQUIRING_STEMS = ("좋아하", "좋아했", "유명하", "유명했", "들려주", "들려줬", "들리", "인기", "흥얼", "빠져", "빠졌", "꽂혀", "꽂혔", "꽂힌", "미쳐", "미쳤")
-_CONTENT_MARKERS = ("가사", "노랫말", "내용", "얘기", "이야기", "스토리", "사연", "줄거리", "주제", "장면", "모습")
+_HEAD_SCAN_TOKENS = 4           # 동사 뒤 이만큼의 어절 안에서 꾸미는 명사구의 머리를 찾는다
+_LISTEN_STEMS = ("듣", "들었", "들으", "들은", "들어본", "들어봤", "들어보", "틀어", "틀었", "틀던", "불렀", "부르", "불러", "유행", "나왔", "나온", "나오",
+                 "떴", "뜬", "히트", "흘러나", "따라부르", "따라불")
+# '뜨'는 뜨겁게·뜨개를, '들어' 통째와 '들어서'는 들어가다·들어오다·들어서다를 잡으므로 없다 — 들은·들어본·들어봤·들어보만(13차)
+_SONG_REQUIRING_STEMS = ("좋아하", "좋아했", "좋아한", "유명하", "유명했", "유명한", "유명해", "들려주", "들려줬", "들리", "인기", "흥얼", "빠져", "빠졌", "꽂혀", "꽂혔", "꽂힌", "미쳐", "미쳤")
+_CONTENT_MARKERS = ("가사", "노랫말", "내용", "얘기", "얘긴", "이야기", "이야긴", "스토리", "사연", "줄거리", "주제", "장면", "모습")
+# 뜻이 하나뿐인 청취 동사(듣·들었·들으·들은·들어본/봤/보) — 뒤에 긴 꾸밈말('듣던 제목이 기억 안 나는 노래')이 흔해 격조사 머리에서 멈추지 않고 곡 명사까지 간다(리뷰).
+# 뜻이 여럿인 동사(부르·나오·유행·틀어·좋아하)는 첫 머리에서 멈춘다('좋아하던 사람을 그리워하는 노래')
+_UNAMBIGUOUS_LISTEN_STEMS = ("듣", "들었", "들으", "들은", "들어본", "들어봤", "들어보")
+_HEAD_SCAN_TOKENS_UNAMBIGUOUS = 6
+_STEM_EXCEPTIONS = ("유행어", "듣보")             # 어간으로 시작하지만 동사가 아닌 명사
+# '-어·-지·-다·-고' 뒤에 오면 종결이 아니라 보조 용언·부정이다: 부르지 못한, 틀어 놓던, 듣고 싶던.
+# 연결형과 겹치지 않는 어미(-는데·-거든·-지만)에는 적용하지 않고, 다음 어절은 보조 용언의 **활용형**이어야 한다('보컬'·'주변'·'말이야'는 아니다, 11차)
+_AUX_CHECK_ENDINGS = ("어", "아", "지", "다", "고")
+_AUX_NEXT_RE = re.compile(r"^(?:않|못|놓|보|주|말|싶|버리|있)(?:$|[았었던는은을고면니려기다지서아어게한할함해했])")
+# 절 경계 — 비동사 어절이 이렇게 끝나면 시간 표현의 절이 청취 근거 없이 끝난 것이다("집이 가난했는데 요즘 나온 노래", 리뷰)
+_CLAUSE_END_SUFFIXES = ("는데", "인데", "은데", "한데", "긴데", "던데", "지만")
+_RELEASE_STEMS = ("나오", "나온", "나왔", "흘러나")   # 'X가 나오는 노래'의 나오는 것은 X다 — 주격 조사가 바로 앞에 있으면 내용
+# '-이'로 끝나는 부사 — '많이 나오던'의 '많이'는 주어가 아니다(11차)
+_ADVERBS_ENDING_I = frozenset({"많이", "같이", "깊이", "높이", "가까이", "굳이", "일찍이", "길이", "일일이", "곰곰이", "틈틈이", "더욱이", "적이"})
+
+
+def _release_subject(prev: str) -> Optional[bool]:
+    """나오-계열 동사 바로 앞 어절이 주어인가. False=내용의 주어('이름이 나오는'), True=곡의 발매('노래가 나왔는데'·'앨범이'), None=주어 아님(부사·에서)."""
+    tok = _clean(prev)
+    if not tok.endswith(("가", "이")) or tok.endswith(("에서", "같이")) or tok in _ADVERBS_ENDING_I:
+        return None
+    if _song_noun_suffix(prev) in ("가", "이"):
+        return True
+    return False
 # 곡 그 자체·장르·음반 — 청취 동사와 '좋아하다'류 모두의 목적어가 된다
 _SONG_NOUNS = frozenset({
     "노래", "곡", "음악", "발라드", "댄스곡", "가요", "동요", "자장가", "팝송", "ost", "오에스티", "트로트", "힙합",
     "팝", "올드팝", "케이팝", "k-pop", "kpop", "록", "락", "재즈", "랩", "알앤비", "r&b", "인디", "포크", "디스코", "클래식", "캐롤", "캐럴",
     "명곡", "히트곡", "타이틀곡", "수록곡", "주제곡", "주제가", "삽입곡", "응원가", "신곡", "데뷔곡", "연주곡", "메들리", "리믹스",
-    "음반", "앨범", "시디", "cd", "테이프", "엘피", "lp", "멜로디", "후렴",
+    "음반", "앨범", "시디", "cd", "테이프", "엘피", "lp", "멜로디", "후렴", "유행가",
 })
 # 부르는 사람 — '듣던 가수·틀어주던 밴드'는 청취지만 '유명했던 가수'는 사람 얘기일 수 있어 청취 동사 뒤에서만 친다
 _ARTIST_NOUNS = frozenset({"가수", "그룹", "밴드", "아이돌", "걸그룹", "보이그룹", "솔로", "듀엣", "래퍼", "디제이", "dj"})
-# '듣던 추억·들었던 기억'은 청취 행위 자체를 가리킨다 — 청취 동사 뒤 머리로 친다(좋아하던 기억은 아니다)
-_LISTEN_MEMORY_NOUNS = frozenset({"추억", "기억", "생각", "시절"})
+# '듣던 추억·들었던 기억'은 청취 행위 자체를 가리킨다 — 청취 동사 **바로 뒤**에서만 머리로 친다('틀어주던 만화 생각이'는 아니다, 리뷰)
+_LISTEN_MEMORY_NOUNS = frozenset({"추억", "기억"})
 _PRONOUN_HEAD_RE = re.compile(r"^(?:그)?(?:(?:거|것)(?:$|[가이은는을를도의야로]|예요|에요|였|인데|라|임|같|든)|건(?:$|데|지)|걸(?:$|로|까)|게(?:$|요))")
-# 어절 끝의 조사·어미 — 긴 것부터 뗀다("곡이에요" → "곡", "노래인데" → "노래")
-_PARTICLES = sorted(("이에요", "이었어", "이었", "이야", "이고", "이랑", "이다", "인데", "이라", "으로", "부터", "까지", "처럼",
-                     "같은", "같이", "였는데", "였어", "였던", "였고", "였", "인가", "인지", "야", "에서", "에",
-                     "들", "을", "를", "이", "가", "은", "는", "도", "만", "의", "과", "와", "요"), key=len, reverse=True)
+# 어절 끝의 계사·어미 — "노래인데·곡이에요·노래였어"는 그 곡이 화제다. 격조사(이/가/을/를 …)와 구별한다(리뷰):
+# "노래가 꿈이었다는"의 '노래가'는 뒤 서술어의 논항이라 그 자체로는 청취 근거가 아니다
+_COPULA_ENDINGS = ("이에요", "이었어", "이었", "이야", "이고", "이랑", "이다", "인데", "이라", "였는데", "였어", "였던", "였고", "였", "인가", "인지", "야", "요")
+_CASE_PARTICLES = ("에서", "한테", "으로", "부터", "까지", "처럼", "같은", "같이", "들", "을", "를", "이", "가", "은", "는", "도", "만", "의", "과", "와", "에", "로")
+_PARTICLES = sorted(_COPULA_ENDINGS + _CASE_PARTICLES, key=len, reverse=True)
+# 명사구의 머리 표시 — 이 조사·계사가 붙었거나 문장 부호가 따르면 그 어절에서 명사구가 끝난다. 주제 조사 은/는은 관형형 어미(신나는)와 겹쳐 빼고,
+# 짧은 격조사는 어간 끝 글자와 겹치기 쉬워(같이·높이) 명사형이 확인된 어절에서만 뗀다
+_NP_HEAD_SUFFIXES = sorted(_COPULA_ENDINGS + ("에서", "한테", "으로", "부터", "까지", "처럼", "을", "를", "이", "가", "도", "의", "과", "와", "에", "로", "랑"),
+                           key=len, reverse=True)
+# 종결형 — 청취가 그 절의 서술이다("많이 들었어", "들었는데 제목이 기억 안 나"). 연결형(듣고·들으면서)·명사형(듣기)·양보(불러도)는 아니다
+_FINITE_ENDINGS = ("어", "어요", "는데", "는데요", "지", "지요", "죠", "거든", "거든요", "지만", "습니다", "잖아", "잖아요", "네", "네요", "더라", "더라고", "더라구", "구나", "더라구요")
+_FINITE_ENDINGS_IF_LAST = ("다", "음")              # '잔소리 듣다 지쳐'의 -다는 연결이다 — 마지막 어절이거나 문장 부호가 따를 때만 종결
 _SUBJECT_ENDINGS = ("", "가", "이", "은", "는", "도", "만", "들", "들이", "들은", "들도")
-_CONTENT_BEFORE_ENDINGS = ("", "에", "에서", "엔", "가", "이", "은", "는", "도", "의", "엔", "중에", "중")
+_CONTENT_BEFORE_ENDINGS = ("", "에", "에서", "엔", "가", "이", "은", "는", "도", "의", "중에", "중")
 # 표현 바로 다음의 곡 명사가 구의 머리인지 — 다음 어절이 이렇게 시작하면 그 곡을 가리키는 말이 이어지는 것이다
 _DETERMINERS = frozenset({"그", "이", "저", "어떤", "무슨", "그런", "어느", "옛날", "그때"})
 _HEAD_CONTINUATIONS = ("하나", "하루", "한", "두", "몇", "중에", "중", "같은", "찾", "기억", "듣", "들", "맞", "있", "였", "이었", "인데", "인가", "말고", "말이야")
-_HADA_EXCEPTIONS = ("하나", "하루")                # '노래 하나'·'노래 하루 종일'은 동사구가 아니다
+_HADA_EXCEPTIONS = ("하나", "하루", "함께")        # '노래 하나'·'노래 하루 종일'·'노래 함께'는 동사구가 아니다
 _TOKEN_STRIP = " ,.!?~…\"'()（）[]「」『』“”‘’"
+_PHRASE_END_PUNCT = ",.!?~…"
 
 
 def _clean(token: str) -> str:
@@ -1202,7 +1253,7 @@ def _clean(token: str) -> str:
 
 
 def _noun_forms(token: str) -> list[str]:
-    """어절 그대로와 조사를 하나·둘 뗀 꼴 — '자장가'·'가요'처럼 끝 글자가 조사와 같은 명사는 그대로인 꼴로 맞는다."""
+    """어절 그대로와 조사·계사를 하나·둘 뗀 꼴 — '자장가'·'가요'처럼 끝 글자가 조사와 같은 명사는 그대로인 꼴로 맞는다."""
     token = _clean(token)
     forms = [token]
     for _ in range(2):
@@ -1214,27 +1265,53 @@ def _noun_forms(token: str) -> list[str]:
     return forms
 
 
+def _song_noun_suffix(token: str) -> Optional[str]:
+    """곡 명사 어절이면 뗀 조사·계사(없으면 ""), 아니면 None."""
+    tok = _clean(token)
+    if tok in _SONG_NOUNS:
+        return ""
+    for suffix in _PARTICLES:
+        if len(tok) > len(suffix) and tok.endswith(suffix) and tok[: -len(suffix)] in _SONG_NOUNS:
+            return suffix
+    return None
+
+
 def _is_song_noun(tokens: list[str], i: int) -> bool:
     """tokens[i]가 곡 명사 어절인가. 뒤 어절이 '하다' 활용이나 잘/못/부르면 동사구('노래 하면서', '노래 잘했다')라 아니다."""
-    if not any(f in _SONG_NOUNS for f in _noun_forms(tokens[i])):
+    if _song_noun_suffix(tokens[i]) is None:
         return False
     nxt = tokens[i + 1] if i + 1 < len(tokens) else ""
-    if nxt.startswith(_HADA_EXCEPTIONS):
+    if nxt.startswith(_HADA_EXCEPTIONS) or _clean(nxt) == "한":        # '노래 한 곡'의 '한'은 수사
         return True
-    return not nxt.startswith(("하", "해", "했", "할", "함", "잘", "못", "부르", "불러", "불렀"))
+    # '한'은 한다·한단·한대·한답(한다고·한다는·한대서·한답시고)일 때만 '하다'다 — 한번·한때·한국·한참은 아니다(12차)
+    return not nxt.startswith(("하", "해", "했", "할", "함", "한다", "한단", "한대", "한답", "잘", "못", "부르", "불러", "불렀"))
 
 
 def _is_artist_noun(token: str) -> bool:
     return any(f in _ARTIST_NOUNS for f in _noun_forms(token))
 
 
-def _is_phrase_head(tokens: list[str], i: int) -> bool:
-    """tokens[i](곡 명사)가 구의 머리인가 — 조사·어미가 붙었거나, 마지막 어절이거나, 다음 어절이 이어짐 표현이다.
-    '음악 선생님이'·'노래 대회'처럼 뒤 명사를 꾸미면 머리가 아니다."""
-    forms = _noun_forms(tokens[i])
-    if len(forms) > 1 and forms[0] not in _SONG_NOUNS:   # 조사·어미를 떼야 곡 명사가 됐다 = 조사가 붙어 있었다
+def _ends_phrase(token: str) -> bool:
+    """어절이 명사구의 머리인가 — 격조사·계사가 붙었거나 문장 부호로 끝난다. 수식어(여자·신나는·그)는 아니다."""
+    raw = token.strip()
+    if raw and raw[-1] in _PHRASE_END_PUNCT:
         return True
-    if i + 1 >= len(tokens) or tokens[i].rstrip()[-1:] in ",.!?~":
+    tok = _clean(raw)
+    return any(len(tok) > len(sfx) and tok.endswith(sfx) for sfx in _NP_HEAD_SUFFIXES)
+
+
+def _is_phrase_head(tokens: list[str], i: int) -> bool:
+    """표현 바로 다음의 곡 명사 tokens[i]가 그 자체로 화제인가 — 계사·어미가 붙었거나(노래인데·곡이에요·노래였어), 마지막 어절이거나,
+    다음 어절이 이어짐 표현이다. **격조사만 붙은 '노래가·음악이'는 뒤 서술어가 정한다**('노래가 꿈이었다는 이야기', 리뷰) —
+    여기서는 근거로 치지 않는다. '음악 선생님이'·'노래 대회'처럼 뒤 명사를 꾸미면 머리가 아니다."""
+    suffix = _song_noun_suffix(tokens[i])
+    if suffix is None:
+        return False
+    if suffix in _COPULA_ENDINGS:
+        return True
+    if suffix:                                       # 격조사 — 그 자체로는 근거가 아니다
+        return False
+    if i + 1 >= len(tokens) or tokens[i].rstrip()[-1:] in _PHRASE_END_PUNCT:
         return True
     return tokens[i + 1].startswith(_HEAD_CONTINUATIONS)
 
@@ -1245,52 +1322,114 @@ def _content_marker_with(token: str, endings: tuple[str, ...]) -> bool:
     return any(tok.startswith(m) and tok[len(m):] in endings for m in _CONTENT_MARKERS)
 
 
-def _is_modifier_form(token: str) -> bool:
-    """동사 어절이 관형형인가 — 끝 글자 받침이 ㄴ/ㄹ(듣던·들은·나오는·뜬·들을). 아니면 종결·연결형(들었어·들었는데·유행했고)."""
+def _is_finite(tokens: list[str], i: int, stems: tuple[str, ...]) -> bool:
+    """tokens[i]가 어간으로 시작하고 종결 어미로 끝나는 어절인가 — "들었어", "들었는데", "유행했지", "들었지만".
+    다음 어절이 보조 용언·부정(않·못·놓·보·주·싶…)이면 종결이 아니다('부르지 못한', '틀어 놓던'). -다·-음은 마지막 어절일 때만."""
+    raw = tokens[i].strip()
+    tok = _clean(raw)
+    if not tok.startswith(stems):
+        return False
+    nxt = _clean(tokens[i + 1]) if i + 1 < len(tokens) else ""
+    if tok.endswith(_AUX_CHECK_ENDINGS) and _AUX_NEXT_RE.match(nxt):
+        return False
+    last = not nxt or raw[-1:] in _PHRASE_END_PUNCT
+    if any(len(tok) > len(e) and tok.endswith(e) for e in _FINITE_ENDINGS):
+        return True
+    return last and any(len(tok) > len(e) and tok.endswith(e) for e in _FINITE_ENDINGS_IF_LAST)
+
+
+def _is_verb_shape(token: str) -> bool:
+    """마지막 어절에 홀로 남은 동사가 관형형(들었던·듣던·유행했던·나오는)이나 종결형 꼴인가 — '불러도'·'듣기'는 아니다."""
     tok = _clean(token)
     if not tok or not ("가" <= tok[-1] <= "힣"):
         return False
-    return (ord(tok[-1]) - 0xAC00) % 28 in (4, 8)
+    return (ord(tok[-1]) - 0xAC00) % 28 == 4 or any(len(tok) > len(e) and tok.endswith(e) for e in _FINITE_ENDINGS + _FINITE_ENDINGS_IF_LAST)
 
 
-def _head_after_verb(tokens: list[str], i: int, allow_pronoun_and_artist: bool) -> Optional[bool]:
-    """동사 tokens[i] 뒤 _HEAD_SCAN_TOKENS 어절에서 머리 명사를 찾는다. True=곡, False=내용 표지, None=못 찾음(애매)."""
-    for j in range(i + 1, min(len(tokens), i + 1 + _HEAD_SCAN_TOKENS)):
-        if _clean(tokens[j]).startswith(_CONTENT_MARKERS):
-            return False
+def _head_after_verb(tokens: list[str], i: int, allow_pronoun_and_artist: bool, unambiguous: bool = False) -> Optional[bool]:
+    """동사 tokens[i]가 꾸미는 명사구의 머리를 찾는다. True=곡(청취), False=내용 표지, None=곡도 내용도 아닌 머리(애매).
+    수식어(여자·신나는·그·내)는 건너뛰고, 뜻이 여럿인 동사는 격조사·계사·문장 부호가 붙은 첫 어절에서 **멈춘다** —
+    '좋아하던 사람을 그리워하는 노래'의 '노래'는 다른 서술어의 대상이라 가져오지 않는다(리뷰). 뜻이 하나뿐인 듣·들었·들으는 멈추지 않고
+    곡 명사까지 간다('듣던 제목이 기억 안 나는 노래', 리뷰). 곡 명사는 내용 표지보다 먼저 본다('만화 주제가'·'주제곡')."""
+    limit = _HEAD_SCAN_TOKENS_UNAMBIGUOUS if unambiguous else _HEAD_SCAN_TOKENS
+    for j in range(i + 1, min(len(tokens), i + 1 + limit)):
+        tok = _clean(tokens[j])
         if _is_song_noun(tokens, j):
             return True
-        if allow_pronoun_and_artist and (_PRONOUN_HEAD_RE.match(_clean(tokens[j])) or _is_artist_noun(tokens[j])
-                                         or any(f in _LISTEN_MEMORY_NOUNS for f in _noun_forms(tokens[j]))):
+        if tok.startswith(_RELEASE_STEMS) and _release_subject(tokens[j - 1]) is False:
+            return False                         # '듣던 라디오가 나오는 노래' — 나오는 것은 라디오다
+        if allow_pronoun_and_artist and (_PRONOUN_HEAD_RE.match(tok) or _is_artist_noun(tokens[j])
+                                         or (j == i + 1 and any(f in _LISTEN_MEMORY_NOUNS for f in _noun_forms(tokens[j])))):
             return True
+        if tok.startswith(_CONTENT_MARKERS):
+            # 듣던 가사가 슬픈 노래 — 뜻이 하나뿐인 동사 뒤의 '가사가/는'은 곡을 꾸미는 절의 주어일 수 있어 결정하지 않는다
+            if unambiguous and _content_marker_with(tokens[j], ("가", "이", "은", "는")):
+                continue
+            return False
+        if not unambiguous and _ends_phrase(tokens[j]):
+            return None
     return None
 
 
-def _listening_context(query: str, start: int, end: int) -> bool:
-    """생애 단계 표현(query[start:end]) 뒤가 '들은 시기' 문맥인가. 위 규칙 0~3."""
-    before = query[:start].split()
+def _mask_quotes(text: str, quoted: list[tuple[int, int]], offset: int = 0) -> str:
+    """인용 구간을 공백으로 지운다 — 인용 안의 '듣고'는 바깥 표현의 청취 근거가 아니다(리뷰). 길이는 그대로라 위치는 보존된다."""
+    chars = list(text)
+    for s, e in quoted:
+        for k in range(max(s - offset, 0), min(e - offset, len(chars))):
+            if not chars[k].isspace():
+                chars[k] = " "
+    return "".join(chars)
+
+
+def _listen_verb_at(tokens: list[str], i: int) -> Optional[bool]:
+    """tokens[i]가 청취 동사일 때의 판정. True/False=결정, None=애매(다른 근거를 더 본다)."""
+    tok = _clean(tokens[i])
+    if i > 0 and _content_marker_with(tokens[i - 1], _SUBJECT_ENDINGS):
+        return False                                                     # "얘기 나오는 노래" — 나오는 것은 얘기다
+    if tok.startswith(_RELEASE_STEMS) and i > 0:
+        subject = _release_subject(tokens[i - 1])
+        if subject is False:
+            return False                                                 # "이름이 나오는 노래" — 나오는 것은 이름이다(리뷰)
+        # subject is True("이 노래가 나왔는데", "앨범이 나왔어")는 내용이 아니라는 것까지만이다 — 청취 여부는 아래 종결형·머리 명사가
+        # 정한다: "노래가 나오는 인형 선물 받은 얘기"는 머리가 인형·얘기라 내용(12차)
+    if _is_finite(tokens, i, _LISTEN_STEMS):
+        return True                                                      # "많이 들었어", "들었는데 제목이 기억 안 나", "들었지만"
+    if i + 1 >= len(tokens):
+        return _is_verb_shape(tokens[i]) or None                        # 마지막 어절에 홀로: "그 노래 중학교 때 많이 들었던"(리뷰)
+    if tok.endswith(("곤", "고")) and _clean(tokens[i + 1]).startswith(("했", "하", "해")):
+        if _is_finite(tokens, i + 1, ("했", "하", "해")):
+            return True                                                  # "자주 듣곤 했어"
+        return _head_after_verb(tokens, i + 1, True, unambiguous=tok.startswith(_UNAMBIGUOUS_LISTEN_STEMS))
+    return _head_after_verb(tokens, i, True, unambiguous=tok.startswith(_UNAMBIGUOUS_LISTEN_STEMS))
+
+
+def _listening_context(query: str, start: int, end: int, quoted: list[tuple[int, int]] = ()) -> bool:
+    """생애 단계 표현(query[start:end]) 뒤가 '들은 시기' 문맥인가. 위 규칙 0~3. 인용 안 어절은 보지 않는다."""
+    before = _mask_quotes(query[:start], list(quoted)).split()
     if before and _content_marker_with(before[-1], _CONTENT_BEFORE_ENDINGS):
         return False                                                     # 규칙 0: "가사에 어릴 때 …"
-    tokens = query[end:].split()
+    tokens = _mask_quotes(query[end:], list(quoted), offset=end).split()
     for i, raw in enumerate(tokens[:_LIFE_STAGE_WINDOW_TOKENS]):
         tok = _clean(raw)
+        if tok.startswith(_STEM_EXCEPTIONS):
+            continue
         if tok.startswith(_LISTEN_STEMS):                                # 규칙 1
-            if i > 0 and _content_marker_with(tokens[i - 1], _SUBJECT_ENDINGS):
-                return False                                             # "얘기 나오는 노래" — 나오는 것은 얘기다
-            if not _is_modifier_form(tok) or i + 1 >= len(tokens):
-                return True                                              # "많이 들었어", "들었는데", 창 끝의 '들었던'
-            head = _head_after_verb(tokens, i, allow_pronoun_and_artist=True)
-            if head is not None:
-                return head
-            continue                                                     # 애매(듣던 라디오 사연 …) — 다른 신호를 더 본다
-        if tok.startswith(_SONG_REQUIRING_STEMS):                        # 규칙 2
+            verdict = _listen_verb_at(tokens, i)
+            if verdict is not None:
+                return verdict
+            continue                                                     # 애매(듣던 라디오 사연, 불러도 대답 없던 이름 …) — 다른 근거를 더 본다
+        if tok.startswith(_SONG_REQUIRING_STEMS):                        # 규칙 2 — 마지막 어절이어도 곡 명사 없이는 안 된다("진짜 좋아했어")
             head = _head_after_verb(tokens, i, allow_pronoun_and_artist=False)
             if head is not None:
                 return head
             continue
-        # 규칙 3: 표현 바로 다음(지시어 하나는 건너뜀)의 곡 명사가 구의 머리 — "중학교 때 노래인데", "고등학교 때 그 노래"
+        # 규칙 3: 표현 바로 다음(지시어 하나는 건너뜀)의 곡 명사가 화제 — "중학교 때 노래인데", "고등학교 때 그 노래"
         if (i == 0 or (i == 1 and tokens[0] in _DETERMINERS)) and _is_song_noun(tokens, i) and _is_phrase_head(tokens, i):
             return True
+        # 절 경계: 시간 표현의 절이 청취 근거 없이 끝났다 — "가사인데 최근에 나온", "친구 얘긴데 요즘 좋아하는", "가난했는데 요즘 나온"
+        # 내용 표지는 계사·인용 꼴(가사인데·얘긴데·이야기야·라는)만 — '가사가 좋아서 계속 듣던'의 '가사가'는 절을 끝내지 않는다(11차)
+        if _content_marker_with(raw, ("데", "인데", "야", "이야", "라는", "라고", "이라", "였", "이었")) or tok.endswith(_CLAUSE_END_SUFFIXES):
+            return False
     return False
 
 
@@ -1349,17 +1488,19 @@ def _inside(pos: int, ranges: list[tuple[int, int]]) -> bool:
 
 
 def _parse_age(text: str) -> Optional[int]:
-    digits = re.search(r"\d{1,2}", text)
-    if digits:
-        return int(digits.group(0))
+    """나이 표현 전체를 숫자로. '열다섯'=15, '쉰 다섯'=55, '스무'=20. 십 단위·단위 수사 밖의 글자가 있으면 None."""
+    text = "".join(text.split())
+    if text.isdigit():
+        return int(text)
     total = 0
-    for word, value in _KOREAN_TENS.items():
-        if word in text:
-            total += value
+    for word, value in sorted(_KOREAN_TENS.items(), key=lambda kv: -len(kv[0])):
+        if text.startswith(word):
+            total, text = value, text[len(word):]
             break
-    unit = re.search(r"(한|두|세|네|다섯|여섯|일곱|여덟|아홉)", text.replace("스물", "").replace("스무", ""))
-    if unit:
-        total += _KOREAN_NUMBER[unit.group(1)]
+    if text:
+        if text not in _KOREAN_NUMBER:
+            return None
+        total += _KOREAN_NUMBER[text]
     return total or None
 
 
@@ -1390,7 +1531,7 @@ def _extract_life_stage(query: str) -> dict | None:
                           "confidence": 0.6, "_start": m.start(), "_end": m.end()})
     found.sort(key=lambda d: (d["_start"], -d["_end"]))
     for d in found:
-        d["_verb"] = _listening_context(query, d["_start"], d["_end"])
+        d["_verb"] = _listening_context(query, d["_start"], d["_end"], quoted)
     head = next((d for d in found if d["_verb"]), None)
     if head is None:
         return None
@@ -1414,12 +1555,41 @@ def _extract_life_stage(query: str) -> dict | None:
             "_content_stages": sorted({d["stage"] for d in found if d not in keep} | quoted_stages)}
 
 
-def _without_spans(query: str, spans: list) -> str:
-    """시간 표현 구간을 뺀 질의를 공백 없이 — 태그가 질의에 내용으로 적혀 있는지 볼 때 쓴다."""
+# 태그가 질의에 '내용'으로 적혀 있는지 — 글자가 있다는 것만으로는 안 된다. 태그 말이 **내용 동사의 논항**("추억을 회상하는", "향수를 담은",
+# "추억이 담긴", "고향에 대한")이거나 **내용 표지를 직접 꾸밀 때**("추억의 가사", "옛날 얘기")만 근거다. '추억의 노래'·'옛날 노래'처럼 곡 명사를
+# 꾸미면 시간 수식어라 뺀다 — 3어절 안에 '가사가'가 있어도(리뷰). 내용 동사는 활용형으로 받는다 — '담임'·'그리고'는 담다·그리워하다가 아니다
+_CONTENT_VERB_FORMS = ("담은", "담긴", "담았", "담고", "담아", "담겨", "담는", "회상", "그리워", "그리는", "그린", "그리던", "그렸", "그리고픈",
+                       "떠올", "얘기하", "이야기하", "말하", "노래하", "노래한", "표현", "다루", "다룬", "등장", "묘사")
+_TAG_ARG_SUFFIXES = ("을", "를", "이", "가", "은", "는")
+
+
+def _tag_has_content_evidence(tag: str, query: str, spans: list) -> bool:
+    """정규화한 tag(공백 없음)가 시간 표현 밖의 질의에 내용으로 적혀 있는가."""
     text = query
     for s, e in sorted((tuple(sp) for sp in spans), reverse=True):
         text = text[:s] + text[e:]
-    return "".join(text.split())
+    tokens = text.split()
+    joined, owner = "", []                       # 공백을 뺀 문자열과 각 글자가 속한 어절 번호
+    for k, tok in enumerate(tokens):
+        joined += tok
+        owner += [k] * len(tok)
+    pos = joined.find(tag)
+    while pos != -1:
+        k = owner[pos + len(tag) - 1]            # 태그 말이 끝나는 어절
+        word = _clean(tokens[k])
+        rest = word[word.find(tag) + len(tag):] if tag in word else ""
+        nxt = _clean(tokens[k + 1]) if k + 1 < len(tokens) else ""
+        nxt2 = _clean(tokens[k + 2]) if k + 2 < len(tokens) else ""
+        if rest and word.startswith(_CONTENT_VERB_FORMS) and word.startswith(tag):
+            return True                          # 태그 말 자체가 내용 동사다: '회상하는'의 회상
+        if rest in _TAG_ARG_SUFFIXES and (nxt.startswith(_CONTENT_VERB_FORMS) or nxt2.startswith(_CONTENT_VERB_FORMS)):
+            return True                          # 추억을 회상하는 · 향수를 담았어 · 추억이 담긴
+        if rest == "에" and nxt.startswith(("대한", "관한", "관련")):
+            return True                          # 고향에 대한
+        if rest in ("", "의") and nxt.startswith(_CONTENT_MARKERS):
+            return True                          # 옛날 얘기 · 추억의 가사
+        pos = joined.find(tag, pos + 1)
+    return False
 
 
 def release_era_from_birth_year(life_stage: dict, birth_year: int, pad_years: int = 1) -> dict | None:
@@ -1978,11 +2148,12 @@ def _apply_metadata_safeguards(
     if (enriched.get("life_stage") or {}).get("stage"):
         # 시간 단서가 내용 태그로 새면 BM25가 "학창 시절 추억" 댓글 요약이 든 곡(2000년대에 몰림)을 찾는다.
         # 생애 단계가 잡힌 질의에서만 뺀다 — "어린 시절" 이야기를 담은 가사를 찾는 질의는 그대로다.
-        # 단 질의에 **시간 표현 밖에 그대로 적힌 말**은 내용이다 — "중학교 때 듣던 추억을 회상하는 가사"의 '추억'·'회상'(리뷰)
+        # 단 질의에 **내용 근거와 함께 적힌 말**은 남긴다 — "추억을 회상하는 가사"의 추억·회상, "가사는 고향에 대한 향수를 담았어"의 향수·고향.
+        # 글자가 있다는 것만으로는 안 된다 — "듣던 추억의 노래"·"듣던 옛날 노래"의 추억·옛날은 시간 수식어라 뺀다(리뷰)
         tag_re = _life_stage_tag_re(life_stages or [enriched["life_stage"]["stage"]], content_stages)
-        remaining = _without_spans(query, enriched["life_stage"].get("spans") or [])
+        spans = enriched["life_stage"].get("spans") or []
         korean_tags = [t for t in korean_tags
-                       if not tag_re.match("".join(str(t).split())) or "".join(str(t).split()) in remaining]
+                       if not tag_re.match("".join(str(t).split())) or _tag_has_content_evidence("".join(str(t).split()), query, spans)]
 
     enriched["korean_tags"] = list(
         dict.fromkeys(korean_tags)
