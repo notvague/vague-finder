@@ -1178,6 +1178,7 @@ _KOREAN_TENS = {"열": 10, "스무": 20, "스물": 20, "서른": 30, "마흔": 4
 #   - "어릴 때 TV에 나오지 않던 가수 얘기", "어릴 때 틀어주던 만화 거의 다 기억난다는 얘기"
 #   - "어릴 때 친구 이야기가 담긴 노래 요즘 듣는" (내용 표지가 앞 절의 주어인데 뒤의 '듣는'이 청취로 잡힌다)
 #   - '즐겨·돌려·자주·많이' 같은 부사는 신호가 아니다(즐겨 듣던 / 즐겨 먹던 — 뒤 동사가 정한다). 어간 접두가 맞아도('뜨겁게'의 뜨) 어간이 아니면 아니다
+#   - 들었·들은은 바로 앞이 '들다'의 논항(잠·정·힘·나이·손 …)이면 듣다가 아니다 — "잠 들었던 기억", "정이 들었던 강아지"는 넘기고 다른 근거를 본다
 #   - 곡 명사 뒤가 '하다' 활용(하면서·해주던)이나 잘/못/부르면 동사구('노래하다·노래 잘하다')라 곡이 아니다. '하나·하루'는 예외
 #   - 창은 글자가 아니라 어절 수다(글자로 자르면 '노래방'→'노래'로 잘린다). 동사는 표현 뒤 _LIFE_STAGE_WINDOW_TOKENS 어절 안에 있어야 하고,
 #     머리 명사는 동사 뒤 _HEAD_SCAN_TOKENS 어절까지 본다("틀어주던 여자 가수 노래")
@@ -1193,6 +1194,8 @@ _CONTENT_MARKERS = ("가사", "노랫말", "내용", "얘기", "얘긴", "이야
 # 뜻이 하나뿐인 청취 동사(듣·들었·들으·들은·들어본/봤/보) — 뒤에 긴 꾸밈말('듣던 제목이 기억 안 나는 노래')이 흔해 격조사 머리에서 멈추지 않고 곡 명사까지 간다(리뷰).
 # 뜻이 여럿인 동사(부르·나오·유행·틀어·좋아하)는 첫 머리에서 멈춘다('좋아하던 사람을 그리워하는 노래')
 _UNAMBIGUOUS_LISTEN_STEMS = ("듣", "들었", "들으", "들은", "들어본", "들어봤", "들어보")
+# 예외: 들었·들은 바로 앞이 '들다'의 논항(잠·정·힘·나이·손 …)이면 듣다가 아니라 들다(잠 들었던·정이 들었던·나이 들은)라 청취 동사로 보지 않는다(14차)
+_DEULDA_ARGS = frozenset({"잠", "정", "철", "나이", "힘", "병", "멍", "물", "감기", "손", "편", "돈", "맛"})
 _HEAD_SCAN_TOKENS_UNAMBIGUOUS = 6
 _STEM_EXCEPTIONS = ("유행어", "듣보")             # 어간으로 시작하지만 동사가 아닌 명사
 # '-어·-지·-다·-고' 뒤에 오면 종결이 아니라 보조 용언·부정이다: 부르지 못한, 틀어 놓던, 듣고 싶던.
@@ -1209,8 +1212,8 @@ _ADVERBS_ENDING_I = frozenset({"많이", "같이", "깊이", "높이", "가까�
 def _release_subject(prev: str) -> Optional[bool]:
     """나오-계열 동사 바로 앞 어절이 주어인가. False=내용의 주어('이름이 나오는'), True=곡의 발매('노래가 나왔는데'·'앨범이'), None=주어 아님(부사·에서)."""
     tok = _clean(prev)
-    if not tok.endswith(("가", "이")) or tok.endswith(("에서", "같이")) or tok in _ADVERBS_ENDING_I:
-        return None
+    if not tok.endswith(("가", "이")) or tok.endswith(("에서", "같이", "없이")) or tok in _ADVERBS_ENDING_I:
+        return None                              # '-없이'(끊임없이·수없이)는 부사다(14차)
     if _song_noun_suffix(prev) in ("가", "이"):
         return True
     return False
@@ -1384,6 +1387,8 @@ def _mask_quotes(text: str, quoted: list[tuple[int, int]], offset: int = 0) -> s
 def _listen_verb_at(tokens: list[str], i: int) -> Optional[bool]:
     """tokens[i]가 청취 동사일 때의 판정. True/False=결정, None=애매(다른 근거를 더 본다)."""
     tok = _clean(tokens[i])
+    if tok.startswith(("들었", "들은")) and i > 0 and any(f in _DEULDA_ARGS for f in _noun_forms(tokens[i - 1])):
+        return None                                                      # "잠 들었던", "정이 들었던", "나이 들은" — 들다다(14차)
     if i > 0 and _content_marker_with(tokens[i - 1], _SUBJECT_ENDINGS):
         return False                                                     # "얘기 나오는 노래" — 나오는 것은 얘기다
     if tok.startswith(_RELEASE_STEMS) and i > 0:

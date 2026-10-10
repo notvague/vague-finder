@@ -110,6 +110,18 @@ from src.retrieval import query_analyzer as qa
     ("어릴 때 들은 노래인데 제목이 기억 안 나", "childhood", "어릴 때"),
     ("중학교 때 많이 들어본 노래", "middle", "중학교 때"),
     ("중학교 때 들어봤던 노래", "middle", "중학교 때"),
+    # 14차 — '들다'의 논항(잠·정·힘·나이·손)이 앞에 없으면 들었·들은은 청취 그대로
+    ("중학교 때 많이 들었던 노래", "middle", "중학교 때"),
+    ("중학교 때 처음 들은 노래", "middle", "중학교 때"),
+    ("중학교 때 마음에 들었던 노래", "middle", "중학교 때"),
+    ("중학교 때 잠 안 올 때 들었던 노래", "middle", "중학교 때"),
+    ("중학교 때 힘들 때 들었던 노래", "middle", "중학교 때"),
+    ("중학교 때 많이 들었던 제목이 기억 안 나는 노래", "middle", "중학교 때"),
+    ("어릴 때 라디오에서 들은 노래", "childhood", "어릴 때"),
+    # 14차 — '-없이'는 부사다
+    ("어릴 때 라디오에서 끊임없이 나오던 노래", "childhood", "어릴 때"),
+    ("중학교 때 길거리에서 쉴새없이 나오던 노래", "middle", "중학교 때"),
+    ("중학교 때 TV에서 수없이 나왔던 노래", "middle", "중학교 때"),
 ])
 def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     found = qa._extract_life_stage(query)
@@ -204,6 +216,16 @@ def test_life_stage_is_detected_as_a_time_clue(query, stage, text):
     "어릴 때 소문으로 들은 얘기 가사",
     "어릴 때 집에 들어온 강아지 얘기 가사",
     "어릴 때 들어가던 골목 얘기 가사",
+    # 14차 — 잠 들다·정 들다·힘 들다·나이 들다·손 들다는 '들다'
+    "어릴 때 잠 들었던 기억을 담은 노래",
+    "중학교 때 정 들었던 친구와 헤어지는 노래",
+    "어릴 때 힘 들었던 시절을 위로하는 노래",
+    "어릴 때 나이 들은 엄마를 걱정하는 노래",
+    "어릴 때 정이 들었던 강아지를 그리워하는 노래",
+    "어릴 때 손 들었던 기억 얘기하는 가사",
+    # 14차 — '-없이' 부사 뒤 나오-계열이어도 머리가 곡이 아니면 내용
+    "어릴 때 엄마 없이 나오던 눈물 얘기 가사",
+    "어릴 때 예고 없이 나온 이사 얘기 가사",
 ])
 def test_lyric_content_and_song_events_are_not_life_stage(query):
     assert qa._extract_life_stage(query) is None
