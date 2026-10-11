@@ -124,7 +124,9 @@ _IMPLICIT_ARTWORK_EVIDENCE = {
     "medium": re.compile(
         r"(?:손(?:으로)?\s*그린|(?:연필|펜|붓|크레용|목탄)(?:으)?로\s*"
         r"(?:그린|그려)|그려\s*(?:진|져|놓)|그림|일러스트|삽화|스케치|"
-        r"드로잉|수채화|유화|사진|도트|픽셀|콜라주|실루엣|초상)",
+        r"드로잉|수채화|유화|사진|도트|픽셀|콜라주|실루엣|초상|"
+        # 칠한 재료·붓자국도 그림이라는 형태 근거다("물감을 붓으로 덧칠한 숲").
+        r"물감|덧칠|붓질|붓\s*터치)",
         re.IGNORECASE,
     ),
     "surface": re.compile(
@@ -166,6 +168,17 @@ _IMPLICIT_ARTWORK_EVIDENCE = {
         re.IGNORECASE,
     ),
 }
+
+# "…한 이미지"로 끝나는 묘사 — '표지'라는 말 없이 그림 자체를 설명한 질의다
+# (results_v38 t086·t099: 이 꼴을 못 읽어 모델이 낸 표지 프롬프트를 지웠다).
+# '이미지'는 "청순한 이미지의 가수"처럼 **인상**도 뜻한다. 그래서 묘사가 '이미지'에서 끝날 때만
+# (절의 끝이거나 서술격으로 맺을 때) 받고, 뒤에 꾸밈받는 명사가 오는 꼴(이미지의·이미지였던 …)은 받지 않는다.
+# 절 단위로 본다 — `_CLAUSE_BREAK_RE`가 "이미지인데/이미지였고"를 이미 끊어 준다.
+_IMAGE_HEAD_NOUN_RE = re.compile(
+    r"이미지\s*(?:$|(?:였|이었)(?:어|다|지|음|는데|던\s*(?:거|것|걸|듯))|"
+    r"(?:이)?야(?:\s|$)|임(?:\s|$)|입니다|이에요|예요|"
+    r"같(?:아|은데|았)|가\s*(?:있|그려|찍혀|나와|보였|보이|들어가))"
+)
 
 _STATIC_VISUAL_PREDICATE_RE = re.compile(
     r"(?:그려|적혀|쓰여|써\s*있|찍혀|찍은|보였|보이|들어가|배치|붙어|"
@@ -483,16 +496,20 @@ def _has_implicit_artwork_description(text: str) -> bool:
     """Detect a detailed static artwork description without a cover noun.
 
     A strong artwork/form anchor plus another independent visual axis is enough.
+    A description that ends on the head noun "이미지" plus two axes is enough.
     Without such an anchor, three axes and a static-layout predicate are required.
     This keeps vague listening imagery out while covering descriptions such as
     hand-drawn flowers, rough paper texture, and handwritten titles.
     """
     evidence_text_parts: list[str] = []
+    image_head_noun = False
     for raw_part in _CLAUSE_BREAK_RE.split(text):
         part = raw_part.strip()
         if not part or _NON_COVER_VISUAL_CONTEXT_RE.search(part):
             continue
         evidence_text_parts.append(part)
+        if _IMAGE_HEAD_NOUN_RE.search(part):
+            image_head_noun = True
     evidence_text = " ".join(evidence_text_parts)
     if not evidence_text:
         return False
@@ -504,6 +521,10 @@ def _has_implicit_artwork_description(text: str) -> bool:
     }
     form_anchor = bool(matched & {"medium", "surface", "typography"})
     if form_anchor and len(matched) >= 2:
+        return True
+    # '이미지'로 맺은 묘사는 그 자체가 형태 근거다. 다른 축이 둘 있어야 한다 —
+    # 하나면 "청순한 이미지였어, 여자 가수"처럼 인상만 말한 문장이 걸린다.
+    if image_head_noun and len(matched) >= 2:
         return True
     return bool(
         len(matched) >= 3

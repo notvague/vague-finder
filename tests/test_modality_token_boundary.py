@@ -28,7 +28,11 @@ _NO_PROMPTS = {"image_english_query": "", "audio_english_query": "", "modality_w
 def test_rock_inside_another_word_is_not_an_audio_clue(query: str) -> None:
     assert not has_explicit_audio_clue(query)
     # 모델이 소리 프롬프트를 내지 않아도 검증을 통과한다(예전에는 여기서 예외 → 3회 뒤 폴백).
-    out = apply_modality_query_safeguards(query, dict(_NO_PROMPTS))
+    # "…이미지"로 맺은 묘사는 표지 단서라 표지 프롬프트는 있어야 한다(test_cover_description_image_noun).
+    raw = dict(_NO_PROMPTS)
+    if has_explicit_visual_clue(query):
+        raw["image_english_query"] = "Album cover with a green field."
+    out = apply_modality_query_safeguards(query, raw)
     assert out["audio_english_query"] == ""
     # 폴백으로 가더라도 "rock style" 프롬프트를 만들지 않는다.
     assert "rock" not in build_fallback_modality_queries(query)[1]
