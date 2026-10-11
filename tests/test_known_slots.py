@@ -125,6 +125,8 @@ def test_gender_describes_the_singer(query: str, gender: str) -> None:
     "남자 셋이 나오는 뮤비",
     "여자가 좋아할 만한 노래를 찾고 있어",             # 듣는 사람 — '노래를'은 가창 동사가 아니다(PR 리뷰)
     "남자들이 좋아하는 노래만 모아 둔 앨범",
+    "여자가 좋아하는 노래를 하나 찾고 있어",            # '하나·하루'는 '하다'가 아니다(PR 리뷰 2차)
+    "남자들이 좋아하는 노래만 하루 종일 들었어",
 ])
 def test_gender_is_not_inferred_from_scenes_quotes_or_names(query: str) -> None:
     assert "vocal_gender" not in known_slot_values(query)
