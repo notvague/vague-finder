@@ -42,6 +42,13 @@ def test_rock_inside_another_word_is_not_an_audio_clue(query: str) -> None:
     "팝록인데 후렴이 시원해",
     "신나는 락 음악",
     "모던 록 밴드 노래",
+    # 접두 목록(리뷰 반영): 목록에 없으면 장르만 말한 질의의 소리 경로가 닫힌다.
+    "블루스록 느낌으로 끈적하게 부르는 노래",
+    "아트록 같은 긴 곡",
+    "서던록",
+    "일렉록",
+    "팝펑크록",
+    "얼터너티브 펑크 록",
 ])
 def test_rock_as_a_genre_word_still_counts(query: str) -> None:
     assert has_explicit_audio_clue(query)
@@ -56,6 +63,11 @@ def test_rock_as_a_genre_word_still_counts(query: str) -> None:
     "앨범마다 분위기가 달라지는 가수",
     "특별한 날에 듣던 앨범",
     "앨범은 별로 안 떴는데 이 노래만 유명했어",
+    # "도"·"로"는 조사로 받지 않는다 — 아래가 흔한 다른 낱말이다.
+    "별도 앨범으로 나온 노래",
+    "유명하긴 해도 앨범은 잘 안 알려졌어",
+    "그동안 해온 음악이랑 다른 앨범",
+    "기록적인 판매량을 올린 앨범",
 ])
 def test_syllable_inside_another_word_is_not_a_cover_clue(query: str) -> None:
     assert not has_explicit_visual_clue(query)
@@ -68,6 +80,17 @@ def test_syllable_inside_another_word_is_not_a_cover_clue(query: str) -> None:
     "비가 내리는 창문 그림이었던 앨범",
     "별무늬가 박힌 앨범",
     "분홍빛 배경에 흑백 얼굴 사진이 있던 앨범",
+    # 조사 에서·까지, 붙여 쓴 서술어, 합성 명사(리뷰 반영). "비 오는"과 "비오는"을 다르게 읽지 않는다.
+    "달에서 우주인이 걷는 앨범",
+    "별까지 닿을 듯한 탑이 있는 앨범",
+    "비오는 거리 앨범",
+    "비 오는 거리 앨범",
+    "해뜨는 바다 앨범",
+    "해지는 들판 앨범",
+    "달뜬 밤 앨범",
+    "보름달이 크게 뜬 앨범",
+    "초승달 하나만 있는 앨범",
+    "별똥별이 떨어지는 앨범",
 ])
 def test_one_syllable_noun_as_a_word_still_counts(query: str) -> None:
     assert has_explicit_visual_clue(query)
