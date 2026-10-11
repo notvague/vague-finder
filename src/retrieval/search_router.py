@@ -29,11 +29,18 @@ from src.retrieval.explain import (
     PATH_LABELS,
     RERANK_APPLIED,
     RERANK_FAILED,
+    RERANK_SKIP_MV_SCENE_UNVERIFIABLE,
     RERANK_UNKNOWN,
     ExplainRecorder,
     RerankRun,
 )
 from src.retrieval.reranker import MusicReranker
+# 리랭킹 생략 정책(표지 지배·자료 없는 MV 장면)은 `rerank_policy.py`에 있다(서비스·평가 공용).
+# 기존 호출부가 `search_router.should_skip_rerank_for_image`로 가져가므로 그대로 내보낸다.
+from src.retrieval.rerank_policy import (  # noqa: F401 - re-export
+    rerank_skip_reason,
+    should_skip_rerank_for_image,
+)
 from src.retrieval.lyrics_exact_search import LyricsExactSearchService
 from src.retrieval.lyrics_query import normalize_lyric_surface
 from src.retrieval.clarify import (
@@ -728,23 +735,40 @@ def select_protected_lyric_ids(candidates: Sequence[MatchingTrack]) -> set:
     return protected
 
 
-def should_skip_rerank_for_image(reranker: Any, analysis: QueryAnalysis) -> bool:
-    """이미지 지배 질의는 텍스트 LLM 리랭킹을 건너뛴다.
+def place_protected_lyrics_first(
+    analysis: QueryAnalysis,
+    candidate_tracks: Sequence[MatchingTrack],
+    top_k: int,
+    recorder: ExplainRecorder = NULL_RECORDER,
+) -> List[MatchingTrack]:
+    """모델 없이 가사 exact 보호 배치만 적용한다 — 리랭킹을 **정책으로 생략**한 요청용.
 
-    SigLIP2가 실제 앨범 커버를 보고 만든 순위를, 이미지를 직접 보지 않는
-    listwise reranker가 다시 섞어 회귀시키는 것을 막는다.
-    mixed 질의(image < 0.70)는 기존 리랭킹을 그대로 사용한다.
+    리랭킹 경로에서는 보호 곡이 일반 후보 아래로 내려가지 않는다. 생략 경로가 후보 순서를
+    그대로 내면 그 보호가 사라져, 같은 가사 단서에서 생략 여부에 따라 보호 곡의 자리가 달라진다.
+    그래서 같은 규칙(`select_protected_lyric_ids` · 성별/장르 tier · tier 안은 후보 순서)으로
+    보호 곡을 앞에 두고 나머지는 후보 순서다. 모델 호출은 없고 그 사실을 순서 규칙으로 기록한다.
 
-    리랭커가 `skips_image_dominant`를 켠 경우에만 적용한다. 기존 Cross-Encoder는
-    v0.5 기준선부터 이미지 질의도 리랭킹해 왔으므로, 여기서 함께 끄면 백엔드를
-    바꾸지 않은 사람의 검색 결과까지 달라진다.
+    `candidate_tracks`는 **보정·거절 제외까지 끝난 후보 순서**다. 라우터와 평가 사본이 함께 쓴다.
+    보호 곡이 없으면 후보 순서 그대로이고 기록도 남기지 않는다.
     """
-    if not getattr(reranker, "skips_image_dominant", False):
-        return False
-    return bool(
-        analysis.has_visual_clue
-        and float(analysis.modality_weights.image or 0.0) >= 0.70
+    protected_ids = select_protected_lyric_ids(candidate_tracks)
+    if not protected_ids:
+        return list(candidate_tracks)[:top_k]
+
+    protected = [t for t in candidate_tracks if t.id in protected_ids]
+    others = [t for t in candidate_tracks if t.id not in protected_ids]
+    # 같은 구절이 여러 곡에 있으면 명시된 성별·장르가 맞는 tier를 먼저. tier 안은 후보 순서(안정 정렬).
+    protected.sort(key=lambda t: exact_lyric_constraint_score(analysis, t), reverse=True)
+    final = [*protected, *others][:top_k]
+    final_ids = {t.id for t in final}
+    for track in protected:
+        if track.id in final_ids:
+            recorder.order(track.id, lyric_priority_rule(track), "일반 후보 아래로 내려가지 않음(모델 없이 배치)")
+    recorder.note_behind_protected(
+        [t.id for t in others if t.id in final_ids], len(protected)
     )
+    recorder.note_order_rules_applied()
+    return final
 
 
 # ---------------------------------------------------------------------------
@@ -846,6 +870,7 @@ class SearchRouter:
         recorder: ExplainRecorder = NULL_RECORDER,
         timer: Any = timing.NULL_TIMER,
         path_k: Optional[int] = None,
+        rerank_skip_out: Optional[List[str]] = None,
     ) -> List[MatchingTrack]:
         """
         QueryAnalysis를 받아 3개 경로를 병렬 실행하고
@@ -872,6 +897,9 @@ class SearchRouter:
             바꾼 순서). 꺼져 있으면 후보 목록과 같다. 평가 하네스가 같은 입력으로 리랭킹하려고 쓴다.
         candidate_tracks_out: 같은 통로의 MatchingTrack 버전. 재질문 슬롯을 고르려면
             후보의 성별·장르 메타데이터가 필요한데 id만으로는 알 수 없다.
+        rerank_skip_out: 리스트를 넘기면 리랭킹을 **정책으로 생략**했을 때 그 사유(RERANK_SKIP_*)가
+            담긴다. 설명 기록과 별개의 통로다 — 기록을 끈 요청에도 응답이 "확인할 자료가 없어
+            다른 단서로 찾았다"는 안내를 실어야 하기 때문이다. 비어 있으면 정책 생략은 없었다.
         answers: 재질문 답변. **질의를 바꾸지 않고** 후보 풀 안에서 재정렬만 한다.
             답변을 분석에 병합해 재검색하면 맞는 답변도 순위를 해친다
             (q200: 후보 4위 → 15위). 자세한 근거는 clarify.apply_answer_bonus 참조.
@@ -1671,16 +1699,31 @@ class SearchRouter:
         )
         timer.mark("search.fuse", fuse_started, candidates=len(candidate_tracks))
 
-        # 리랭킹은 빠져나가는 자리가 셋(보호 그룹·일반·폴백)이라 블록으로 묶지 않고
-        # 각 출구에서 닫는다. None이면 리랭킹을 아예 시도하지 않은 것이다.
-        rerank_started: Optional[float] = None
-        if (
+        # 정책 생략은 모델을 부르기 **전에**, 부를 수 있는 요청에서만 판정한다 — 꺼져 있거나
+        # 후보가 하나뿐인 요청에 "생략했다"고 적으면 하지 않을 일을 생략한 것이 된다.
+        # 평가 스크립트(`rerank_preserving_exact_lyrics`)와 같은 함수다. 생략한 요청은
+        # 아래 폴백 출구로 가서 **지금 후보 순서(보정·거절 제외 반영)** 그대로 나간다.
+        rerank_eligible = bool(
             use_rerank
             and self._reranker is not None
             and self._reranker.enabled
             and len(candidate_tracks) > 1
-            and not should_skip_rerank_for_image(self._reranker, analysis)
-        ):
+        )
+        skip_reason = (
+            rerank_skip_reason(self._reranker, analysis, candidate_tracks)
+            if rerank_eligible
+            else ""
+        )
+        if skip_reason:
+            recorder.set_rerank_policy_skip(skip_reason)
+            if rerank_skip_out is not None:
+                rerank_skip_out.append(skip_reason)
+            logger.info("[SearchRouter] 리랭킹 정책 생략 reason=%s", skip_reason)
+
+        # 리랭킹은 빠져나가는 자리가 셋(보호 그룹·일반·폴백)이라 블록으로 묶지 않고
+        # 각 출구에서 닫는다. None이면 리랭킹을 아예 시도하지 않은 것이다.
+        rerank_started: Optional[float] = None
+        if rerank_eligible and not skip_reason:
             recorder.set_reorder_attempted(True)
             rerank_started = time.perf_counter()
             try:
@@ -1845,7 +1888,14 @@ class SearchRouter:
             # 여기까지 왔다는 건 리랭킹이 예외로 멈췄다는 뜻이다. 실패한 시도의
             # 시간도 응답 지연에는 그대로 들어간다.
             timer.mark("search.rerank", rerank_started, shape="failed")
-        final = candidate_tracks[:top_k]
+        if skip_reason == RERANK_SKIP_MV_SCENE_UNVERIFIABLE:
+            # MV 장면 생략: 모델만 빼고 가사 exact 보호 배치는 그대로 적용한다(평가 사본과 같은 함수).
+            # 표지 지배 생략은 기존 동작(후보 순서 그대로)을 유지한다 — 바꾸면 기준선에 닿는다.
+            final = place_protected_lyrics_first(
+                analysis_with_answers(analysis, answers or []), candidate_tracks, top_k, recorder
+            )
+        else:
+            final = candidate_tracks[:top_k]
         recorder.set_rank_after([t.id for t in final])
         return final
 

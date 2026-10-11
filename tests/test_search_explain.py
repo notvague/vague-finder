@@ -1282,16 +1282,16 @@ def test_track_explain_leaves_the_lyric_label_empty_without_a_match():
     assert out.lyric_match_label == ""
 
 
-def test_track_explain_labels_the_model_note_as_unverified():
-    """모델의 문장은 나가되, 검증되지 않았다는 표시와 **함께만** 나간다."""
+def test_track_explain_keeps_the_model_note_out_of_the_response():
+    """모델의 문장은 응답에 **나가지 않는다.** 내부 기록에는 남는다(2026-10-11 — 경고를 붙여도 근거로 읽혔다)."""
     rec = ExplainRecorder("q")
     rec.path("s1", "text_hybrid", 1, 0.016)
     rec.note_model_reason("s1", ["분위기가 비슷하다"])
 
     out = to_track_explain(rec.record.get("s1"))
 
-    assert out.model_notes == ["분위기가 비슷하다"]
-    assert "검증" in out.model_notes_caption
+    assert out.model_notes == [], "호환용 필드는 남기되 비어 있어야 한다"
+    assert rec.record.get("s1").model_notes == ["분위기가 비슷하다"], "내부 진단 원문은 보존한다"
     assert "분위기가 비슷하다" not in out.summary, "확인된 근거와 섞였다"
 
 

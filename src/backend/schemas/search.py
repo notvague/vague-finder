@@ -351,10 +351,27 @@ class MatchingTrack(BaseModel):
 
 
 
+class SearchNotice(BaseModel):
+    """요청 전체에 대한 안내 — 서버가 **구조화된 코드와 고정 문구**로 준다. LLM이 짓지 않는다.
+
+    지금은 자료 없는 MV 장면 질의의 리랭킹 생략 하나뿐이다. explain 여부와 무관하게 실린다 —
+    "말씀하신 뮤직비디오 장면은 확인할 자료가 없어 다른 단서로 찾았다"는 사용자가 알아야 할
+    결과의 성격이지 진단 정보가 아니다. 표지 지배 생략은 기존 동작이라 안내하지 않는다
+    (explain의 `rerank_skip_reason`에만 남는다).
+    """
+
+    code: Literal["mv_scene_unverifiable"] = Field(..., description="사유 코드")
+    message: str = Field(..., description="화면에 그대로 보여줄 고정 문구")
+
+
 class SearchResponse(BaseModel):
     results: List[MatchingTrack] = Field(
         default_factory=list,
         description="검색된 상위 K개의 음악 리스트",
+    )
+    notice: Optional[SearchNotice] = Field(
+        default=None,
+        description="요청 전체 안내. 리랭킹을 정책으로 생략했을 때만 채워진다. None이면 안내할 것이 없다",
     )
     total_found: int = Field(default=0, description="발견된 곡의 수")
 

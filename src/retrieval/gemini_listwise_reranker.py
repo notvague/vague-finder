@@ -303,8 +303,13 @@ class GeminiListwiseReranker:
     """후보 목록 전체를 비교하는 LLM 기반 listwise reranker."""
 
     # 앨범 커버를 보지 못하는 텍스트 리랭커라 이미지 지배 질의는 건드리지 않는다.
-    # search_router.should_skip_rerank_for_image가 이 값을 본다.
+    # rerank_policy.should_skip_rerank_for_image가 이 값을 본다.
     skips_image_dominant = True
+    # 구체적인 뮤직비디오 장면 질의인데 후보 입력에 장면을 판단할 출처 자료가 없으면 부르지 않는다
+    # (rerank_policy.rerank_skip_reason). 이 리랭커의 입력(`_candidate_payload`)에는 가사 요약·태그만
+    # 있고 MV 장면 자료가 없어, 프롬프트의 "일반 지식 사용"이 질의의 소품과 가사의 장소를 합친
+    # 장면("옥상에서 의자를 던지는 장면")을 이유로 만들어 낸 사례가 있다(2026-10-11).
+    skips_unverifiable_mv_scene = True
     # 재질문 답변을 프롬프트에 반영한다. search_router.call_reranker가 이 값을 보고
     # answers를 넘긴다 (Cross-Encoder는 질의-곡 쌍만 보므로 받지 않는다).
     uses_clarify_answers = True

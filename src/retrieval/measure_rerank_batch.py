@@ -13,6 +13,11 @@ CE 2.7초였다. 둘 중 CE 쪽은 **분석 결과를 건드리지 않으므로*
 같은 장치 · 모델은 한 번만 올리고 설정만 바꾼다 · 예열 후 반복 측정.
 후보 수와 `max_length`는 **건드리지 않는다**(이번 실험의 변수는 배치 크기 하나다).
 
+이 도구는 `reranker.rerank_run`을 **직접** 부른다 — 라우터·평가 스크립트의 리랭킹 생략 정책
+(`rerank_policy.py`: 표지 지배·자료 없는 MV 장면)과 가사 보호 배치를 거치지 않는다. 의도된 것이다:
+여기서 재는 것은 리랭커 호출 한 번의 시간·점수이고 서비스 결과가 아니다. 서비스 결과를 재려면
+`evaluate_search_accuracy`를 쓴다.
+
     venv/bin/python -m src.retrieval.measure_rerank_batch \
         --input experiments/reranking/eval_queries_v06.csv --split dev \
         --analysis-cache experiments/reranking/analysis_cache_v06_dev.json \
