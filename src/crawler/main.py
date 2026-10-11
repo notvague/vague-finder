@@ -45,6 +45,7 @@ from src.crawler.scripts_py.collect_melon_data import (
     MelonAccessError,
     MelonTransientError,
     SongCandidate,
+    blank_placeholder,
     collect_melon_data,
     fetch_melon_song_candidates,
 )
@@ -750,7 +751,8 @@ def build_record(source: Dict, final_meta: Dict, state: CrawlState) -> Dict:
             tag_list = [tag_list]
         return [str(t).replace(" ", "") for t in tag_list if t]
 
-    genre_str = melon_data.get("genre", "")
+    # 이미 받아 둔 source.json에는 멜론의 빈 칸 표시 '-'가 남아 있을 수 있다.
+    genre_str = blank_placeholder(melon_data.get("genre", "") or "")
     genre_list = [g.strip() for g in genre_str.split(",")] if genre_str else []
 
     ordered_data = {
@@ -759,7 +761,7 @@ def build_record(source: Dict, final_meta: Dict, state: CrawlState) -> Dict:
             "title": melon_data.get("title"),
             "artist": melon_data.get("artist", []),
             "album": melon_data.get("album_name", ""),
-            "release_date": melon_data.get("release_date", ""),
+            "release_date": blank_placeholder(melon_data.get("release_date", "") or ""),
             "genre": genre_list,
             "type": no_space(final_meta.get("artist_type", ["unknown"])),
             "vocal_gender": final_meta.get("vocal_gender", "unknown"),
