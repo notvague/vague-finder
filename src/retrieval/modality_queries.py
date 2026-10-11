@@ -124,7 +124,9 @@ _IMPLICIT_ARTWORK_EVIDENCE = {
     "medium": re.compile(
         r"(?:손(?:으로)?\s*그린|(?:연필|펜|붓|크레용|목탄)(?:으)?로\s*"
         r"(?:그린|그려)|그려\s*(?:진|져|놓)|그림|일러스트|삽화|스케치|"
-        r"드로잉|수채화|유화|사진|도트|픽셀|콜라주|실루엣|초상)",
+        r"드로잉|수채화|유화|사진|도트|픽셀|콜라주|실루엣|초상|"
+        # 칠한 재료·붓자국도 그림이라는 형태 근거다("물감을 붓으로 덧칠한 숲").
+        r"물감|덧칠|붓질|붓\s*터치)",
         re.IGNORECASE,
     ),
     "surface": re.compile(
@@ -166,6 +168,79 @@ _IMPLICIT_ARTWORK_EVIDENCE = {
         re.IGNORECASE,
     ),
 }
+
+# "…한 이미지"로 끝나는 묘사 — '표지'라는 말 없이 그림 자체를 설명한 질의다
+# (results_v38 t086·t099: 이 꼴을 못 읽어 모델이 낸 표지 프롬프트를 지웠다).
+# '이미지'는 "청순한 이미지의 가수"처럼 **인상**도 뜻한다. 규칙이 참인데 모델이 표지 프롬프트를
+# 내지 않으면 분석 전체가 폴백으로 떨어지므로, 애매하면 받지 않는다:
+# - **절이 '이미지'(와 그 서술어)에서 끝나야 한다.** 받는 꼴을 늘어놓고 새는 꼴을 하나씩 막는 대신
+#   "그 뒤로 절이 이어지지 않는다"를 조건으로 건다. 그래서 뒤 명사를 꾸미는 꼴은 종류와 상관없이
+#   빠진다 — "이미지의 가수", "이미지였던 가수", "이미지가 있는 가수", "이미지 같아 보이는 가수",
+#   "이미지가 있어 보이는 가수", "이미지였다고 하는 가수".
+#   · 서술어 없이 '이미지'로 끝나면 그 뒤는 절의 끝이거나 말을 잇는 부사(근데·그래서 …)여야 한다
+#     ("이미지 변신", "이미지 좋은"을 막는다).
+#   · 문장을 맺는 서술어(`_IMAGE_FINAL`)는 **정말 맺었을 때만** 받는다 — 글자가 붙어 이어지거나
+#     ("였다고", "야말로", "임에도") 그 어미의 보조 서술어가 따라오면("같아 보이는", "같지 않은",
+#     "이미지다 보니", "였다 하는") 맺은 것이 아니다.
+#     맺은 뒤에 새 문장이 오는 것은 마침표가 있든 없든 같다("이미지였어 제목이 기억 안 나").
+#   · 다음 절로 넘어가는 서술어(`_IMAGE_CONNECTIVE`: -는데·-지만)는 그 자체가 절의 경계다.
+#     `_CLAUSE_BREAK_RE`가 "이미지인데/이미지였고"는 이미 끊어 주고, 여기서 나머지를 받는다.
+# - 같은 절에서 '이미지' 앞에 노래·듣기 낱말이 오면 노래가 주는 심상이다 — "노래가 … 같은 이미지야".
+# - 시각 축은 그 절의 '이미지' **앞**에서만 센다(`_has_implicit_artwork_description`).
+#
+# 맺음꼴은 어간과 어미를 따로 적어 곱한다. 꼴을 하나씩 적으면 "같았지·있었지"처럼 빠지는 것이 생긴다.
+_IMAGE_COPULA = r"(?:였|이었)"
+_IMAGE_EXISTS = r"가\s*(?:있|그려져\s*있|찍혀\s*있)"
+_IMAGE_RECALLED = _IMAGE_COPULA + r"던\s*(?:거|것|걸|듯)"   # "이미지였던 거 (같아)"
+# 어간: 같-·같았-, 였-, 가 있-·가 있었- ("였던 거 같-" 포함)
+_IMAGE_STEM = (
+    r"(?:(?:" + _IMAGE_RECALLED + r"\s*)?같(?:았)?|" + _IMAGE_COPULA + r"|"
+    + _IMAGE_EXISTS + r"(?:었)?)"
+)
+# 맺음 뒤에 붙는 높임·감탄 글자.
+_ENDING_FILLER = r"[요ㅠㅜㅋㅎ~]*"
+
+
+def _closed(auxiliary: str = "") -> str:
+    """어미가 정말 문장을 맺었는가: 한글이 붙어 이어지지 않고, 그 어미의 보조 서술어가 따라오지 않는다.
+
+    맺은 뒤에 새 문장이 오는 것은 막지 않는다 — 마침표가 있든 없든 같아야 한다.
+    """
+    follows = r"(?!\s*(?:" + auxiliary + r"))" if auxiliary else ""
+    return _ENDING_FILLER + r"(?![가-힣])" + follows
+
+
+# 어미마다 뒤에 올 수 있는 보조 서술어가 정해져 있다(닫힌 목록). 그것이 따라오면 맺은 것이 아니다.
+#   -어/-아 + 보이다           "같아 보이는", "있어 보이는"
+#   -지     + 않다·못하다      "같지 않은", "있지 못한"
+#   -다     + 보니·보면·하다   "이미지다 보니", "였다 하는"
+# -음·-야·-임·합쇼체에는 보조 서술어가 붙지 않는다.
+_AFTER_EO = _closed(r"보[이여였]")
+_AFTER_JI = _closed(r"않|못")
+_AFTER_DA = _closed(r"보[니면]|하[는던니며고]")
+_AFTER_NEUTRAL = _closed()
+_IMAGE_FINAL = (
+    r"(?:" + _IMAGE_STEM
+    + r"(?:[어아]" + _AFTER_EO + r"|지" + _AFTER_JI + r"|다" + _AFTER_DA + r"|음" + _AFTER_NEUTRAL + r")|"
+    r"(?:이)?다" + _AFTER_DA + r"|"
+    r"(?:(?:이)?야|임|입니다|이에요|예요)" + _AFTER_NEUTRAL + r")"
+)
+_IMAGE_CONNECTIVE = (
+    r"(?:(?:" + _IMAGE_RECALLED + r"\s*)?같(?:은데|지만|았는데|았지만)|"
+    + _IMAGE_COPULA + r"(?:는데|지만)|"
+    + _IMAGE_EXISTS + r"(?:는데|지만|었는데|었지만))"
+)
+# 서술어 없이 '이미지'(또는 "이미지였던 거")로 끝난 절: 절의 끝이거나, 말을 잇는 부사가 새 절을 연다.
+_BARE_CLAUSE_END = r"\s*" + _ENDING_FILLER + r"\s*(?:$|근데|그래서|그치만|암튼|아무튼)"
+_IMAGE_HEAD_NOUN_RE = re.compile(
+    r"이미지\s*(?:" + _IMAGE_CONNECTIVE + r"|" + _IMAGE_FINAL
+    + r"|(?:" + _IMAGE_RECALLED + r")?" + _BARE_CLAUSE_END + r")"
+)
+
+_LISTENING_BEFORE_IMAGE_RE = re.compile(
+    r"(?:노래|음악|멜로디|사운드|(?<![가-힣])곡(?:이|은|는|을|도)?(?=\s)|"
+    r"들으면|들을\s*때|듣다\s*보면|듣고\s*있으면|들었을\s*때)"
+)
 
 _STATIC_VISUAL_PREDICATE_RE = re.compile(
     r"(?:그려|적혀|쓰여|써\s*있|찍혀|찍은|보였|보이|들어가|배치|붙어|"
@@ -483,16 +558,32 @@ def _has_implicit_artwork_description(text: str) -> bool:
     """Detect a detailed static artwork description without a cover noun.
 
     A strong artwork/form anchor plus another independent visual axis is enough.
+    A description that ends on the head noun "이미지" plus two axes is enough.
     Without such an anchor, three axes and a static-layout predicate are required.
     This keeps vague listening imagery out while covering descriptions such as
     hand-drawn flowers, rough paper texture, and handwritten titles.
     """
     evidence_text_parts: list[str] = []
+    image_head_axes = 0
     for raw_part in _CLAUSE_BREAK_RE.split(text):
         part = raw_part.strip()
         if not part or _NON_COVER_VISUAL_CONTEXT_RE.search(part):
             continue
         evidence_text_parts.append(part)
+        head = _IMAGE_HEAD_NOUN_RE.search(part)
+        if head is None:
+            continue
+        # 묘사는 '이미지' 앞에 온다. 다른 절의 가수 설명("…이미지였어, 노란 옷 입은 여자 가수")이
+        # 축을 채우지 않도록 그 절의 앞부분만 본다.
+        described = part[: head.start()]
+        if _LISTENING_BEFORE_IMAGE_RE.search(described):
+            continue
+        axes = sum(
+            1
+            for pattern in _IMPLICIT_ARTWORK_EVIDENCE.values()
+            if pattern.search(described)
+        )
+        image_head_axes = max(image_head_axes, axes)
     evidence_text = " ".join(evidence_text_parts)
     if not evidence_text:
         return False
@@ -504,6 +595,9 @@ def _has_implicit_artwork_description(text: str) -> bool:
     }
     form_anchor = bool(matched & {"medium", "surface", "typography"})
     if form_anchor and len(matched) >= 2:
+        return True
+    # '이미지'로 맺은 묘사는 그 자체가 형태 근거다. 그 묘사 안에 다른 축이 둘 있어야 한다.
+    if image_head_axes >= 2:
         return True
     return bool(
         len(matched) >= 3

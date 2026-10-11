@@ -119,3 +119,6 @@ experiments/reranking/results_*/*/*_explain.jsonl
 !experiments/reranking/results_v39_corpus5143_baseline/*/*/search_eval_*_top10.csv
 !experiments/reranking/results_v39_corpus5143_baseline/*/*/search_eval_*_ranks.csv
 experiments/reranking/results_*/*/*/*_explain.jsonl
+
+# "…이미지" 표지 묘사 규칙(results_v41) — 규칙 판정 전후표
+!experiments/reranking/results_v41_cover_description_image_noun/*.csv
