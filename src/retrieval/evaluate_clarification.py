@@ -859,26 +859,16 @@ def load_target_tracks(song_ids: Sequence[str]) -> Dict[str, MatchingTrack]:
     등이 후보와 달라 같은 곡인데도 선택지와 안 맞을 수 있다.
     """
     from src.retrieval.search_service import SearchService
-    from src.vector_db.qdrant_backend import collection_name, point_id
-    from src.vector_db.settings import NAMESPACE, TEXT_HYBRID_INDEX_NAME
+    from src.vector_db.settings import TEXT_HYBRID_INDEX_NAME
 
     ids = list(dict.fromkeys(str(s) for s in song_ids))
     if not ids:
         return {}
-    records = get_vector_client().client.retrieve(
-        collection_name=collection_name(TEXT_HYBRID_INDEX_NAME, NAMESPACE),
-        ids=[point_id(s) for s in ids],
-        with_payload=True,
-        with_vectors=False,
-    )
-    out: Dict[str, MatchingTrack] = {}
-    for record in records:
-        payload = dict(record.payload or {})
-        song_id = str(payload.pop("song_id", record.id))
-        out[song_id] = SearchService.track_from_match(
-            {"id": song_id, "score": 0.0, "metadata": payload}
-        )
-    return out
+    # 서비스의 질문 조회(/search/clarify)와 같은 통로로 읽는다. 여기서는 페이로드 전체를 받는다.
+    result = get_vector_client().Index(TEXT_HYBRID_INDEX_NAME).fetch(ids)
+    return {
+        match["id"]: SearchService.track_from_match(match) for match in result["matches"]
+    }
 
 
 # ---------------------------------------------------------------------------

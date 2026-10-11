@@ -686,13 +686,20 @@ function localSearch(q) {
  * 서버 쪽 질의 분석에도 따로 20초 예산이 있다(QUERY_ANALYSIS_TIMEOUT_SECONDS).
  */
 const SEARCH_TIMEOUT_MS = 30000;
+const SEARCH_PATH = "/api/v1/search";
+/*
+ * 질문 조회는 검색이 아니다 — 후보 20곡 안팎의 메타데이터만 읽는다. 검색과 같은 30초를 주면 서버가
+ * 멈췄을 때 "이 중에는 없어요"가 30초 동안 먹통이 된다. 이 시간이 지나면 질문 없이 거절만 진행한다.
+ */
+const CLARIFY_PATH = "/api/v1/search/clarify";
+const CLARIFY_TIMEOUT_MS = 8000;
 
-async function requestSearch(body) {
-  const res = await fetch("/api/v1/search", {
+async function requestSearch(body, path = SEARCH_PATH, timeoutMs = SEARCH_TIMEOUT_MS) {
+  const res = await fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) {
     const err = new Error(`search ${res.status}`);
@@ -723,17 +730,22 @@ function searchFailureText(err) {
  * 여기 보관했다가 다음 요청에 그대로 되돌려준다.
  *
  * 흐름:
- *   검색 → Top-10 + (응답에 미리 실린) 질문
- *   "이 중에는 없어요" → 질문이 있으면 보여주고, 없으면 거절만 해서 다시 검색
+ *   검색 → Top-10 (출생 연도 질문만 즉시 표시)
+ *   "이 중에는 없어요" → 현재 후보로 질문을 조회하고(/search/clarify), 없으면 거절만 해서 다시 검색
  *   답 선택 / "잘 모르겠어요" → 보여준 10곡을 거절 + 답변을 실어 다시 검색
+ *
+ * 질문 조회는 **질문만** 가져온다 — 턴·거절 목록·결과를 바꾸지 않는다. 그래서 질문을 닫아도 잃는 것이
+ * 없고, 다시 누르면 받아 둔 질문을 그대로 연다(결과가 바뀌면 applyResponse가 버린다). 조회가 실패하거나
+ * 제한 시간을 넘기면 안내를 남기고 질문 없이 거절만 진행한다 — 거절에는 질문이 필요 없다.
  *
  * 예외 — 출생 연도(birth_year) 질문은 곡이 아니라 사용자에 대한 것이라 거절을 기다리지 않고 **결과와 함께 바로** 묻는다.
  * 답하면 저장하고 같은 질의를 **기존 분석 + birth_year로** 다시 검색한다(재분석 없음·거절 없음·턴 그대로 — 첫 결과부터
  * 시기 창이 들어가야 한다). 실패하면 앞의 결과를 그대로 둔다. 답은 저장돼 있으니 다음 검색부터 반영된다.
- * "잘 모르겠어요"·닫기는 이 검색에서는 다시 묻지 않고, 그 뒤 "이 중에는 없어요"를 누르면 건너뛴 답을 실어 서버가 다음 질문으로 넘어간다.
+ * 연령대는 이 재검색이 돌려준 후보(candidateIds)에 반영된다 — 그 뒤의 질문 조회는 그 후보를 보낼 뿐 연도를 다시 보내지 않는다.
+ * "잘 모르겠어요"·닫기는 이 검색에서는 다시 묻지 않고, 그 뒤 "이 중에는 없어요"를 누르면 데이터 질문을 조회한다.
  *
- * 질문을 더 할지는 서버가 정한다(clarify가 null이면 끝). 화면은 거절 한도만
- * 따로 확인한다 — 질문 없이 거절만 하는 경로가 있어서다.
+ * 질문을 조회할지는 서버가 정한다(clarify_deferred — 한도가 남았고 보여준 곡 말고 후보가 있을 때). 화면은 거절
+ * 한도만 따로 확인한다 — 질문 없이 거절만 하는 경로가 있어서다.
  */
 const TOP_K = 10;
 // 서버 스키마 MAX_REJECTED_IDS와 같아야 한다. 넘기면 요청이 422로 막힌다.
@@ -748,8 +760,13 @@ const resultList = document.getElementById("resultList");
 const clarifyBox = document.getElementById("clarifyBox");
 
 let convo = null;       // 진행 중인 재질문 대화. 새 검색마다 초기화
-let panelMode = "idle"; // idle | asking | loading
+let panelMode = "idle"; // idle | asking | loading(다시 찾는 중) | question_loading(질문 조회 중)
 let searchSeq = 0;      // 늦게 도착한 옛 응답이 새 검색 결과를 덮지 않게
+
+/* 요청이 나가 있는 동안에는 버튼·답·거절을 모두 막는다 — 같은 거절이 두 번 나가지 않게 */
+function isBusy() {
+  return panelMode === "loading" || panelMode === "question_loading";
+}
 
 function startConvo(query, data) {
   convo = { query, answers: [], birthYearSkipped: false };
@@ -765,7 +782,9 @@ function applyResponse(data) {
   convo.candidateIds = data.candidate_ids || [];
   convo.turn = data.turn || 1;
   convo.results = data.results || [];
+  // 결과·후보가 바뀌었다 — 앞 결과로 받아 둔 데이터 질문은 여기서 버려진다(서버는 출생 연도 질문만 싣는다)
   convo.clarify = data.clarify || null;
+  convo.clarifyDeferred = Boolean(data.clarify_deferred);
   convo.explain = data.explain || null;
   explainOpen.clear(); // 새 결과다 — 앞 목록에서 펼쳐 둔 곡은 여기 없다
   // 출생 연도 질문은 결과와 함께 바로 띄운다(위 '예외'). 건너뛴 뒤에는 거절 버튼만 보인다
@@ -783,9 +802,11 @@ function isBirthYearQuestion() {
   return Boolean(convo && convo.clarify && convo.clarify.slot === "birth_year");
 }
 
-/* 출생 연도 질문을 이 검색에서는 더 묻지 않는다 — "잘 모르겠어요"·닫기·Esc */
+/* 출생 연도 질문을 이 검색에서는 더 묻지 않는다 — "잘 모르겠어요"·닫기·Esc.
+   물어본 슬롯으로 적어 두면 다음 요청(질문 조회·거절)에 실려 가 서버도 다시 묻지 않는다 */
 function dismissBirthYearQuestion() {
   convo.birthYearSkipped = true;
+  if (!convo.askedSlots.includes("birth_year")) convo.askedSlots.push("birth_year");
   panelMode = "idle";
   renderPanel();
 }
@@ -860,6 +881,7 @@ function yearWheel(options) {
 /* 출생 연도 답 — 저장하고 같은 질의를 기존 분석 + birth_year로 다시 검색한다. 거절할 곡이 없으므로 턴을 쌓지 않고,
    실패하면 앞의 결과·대화를 그대로 둔다(답은 저장됐으므로 다음 검색부터 반영된다) */
 async function answerBirthYear(value) {
+  if (!convo || isBusy()) return;
   const year = parseBirthYear(value);
   if (!year) {
     dismissBirthYearQuestion();
@@ -871,7 +893,7 @@ async function answerBirthYear(value) {
   current.birthYearSkipped = true; // 성공하든 실패하든 이 검색에서 다시 묻지 않는다
   panelMode = "loading";
   renderPanel();
-  const body = { query: current.query, top_k: TOP_K, explain: true, birth_year: year, turn: current.turn };
+  const body = { query: current.query, top_k: TOP_K, explain: true, birth_year: year, turn: current.turn, defer_clarify: true };
   if (current.analysis) body.prior_analysis = current.analysis; // 재분석(Gemini 호출) 없이 창만 넣어 다시 찾는다
   try {
     const data = await requestSearch(body);
@@ -902,7 +924,7 @@ function makeEl(tag, className, text) {
 function button(className, text, onClick) {
   const b = makeEl("button", className, text);
   b.type = "button";
-  b.disabled = panelMode === "loading";
+  b.disabled = isBusy();
   b.addEventListener("click", (e) => {
     e.stopPropagation(); // document 핸들러가 곡 카드를 닫지 않게
     onClick();
@@ -981,6 +1003,9 @@ function renderPanel() {
 }
 
 function clarifyContent() {
+  if (panelMode === "question_loading") {
+    return [makeEl("p", "clarifynote", "추가 질문을 준비하는 중…")];
+  }
   if (panelMode === "loading") {
     return [makeEl("p", "clarifynote", "다시 찾는 중…")];
   }
@@ -1421,23 +1446,59 @@ try {
 }
 
 function onReject() {
-  if (!canRejectMore()) return;
-  if (isBirthYearQuestion()) {
-    // 출생 연도는 이미 결과와 함께 물었고 사용자가 건너뛰었다 — 건너뛴 답을 실어 서버가 다음(데이터) 질문으로 넘어가게 한다
-    submitTurn({ slot: "birth_year", value: "", skipped: true });
-    return;
-  }
-  if (convo.clarify) {
-    // 질문은 이미 응답에 실려 있다 — 모델을 다시 부르지 않고 바로 보여준다
+  if (!canRejectMore() || isBusy()) return;
+  if (convo.clarify && !isBirthYearQuestion()) {
+    // 이 결과로 이미 받아 둔 질문이다(닫았다가 다시 눌렀다) — 다시 조회하지 않는다
     panelMode = "asking";
     renderPanel();
     return;
   }
-  submitTurn(null); // 물을 게 없으면 거절만 한다
+  if (convo.clarifyDeferred) return requestClarification();
+  return submitTurn(null); // 물을 게 없으면 거절만 한다
 }
 
-async function submitTurn(answer) {
-  if (!convo || panelMode === "loading") return;
+const CLARIFY_FAILED_NOTE = "추가 질문을 준비하지 못해 질문 없이 다음 곡을 찾았습니다.";
+
+/* 지금 후보로 물을 것이 있는지 서버에 묻는다. 질문만 가져온다 — 턴·거절·결과는 그대로다.
+   질문이 없거나 조회가 실패(오류·제한 시간)하면 거절만 해서 다음 결과로 간다. 실패한 조회는 다시 시도하지
+   않는다(클릭 한 번에 조회 한 번·거절 검색 한 번). 그 거절 검색까지 실패하면 submitTurn이 앞의 결과를 그대로 둔다 */
+async function requestClarification() {
+  const current = convo;
+  const seq = searchSeq;
+  // 답을 실어 보낼 분석이 없으면 질문을 받아도 반영하지 못한다(서버는 prior_analysis 없는 answers를 거부한다)
+  if (!current.analysis) return submitTurn(null);
+  panelMode = "question_loading";
+  renderPanel();
+  let question = null;
+  let failed = false;
+  try {
+    const data = await requestSearch({
+      asked_slots: current.askedSlots,
+      previous_candidate_ids: current.candidateIds.slice(0, MAX_PREVIOUS_CANDIDATES),
+      shown_ids: shownIds(),
+      rejected_ids: current.rejectedIds,
+      turn: current.turn,
+    }, CLARIFY_PATH, CLARIFY_TIMEOUT_MS);
+    question = data.clarify || null;
+  } catch (err) {
+    failed = true;
+  }
+  if (seq !== searchSeq || convo !== current) return; // 그 사이 새 검색을 했다 — 늦은 응답은 버린다
+  panelMode = "idle";
+  if (question) {
+    current.clarify = question;
+    showStatus("");
+    panelMode = "asking";
+    renderPanel();
+    return;
+  }
+  return submitTurn(null, failed ? CLARIFY_FAILED_NOTE : "");
+}
+
+/* 보여준 곡을 거절하고(답이 있으면 함께 실어) 다음 결과를 찾는다. note는 성공했을 때 상태줄에 남길 안내 */
+async function submitTurn(answer, note = "") {
+  if (!convo || isBusy()) return;
+  const current = convo;
   const rejected = [...new Set([...convo.rejectedIds, ...shownIds()])];
   let answers = answer ? [...convo.answers, answer] : convo.answers;
   if (!convo.analysis) answers = []; // 서버는 prior_analysis 없는 answers를 거부한다
@@ -1457,6 +1518,7 @@ async function submitTurn(answer) {
     rejected_ids: rejected,
     turn: convo.turn,
     explain: true,
+    defer_clarify: true,
     birth_year: loadBirthYear(),
   };
 
@@ -1466,12 +1528,12 @@ async function submitTurn(answer) {
   renderPanel();
   try {
     const data = await requestSearch(body);
-    if (seq !== searchSeq || !convo) return; // 그 사이 새 검색을 했다
+    if (seq !== searchSeq || convo !== current) return; // 그 사이 새 검색을 했다
     convo.answers = answers;
-    showStatus("");
+    showStatus(note, note ? "warn" : undefined);
     applyResponse(data);
   } catch (err) {
-    if (seq !== searchSeq || !convo) return;
+    if (seq !== searchSeq || convo !== current) return;
     // 실패하면 상태를 건드리지 않고 직전 화면으로 되돌린다 — 다시 누르면 재시도된다
     panelMode = previousMode;
     renderPanel();
@@ -1505,11 +1567,12 @@ searchForm.addEventListener("submit", (e) => {
 async function runSearch(q) {
   const seq = ++searchSeq;
   convo = null;
+  panelMode = "idle"; // 앞 대화의 요청이 나가 있었더라도 그 응답은 버려진다 — 로딩 표시를 남기지 않는다
   renderPanel();
   clearBtn.hidden = false;
   showStatus("검색 중…");
   try {
-    const data = await requestSearch({ query: q, top_k: TOP_K, explain: true, birth_year: loadBirthYear() });
+    const data = await requestSearch({ query: q, top_k: TOP_K, explain: true, birth_year: loadBirthYear(), defer_clarify: true });
     if (seq !== searchSeq) return;
     showStatus("");
     startConvo(q, data);

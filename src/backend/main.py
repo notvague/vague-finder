@@ -79,7 +79,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-TIMED_PATHS = ("/api/v1/search",)
+# 검색 한 건의 시간만 잰다. **정확히 이 경로만** — 접두사로 고르면 질문 조회(/api/v1/search/clarify)가
+# 질의도 구간도 없는 행으로 섞여 검색 시간 집계를 흐린다.
+TIMED_PATHS = frozenset({"/api/v1/search"})
 
 
 @app.middleware("http")
@@ -90,12 +92,13 @@ async def record_request_timing(request: Request, call_next):
     요청 본문 검증, 응답 직렬화가 빠진다. 15.7초의 정체를 찾는 중이므로 빠지는
     구간이 있으면 안 된다. 미들웨어 시간에서 라우트 시간을 빼면 그 바깥이 남는다.
 
-    검색 경로만 잰다. 정적 파일까지 한 줄씩 남기면 정작 볼 줄이 묻힌다.
+    검색 경로만 잰다. 정적 파일까지 한 줄씩 남기면 정작 볼 줄이 묻힌다. 검색 아래의 질문 조회
+    (`/search/clarify`)도 재지 않는다 — 검색이 아니라서 한 줄로 남기면 검색 분포에 0초대 행이 낀다.
 
     `X-Request-Id`를 돌려주는 이유: 측정 스크립트가 클라이언트에서 잰 벽시계
     시간과 서버가 남긴 구간 기록을 같은 요청끼리 맞춰야 한다.
     """
-    if not request.url.path.startswith(TIMED_PATHS):
+    if request.url.path not in TIMED_PATHS:
         return await call_next(request)
 
     timer = timing.TimingRecorder()

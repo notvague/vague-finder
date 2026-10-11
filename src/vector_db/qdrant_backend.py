@@ -61,10 +61,20 @@ def collection_name(index_name: str, namespace: str = NAMESPACE) -> str:
     return f"{index_name}__{namespace or 'default'}"
 
 
+# Qdrant의 정수 point id는 부호 없는 64비트다(십진수 20자리 이하).
+_MAX_POINT_INT = 2**64 - 1
+
+
 def point_id(song_id: str) -> int | str:
-    """Qdrant point id는 정수 또는 UUID만 허용한다. 곡 id는 숫자 문자열이다."""
+    """Qdrant point id는 정수 또는 UUID만 허용한다. 곡 id는 숫자 문자열이다.
+
+    **어떤 문자열이 와도 예외를 내지 않는다.** `isdigit()`만 보면 '²'처럼 숫자로 분류되지만 `int()`가
+    받지 않는 문자에서 터지고, 64비트를 넘는 숫자열은 Qdrant가 거부한다. 요청으로 들어온 id도 여기를
+    지나므로(`QdrantIndex.fetch`), ASCII 숫자이면서 64비트에 들어가는 값만 정수 id로 쓰고 나머지는
+    비숫자 id와 같이 UUID로 접는다 — 그런 id는 적재된 적이 없으니 조회하면 "없는 곡"이 된다.
+    """
     text = str(song_id).strip()
-    if text.isdigit():
+    if text.isascii() and text.isdigit() and len(text) <= 20 and int(text) <= _MAX_POINT_INT:
         return int(text)
     # 숫자가 아닌 id가 들어오면 UUID로 접는다. payload의 song_id가 원본을 보존한다.
     import uuid
@@ -167,6 +177,33 @@ class QdrantIndex:
         # 서버 모드에서만 정확 검색을 명시한다 — 근사 검색은 측정 순위를 흔든다.
         self._search_params = models.SearchParams(exact=True) if exact else None
 
+    def fetch(
+        self,
+        ids: Sequence[str],
+        namespace: str = NAMESPACE,
+        fields: Optional[Sequence[str]] = None,
+    ) -> Dict[str, Any]:
+        """곡 id로 페이로드만 읽는다. 벡터 검색·임베딩은 실행하지 않는다.
+
+        돌려주는 모양은 `query()`의 matches와 같다(입력 순서 · 없는 id는 건너뜀 · score 0).
+        fields를 주면 그 키만 읽는다 — 재질문 선택은 성별·장르 두 칸이면 된다.
+        """
+        unique_ids = list(dict.fromkeys(ids))
+        payloads = self._payloads(
+            collection_name(self._index_name, namespace),
+            [point_id(s) for s in unique_ids],
+            fields=fields,
+        )
+        matches = []
+        for song_id in unique_ids:
+            payload = payloads.get(point_id(song_id))
+            if payload is None:
+                continue
+            metadata = dict(payload)
+            metadata.pop("song_id", None)
+            matches.append({"id": song_id, "score": 0.0, "metadata": metadata})
+        return {"matches": matches}
+
     # 검색 코드의 호출 인자를 그대로 받는다 (include_values 등 미사용 인자는 무시)
     def query(
         self,
@@ -235,15 +272,20 @@ class QdrantIndex:
             ]
         }
 
-    def _payloads(self, collection: str, ids: List[Any]) -> Dict[Any, Dict[str, Any]]:
-        """point id → 페이로드. 합산 뒤 남긴 곡만 읽는다."""
+    def _payloads(
+        self,
+        collection: str,
+        ids: List[Any],
+        fields: Optional[Sequence[str]] = None,
+    ) -> Dict[Any, Dict[str, Any]]:
+        """point id → 페이로드. 합산 뒤 남긴 곡만 읽는다. fields가 있으면 그 키만."""
         if not ids:
             return {}
         try:
             records = self._client.retrieve(
                 collection_name=collection,
                 ids=ids,
-                with_payload=True,
+                with_payload=list(fields) if fields else True,
                 with_vectors=False,
             )
         except Exception as exc:

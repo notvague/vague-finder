@@ -27,6 +27,9 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 DEFAULT_URL = "http://127.0.0.1:8010"
+# 요청이 나가 있는 상태(map.js의 panelMode). 질문 조회 중(question_loading)도 로딩이다 —
+# 빼면 조회가 끝나기 전의 화면을 "로딩이 풀렸다"로 읽고 다음 단계로 넘어간다.
+BUSY_MODES = ("loading", "question_loading")
 # 결과가 0건일 때 화면이 내는 문구. 다른 상황이 같은 말을 하면 구분이 안 된다.
 EMPTY_MESSAGE = "일치하는 곡이 없습니다."
 QUERY = "앨범이 파란 잔잔한 노래"
@@ -54,8 +57,18 @@ return {
       .map((b) => ({ text: (b.textContent || "").trim(), disabled: b.disabled })),
   explainToggles: document.querySelectorAll("#resultList .extoggle").length,
   panelMode: (typeof panelMode === "undefined" ? "?" : panelMode),
+  // 화면이 들고 있는 대화 상태 — 문구만 봐서는 거절이 몇 곡 쌓였는지, 턴이 갔는지 알 수 없다
+  turn: (typeof convo === "undefined" || !convo) ? null : convo.turn,
+  rejected: (typeof convo === "undefined" || !convo) ? [] : convo.rejectedIds.map(String),
+  resultIds: (typeof convo === "undefined" || !convo) ? [] : convo.results.map((r) => String(r.id)),
+  // 페이지를 연 뒤 화면이 보낸 요청 수(검색 / 질문 조회)
+  calls: Object.assign({ search: 0, clarify: 0 }, window.__vfCalls || {}),
 };
 """
+
+
+def _busy(state: Dict[str, Any]) -> bool:
+    return state["panelMode"] in BUSY_MODES
 
 
 @dataclass
@@ -100,17 +113,30 @@ class Screen:
     # -- 조작 ---------------------------------------------------------
     # 검색 응답 원본을 붙잡아 둔다. 근거 패널에는 경로 **가중치**가 없어서,
     # "서버가 말한 것"과 "화면이 보여준 것"을 맞춰 보려면 응답이 있어야 한다.
+    #
+    # 경로는 **정확히** 가른다. 질문 조회(/api/v1/search/clarify)는 검색 응답이 아니다 — 주소에
+    # "/api/v1/search"가 들었는지만 보면 질문 응답이 __vfLast를 덮어, 그 뒤의 "서버가 말한 것"이
+    # 검색 결과가 아니게 된다. 질문 응답은 __vfClarify에 따로 둔다.
     _HOOK_JS = """
     (() => {
       if (window.__vfHooked) return;
       window.__vfHooked = true;
+      window.__vfCalls = { search: 0, clarify: 0 };
+      const kinds = { "/api/v1/search": "search", "/api/v1/search/clarify": "clarify" };
       const real = window.fetch;
       window.fetch = async (...args) => {
-        const res = await real(...args);
         const url = typeof args[0] === "string" ? args[0] : (args[0] || {}).url || "";
-        if (url.includes("/api/v1/search")) {
+        const kind = kinds[new URL(url, location.href).pathname] || "";
+        // 보낸 횟수는 응답을 기다리지 않고 센다 — 실패하거나 끊긴 요청도 보낸 것이다
+        if (kind) window.__vfCalls[kind] += 1;
+        const res = await real(...args);
+        if (kind === "search") {
           window.__vfStatus = res.status;
           try { window.__vfLast = await res.clone().json(); } catch { window.__vfLast = null; }
+        }
+        if (kind === "clarify") {
+          window.__vfClarifyStatus = res.status;
+          try { window.__vfClarify = await res.clone().json(); } catch { window.__vfClarify = null; }
         }
         return res;
       };
@@ -161,10 +187,19 @@ class Screen:
         return state
 
     def settled(self, timeout: float = 20.0) -> Dict[str, Any]:
-        """검색이 끝난 상태 — 결과가 있든 안내 문구가 떴든, 로딩만 아니면 된다."""
+        """요청이 끝난 상태 — 결과가 있든 안내 문구가 떴든, 로딩(검색·질문 조회)만 아니면 된다."""
         return self.wait(
-            lambda s: s["panelMode"] != "loading" and s["status"] != "검색 중…",
+            lambda s: not _busy(s) and s["status"] != "검색 중…",
             timeout=timeout,
+        )
+
+    def responses(self) -> Dict[str, Any]:
+        """훅이 붙잡아 둔 마지막 응답의 모양 — 검색 응답과 질문 응답이 섞이지 않았는지 본다."""
+        return self.d.execute_script(
+            "const last = window.__vfLast || {}, q = (window.__vfClarify || {}).clarify || {};"
+            "return {searchHasResults: Array.isArray(last.results),"
+            " searchResultIds: (last.results || []).map((r) => String(r.id)),"
+            " clarifySlot: q.slot || '', clarifyStatus: window.__vfClarifyStatus || 0};"
         )
 
     def shot(self, name: str) -> None:
@@ -187,7 +222,7 @@ def case_quota(s: Screen) -> Case:
     st = s.settled()
     s.shot("1_quota")
     c.check(len(st["results"]) > 0, f"결과가 뜬다 ({len(st['results'])}곡)")
-    c.check(st["panelMode"] != "loading", "로딩이 풀렸다")
+    c.check(not _busy(st), "로딩이 풀렸다")
     c.see(f"상태줄: {st['status'] or '(없음)'}")
     c.see(f"실행 기록: {st['runNote'] or '(없음)'}")
     x = _explain(s)
@@ -330,7 +365,7 @@ def case_empty(s: Screen) -> Case:
         all(not b["disabled"] for b in st["buttons"]),
         f"막힌 버튼이 없다 (버튼 {len(st['buttons'])}개)",
     )
-    c.check(st["panelMode"] != "loading", "로딩이 풀렸다")
+    c.check(not _busy(st), "로딩이 풀렸다")
     s.fault("ok")
     s.search()
     st = s.settled()
@@ -344,23 +379,68 @@ def case_reject_exhausted(s: Screen) -> Case:
     s.fault("ok")
     s.open()
     s.search()
-    s.settled()
-    rounds = 0
-    while rounds < 6:
+    st = s.settled()
+    # 한도는 화면에서 읽는다. 여기 숫자를 따로 적으면 둘이 갈린다.
+    limits = s.d.execute_script("return {max: MAX_REJECTED, topK: TOP_K};")
+    expected_rounds = limits["max"] // limits["topK"]
+
+    rounds = questions = 0
+    pages: List[List[str]] = []      # 거절한 페이지들(본 순서)
+    lookup_changed_state = False
+    stuck = False
+    while rounds < expected_rounds + 3:
+        page = list(st["resultIds"])
         if not s.click("이 중에는 없어요"):
             break
         rounds += 1
-        st = s.wait(lambda x: x["panelMode"] != "loading", timeout=20)
+        st = s.wait(lambda x: not _busy(x), timeout=20)
+        if _busy(st):
+            stuck = True
+            break
         if st["panelMode"] == "asking":
-            # 질문이 떴으면 답해서 다음 턴으로 넘어간다
-            answered = s.click("잘 모르겠어요")
-            if answered:
-                s.wait(lambda x: x["panelMode"] != "loading", timeout=20)
+            # 질문이 떴다 — 여기까지는 조회일 뿐이라 아무것도 거절되지 않았어야 한다
+            questions += 1
+            if st["resultIds"] != page or st["rejected"] != [i for p in pages for i in p]:
+                lookup_changed_state = True
+            if not s.click("잘 모르겠어요"):
+                c.check(False, f"{rounds}번째 질문에 답할 수 있다")
+                break
+            st = s.wait(lambda x: not _busy(x), timeout=20)
+            if _busy(st):
+                stuck = True
+                break
+        pages.append(page)
+
     st = s.snap()
     s.shot("6_exhausted")
-    c.see(f"거절 {rounds}회 뒤 재질문 영역: {st['clarify'] or '(없음)'}")
+    rejected = [i for p in pages for i in p]
+    c.see(f"거절 {rounds}회 · 질문 {questions}회 · 요청 {st['calls']} · 누적 거절 {len(st['rejected'])}곡 · 턴 {st['turn']}")
+    c.see(f"재질문 영역: {st['clarify'] or '(없음)'}")
     c.see(f"버튼: {[b['text'] for b in st['buttons']] or '(없음)'}")
-    c.check(rounds > 0, f"거절이 동작한다 ({rounds}회)")
+    c.check(not stuck and not _busy(st), "요청이 끝난 뒤에 다음 단계로 넘어갔다(로딩 중에 지나치지 않았다)")
+    c.check(
+        rounds == expected_rounds,
+        f"거절이 한도만큼 동작하고 멈춘다 ({rounds}회, 한도 {limits['max']}곡 ÷ {limits['topK']}곡 = {expected_rounds}회)",
+    )
+    c.check(questions >= 1, f"질문이 실제로 조회돼 떴다 ({questions}회)")
+    c.check(not lookup_changed_state, "질문 조회만으로는 결과·거절 목록이 바뀌지 않는다")
+    c.check(
+        st["rejected"] == rejected and len(set(rejected)) == len(rejected),
+        f"거절한 곡이 본 순서대로 빠짐없이, 중복 없이 쌓였다 ({len(st['rejected'])}곡)",
+    )
+    c.check(len(st["rejected"]) <= limits["max"], "누적 거절이 한도를 넘지 않는다")
+    c.check(not set(st["resultIds"]) & set(st["rejected"]), "거절한 곡이 마지막 결과에 다시 나오지 않는다")
+    c.check(st["turn"] == rounds + 1, f"거절마다 턴이 하나씩 갔다 (턴 {st['turn']})")
+    c.check(
+        st["calls"]["search"] == rounds + 1,
+        f"거절 한 번에 검색 한 번 — 같은 거절이 두 번 나가지 않았다 (검색 {st['calls']['search']}회)",
+    )
+    c.check(st["calls"]["clarify"] <= rounds, f"질문 조회는 거절 클릭마다 많아야 한 번 ({st['calls']['clarify']}회)")
+    c.check(st["panelMode"] == "idle", f"끝난 화면이 멈춰 있다 (panelMode={st['panelMode']})")
+    c.check(
+        not any(b["text"].startswith("이 중에는 없어요") for b in st["buttons"]),
+        "한도를 다 쓴 뒤에는 거절 버튼이 없다",
+    )
     c.check(st["clarify"] != "", "끝났다는 것을 문구로 말한다")
     c.check(
         all(not b["disabled"] for b in st["buttons"]),
@@ -421,7 +501,7 @@ def case_server_error(s: Screen) -> Case:
         st["status"] != EMPTY_MESSAGE,
         f"결과 0건과 구분되는 문구다 (0건일 때와 같은 '{EMPTY_MESSAGE}'가 아니다)",
     )
-    c.check(st["panelMode"] != "loading", "로딩이 풀렸다")
+    c.check(not _busy(st), "로딩이 풀렸다")
     c.check(
         all(not b["disabled"] for b in st["buttons"]),
         "막힌 버튼이 없다",
@@ -433,36 +513,131 @@ def case_server_error(s: Screen) -> Case:
     return c
 
 
-def case_rerank_fail_midturn(s: Screen) -> Case:
-    """재질문 도중 실패 — 직전 화면으로 돌아오고 다시 누를 수 있는가."""
-    c = Case("9. 재질문 도중 서버 오류")
+def case_question_lookup_fail(s: Screen) -> Case:
+    """질문 조회 실패 — 안내하고 거절만으로 다음 결과로 가는가. 거절까지 실패하면 앞의 결과가 남는가."""
+    c = Case("9a. 질문 조회 실패")
+
+    # (1) 질문 조회만 실패한다 — 거절에는 질문이 필요 없으니 다음 결과로 간다
     s.fault("ok")
     s.open()
     s.search()
-    s.settled()
-    before = s.snap()
-    # "이 중에는 없어요"만으로는 요청이 나가지 않는다 — 질문은 이미 응답에 실려
-    # 있어서 화면만 바뀐다. 답을 골라야 그때 다시 검색한다.
+    before = s.settled()
+    s.fault("clarify_fail")
     c.check(s.click("이 중에는 없어요"), "거절 버튼을 누를 수 있다")
-    st = s.wait(lambda x: x["panelMode"] == "asking", timeout=5)
-    c.check(st["panelMode"] == "asking", "질문이 뜬다(여기까지는 요청 없음)")
+    st = s.wait(lambda x: not _busy(x), timeout=20)
+    s.shot("9a_lookup_fail")
+    c.see(f"(1) 조회만 실패 — 상태줄: {st['status'] or '(없음)'} · 요청 {st['calls']}")
+    c.check(not _busy(st), "(1) 로딩이 풀렸다")
+    c.check(st["calls"] == {"search": 2, "clarify": 1}, "(1) 질문 조회 한 번 · 거절 검색 한 번 — 조회를 되풀이하지 않는다")
+    c.check(st["rejected"] == before["resultIds"], "(1) 보여준 곡이 한 번만 거절됐다")
+    c.check(
+        len(st["results"]) > 0 and not set(st["resultIds"]) & set(before["resultIds"]),
+        "(1) 질문 없이 다음 결과로 넘어갔다",
+    )
+    c.check(st["statusWarn"] and "질문" in st["status"], "(1) 질문을 준비하지 못했다는 것을 안내한다")
+    c.check(all(not b["disabled"] for b in st["buttons"]), "(1) 버튼이 다시 눌리는 상태다")
+
+    # (2) 질문 조회도 거절 검색도 실패한다 — 앞의 결과를 그대로 둔다
+    s.fault("ok")
+    s.open()
+    s.search()
+    before = s.settled()
+    s.fault("server_error")
+    c.check(s.click("이 중에는 없어요"), "(2) 거절 버튼을 누를 수 있다")
+    st = s.wait(lambda x: not _busy(x), timeout=20)
+    s.shot("9a_lookup_and_search_fail")
+    c.see(f"(2) 둘 다 실패 — 상태줄: {st['status'] or '(없음)'} · 요청 {st['calls']}")
+    c.check(not _busy(st), "(2) 로딩이 풀렸다")
+    c.check(st["calls"] == {"search": 2, "clarify": 1}, "(2) 실패가 이어져도 요청은 조회 한 번 · 거절 검색 한 번뿐이다")
+    c.check(st["resultIds"] == before["resultIds"], "(2) 직전 결과가 그대로 남는다")
+    c.check(st["rejected"] == [] and st["turn"] == 1, "(2) 실패한 거절은 거절 목록·턴을 쌓지 않는다")
+    c.check(st["status"] != "" and st["statusWarn"], "(2) 오류를 안내한다")
+    c.check(all(not b["disabled"] for b in st["buttons"]), "(2) 버튼이 다시 눌리는 상태로 돌아온다")
+    s.fault("ok")
+    c.check(s.click("이 중에는 없어요"), "(2) 같은 자리에서 다시 누를 수 있다")
+    st = s.wait(lambda x: not _busy(x), timeout=20)
+    c.check(st["panelMode"] == "asking", "(2) 복구되면 질문이 뜬다")
+    c.check(st["rejected"] == [] and st["resultIds"] == before["resultIds"], "(2) 그때까지 아무것도 거절되지 않았다")
+
+    # (3) 질문 조회가 응답하지 않는다 — 화면의 제한 시간 뒤 질문 없이 진행한다
+    s.fault("ok")
+    s.open()
+    s.search()
+    before = s.settled()
+    limit = s.d.execute_script(
+        "return typeof CLARIFY_TIMEOUT_MS === 'undefined' ? null : CLARIFY_TIMEOUT_MS;"
+    )
+    c.see(f"(3) 화면의 질문 조회 제한 시간: {limit if limit else '(없음)'}")
+    s.fault("clarify_hang", seconds=600)
+    c.check(s.click("이 중에는 없어요"), "(3) 거절 버튼을 누를 수 있다")
+    time.sleep(1)
+    st = s.snap()
+    c.check(st["panelMode"] == "question_loading", "(3) 기다리는 동안 질문을 준비 중이라고 보인다")
+    c.check(all(b["disabled"] for b in st["buttons"]), "(3) 기다리는 동안 다시 누를 수 없다")
+    budget = (limit / 1000 + 8) if limit else 20
+    st = s.wait(lambda x: not _busy(x), timeout=budget)
+    s.shot("9a_lookup_hang")
+    c.see(f"(3) 응답 없음 — 상태줄: {st['status'] or '(없음)'} · 요청 {st['calls']}")
+    c.check(not _busy(st), f"(3) 조회가 스스로 끝난다 ({budget:.0f}초 안에)")
+    c.check(st["calls"] == {"search": 2, "clarify": 1}, "(3) 질문 조회 한 번 · 거절 검색 한 번")
+    c.check(
+        st["rejected"] == before["resultIds"] and len(st["results"]) > 0,
+        "(3) 질문 없이 다음 결과로 넘어갔다",
+    )
+    c.check(st["statusWarn"] and "질문" in st["status"], "(3) 질문을 준비하지 못했다는 것을 안내한다")
+    s.release()
+    s.fault("ok")
+    return c
+
+
+def case_answer_search_fail(s: Screen) -> Case:
+    """답변 뒤 검색 실패 — 질문 화면으로 돌아오고 같은 자리에서 다시 답할 수 있는가."""
+    c = Case("9b. 답변 뒤 검색 실패")
+    s.fault("ok")
+    s.open()
+    s.search()
+    before = s.settled()
+    c.check(s.click("이 중에는 없어요"), "거절 버튼을 누를 수 있다")
+    st = s.wait(lambda x: not _busy(x), timeout=20)
+    c.check(st["panelMode"] == "asking", "질문이 뜬다")
+    # 질문은 클릭할 때 조회한다. 조회는 질문만 가져온다 — 검색을 다시 하지도, 무엇을 거절하지도 않는다.
+    c.check(st["calls"] == {"search": 1, "clarify": 1}, "여기까지 나간 요청은 질문 조회 한 번뿐이다")
+    c.check(
+        st["rejected"] == [] and st["turn"] == 1 and st["resultIds"] == before["resultIds"],
+        "질문 조회는 턴·거절 목록·결과를 바꾸지 않는다",
+    )
+    got = s.responses()
+    c.see(f"훅이 붙잡은 응답: 검색 결과 {len(got['searchResultIds'])}곡 · 질문 슬롯 {got['clarifySlot'] or '(없음)'}")
+    c.check(
+        got["searchHasResults"] and got["searchResultIds"] == before["resultIds"],
+        "질문 응답이 붙잡아 둔 검색 응답을 덮어쓰지 않았다",
+    )
+    c.check(got["clarifySlot"] != "" and got["clarifyStatus"] == 200, "질문 응답은 따로 붙잡혔다")
+    question = st["clarify"]
 
     s.fault("server_error")
     c.check(s.click("잘 모르겠어요"), "답을 고를 수 있다")
-    st = s.wait(lambda x: x["panelMode"] != "loading", timeout=20)
-    s.shot("9_midturn_error")
+    st = s.wait(lambda x: not _busy(x), timeout=20)
+    s.shot("9b_answer_search_error")
     c.see(f"상태줄: {st['status'] or '(없음)'}")
     c.see(f"돌아온 화면: panelMode={st['panelMode']} · 버튼 {[b['text'] for b in st['buttons']]}")
     c.check(st["status"] != "", "오류를 안내한다")
-    c.check(st["results"] == before["results"], "직전 결과가 그대로 남는다")
+    c.check(st["resultIds"] == before["resultIds"], "직전 결과가 그대로 남는다")
+    c.check(st["panelMode"] == "asking" and st["clarify"] == question, "같은 질문으로 돌아온다")
+    c.check(st["rejected"] == [] and st["turn"] == 1, "실패한 답은 거절 목록·턴을 쌓지 않는다")
     c.check(
         all(not b["disabled"] for b in st["buttons"]),
         "버튼이 다시 눌리는 상태로 돌아온다",
     )
     s.fault("ok")
     c.check(s.click("잘 모르겠어요"), "같은 자리에서 재시도할 수 있다")
-    st = s.wait(lambda x: x["panelMode"] != "loading", timeout=20)
-    c.check(len(st["results"]) > 0, "재시도가 정상 동작한다")
+    st = s.wait(lambda x: not _busy(x), timeout=20)
+    c.check(
+        len(st["results"]) > 0 and not set(st["resultIds"]) & set(before["resultIds"]),
+        "재시도가 정상 동작한다",
+    )
+    c.check(st["rejected"] == before["resultIds"], "거절은 한 번만 쌓였다")
+    c.check(st["calls"]["clarify"] == 1, "재시도하는 동안 질문을 다시 조회하지 않았다")
     c.check(st["status"] == "", "복구되면 경고가 사라진다")
     return c
 
@@ -533,7 +708,8 @@ CASES: List[Callable[[Screen], Case]] = [
     case_reject_exhausted,
     case_out_of_order,
     case_server_error,
-    case_rerank_fail_midturn,
+    case_question_lookup_fail,
+    case_answer_search_fail,
     case_warmup,
 ]
 

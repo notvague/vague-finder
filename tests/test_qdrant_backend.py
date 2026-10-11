@@ -44,6 +44,63 @@ def _unit(*values):
     return [v / norm for v in values]
 
 
+def test_fetch_reads_only_requested_payloads_in_input_order(client):
+    from qdrant_client import models
+    from src.vector_db.qdrant_backend import DENSE_VECTOR, point_id
+
+    collection = client.ensure_collection(TEXT_HYBRID_INDEX_NAME, dim=3, recreate=True)
+    client.client.upsert(collection_name=collection, points=[
+        models.PointStruct(id=point_id(sid), payload={"song_id": sid, "title": sid},
+                           vector={DENSE_VECTOR: [1.0, 0.0, 0.0]})
+        for sid in ["123", "non-numeric"]
+    ])
+    matches = client.Index(TEXT_HYBRID_INDEX_NAME).fetch(["non-numeric", "404", "123", "123"])["matches"]
+    assert [m["id"] for m in matches] == ["non-numeric", "123"]
+    assert matches[0]["metadata"] == {"title": "non-numeric"}
+    assert client.Index(TEXT_HYBRID_INDEX_NAME).fetch([]) == {"matches": []}
+
+
+def test_fetch_can_read_only_the_named_fields(client):
+    """질문 조회는 성별·장르만 본다 — 가사 요약·태그까지 20곡씩 실어 나를 이유가 없다."""
+    from qdrant_client import models
+    from src.vector_db.qdrant_backend import DENSE_VECTOR, point_id
+
+    collection = client.ensure_collection(TEXT_HYBRID_INDEX_NAME, dim=3, recreate=True)
+    client.client.upsert(collection_name=collection, points=[
+        models.PointStruct(
+            id=point_id("123"), vector={DENSE_VECTOR: [1.0, 0.0, 0.0]},
+            payload={"song_id": "123", "title": "곡", "vocal_gender": "여성", "genre": "발라드",
+                     "lyrics_summary": "긴 요약"},
+        )
+    ])
+    index = client.Index(TEXT_HYBRID_INDEX_NAME)
+    narrow = index.fetch(["123"], fields=("vocal_gender", "genre", "없는 칸"))["matches"]
+    assert narrow == [{"id": "123", "score": 0.0, "metadata": {"vocal_gender": "여성", "genre": "발라드"}}]
+    assert set(index.fetch(["123"])["matches"][0]["metadata"]) == {"title", "vocal_gender", "genre", "lyrics_summary"}
+
+
+def test_point_id_never_raises_and_keeps_existing_ids():
+    """요청으로 들어온 id도 point_id를 지난다(fetch). 어떤 문자열에도 예외가 없어야 한다."""
+    import uuid
+
+    from src.vector_db.qdrant_backend import point_id
+
+    # 적재에 쓰인 규칙은 그대로다 — 숫자 문자열은 정수, 그 외는 원문으로 만든 UUID
+    assert point_id("123") == 123 and point_id(" 30000001 ") == 30000001 and point_id("007") == 7
+    assert point_id(str(2**64 - 1)) == 2**64 - 1
+    for text in ("non-numeric", "s0", "abc-123"):
+        assert point_id(text) == str(uuid.uuid5(uuid.NAMESPACE_URL, text))
+    # isdigit()은 참이지만 int()가 받지 않거나, 정수 id 범위를 넘거나, 숫자가 아닌 것 — 모두 UUID로 접힌다
+    for text in ("²", "①", "１２３", str(2**64), "9" * 5000, "-5", "1.5", "", " "):
+        folded = point_id(text)
+        assert isinstance(folded, str) and uuid.UUID(folded).version == 5, text
+
+
+def test_fetch_skips_ids_that_cannot_exist(client):
+    client.ensure_collection(TEXT_HYBRID_INDEX_NAME, dim=3, recreate=True)
+    assert client.Index(TEXT_HYBRID_INDEX_NAME).fetch(["²", str(2**64), "", "404"]) == {"matches": []}
+
+
 def _fill_text(client):
     from qdrant_client import models
 
@@ -756,3 +813,29 @@ def test_lifespan_runs_the_shutdown_and_it_completes(monkeypatch):
 
     # with를 벗어난 시점에 종료가 이미 끝나 있어야 한다
     assert done == ["닫힘"]
+
+
+def test_harness_target_loader_reads_through_the_same_fetch(client, monkeypatch):
+    """재질문 측정의 정답 곡 로더는 서비스의 질문 조회와 같은 통로(`fetch`)로 읽는다 — 페이로드는 전체."""
+    from qdrant_client import models
+
+    from src.retrieval import evaluate_clarification as harness
+    from src.vector_db.qdrant_backend import DENSE_VECTOR, point_id
+
+    collection = client.ensure_collection(TEXT_HYBRID_INDEX_NAME, dim=3, recreate=True)
+    client.client.upsert(collection_name=collection, points=[
+        models.PointStruct(
+            id=point_id(sid), vector={DENSE_VECTOR: [1.0, 0.0, 0.0]},
+            payload={"song_id": sid, "title": f"곡{sid}", "artist": "가수", "vocal_gender": gender,
+                     "genre": "발라드, 국내드라마", "type": "솔로", "release_date": "2012.03.01"},
+        )
+        for sid, gender in [("30000001", "여성"), ("30000002", "남성")]
+    ])
+    monkeypatch.setattr(harness, "get_vector_client", lambda: client)
+
+    tracks = harness.load_target_tracks(["30000002", "404", "30000001", "30000002"])
+    assert list(tracks) == ["30000002", "30000001"], "곡 id로 찾는다 — 없는 곡은 빠지고 중복은 한 번"
+    track = tracks["30000001"]
+    assert (track.id, track.title, track.artist, track.vocal_gender) == ("30000001", "곡30000001", "가수", "여성")
+    assert (track.genre, track.type, track.release_date) == ("발라드, 국내드라마", "솔로", "2012.03.01")
+    assert harness.load_target_tracks([]) == {}

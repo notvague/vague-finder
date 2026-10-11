@@ -81,6 +81,10 @@ ANSWER_CONFIDENCE = 0.8
 # 그 경우는 성별이 skip 조건에 걸려 자연히 장르로 넘어간다.
 ALLOWED_SLOTS: Sequence[str] = ("vocal_gender", "genre")
 
+# `slot_value`가 후보에서 읽는 칸. 질문만 조회하는 경로(/search/clarify)는 후보 페이로드에서 이것만 읽는다.
+# 슬롯을 늘리면 여기도 함께 늘린다.
+QUESTION_FIELDS: Sequence[str] = ("vocal_gender", "genre")
+
 # 생애 단계 질의("중학교 때 듣던")의 기준점. 데이터 슬롯이 아니라 **사용자에 대한** 질문이라
 # ALLOWED_SLOTS 밖에 두고, 생애 단계가 있는데 발매 시기를 모를 때만 데이터 슬롯보다 먼저 묻는다.
 # 답은 후보 재정렬 보너스(answer_matches)가 아니라 분석의 release_era 창(출생 연도 + 단계 나이 범위,
@@ -298,14 +302,27 @@ def pick_question(
     None을 돌려주는 것은 실패가 아니라 정상 동작이다. 호출부는 질문 없이
     Reject-only로 진행하면 된다.
     """
-    asked = set(asked_slots)
     # 생애 단계 질의인데 시기를 모른다 — 데이터 슬롯보다 먼저 기준점을 묻는다. 프로필(요청의 birth_year)이
     # 있으면 라우트가 이미 창을 넣어 has_release_era라 여기 오지 않는다.
     # 남은 후보가 없어도 묻는다 — 출생 연도는 곡을 고르는 질문이 아니라 **지금 보이는 결과에도** 적용되는 정보다(리뷰).
-    if analysis.has_life_stage and not analysis.has_release_era and BIRTH_YEAR_SLOT not in asked:
+    if analysis.has_life_stage and not analysis.has_release_era and BIRTH_YEAR_SLOT not in set(asked_slots):
         return build_birth_year_question(analysis)
+    return pick_data_question(candidates, asked_slots)
+
+
+def pick_data_question(
+    candidates: Sequence[MatchingTrack],
+    asked_slots: Sequence[str] = (),
+) -> Optional[ClarifyQuestion]:
+    """후보의 메타데이터(성별·장르)로 가를 수 있는 첫 슬롯의 질문. 물을 게 없으면 None.
+
+    **분석을 보지 않는다.** 질의에서 온 정보(시기·연령대)는 후보가 어떤 곡들인지에 이미 반영돼 있고,
+    여기서는 그 후보가 실제로 어떻게 갈리는지만 본다. 그래서 질문만 조회하는 경로(/search/clarify)는
+    후보 id만 받아 이 함수를 부른다. 사용자에 대한 질문(출생 연도)은 `pick_question`이 따로 다룬다.
+    """
     if not candidates:
         return None
+    asked = set(asked_slots)
     for slot in ALLOWED_SLOTS:          # 우선순위 순서 — 앞엣것부터 본다
         if slot in asked:
             continue

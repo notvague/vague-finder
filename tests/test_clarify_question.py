@@ -23,6 +23,7 @@ from src.retrieval.clarify import (
     discrimination,
     can_ask,
     merge_answer,
+    pick_data_question,
     pick_question,
     slot_value,
     stated_in_query,
@@ -145,6 +146,17 @@ def test_does_not_ask_when_the_split_is_too_lopsided() -> None:
 
 def test_returns_none_for_an_empty_pool() -> None:
     assert pick_question(_analysis(), []) is None
+    assert pick_data_question([]) is None
+
+
+def test_data_question_needs_only_the_candidates() -> None:
+    """질문만 조회하는 경로는 분석 없이 후보만 넘긴다. 같은 후보면 `pick_question`과 같은 질문이어야 한다
+    — 두 경로가 갈리면 화면(지연 조회)과 재질문 측정(즉시 계산)이 다른 질문을 낸다."""
+    pool = _pool(["남성"] * 6 + ["여성"] * 4)
+    assert pick_data_question(pool) == pick_question(_analysis(), pool)
+    assert pick_data_question(pool).slot == "vocal_gender"
+    for asked in (["vocal_gender"], ["birth_year"], ["birth_year", "vocal_gender"], list(ALLOWED_SLOTS)):
+        assert pick_data_question(pool, asked) == pick_question(_analysis(), pool, asked_slots=asked)
 
 
 # ---------------------------------------------------------------------------
