@@ -226,6 +226,20 @@ def test_full_pipeline_writes_complete_folder_and_jsonl(pipeline) -> None:
     assert (calls.melon, calls.youtube, calls.refine) == calls_before
 
 
+def test_dash_left_in_source_does_not_reach_the_record(pipeline) -> None:
+    """파서를 고치기 전에 받은 source.json에는 '-'가 남아 있다. 분석만 다시 돌려도 장르로
+    저장되지 않아야 하고, 빈 장르는 검증 메모로 드러나야 한다."""
+    crawler, state, calls, tmp = pipeline
+    state["melon"].update(genre="-", release_date="-")
+
+    assert crawler.process_song("가수", "밤편지", crawler.Registry()) == "done"
+
+    record = jsonl_records(tmp)[0]
+    assert (record["metadata"]["genre"], record["metadata"]["release_date"]) == ([], "")
+    assert issue_paths(record, "metadata.genre", "metadata.release_date") == [
+        "metadata.genre", "metadata.release_date"]
+
+
 # --- 1. JSONL 저장 실패 -----------------------------------------------------------------
 
 def test_jsonl_append_failure_is_not_reported_as_complete(pipeline, monkeypatch) -> None:

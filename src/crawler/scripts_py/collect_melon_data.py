@@ -142,6 +142,15 @@ def clean_text(text: str) -> str:
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
+
+def blank_placeholder(value: str) -> str:
+    """멜론이 값 없는 칸에 찍는 '-'를 빈 문자열로 바꾼다.
+
+    장르·발매일이 없는 곡의 상세 페이지는 칸을 비우지 않고 '-'를 내보낸다. 그대로 두면
+    genre가 ["-"]로 저장돼 지도 범례와 재질문 선택지에 '-'가 장르로 나온다(raw8 3곡).
+    """
+    return "" if value.strip() == "-" else value
+
 from .llm_utils import select_emotional_comments_with_llm
 
 def preprocess_melon_comment_candidates(comments_list: List[Dict]) -> List[Dict]:
@@ -464,9 +473,9 @@ def _parse_details_rest(soup, title: str, artist: List[str]) -> Dict:
             value = clean_text(dd.text)
             
             if "발매일" in header:
-                release_date = value
+                release_date = blank_placeholder(value)
             elif "장르" in header:
-                genre = value
+                genre = blank_placeholder(value)
             elif "앨범" in header:
                 album_name = value
                 # href="javascript:melon.link.goAlbumDetail('10554246');"
