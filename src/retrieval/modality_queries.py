@@ -180,7 +180,8 @@ _IMPLICIT_ARTWORK_EVIDENCE = {
 #   · 서술어 없이 '이미지'로 끝나면 그 뒤는 절의 끝이거나 말을 잇는 부사(근데·그래서 …)여야 한다
 #     ("이미지 변신", "이미지 좋은"을 막는다).
 #   · 문장을 맺는 서술어(`_IMAGE_FINAL`)는 **정말 맺었을 때만** 받는다 — 글자가 붙어 이어지거나
-#     ("였다고", "야말로", "임에도") 보조용언이 따라오면("같아 보이는") 맺은 것이 아니다.
+#     ("였다고", "야말로", "임에도") 그 어미의 보조 서술어가 따라오면("같아 보이는", "같지 않은",
+#     "이미지다 보니", "였다 하는") 맺은 것이 아니다.
 #     맺은 뒤에 새 문장이 오는 것은 마침표가 있든 없든 같다("이미지였어 제목이 기억 안 나").
 #   · 다음 절로 넘어가는 서술어(`_IMAGE_CONNECTIVE`: -는데·-지만)는 그 자체가 절의 경계다.
 #     `_CLAUSE_BREAK_RE`가 "이미지인데/이미지였고"는 이미 끊어 주고, 여기서 나머지를 받는다.
@@ -188,31 +189,51 @@ _IMPLICIT_ARTWORK_EVIDENCE = {
 # - 시각 축은 그 절의 '이미지' **앞**에서만 센다(`_has_implicit_artwork_description`).
 #
 # 맺음꼴은 어간과 어미를 따로 적어 곱한다. 꼴을 하나씩 적으면 "같았지·있었지"처럼 빠지는 것이 생긴다.
-_PLAIN_END = r"(?:어|아|다|지|음)"            # 현재: 같아·같다·같지·같음, 있어·있다·있지·있음
-_PAST_END = r"(?:어|다|지|음)"               # 과거: 였어·였다·였지·였음
 _IMAGE_COPULA = r"(?:였|이었)"
-_IMAGE_SEEMS = r"같"
 _IMAGE_EXISTS = r"가\s*(?:있|그려져\s*있|찍혀\s*있)"
 _IMAGE_RECALLED = _IMAGE_COPULA + r"던\s*(?:거|것|걸|듯)"   # "이미지였던 거 (같아)"
-_IMAGE_FINAL = (
-    r"(?:(?:" + _IMAGE_RECALLED + r"\s*)?" + _IMAGE_SEEMS + r"(?:" + _PLAIN_END + r"|았" + _PAST_END + r")|"
-    + _IMAGE_COPULA + _PAST_END + r"|"
-    r"(?:이)?야|(?:이)?다|임|입니다|이에요|예요|"
-    + _IMAGE_EXISTS + r"(?:" + _PLAIN_END + r"|었" + _PAST_END + r"))"
-)
-_IMAGE_CONNECTIVE = (
-    r"(?:(?:" + _IMAGE_RECALLED + r"\s*)?" + _IMAGE_SEEMS + r"(?:은데|지만|았는데|았지만)|"
-    + _IMAGE_COPULA + r"(?:는데|지만)|"
-    + _IMAGE_EXISTS + r"(?:는데|지만|었는데|었지만))"
+# 어간: 같-·같았-, 였-, 가 있-·가 있었- ("였던 거 같-" 포함)
+_IMAGE_STEM = (
+    r"(?:(?:" + _IMAGE_RECALLED + r"\s*)?같(?:았)?|" + _IMAGE_COPULA + r"|"
+    + _IMAGE_EXISTS + r"(?:었)?)"
 )
 # 맺음 뒤에 붙는 높임·감탄 글자.
 _ENDING_FILLER = r"[요ㅠㅜㅋㅎ~]*"
-# 서술어가 정말 문장을 맺었는가: 한글이 붙어 이어지지 않고, 보조용언 '보이다'가 따라오지 않는다.
-_SENTENCE_CLOSED = _ENDING_FILLER + r"(?![가-힣])(?!\s*보[이여였])"
+
+
+def _closed(auxiliary: str = "") -> str:
+    """어미가 정말 문장을 맺었는가: 한글이 붙어 이어지지 않고, 그 어미의 보조 서술어가 따라오지 않는다.
+
+    맺은 뒤에 새 문장이 오는 것은 막지 않는다 — 마침표가 있든 없든 같아야 한다.
+    """
+    follows = r"(?!\s*(?:" + auxiliary + r"))" if auxiliary else ""
+    return _ENDING_FILLER + r"(?![가-힣])" + follows
+
+
+# 어미마다 뒤에 올 수 있는 보조 서술어가 정해져 있다(닫힌 목록). 그것이 따라오면 맺은 것이 아니다.
+#   -어/-아 + 보이다           "같아 보이는", "있어 보이는"
+#   -지     + 않다·못하다      "같지 않은", "있지 못한"
+#   -다     + 보니·보면·하다   "이미지다 보니", "였다 하는"
+# -음·-야·-임·합쇼체에는 보조 서술어가 붙지 않는다.
+_AFTER_EO = _closed(r"보[이여였]")
+_AFTER_JI = _closed(r"않|못")
+_AFTER_DA = _closed(r"보[니면]|하[는던니며고]")
+_AFTER_NEUTRAL = _closed()
+_IMAGE_FINAL = (
+    r"(?:" + _IMAGE_STEM
+    + r"(?:[어아]" + _AFTER_EO + r"|지" + _AFTER_JI + r"|다" + _AFTER_DA + r"|음" + _AFTER_NEUTRAL + r")|"
+    r"(?:이)?다" + _AFTER_DA + r"|"
+    r"(?:(?:이)?야|임|입니다|이에요|예요)" + _AFTER_NEUTRAL + r")"
+)
+_IMAGE_CONNECTIVE = (
+    r"(?:(?:" + _IMAGE_RECALLED + r"\s*)?같(?:은데|지만|았는데|았지만)|"
+    + _IMAGE_COPULA + r"(?:는데|지만)|"
+    + _IMAGE_EXISTS + r"(?:는데|지만|었는데|었지만))"
+)
 # 서술어 없이 '이미지'(또는 "이미지였던 거")로 끝난 절: 절의 끝이거나, 말을 잇는 부사가 새 절을 연다.
 _BARE_CLAUSE_END = r"\s*" + _ENDING_FILLER + r"\s*(?:$|근데|그래서|그치만|암튼|아무튼)"
 _IMAGE_HEAD_NOUN_RE = re.compile(
-    r"이미지\s*(?:" + _IMAGE_CONNECTIVE + r"|" + _IMAGE_FINAL + _SENTENCE_CLOSED
+    r"이미지\s*(?:" + _IMAGE_CONNECTIVE + r"|" + _IMAGE_FINAL
     + r"|(?:" + _IMAGE_RECALLED + r")?" + _BARE_CLAUSE_END + r")"
 )
 
