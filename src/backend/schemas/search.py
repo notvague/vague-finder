@@ -11,7 +11,10 @@ from src.backend.schemas.query import QueryAnalysis
 # 거절·질문 한도. 라우트가 종료 판정에 같은 값을 써야 해서 상수로 노출한다.
 # 숫자가 두 곳에 흩어지면 스키마는 거부하는데 라우트는 질문을 계속 내주는
 # 상태가 된다 — 실제로 그렇게 422가 났다.
-MAX_REJECTED_IDS = 20
+# 거절 한도는 화면이 한 번에 보여 주는 곡 수(map.js TOP_K=15) × 거절 두 번이다.
+# 화면의 MAX_REJECTED와 같아야 한다.
+MAX_REJECT_ROUNDS = 2
+MAX_REJECTED_IDS = 30
 MAX_ASKED_SLOTS = 3  # 생애 단계 질의는 출생 연도(birth_year) 하나가 데이터 슬롯 앞에 더 붙는다
 MAX_TURNS = 2
 # 화면이 되돌려주는 후보 수. /search가 "질문을 조회할 후보가 남았는가"를 같은 범위로 판단한다.
@@ -150,7 +153,7 @@ class SearchRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_unique_rejections(self) -> "SearchRequest":
-        # 같은 id가 쌓이면 max_length=20에 금방 걸려 실제 거절 곡이 잘린다.
+        # 같은 id가 쌓이면 상한(MAX_REJECTED_IDS)에 금방 걸려 실제 거절 곡이 잘린다.
         if len(set(self.rejected_ids)) != len(self.rejected_ids):
             raise ValueError("rejected_ids에 중복된 곡 id가 있습니다.")
         return self

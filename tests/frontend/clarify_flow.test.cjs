@@ -31,7 +31,7 @@ function functionSource(name) {
 const DECLARATIONS = [
   'BIRTH_YEAR_KEY', 'sessionBirthYear',
   'SEARCH_TIMEOUT_MS', 'SEARCH_PATH', 'CLARIFY_PATH', 'CLARIFY_TIMEOUT_MS',
-  'TOP_K', 'MAX_REJECTED', 'MAX_PREVIOUS_CANDIDATES',
+  'TOP_K', 'CANDIDATE_K', 'MAX_REJECTED', 'MAX_PREVIOUS_CANDIDATES',
   'convo', 'panelMode', 'searchSeq', 'CLARIFY_FAILED_NOTE',
 ];
 const FUNCTIONS = [
@@ -325,4 +325,39 @@ test('연도 재검색이 실패하면 앞의 결과와 분석을 그대로 둔�
   await s.ev('answerBirthYear("1998")');
   assert.deepEqual(s.state(), { ...s.state(), mode: 'idle', turn: 1, shown: ['a'], rejected: [] });
   assert.equal(s.ev('convo.analysis.original_query'), QUERY);
+});
+
+test('검색을 내는 세 경로(첫 검색 · 출생 연도 재검색 · 거절 검색)가 모두 곡 수와 후보 수를 함께 보낸다', async () => {
+  const s = screen(reply({ clarify: { slot: 'birth_year', options: [] }, clarify_deferred: false }));
+  s.serve(body => reply({ rejected_ids: body.rejected_ids || [], clarify_deferred: false }));
+
+  await s.ev('runSearch("새 검색")');
+  await s.ev('answerBirthYear("1998")');
+  await s.ev('onReject()');
+  assert.deepEqual(s.kinds(), ['search', 'search', 'search']);
+  const [first, birth, reject] = s.ctx.requests.map(r => r.body);
+  assert.equal(first.prior_analysis, undefined, '첫 검색');
+  assert.equal(birth.birth_year, 1998, '출생 연도 재검색');
+  assert.deepEqual(reject.rejected_ids, ['a'], '거절 검색');
+  for (const body of [first, birth, reject]) {
+    assert.equal(body.top_k, 15);
+    // 보내지 않으면 서버가 후보를 top_k*3으로 넓혀 검색 깊이가 측정한 구성과 달라진다
+    assert.equal(body.candidate_k, 30);
+  }
+});
+
+test('한 쪽 15곡을 두 번 거절하면 한도에 닿는다', async () => {
+  const topK = s => s.ev('TOP_K');
+  const page = (n, size) => Array.from({ length: size }, (_, i) => ({ id: `p${n}-${i}` }));
+  const s = screen(reply({ results: page(0, 15), clarify_deferred: false }));
+  assert.equal(topK(s), 15);
+  let n = 0;
+  s.serve(body => reply({ results: page(++n, 15), rejected_ids: body.rejected_ids, turn: n + 1, clarify_deferred: false }));
+
+  assert.equal(s.ev('canRejectMore()'), true);
+  await s.ev('onReject()');
+  assert.equal(s.ev('canRejectMore()'), true, '두 번째 거절까지 한도 안이다');
+  await s.ev('onReject()');
+  assert.equal(s.state().rejected.length, 30);
+  assert.equal(s.ev('canRejectMore()'), false, '세 번째는 한도(MAX_REJECTED)를 넘는다');
 });

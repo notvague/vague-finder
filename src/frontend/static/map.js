@@ -688,7 +688,7 @@ function localSearch(q) {
 const SEARCH_TIMEOUT_MS = 30000;
 const SEARCH_PATH = "/api/v1/search";
 /*
- * 질문 조회는 검색이 아니다 — 후보 20곡 안팎의 메타데이터만 읽는다. 검색과 같은 30초를 주면 서버가
+ * 질문 조회는 검색이 아니다 — 후보 15곡 안팎의 메타데이터만 읽는다. 검색과 같은 30초를 주면 서버가
  * 멈췄을 때 "이 중에는 없어요"가 30초 동안 먹통이 된다. 이 시간이 지나면 질문 없이 거절만 진행한다.
  */
 const CLARIFY_PATH = "/api/v1/search/clarify";
@@ -730,9 +730,9 @@ function searchFailureText(err) {
  * 여기 보관했다가 다음 요청에 그대로 되돌려준다.
  *
  * 흐름:
- *   검색 → Top-10 (출생 연도 질문만 즉시 표시)
+ *   검색 → Top-15 (출생 연도 질문만 즉시 표시)
  *   "이 중에는 없어요" → 현재 후보로 질문을 조회하고(/search/clarify), 없으면 거절만 해서 다시 검색
- *   답 선택 / "잘 모르겠어요" → 보여준 10곡을 거절 + 답변을 실어 다시 검색
+ *   답 선택 / "잘 모르겠어요" → 보여준 15곡을 거절 + 답변을 실어 다시 검색
  *
  * 질문 조회는 **질문만** 가져온다 — 턴·거절 목록·결과를 바꾸지 않는다. 그래서 질문을 닫아도 잃는 것이
  * 없고, 다시 누르면 받아 둔 질문을 그대로 연다(결과가 바뀌면 applyResponse가 버린다). 조회가 실패하거나
@@ -747,9 +747,12 @@ function searchFailureText(err) {
  * 질문을 조회할지는 서버가 정한다(clarify_deferred — 한도가 남았고 보여준 곡 말고 후보가 있을 때). 화면은 거절
  * 한도만 따로 확인한다 — 질문 없이 거절만 하는 경로가 있어서다.
  */
-const TOP_K = 10;
-// 서버 스키마 MAX_REJECTED_IDS와 같아야 한다. 넘기면 요청이 422로 막힌다.
-const MAX_REJECTED = 20;
+const TOP_K = 15;
+// 후보 수는 보여주는 곡 수와 따로 고정한다. 보내지 않으면 서버가 max(top_k*3, 30)=45로 넓혀
+// 검색 깊이와 리랭커 입력이 측정한 구성(후보 30)과 달라진다. 15곡은 그 30곡 순위의 앞부분이다.
+const CANDIDATE_K = 30;
+// 서버 스키마 MAX_REJECTED_IDS와 같아야 한다. 넘기면 요청이 422로 막힌다. 보여주는 곡 수 × 거절 두 번.
+const MAX_REJECTED = 30;
 // 서버 스키마의 previous_candidate_ids max_length
 const MAX_PREVIOUS_CANDIDATES = 30;
 
@@ -893,7 +896,7 @@ async function answerBirthYear(value) {
   current.birthYearSkipped = true; // 성공하든 실패하든 이 검색에서 다시 묻지 않는다
   panelMode = "loading";
   renderPanel();
-  const body = { query: current.query, top_k: TOP_K, explain: true, birth_year: year, turn: current.turn, defer_clarify: true };
+  const body = { query: current.query, top_k: TOP_K, candidate_k: CANDIDATE_K, explain: true, birth_year: year, turn: current.turn, defer_clarify: true };
   if (current.analysis) body.prior_analysis = current.analysis; // 재분석(Gemini 호출) 없이 창만 넣어 다시 찾는다
   try {
     const data = await requestSearch(body);
@@ -1511,6 +1514,7 @@ async function submitTurn(answer, note = "") {
   const body = {
     query: convo.query,
     top_k: TOP_K,
+    candidate_k: CANDIDATE_K,
     prior_analysis: convo.analysis,
     answers,
     asked_slots: convo.askedSlots,
@@ -1572,7 +1576,7 @@ async function runSearch(q) {
   clearBtn.hidden = false;
   showStatus("검색 중…");
   try {
-    const data = await requestSearch({ query: q, top_k: TOP_K, explain: true, birth_year: loadBirthYear(), defer_clarify: true });
+    const data = await requestSearch({ query: q, top_k: TOP_K, candidate_k: CANDIDATE_K, explain: true, birth_year: loadBirthYear(), defer_clarify: true });
     if (seq !== searchSeq) return;
     showStatus("");
     startConvo(q, data);

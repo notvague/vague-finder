@@ -472,9 +472,10 @@ def test_fallback_after_first_turn_success_is_the_first_turn() -> None:
 # 서비스 2턴 흐름 (flow:*) — routes/search.py · map.js와 같은 규칙인지
 # ---------------------------------------------------------------------------
 
-from src.backend.schemas.search import ClarifyOption, ClarifyQuestion  # noqa: E402
+from src.backend.schemas.search import MAX_REJECTED_IDS, ClarifyOption, ClarifyQuestion  # noqa: E402
 from src.retrieval.evaluate_clarification import (  # noqa: E402
     FLOW_POLICIES,
+    flow_reject_limit,
     TurnResult,
     check_against_labels,
     choose_answer,
@@ -514,7 +515,16 @@ def test_no_question_after_the_last_turn_or_full_rejections() -> None:
     result = TurnResult(rank=None, candidate_rank=None, candidate_recall=0.0)
     assert next_question(_analysis(), result, 3, [], [], 10) is None          # 3턴 응답에는 질문 없음
     assert next_question(_analysis(), result, 2, ["vocal_gender", "genre"], [], 10) is None
-    assert next_question(_analysis(), result, 2, [], [f"x{i}" for i in range(11)], 10) is None
+    # 다음 쪽(10곡)을 더 거절하면 서비스 상한을 넘는 상태
+    full = [f"x{i}" for i in range(MAX_REJECTED_IDS - 9)]
+    assert next_question(_analysis(), result, 2, [], full, 10) is None
+
+
+def test_flow_reject_limit_follows_the_page_size() -> None:
+    """한도는 한 쪽 곡 수 × 두 번 — 기준선(10곡)은 20 그대로, 서비스(15곡)는 서버 상한과 같다."""
+    assert flow_reject_limit(10) == 20
+    assert flow_reject_limit(15) == MAX_REJECTED_IDS
+    assert flow_reject_limit(50) == MAX_REJECTED_IDS      # 서버가 받는 길이를 넘지 않는다
 
 
 def _flow(router, mode, gender="여성"):
