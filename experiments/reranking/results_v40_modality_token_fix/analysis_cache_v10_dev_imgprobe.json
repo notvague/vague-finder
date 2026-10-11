@@ -1,0 +1,161 @@
+{
+  "format": 1,
+  "meta": {
+    "created_at": "2026-10-11T21:40:29+0900",
+    "query_source": "/Users/ozzing727/Desktop/Developer/졸작-RISE/vague-finder-modality-fix/experiments/reranking/results_v40_modality_token_fix/eval_queries_v10_imgprobe.csv",
+    "split": "dev",
+    "analyzer": {
+      "model_name": "gemini-3.1-flash-lite",
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "reference_year": 2026,
+      "reference_year_env": "2026",
+      "prompt_sha": "08f0b3bc4c37",
+      "postprocess_sha": "9033be1a70fa"
+    }
+  },
+  "entries": {
+    "t086": {
+      "query": "초록색 물감을 붓으로 마구 덧칠한 초록 숲 이미지",
+      "fallback": false,
+      "analyzed_at": "2026-10-11T21:40:31+0900",
+      "analyzer_sha": "a967d579ea9d",
+      "analysis": {
+        "original_query": "초록색 물감을 붓으로 마구 덧칠한 초록 숲 이미지",
+        "intent_type": "place",
+        "korean_tags": [
+          "초록색",
+          "숲",
+          "물감",
+          "붓터치",
+          "추상화"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": null,
+        "genre": "",
+        "image_english_query": "Album cover featuring a forest scene created with thick, expressive green paint brushstrokes, resembling an abstract painting with layered textures.",
+        "audio_english_query": "",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.3,
+          "image": 0.7,
+          "audio": 0.0
+        },
+        "text_alpha": 0.8,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        },
+        "life_stage": {
+          "stage": null,
+          "text": "",
+          "spans": [],
+          "age_from": null,
+          "age_to": null,
+          "confidence": 0.0
+        }
+      }
+    },
+    "t099": {
+      "query": "쨍한 빨간 드레스 입은 여자가 초록 풀밭에 엎드려 턱 괴고 있는 이미지",
+      "fallback": false,
+      "analyzed_at": "2026-10-11T21:40:33+0900",
+      "analyzer_sha": "a967d579ea9d",
+      "analysis": {
+        "original_query": "쨍한 빨간 드레스 입은 여자가 초록 풀밭에 엎드려 턱 괴고 있는 이미지",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "여성",
+          "이미지",
+          "앨범아트"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": null,
+        "genre": "",
+        "image_english_query": "Album cover showing a woman wearing a vibrant red dress, lying prone on a green grassy field, resting her chin on her hands.",
+        "audio_english_query": "",
+        "has_visual_clue": true,
+        "modality_weights": {
+          "text": 0.3,
+          "image": 0.7,
+          "audio": 0.0
+        },
+        "text_alpha": 0.8,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": null,
+          "end_year": null,
+          "confidence": 0.0
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": null,
+          "vocal_roles": [],
+          "sound_ensemble": [],
+          "confidence": 0.0
+        },
+        "life_stage": {
+          "stage": null,
+          "text": "",
+          "spans": [],
+          "age_from": null,
+          "age_to": null,
+          "confidence": 0.0
+        }
+      }
+    }
+  }
+}
