@@ -319,13 +319,15 @@ async def run_search(
     input_differs = [str(t.id) for t in rerank_source] != [str(t.id) for t in candidates]
     errors: List[str] = []
     statuses: List[str] = []
+    skips: List[str] = []
     reranked_all = rerank_preserving_exact_lyrics(
         reranker, analysis_with_answers(analysis, answers or []), rerank_source, candidate_k,
         answers=answers_for_reranker(analysis, list(answers or [])),  # 라우터와 같은 선별
-        errors=errors, statuses=statuses,
+        errors=errors, statuses=statuses, skips=skips,
         fallback_candidates=list(candidates) if input_differs else None,  # 적용 안 된 호출의 그룹은 보너스 순서로(라우터와 같은 호출 단위 폴백)
     )
-    RERANK_STATUS_COUNTS.update(statuses or ["no_status"])
+    # 정책 생략(표지 지배·자료 없는 MV 장면)은 호출이 없어 상태도 없다. no_status에 섞으면 생략이 보이지 않는다
+    RERANK_STATUS_COUNTS.update(statuses or [f"policy_skipped:{s}" for s in skips] or ["no_status"])
     if errors:
         RERANK_STATUS_COUNTS["exception"] += 1
     if input_differs and errors:

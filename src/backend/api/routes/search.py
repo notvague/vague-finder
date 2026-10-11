@@ -22,6 +22,7 @@ from src.backend.schemas.search import (
     ClarifyRequest,
     ClarifyResponse,
     MatchingTrack,
+    SearchNotice,
     SearchRequest,
     SearchResponse,
 )
@@ -37,7 +38,13 @@ from src.retrieval.clarify import (
     with_birth_year,
 )
 from src.retrieval.known_slots import known_slots_from_query
-from src.retrieval.explain import NULL_RECORDER, ExplainRecorder, SongExplain
+from src.retrieval.explain import (
+    NULL_RECORDER,
+    RERANK_SKIP_LABELS,
+    RERANK_SKIP_MV_SCENE_UNVERIFIABLE,
+    ExplainRecorder,
+    SongExplain,
+)
 from src.retrieval.lyrics_exact_search import (
     LyricsExactSearchService,
     LyricsSnapshot,
@@ -315,6 +322,9 @@ async def search(
         candidate_tracks: list[MatchingTrack] = []
         # 가사 경로가 **무슨 판을 봤는지**. 인용이 그 판에서만 뜨게 하려고 받는다.
         lyrics_snapshot: list[LyricsSnapshot] = []
+        # 리랭킹을 정책으로 생략했으면 그 사유. 기록(explain)과 별개로 받는다 — 기록을 끈 요청에도
+        # "확인할 자료가 없어 다른 단서로 찾았다"는 안내는 실려야 한다.
+        rerank_skips: list[str] = []
 
         # 끄면 아무것도 기록하지 않는 null object가 들어간다. 라우터에 `if` 분기가
         # 없으므로 "기록을 켰을 때만 지나가는 코드"가 생기지 않는다.
@@ -342,7 +352,17 @@ async def search(
                 answers=request.answers,
                 recorder=recorder,
                 timer=timer,
+                rerank_skip_out=rerank_skips,
             )
+
+        # 안내 문구는 서버의 고정 문구다. 사유 코드와 함께 보내 화면이 문장을 짓지 않게 한다.
+        # 자료 없는 MV 장면 생략에만 싣는다 — 표지 지배 생략은 기존 동작이고 문구가 없다(RERANK_SKIP_LABELS).
+        notice = (
+            SearchNotice(code=RERANK_SKIP_MV_SCENE_UNVERIFIABLE,
+                         message=RERANK_SKIP_LABELS[RERANK_SKIP_MV_SCENE_UNVERIFIABLE])
+            if RERANK_SKIP_MV_SCENE_UNVERIFIABLE in rerank_skips
+            else None
+        )
 
         explain_summary = None
         if request.explain:
@@ -406,6 +426,7 @@ async def search(
 
         return SearchResponse(
             results=results,
+            notice=notice,
             total_found=len(results),
             analysis=analysis,
             clarify=clarify,

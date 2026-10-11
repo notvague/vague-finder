@@ -793,6 +793,8 @@ function applyResponse(data) {
   convo.clarify = data.clarify || null;
   convo.clarifyDeferred = Boolean(data.clarify_deferred);
   convo.explain = data.explain || null;
+  // 서버의 요청 단위 안내(리랭킹 정책 생략 사유·고정 문구). 응답 값으로 교체한다 — 앞 결과의 안내가 남으면 안 된다
+  convo.notice = data.notice || null;
   explainOpen.clear(); // 새 결과다 — 앞 목록에서 펼쳐 둔 곡은 여기 없다
   // 출생 연도 질문은 결과와 함께 바로 띄운다(위 '예외'). 건너뛴 뒤에는 거절 버튼만 보인다
   panelMode = isBirthYearQuestion() && !convo.birthYearSkipped && convo.results.length > 0 ? "asking" : "idle";
@@ -1232,7 +1234,12 @@ function explainPanel(x) {
   if (x.score_mix) box.append(explainMix(x));
   if (x.lyric_match) box.append(explainLyric(x));
   for (const item of x.evidence || []) box.append(explainEvidence(item));
-  if (x.model_notes.length) box.append(explainModelNotes(x));
+  /*
+   * 모델이 스스로 쓴 이유(model_notes)는 **그리지 않는다.** 서버도 더 이상 보내지 않지만
+   * (항상 빈 배열), 구형 서버가 문장을 실어 보내도 여기서 근거로 보이게 하지 않는다 —
+   * 입력 어디에도 없는 뮤직비디오 장면을 사실처럼 쓴 사례가 있었고, "미검증" 경고를
+   * 붙여도 사용자에게는 확인된 근거로 읽혔다(2026-10-11).
+   */
 
   li.append(box);
   return li;
@@ -1350,47 +1357,49 @@ function explainEvidence(item) {
   return g;
 }
 
-function explainModelNotes(x) {
-  const g = exGroup("모델이 쓴 이유");
-  // 검증된 기록과 한 덩어리로 읽히지 않게, 서버가 함께 보낸 경고를 그대로 붙인다
-  g.append(makeEl("p", "exwarn", x.model_notes_caption));
-  for (const text of x.model_notes) g.append(makeEl("p", "exmodelnote", text));
-  return g;
-}
-
 /*
  * 요청 한 번의 실행 기록. 곡별 근거와 달리 질의 전체에 해당한다 — 리랭커가
  * 예외로 멈췄으면 열 곡의 이야기가 통째로 달라지므로, 곡을 펼쳐야 보이는
  * 자리에 두지 않는다.
+ *
+ * 서버의 안내(notice)도 여기 적는다. "말씀하신 뮤직비디오 장면은 확인할 자료가 없어
+ * 다른 단서로 찾은 후보를 보여드려요"처럼 결과의 성격을 바꾸는 말이라 기록(explain)이
+ * 없어도 보여야 한다. 문구는 서버가 보낸 것을 그대로 쓴다 — 화면이 짓지 않는다.
  */
 function renderRunNote() {
   const x = convo && convo.explain;
-  if (!x) {
+  const notice = convo && convo.notice;
+  if (!x && !notice) {
     runNote.hidden = true;
     return;
   }
-  const parts = [x.reorder_stage_label || x.reorder_stage];
-  if (x.reranker && x.reranker !== "none") parts.push(x.reranker);
-  // 호출 수 ≠ 성공 수다. 같을 때는 말할 것이 없다
-  if (x.rerank_calls !== x.rerank_calls_applied) {
-    parts.push(`${x.rerank_calls}번 불러 ${x.rerank_calls_applied}번 적용`);
+  const parts = [];
+  if (notice && notice.message) parts.push(notice.message);
+  if (x) {
+    parts.push(x.reorder_stage_label || x.reorder_stage);
+    if (x.reranker && x.reranker !== "none") parts.push(x.reranker);
+    // 호출 수 ≠ 성공 수다. 같을 때는 말할 것이 없다
+    if (x.rerank_calls !== x.rerank_calls_applied) {
+      parts.push(`${x.rerank_calls}번 불러 ${x.rerank_calls_applied}번 적용`);
+    }
+    if (x.rerank_error) parts.push(x.rerank_error);
+    /*
+     * 질의 분석이 규칙 폴백이면 결과의 성격이 통째로 달라진다(쿼터 초과·시간 초과).
+     * 검색은 그대로 돌아서 결과만 봐서는 구분되지 않으므로 여기서 말한다.
+     * 문구는 서버가 보낸 것을 그대로 쓴다 — 화면이 짓지 않는다.
+     */
+    if (x.analysis_fallback) parts.push(x.analysis_fallback_label);
+    /*
+     * 예외로 죽은 경로. 가중치는 남아 있으므로 이것이 없으면 "가중치 0.20인데
+     * 기여가 한 줄도 없다"가 되어, 경로가 돌았지만 이 곡을 못 올린 것으로 읽힌다.
+     */
+    for (const path of x.failed_paths || []) parts.push(path.label);
   }
-  if (x.rerank_error) parts.push(x.rerank_error);
-  /*
-   * 질의 분석이 규칙 폴백이면 결과의 성격이 통째로 달라진다(쿼터 초과·시간 초과).
-   * 검색은 그대로 돌아서 결과만 봐서는 구분되지 않으므로 여기서 말한다.
-   * 문구는 서버가 보낸 것을 그대로 쓴다 — 화면이 짓지 않는다.
-   */
-  if (x.analysis_fallback) parts.push(x.analysis_fallback_label);
-  /*
-   * 예외로 죽은 경로. 가중치는 남아 있으므로 이것이 없으면 "가중치 0.20인데
-   * 기여가 한 줄도 없다"가 되어, 경로가 돌았지만 이 곡을 못 올린 것으로 읽힌다.
-   */
-  for (const path of x.failed_paths || []) parts.push(path.label);
   runNote.textContent = parts.filter(Boolean).join(" · ");
+  // 정책 생략(안내)은 경고가 아니다 — 실패·폴백·죽은 경로만 경고색이다
   runNote.classList.toggle(
     "warn",
-    !!(x.rerank_error || x.analysis_fallback || (x.failed_paths || []).length)
+    !!(x && (x.rerank_error || x.analysis_fallback || (x.failed_paths || []).length))
   );
   runNote.hidden = false;
 }

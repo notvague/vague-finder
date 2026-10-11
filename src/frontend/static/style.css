@@ -1005,7 +1005,6 @@ body.listmode .sitefooter { min-width: 0; }
   color: inherit;
   border-radius: 2px;
 }
-.exmodelnote { margin: 5px 0 0; color: #555; line-height: 1.6; }
 
 /* 요청 한 번의 실행 기록 — 곡을 펼치지 않아도 보이는 자리 */
 .runnote[hidden] { display: none; }

@@ -39,6 +39,7 @@ from src.retrieval.explain import (
     NULL_RECORDER,
     RERANK_APPLIED,
     RERANK_FAILED,
+    RERANK_SKIP_MV_SCENE_UNVERIFIABLE,
     RERANK_UNKNOWN,
     ExplainRecorder,
     render_ko,
@@ -47,12 +48,13 @@ from src.common.gemini_client import RETRIEVAL, gemini_route_info
 from src.retrieval import search_router as _search_router
 from src.retrieval.clarify import reranker_corrections_mode, reranker_input_order_mode
 from src.retrieval.gemini_listwise_reranker import type_slot_label
+from src.retrieval.rerank_policy import rerank_skip_reason
 from src.retrieval.search_router import (
     call_reranker,
     exact_lyric_constraint_score,
     lyric_priority_rule,
+    place_protected_lyrics_first,
     select_protected_lyric_ids,
-    should_skip_rerank_for_image,
 )
 
 
@@ -132,10 +134,14 @@ def rerank_preserving_exact_lyrics(
     errors=None,
     statuses=None,
     fallback_candidates=None,
+    skips=None,
 ):
-    """실서비스와 동일하게 이미지 지배/가사 exact 보호 규칙을 적용한다.
+    """실서비스와 동일하게 리랭킹 생략 정책(표지 지배·자료 없는 MV 장면)과 가사 exact 보호 규칙을 적용한다.
 
     answers는 재질문 답변이다. 답변을 쓰는 리랭커에만 전달된다(call_reranker).
+
+    skips에 리스트를 넘기면 **정책으로 생략한 사유**(RERANK_SKIP_*)가 담긴다. statuses처럼 기록기와
+    별개의 통로다 — 생략은 실패가 아니고, 기록을 꺼도 "리랭킹이 없었던 이유"는 측정 결과에 남아야 한다.
 
     recorder는 SearchRouter.search()와 **같은 것을 같은 순서로** 기록한다. 이 함수는
     라우터의 보호 로직을 평가용으로 옮겨 놓은 사본이라, 기록도 함께 옮겨야 평가
@@ -151,9 +157,28 @@ def rerank_preserving_exact_lyrics(
     순서로 돌아간다. 평가만 예외로 멈추면 질의 하나의 추론 실패로 **측정 전체가
     중단되고 요약 파일도 생성되지 않는다.**
     """
-    if should_skip_rerank_for_image(reranker, analysis):
-        # 시도 자체가 없었다. attempted를 올리면 "실패"로 읽힌다.
-        return list(candidates)[:top_k]
+    # 라우터와 같은 함수로 판정한다. 시도 자체가 없었으므로 attempted를 올리지 않는다 —
+    # 올리면 "실패"로 읽힌다. 사유는 기록과 skips 양쪽에 남긴다.
+    #
+    # 돌려주는 순서는 라우터와 같이 **후보 목록(보정 반영)** 이다. 실험 스위치로 리랭커 입력
+    # (candidates)이 보정 전 순서일 때 그것을 돌려주면 생략이 곧 답변을 버리는 일이 된다.
+    #
+    # 라우터와 같은 게이트 — 리랭커가 꺼져 있거나 후보가 하나뿐이면 부를 수 없는 요청이라 생략을 적지 않는다
+    # (서비스는 그 요청을 not_attempted로 적는다).
+    eligible = bool(getattr(reranker, "enabled", True)) and len(candidates) > 1
+    skip_reason = rerank_skip_reason(reranker, analysis, candidates) if eligible else ""
+    if skip_reason:
+        recorder.set_rerank_policy_skip(skip_reason)
+        if skips is not None:
+            skips.append(skip_reason)
+        base = fallback_candidates if fallback_candidates is not None else candidates
+        if skip_reason == RERANK_SKIP_MV_SCENE_UNVERIFIABLE:
+            # 라우터와 같은 함수 — 모델 없이 가사 exact 보호 배치만. 표지 지배는 기존 동작 그대로.
+            final = place_protected_lyrics_first(analysis, base, top_k, recorder)
+        else:
+            final = list(base)[:top_k]
+        recorder.set_rank_after([track.id for track in final])
+        return final
 
     recorder.set_reorder_attempted(True)
     try:
@@ -317,21 +342,27 @@ OUTCOME_FALLBACK = "fallback"              # 예외 없이 실패, 반영 0건
 OUTCOME_PARTIAL_FAILURE = "partial_failure"  # 일부 그룹만 실패
 OUTCOME_APPLIED = "applied"                # 모델이 순서를 정했다
 OUTCOME_SKIPPED = "skipped"                # 부를 조건이 아니었다(정상)
+OUTCOME_POLICY_SKIPPED = "policy_skipped"  # 부를 수 있었지만 정책으로 부르지 않았다(표지 지배·자료 없는 MV 장면)
 OUTCOME_UNKNOWN = "unknown"                # 상태를 보고하지 않는 백엔드
 
 
-def rerank_outcome(statuses, rerank_error: str) -> str:
+def rerank_outcome(statuses, rerank_error: str, policy_skip: str = "") -> str:
     """리랭킹 결말 한 단어. **실패와 정상 건너뜀을 섞지 않는다.**
 
     `skipped`를 실패로 세면 안 된다 — 후보가 1곡뿐이거나 리랭킹이 꺼져 있으면
     백엔드는 정상적으로 호출을 생략하고 `skipped`를 돌려준다. 그것을 폴백으로
     집계하면 아무 문제 없는 질의가 실패 목록에 올라간다.
 
+    `policy_skipped`는 그와도 다르다 — 부를 수 있었는데 **일부러** 부르지 않은 것이다
+    (`rerank_policy.rerank_skip_reason`). 호출이 없으니 statuses는 비어 있고, 사유는 따로 온다.
+
     `unknown`도 실패가 아니다. 상태를 보고하지 않는 백엔드라 **모른다**는 뜻이고,
     모르는 것을 실패로 단정하면 이 기록의 원칙이 무너진다.
     """
     if rerank_error:
         return OUTCOME_EXCEPTION
+    if policy_skip:
+        return OUTCOME_POLICY_SKIPPED
     failed = any(status == RERANK_FAILED for status in statuses)
     applied = any(status == RERANK_APPLIED for status in statuses)
     if failed and applied:
@@ -546,12 +577,12 @@ def _count_points(vsettings) -> Optional[int]:
 
 
 def explain_columns(
-    record, *, enabled: bool, rerank_error: str = "", statuses=None
+    record, *, enabled: bool, rerank_error: str = "", statuses=None, skips=None
 ) -> dict:
     """detail CSV의 실행 상태 열.
 
-    **백엔드가 보고한 상태(`rerank_run_statuses`)와 폴백 사유는 기록 여부와 무관하게
-    남긴다.** 리랭킹이 실제로 일어났는지는 설명 기능의 부산물이 아니라 측정 결과를
+    **백엔드가 보고한 상태(`rerank_run_statuses`)·폴백 사유·정책 생략 사유는 기록 여부와
+    무관하게 남긴다.** 리랭킹이 실제로 일어났는지는 설명 기능의 부산물이 아니라 측정 결과를
     읽는 데 필요한 사실이다.
 
     나머지 열은 기록을 끄면 빈 값으로 남긴다. NULL_RECORDER의 빈 기록은 "리랭킹이
@@ -559,10 +590,12 @@ def explain_columns(
     돌아간 실행에 not_attempted / 호출 0회가 남는다.
     """
     statuses = list(statuses or [])
-    outcome = rerank_outcome(statuses, rerank_error)
+    policy_skip = "|".join(skips or [])
+    outcome = rerank_outcome(statuses, rerank_error, policy_skip)
     always = {
         "rerank_run_statuses": "|".join(statuses),
         "rerank_outcome": outcome,
+        "rerank_policy_skip": policy_skip,
         "rerank_error": rerank_error,
         "rerank_fell_back": int(outcome in {OUTCOME_EXCEPTION, OUTCOME_FALLBACK}),
         "rerank_partial_failure": int(outcome == OUTCOME_PARTIAL_FAILURE),
@@ -624,6 +657,10 @@ def build_explain_payload(
             row["explain"] = None
             return row
         row["explain"] = to_track_explain(song, reorder_stage=stage).model_dump()
+        # 모델이 스스로 쓴 이유 문장의 **원문**. 일반 API(`explain.model_notes`)에는 싣지 않지만
+        # 진단 기록에는 보존한다 — "모델이 무엇을 보고 그렇게 말했나"를 되짚을 유일한 단서다.
+        # 검증된 기록이 아니므로 explain 안이 아니라 옆에 둔다.
+        row["model_notes_internal"] = list(song.model_notes)
         return row
 
     songs = [entry(str(track.id), "result") for track in ordered[:top_k]]
@@ -813,6 +850,7 @@ async def evaluate(args: argparse.Namespace) -> None:
 
         rerank_errors: list[str] = []
         rerank_statuses: list[str] = []
+        rerank_skips: list[str] = []
         if not candidates:
             print("  경고: 검색 후보가 없습니다.")
             baseline = []
@@ -842,6 +880,7 @@ async def evaluate(args: argparse.Namespace) -> None:
                 recorder=recorder,
                 errors=rerank_errors,
                 statuses=rerank_statuses,
+                skips=rerank_skips,
             )
             rerank_ms = (time.perf_counter() - rerank_started) * 1000
             reranked = reranked_all[: args.top_k]
@@ -1024,6 +1063,7 @@ async def evaluate(args: argparse.Namespace) -> None:
                     enabled=args.explain,
                     rerank_error=rerank_errors[0] if rerank_errors else "",
                     statuses=rerank_statuses,
+                    skips=rerank_skips,
                 ),
                 "explain_top1": explain_top1,
                 "explain_relevant": explain_relevant,

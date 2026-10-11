@@ -24,6 +24,7 @@ from src.retrieval.explain import (
     PATH_LABELS,
     REORDER_NOT_ATTEMPTED,
     REORDER_STAGE_LABELS,
+    RERANK_SKIP_LABELS,
     RULE_LABELS,
     PathContribution,
     ScoreAdjustment,
@@ -33,8 +34,8 @@ from src.retrieval.explain import (
     render_ko,
 )
 
-# 모델의 문장에 붙는 경고. 화면이 이 문구를 직접 쓰게 해서, "검증된 근거"와 섞여
-# 표시되는 경로를 만들지 않는다.
+# 호환용. 모델의 문장(`model_notes`)은 2026-10-11부터 응답에 싣지 않으므로 화면이 쓸 일이 없다.
+# 필드를 지우지 않는 것은 구형 클라이언트가 읽기 때문이다.
 MODEL_NOTES_CAPTION = (
     "모델이 스스로 말한 이유입니다. 실행 기록으로 검증되지 않았고, "
     "최종 순위의 근거와 다를 수 있습니다"
@@ -274,13 +275,15 @@ class TrackExplain(BaseModel):
     model_notes: List[str] = Field(
         default_factory=list,
         description=(
-            "모델이 스스로 쓴 이유 문장. **검증된 기록이 아니다** — "
-            "summary에는 들어가지 않는다"
+            "**항상 빈 배열이다(호환용 필드).** 모델이 스스로 쓴 이유 문장은 일반 응답에 싣지 않는다 — "
+            "입력에 없는 장면을 사실처럼 쓴 사례가 있었고(2026-10-11), 경고 문구를 붙여도 "
+            "사용자에게는 확인된 근거로 읽힌다. 원문은 내부 RerankRun·평가 진단 기록"
+            "(`model_notes_internal`)에만 보존한다"
         ),
     )
     model_notes_caption: str = Field(
         default=MODEL_NOTES_CAPTION,
-        description="model_notes를 보여줄 때 함께 표시할 경고 문구",
+        description="호환용. model_notes가 비어 있으므로 화면에 쓸 일이 없다",
     )
 
     evidence: List[LyricEvidenceOut] = Field(
@@ -334,6 +337,17 @@ class SearchExplainOut(BaseModel):
     reranker: str = "none"
     reorder_stage: str = REORDER_NOT_ATTEMPTED
     reorder_stage_label: str = ""
+    rerank_skip_reason: str = Field(
+        default="",
+        description=(
+            "리랭킹을 **정책으로** 생략했으면 그 사유 코드(image_dominant · mv_scene_unverifiable). "
+            "실패가 아니다 — 모델을 부르지 않았고 후보 순서(보정·거절 제외 반영)가 그대로 최종이다"
+        ),
+    )
+    rerank_skip_label: str = Field(
+        default="",
+        description="rerank_skip_reason의 사용자 안내 문구. 서버가 고정 문구로 준다 — 화면이 짓지 않는다",
+    )
     rerank_error: str = Field(
         default="",
         description="라우터가 예외를 잡았으면 그 사유. 비어 있으면 예외는 없었다",
@@ -362,6 +376,8 @@ class SearchExplainOut(BaseModel):
             reranker=record.reranker,
             reorder_stage=stage,
             reorder_stage_label=REORDER_STAGE_LABELS.get(stage, stage),
+            rerank_skip_reason=record.rerank_policy_skip,
+            rerank_skip_label=RERANK_SKIP_LABELS.get(record.rerank_policy_skip, ""),
             rerank_error=record.rerank_error,
             rerank_calls=len(record.rerank_runs),
             rerank_calls_applied=record.rerank_runs_applied,
@@ -449,7 +465,9 @@ def to_track_explain(
         score_mix=(
             ScoreMixOut.of(explain.score_mix) if explain.score_mix is not None else None
         ),
-        model_notes=list(explain.model_notes),
+        # 모델의 자유 서술은 내보내지 않는다. 내부 기록(`explain.model_notes`)은 그대로 둔다 —
+        # 지우는 것은 원인 추적을 막고, 내보내는 것은 미검증 주장을 근거로 보이게 한다.
+        model_notes=[],
         evidence=[
             LyricEvidenceOut(
                 song_id=item.song_id,
