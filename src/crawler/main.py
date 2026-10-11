@@ -53,6 +53,7 @@ from src.crawler.scripts_py.collect_reaction import (
     download_youtube_audio,
     fetch_youtube_reaction,
     looks_like_m4a,
+    youtube_video_id,
 )
 from src.crawler.scripts_py.refine_data import (
     blank_album_text_without_evidence,
@@ -119,6 +120,10 @@ MIN_AUDIO_SECONDS = 30.0
 
 # 403/429처럼 이후 요청도 중단해야 하는 접근 차단이 발생하면 현재 실행에서만 비활성화한다.
 _namuwiki_disabled_for_run = False
+
+# CSV의 youtube_url로 사람이 지정한 영상(song_id -> 주소). 검색이 맞는 영상을 못 찾았거나,
+# 찾은 영상의 상세 제목이 영어·자모 분리 표기라 대조에서 떨어진 곡에 쓴다(2026-10-11 55곡).
+_manual_video_urls: Dict[str, str] = {}
 
 
 def reset_namuwiki_state() -> None:
@@ -600,11 +605,13 @@ def stage_source(state: CrawlState, source: Dict) -> str:
 
     # Step 2: YouTube Reaction (영상URL + 유튜브댓글 + 조회수)
     #         가수 이름은 시드와 멜론 표기를 모두 넘겨 다른 가수의 동명곡을 거른다.
+    manual_url = _manual_video_urls.get(state.song_id, "")
     try:
         reaction_data = fetch_youtube_reaction(
             artist, title, song_lyrics=lyrics,
             melon_title=melon_data.get("title", ""),
             known_artists=list(melon_data.get("artist") or []),
+            video_url=manual_url,
         )
     except CommentSelectionUnavailable as e:
         # 판정 장애는 '댓글 0개'가 아니다. 단계 실패로 남겨 다음 실행에서 다시 시도한다.
@@ -620,8 +627,9 @@ def stage_source(state: CrawlState, source: Dict) -> str:
     # 멜론(가사·메타)과 유튜브(오디오)가 같은 녹음인지 대조.
     # 어긋나면 저장하지 않는다. 기록만 남기고 저장하면 텍스트 임베딩과 오디오
     # 임베딩이 다른 녹음을 가리키는 레코드가 그대로 쌓인다(32591630 사례).
-    conflict = title_conflict(melon_data.get("title", ""), video_title,
-                              list(melon_data.get("artist") or []))
+    # 지정 영상은 사람이 같은 녹음이라고 확인한 것이라 대조하지 않는다.
+    conflict = "" if manual_url else title_conflict(
+        melon_data.get("title", ""), video_title, list(melon_data.get("artist") or []))
     if conflict:
         return (
             f"Source Mismatch: {conflict} (멜론 '{melon_data.get('title','')}' / 영상 '{video_title}')"
@@ -692,6 +700,8 @@ def stage_source(state: CrawlState, source: Dict) -> str:
         "artist_verified": bool(reaction_data.get("artist_verified", True)),
         "comment_source_url": reaction_data.get("comment_source_url", ""),
     }
+    if manual_url:
+        state.selection["youtube"]["manual"] = True
     write_source(state.folder, source)
     state.save()
     return ""
@@ -965,11 +975,28 @@ def advance(state: CrawlState, registry: Registry, source: Optional[Dict] = None
     return True
 
 
+def _manual_video_changed(pending: CrawlState, youtube_url: Optional[str]) -> bool:
+    """지정 영상이 미완료 폴더에 저장해 둔 영상과 다른지.
+
+    source 단계를 마친 폴더는 예전 영상의 제목·댓글을 담고 있고 오디오도 그 영상 것일 수 있다.
+    영상만 바꿔 이어가면 오디오와 메타데이터가 어긋나므로, 폴더를 버리고 처음부터 수집한다.
+    """
+    if not youtube_url:
+        return False
+    saved = ((pending.selection or {}).get("youtube") or {}).get("video_url", "")
+    return bool(saved) and youtube_video_id(saved) != youtube_video_id(youtube_url)
+
+
 def resume_incomplete(registry: Registry) -> Tuple[int, int]:
     """시작할 때 격리 폴더의 미완료 곡을 이어서 진행한다. (성공 수, 실패 수)"""
     ok = failed = 0
     for song_id, state in list(registry.incomplete.items()):
         registry.attempted_this_run.add(song_id)
+        if _manual_video_changed(state, _manual_video_urls.get(song_id)):
+            # 여기서 이어가면 예전 영상으로 끝난다. 시드 순서에서 폴더를 버리고 다시 수집한다.
+            logger.info(f"재개 보류: {state.folder.name} — 지정 영상이 저장된 영상과 다르다.")
+            failed += 1
+            continue
         recollect = state.needs_recollect()
         if recollect:
             logger.warning(
@@ -999,7 +1026,8 @@ def resume_incomplete(registry: Registry) -> Tuple[int, int]:
     return ok, failed
 
 
-def process_song(artist: str, title: str, registry: Registry, song_id: Optional[str] = None) -> str:
+def process_song(artist: str, title: str, registry: Registry, song_id: Optional[str] = None,
+                 youtube_url: Optional[str] = None) -> str:
     """
     한 곡에 대해 4단계 파이프라인(Melon -> YouTube -> Namuwiki -> LLM)을 실행.
 
@@ -1007,6 +1035,8 @@ def process_song(artist: str, title: str, registry: Registry, song_id: Optional[
         가사)는 그대로 거친다. 아티스트 인기곡 목록(build_expansion_list)은 곡 ID를 이미 알고
         있는데, '엔플라잉 (N.Flying) 잔불 (Still)'처럼 괄호가 든 검색어는 멜론 결과가 0건이라
         2026-10-10 첫 798곡 중 292곡이 검색에서 실패했다.
+    youtube_url: CSV에 유튜브 주소가 있으면 검색하지 않고 그 영상을 오디오·댓글 출처로 쓴다.
+        제목 대조도 하지 않는다(fetch_youtube_reaction 참고).
 
     Returns:
         "done" | "skipped" | "failed" | "blocked"
@@ -1041,6 +1071,8 @@ def process_song(artist: str, title: str, registry: Registry, song_id: Optional[
             return "failed"
 
         best_id = str(candidates[0].song_id)
+        if youtube_url:
+            _manual_video_urls[best_id] = youtube_url
 
         # [중복 체크 - 조기 스킵] 최선 후보가 이미 있으면 상세 수집을 건너뛴다.
         if registry.is_complete(best_id):
@@ -1050,7 +1082,7 @@ def process_song(artist: str, title: str, registry: Registry, song_id: Optional[
         # [재개] 미완료 폴더가 있으면 원천 수집을 다시 하지 않는다.
         pending = registry.incomplete.get(best_id)
         if pending is not None:
-            if pending.needs_recollect():
+            if pending.needs_recollect() or _manual_video_changed(pending, youtube_url):
                 logger.warning(f"미완료 폴더를 버리고 처음부터: {pending.folder.name}")
                 shutil.rmtree(pending.folder, ignore_errors=True)
                 registry.incomplete.pop(best_id, None)
@@ -1086,9 +1118,11 @@ def process_song(artist: str, title: str, registry: Registry, song_id: Optional[
         # 바꾸면('밤편지' -> '밤 편지') 새 이름이 나오는데, 그 이유로 폴더를 지우면 검증을
         # 끝낸 분석과 오디오를 잃고 다시 분석한다. 그 분석이 실패하면 되돌릴 수도 없다.
         # 폴더를 버리는 것은 needs_recollect()가 참일 때뿐이다.
+        if youtube_url:
+            _manual_video_urls[state.song_id] = youtube_url
         pending = registry.incomplete.get(state.song_id)
         if pending is not None:
-            if pending.needs_recollect():
+            if pending.needs_recollect() or _manual_video_changed(pending, youtube_url):
                 logger.warning(f"미완료 폴더를 버리고 처음부터: {pending.folder.name}")
                 shutil.rmtree(pending.folder, ignore_errors=True)
                 registry.incomplete.pop(state.song_id, None)
@@ -1146,7 +1180,8 @@ def process_song(artist: str, title: str, registry: Registry, song_id: Optional[
 
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Vague-Finder 크롤러")
-    parser.add_argument("songs_file", nargs="?", default="songs.csv", help="artist,title 컬럼 CSV")
+    parser.add_argument("songs_file", nargs="?", default="songs.csv",
+                        help="artist,title 컬럼 CSV (song_id·youtube_url 컬럼은 선택)")
     parser.add_argument(
         "--rebuild-jsonl", action="store_true",
         help="완료 폴더의 meta.json만으로 all_songs.jsonl을 다시 만들고 종료 (기존 파일은 시각 사본)",
@@ -1220,6 +1255,13 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     registry = Registry(complete=complete, jsonl_ids=jsonl_ids)
 
+    # 재개가 시드 순회보다 먼저 돈다. 지정 영상을 미리 알려 두지 않으면 재개가 다시 검색한다.
+    _manual_video_urls.clear()
+    for s in songs:
+        seed_id, seed_url = (s.get("song_id") or "").strip(), (s.get("youtube_url") or "").strip()
+        if seed_id and seed_url:
+            _manual_video_urls[seed_id] = seed_url
+
     if registry.incomplete and not args.no_resume:
         ok, failed = resume_incomplete(registry)
         logger.info(f"미완료 폴더 재개: 성공 {ok}, 실패 {failed}")
@@ -1227,7 +1269,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     counts = {"done": 0, "skipped": 0, "failed": 0, "blocked": 0}
     for s in songs:
         result = process_song(s["artist"], s["title"], registry,
-                              song_id=(s.get("song_id") or "").strip() or None)
+                              song_id=(s.get("song_id") or "").strip() or None,
+                              youtube_url=(s.get("youtube_url") or "").strip() or None)
         counts[result] = counts.get(result, 0) + 1
         if result == "blocked":
             logger.error("멜론 접근이 막혀 배치를 중단합니다. 잠시 뒤 다시 실행하세요.")

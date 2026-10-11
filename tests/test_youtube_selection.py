@@ -702,3 +702,43 @@ def test_comments_are_fetched_once_for_the_accepted_video(fake_ydl) -> None:
                               "comments": [{"text": "비 오는 새벽에 듣기 좋은 노래", "like_count": 3}]}})
     cr.fetch_youtube_reaction("아이유", "밤편지", melon_title="밤편지", known_artists=["아이유"])
     assert FakeYDL.comment_calls == ["ok"]
+
+
+# --- 영상 지정 (CSV youtube_url) -------------------------------------------------------------
+
+@pytest.mark.parametrize("url, expected", [
+    ("https://www.youtube.com/watch?v=09ig852MsMg", "09ig852MsMg"),
+    ("https://youtu.be/hHpiArQP3X4?si=xHuOXFiwP9x1gHaX", "hHpiArQP3X4"),
+    ("https://www.youtube.com/watch?list=PL1&v=-sdZYAge8jc&t=3", "-sdZYAge8jc"),
+    ("https://www.youtube.com/shorts/_FwOMyE_jEQ", "_FwOMyE_jEQ"),
+    ("없음", ""),
+    ("", ""),
+])
+def test_youtube_video_id(url, expected) -> None:
+    assert cr.youtube_video_id(url) == expected
+
+
+def test_manual_video_skips_search_and_name_checks(fake_ydl, monkeypatch) -> None:
+    """지정 영상은 검색하지 않고, 가수·곡 이름이 안 맞아도 쓴다(영어 제목 공식 오디오)."""
+    fake_ydl(
+        [entry("mv", "아이유 - 밤편지 Official MV", views=100)],
+        {"MANUALVID01": {"title": "DAY6 - She Smiled (Official Audio)", "view_count": 7,
+                         "artists": ["DAY6"], "track": "She Smiled",
+                         "comments": [{"text": "이 노래 들으면 그때 생각이 나서 울컥해요", "like_count": 3}]}},
+    )
+    monkeypatch.setattr(cr, "fetch_best_video",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("지정했는데 검색했다")))
+
+    result = cr.fetch_youtube_reaction("아이유", "밤편지", melon_title="밤편지",
+                                       video_url="https://youtu.be/MANUALVID01?si=share")
+    assert result["video_url"] == "https://www.youtube.com/watch?v=MANUALVID01"
+    assert result["video_title"] == "DAY6 - She Smiled (Official Audio)"
+    assert result["artist_verified"] is True
+    assert result["comments"] == ["이 노래 들으면 그때 생각이 나서 울컥해요"]
+
+
+def test_manual_video_without_a_video_id_is_not_searched(fake_ydl) -> None:
+    fake_ydl([entry("mv", "아이유 - 밤편지 Official MV", views=100)],
+             {"mv": {"title": "아이유 - 밤편지 Official MV", "view_count": 100, "comments": None}})
+    assert cr.fetch_youtube_reaction("아이유", "밤편지", melon_title="밤편지", video_url="없음") == {}
+
