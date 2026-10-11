@@ -105,6 +105,7 @@ class Calls:
         self.melon = 0
         self.youtube = 0
         self.refine = 0
+        self.video_urls = []
 
 
 @pytest.fixture
@@ -119,6 +120,7 @@ def pipeline(tmp_path, monkeypatch):
     monkeypatch.setattr(crawler, "REVIEW_LOG_FILE", tmp_path / "review_songs.csv")
     monkeypatch.setattr(crawler, "LOG_DIR", tmp_path / "logs")
     monkeypatch.setattr(crawler, "ENABLE_NAMUWIKI", False)
+    monkeypatch.setattr(crawler, "_manual_video_urls", {})
     monkeypatch.setattr(crawler.time, "sleep", lambda s: None)
 
     calls = Calls()
@@ -136,8 +138,9 @@ def pipeline(tmp_path, monkeypatch):
             raise AlreadyCollected(song_id)
         return json.loads(json.dumps(state["melon"]))
 
-    def fake_reaction(artist, title, song_lyrics="", melon_title="", known_artists=None):
+    def fake_reaction(artist, title, song_lyrics="", melon_title="", known_artists=None, video_url=""):
         calls.youtube += 1
+        calls.video_urls.append(video_url)
         return json.loads(json.dumps(state["reaction"]))
 
     def fake_refine(metadata, lyrics, reaction, namuwiki_data=None):
@@ -967,7 +970,7 @@ def test_comment_selection_outage_is_retryable_not_a_zero_comment_song(pipeline,
 
     working_reaction = crawler.fetch_youtube_reaction
 
-    def unavailable(artist, title, song_lyrics="", melon_title="", known_artists=None):
+    def unavailable(artist, title, song_lyrics="", melon_title="", known_artists=None, video_url=""):
         raise CommentSelectionUnavailable("YouTube", 25, 2)
 
     monkeypatch.setattr(crawler, "fetch_youtube_reaction", unavailable)
@@ -1617,3 +1620,87 @@ def test_without_song_id_still_searches(pipeline, monkeypatch) -> None:
     monkeypatch.setattr(crawler, "fetch_melon_song_candidates", spy)
     assert crawler.process_song("가수", "밤편지", crawler.Registry(), song_id=None) == "done"
     assert searched == [("가수", "밤편지")]
+
+
+# --- 유튜브 영상 지정 (CSV youtube_url) ------------------------------------------------------
+
+MANUAL_URL = "https://youtu.be/AAAAAAAAAAA?si=share"
+ENGLISH_TITLE = "IU - Through the Night (Official Audio)"
+
+
+def test_youtube_url_is_used_and_skips_the_title_check(pipeline) -> None:
+    """공식 오디오가 영어 제목이면 대조에서 떨어진다(DAY6 '그녀가 웃었다' / 'She Smiled').
+    사람이 지정한 영상은 대조하지 않는다."""
+    crawler, state, calls, tmp = pipeline
+    state["reaction"]["video_title"] = ENGLISH_TITLE
+
+    assert crawler.process_song("가수", "밤편지", crawler.Registry()) == "failed"
+    assert any("Source Mismatch" in r for r in failed_reasons(tmp))
+    assert calls.video_urls == [""]
+
+    assert crawler.process_song("가수", "밤편지", crawler.Registry(),
+                                song_id=str(state["melon"]["id"]), youtube_url=MANUAL_URL) == "done"
+    assert calls.video_urls[-1] == MANUAL_URL
+    status = json.loads((tmp / "raw" / "가수_밤편지_100" / "crawl_status.json").read_text(encoding="utf-8"))
+    assert status["selection"]["youtube"]["manual"] is True
+    assert status["selection"]["youtube"]["video_title"] == ENGLISH_TITLE
+
+
+def test_youtube_url_column_reaches_the_resume_path(pipeline) -> None:
+    """미완료 폴더 재개는 시드 순회보다 먼저 돈다. 그때도 지정 영상을 써야 한다."""
+    crawler, state, calls, tmp = pipeline
+    state["reaction"]["video_title"] = ENGLISH_TITLE
+    assert crawler.process_song("가수", "밤편지", crawler.Registry()) == "failed"
+
+    songs = tmp / "songs.csv"
+    songs.write_text(f"artist,title,song_id,youtube_url\n가수,밤편지,{state['melon']['id']},{MANUAL_URL}\n",
+                     encoding="utf-8")
+    before = calls.melon
+    assert crawler.main([str(songs)]) == 0
+    assert calls.video_urls[-1] == MANUAL_URL
+    assert calls.melon == before                  # 멜론 수집은 다시 하지 않는다
+    assert [r["song_id"] for r in jsonl_records(tmp)] == [str(state["melon"]["id"])]
+
+
+def test_changed_youtube_url_discards_the_staged_video(pipeline, monkeypatch) -> None:
+    """예전 영상으로 source 단계를 마친 폴더를 그대로 이어가면 그 영상의 오디오·댓글로 끝난다."""
+    crawler, state, calls, tmp = pipeline
+    downloads = []
+
+    def failing_download(video_url, save_path):
+        downloads.append(video_url)
+        return False
+
+    working_download = crawler.download_youtube_audio
+    monkeypatch.setattr(crawler, "download_youtube_audio", failing_download)
+    assert crawler.process_song("가수", "밤편지", crawler.Registry()) == "failed"
+    assert any("Audio Download Failed" in r for r in failed_reasons(tmp))
+
+    monkeypatch.setattr(crawler, "download_youtube_audio", working_download)
+    state["reaction"]["video_url"] = "https://www.youtube.com/watch?v=AAAAAAAAAAA"
+    before = calls.melon
+    songs = tmp / "songs.csv"
+    songs.write_text(f"artist,title,song_id,youtube_url\n가수,밤편지,{state['melon']['id']},{MANUAL_URL}\n",
+                     encoding="utf-8")
+    assert crawler.main([str(songs)]) == 0
+
+    assert calls.melon == before + 1              # 폴더를 버리고 처음부터 다시 수집했다
+    assert calls.video_urls[-1] == MANUAL_URL
+    record = jsonl_records(tmp)[0]
+    assert record["links"]["youtube_url"] == "https://www.youtube.com/watch?v=AAAAAAAAAAA"
+
+
+def test_same_youtube_url_keeps_the_staged_folder(pipeline, monkeypatch) -> None:
+    """공유 주소와 watch 주소가 같은 영상이면 폴더를 버리지 않는다."""
+    crawler, state, calls, tmp = pipeline
+    state["reaction"]["video_url"] = "https://www.youtube.com/watch?v=AAAAAAAAAAA"
+    working_download = crawler.download_youtube_audio
+    monkeypatch.setattr(crawler, "download_youtube_audio", lambda video_url, save_path: False)
+    assert crawler.process_song("가수", "밤편지", crawler.Registry()) == "failed"
+
+    monkeypatch.setattr(crawler, "download_youtube_audio", working_download)
+    before = (calls.melon, calls.youtube)
+    assert crawler.process_song("가수", "밤편지", crawler.Registry(),
+                                song_id=str(state["melon"]["id"]), youtube_url=MANUAL_URL) == "done"
+    assert (calls.melon, calls.youtube) == before
+

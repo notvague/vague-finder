@@ -421,12 +421,25 @@ def extract_comments(info: Dict) -> Optional[List[Dict]]:
     return (post_extractor() or {}).get("comments")
 
 
+_YOUTUBE_ID = re.compile(r"(?:youtu\.be/|[?&]v=|/shorts/|/embed/)([A-Za-z0-9_-]{11})")
+
+
+def youtube_video_id(url: str) -> str:
+    """유튜브 주소에서 영상 ID만 뽑는다. 못 찾으면 ''.
+
+    공유 주소('youtu.be/ID?si=...')와 watch 주소를 같은 영상으로 다루기 위한 것이다.
+    """
+    match = _YOUTUBE_ID.search(url or "")
+    return match.group(1) if match else ""
+
+
 def fetch_youtube_reaction(
     artist: str,
     title: str,
     song_lyrics: str = "",
     melon_title: str = "",
     known_artists: Optional[Sequence[str]] = None,
+    video_url: str = "",
 ) -> Dict:
     """
     유튜브에서 검색 -> [Smart Selection] -> 영상 메타데이터 및 댓글 수집.
@@ -434,6 +447,10 @@ def fetch_youtube_reaction(
     오디오 선택과 댓글 수집은 별개다. 검증을 통과한 첫 영상이 오디오 출처가 되고,
     그 영상의 댓글이 꺼져 있으면 검증된 다른 후보에서 댓글을 보충한다. 어디에도
     댓글이 없으면 빈 목록으로 돌려준다 — 댓글이 없다고 정상 음원을 버리지 않는다.
+
+    video_url: 사람이 직접 고른 영상. 주면 검색하지 않고 그 영상만 본다. 가수·곡 이름 대조도
+        하지 않는다 — 검색이 못 찾거나 대조에서 떨어진 곡을 살리려고 지정하는 것이라, 대조하면
+        같은 자리에서 다시 떨어진다. 내려받을 수 있는지는 그대로 본다.
 
     Returns:
         video_url, video_title, view_count, comments, artist_verified,
@@ -443,9 +460,17 @@ def fetch_youtube_reaction(
     query = f"{artist} {title}"
     names = [artist] + [n for n in (known_artists or []) if n and n != artist]
 
-    # 1. 최상의 후보 영상들(최대 3개) 탐색
-    candidates = fetch_best_video(f"ytsearch10:{query}", melon_title=melon_title, known_artists=names)
-    
+    # 1. 최상의 후보 영상들(최대 3개) 탐색. 지정 영상이 있으면 그것 하나가 후보다.
+    manual_id = youtube_video_id(video_url) if video_url else ""
+    if video_url:
+        if not manual_id:
+            logger.error(f"지정한 유튜브 주소에서 영상 ID를 찾지 못했습니다: {video_url}")
+            return {}
+        logger.info(f"유튜브 영상 지정({manual_id}) → 검색 생략")
+        candidates = [{"id": manual_id, "title": "(지정 영상)", "_artist_verified": True}]
+    else:
+        candidates = fetch_best_video(f"ytsearch10:{query}", melon_title=melon_title, known_artists=names)
+
     if not candidates:
         logger.warning(f"최적의 영상을 찾지 못했습니다: {query}")
         return {}
@@ -494,7 +519,7 @@ def fetch_youtube_reaction(
         if not info:
             continue
 
-        reason = video_mismatch(info, melon_title, names)
+        reason = "" if manual_id else video_mismatch(info, melon_title, names)
         if reason:
             logger.warning(f"[영상 제외] {reason} | {info.get('title')}")
             continue
