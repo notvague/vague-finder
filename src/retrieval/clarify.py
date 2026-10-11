@@ -45,14 +45,24 @@ q203이 그런 경우다 — 성별을 정확히 답해도 순위가 그대로�
 첫 구현은 점수(1 - Σp² × 슬롯 가중치)로 슬롯을 골랐고 **5/9에 그쳤다.**
 항상 성별만 묻는 것(7/9)보다 못했다. 원인 둘을 고쳤다.
 
-**"이미 말한 슬롯은 묻지 않는다"가 3건을 날렸다.** c701·c705·q101 전부 질의에
-성별이 들어 있어 건너뛰었는데, 셋 다 그 성별이 **틀렸다**. 사람이 잘못 기억하는
-것이 이 프로젝트의 전제이므로 이미 말한 슬롯도 다시 확인한다.
-자세한 근거는 `stated_in_query()` 참조.
-
 **점수 방식이 장르를 3/4번 골랐다.** 장르는 값이 4~6종이라 2~3종인 성별보다
 점수가 높게 나오지만 실제 회수 효과는 반대다. 점수 비교를 버리고
 `ALLOWED_SLOTS` 순서대로 "가를 수 있는 첫 슬롯"을 고른다.
+
+**v02에서는 "이미 말한 슬롯"도 다시 물었다.** c701·c705·q101은 질의의 성별이 틀린
+오기억 질의라, 다시 물어야 회수됐다(3/9). 그 뒤로 실제 화면에서는 "남자 아이돌 노래"라고
+한 사용자에게 성별을 또 묻는 것이 되돌아왔다 — 사용자는 방금 말한 것을 왜 묻는지 모른다.
+
+## 2026-10-11 — 최초 질의에 명시한 슬롯은 묻지 않는다
+
+`known_slots.known_slots_from_query()`가 **원문**에서 이미 말한 성별·장르를 찾고, 질문 선택은
+그 슬롯을 `asked_slots`와 같이 뺀다(`pick_data_question`). 후보가 반대쪽으로 갈려도 뒤집지
+않는다 — 후보가 다양하다는 것은 사용자의 기억이 틀렸다는 증거가 아니다. 그래서 c701·c705·q101
+같은 오기억 질의의 회수율은 내려갈 수 있다. 그 수치를 맞추려고 중복 질문을 되살리지 않는다.
+오기억을 잡는 재확인은 별도 설계다(로컬 계획서 docs/plans/clarification-known-slots-plan.md — 커밋 여부는 미정).
+
+known_slots는 질문 선택에만 쓰는 상태다. `asked_slots`·`answers`·turn에 끼워 넣지 않는다 —
+가짜 답은 순위 보정을 바꾸고, 이력에 넣으면 질문·턴 한도를 소비한다.
 """
 from __future__ import annotations
 
@@ -64,6 +74,7 @@ from typing import Dict, Iterable, Optional, Sequence
 
 from src.backend.schemas.query import QueryAnalysis
 from src.backend.schemas.search import ClarifyAnswer, ClarifyOption, ClarifyQuestion, MatchingTrack
+from src.retrieval.known_slots import known_slots_from_query
 from src.retrieval.query_analyzer import _extract_release_era, release_era_from_birth_year
 
 logger = logging.getLogger(__name__)
@@ -243,25 +254,16 @@ def coverage(counts: Counter, candidate_count: int) -> float:
 # 질문 선택
 # ---------------------------------------------------------------------------
 
-def stated_in_query(analysis: QueryAnalysis, slot: str) -> bool:
-    """사용자가 최초 질의에서 이미 말한 슬롯인지.
+def excluded_slots(asked_slots: Sequence[str] = (), known_slots: Sequence[str] = ()) -> set:
+    """데이터 질문에서 뺄 슬롯 — 실제로 물은 이력 + 최초 질의에서 이미 말한 것. 즉시 질문·지연 질문·
+    `clarify_deferred` 판정·측정 하네스가 모두 이 한 기준을 쓴다(갈리면 화면이 빈손으로 조회하러 온다)."""
+    return set(asked_slots) | set(known_slots)
 
-    **이걸 이유로 건너뛰지 않는다.** 계획서는 "이미 명시한 슬롯"을 질문하지 않을
-    조건 맨 앞에 뒀고 당연해 보이지만, v02 측정에서 그 조건이 9건 중 3건을
-    통째로 날렸다(c701·c705·q101 — 전부 성별을 물었으면 회수됐다).
 
-    사람이 잘못 기억하는 것이 이 프로젝트의 전제다. 이미 말한 속성을 다시
-    확인하는 것이 바로 그 오기억을 잡는 방법이고, 비대칭이 유리하다 —
-    맞게 답했으면 같은 값이 다시 들어와 아무것도 바뀌지 않고, 틀렸을 때만 크게
-    이득이다. 화면에서는 "혹시 남자 목소리가 맞나요?" 같은 재확인으로 보이면 된다.
-
-    판정 자체는 남겨 둔다. 질문 문구를 확인형으로 바꾸는 데 쓸 수 있다.
-    """
-    if slot == "vocal_gender":
-        return analysis.vocal_gender is not None
-    if slot == "genre":
-        return bool((analysis.genre or "").strip())
-    return False
+def remaining_data_slots(asked_slots: Sequence[str] = (), known_slots: Sequence[str] = ()) -> list:
+    """아직 물을 수 있는 데이터 슬롯. 비어 있으면 질문 조회는 DB를 읽지 않고 None이다."""
+    excluded = excluded_slots(asked_slots, known_slots)
+    return [slot for slot in ALLOWED_SLOTS if slot not in excluded]
 
 
 def can_ask(candidates: Sequence[MatchingTrack], slot: str) -> bool:
@@ -301,31 +303,33 @@ def pick_question(
 
     None을 돌려주는 것은 실패가 아니라 정상 동작이다. 호출부는 질문 없이
     Reject-only로 진행하면 된다.
+
+    최초 질의에서 이미 말한 성별·장르(`known_slots_from_query`)는 묻지 않는다. 출생 연도 질문은 그것과
+    무관하다 — "남자 아이돌 노래"라고 했어도 "중학생 때"의 기준점은 여전히 모른다.
     """
     # 생애 단계 질의인데 시기를 모른다 — 데이터 슬롯보다 먼저 기준점을 묻는다. 프로필(요청의 birth_year)이
     # 있으면 라우트가 이미 창을 넣어 has_release_era라 여기 오지 않는다.
     # 남은 후보가 없어도 묻는다 — 출생 연도는 곡을 고르는 질문이 아니라 **지금 보이는 결과에도** 적용되는 정보다(리뷰).
     if analysis.has_life_stage and not analysis.has_release_era and BIRTH_YEAR_SLOT not in set(asked_slots):
         return build_birth_year_question(analysis)
-    return pick_data_question(candidates, asked_slots)
+    return pick_data_question(candidates, asked_slots, known_slots_from_query(analysis))
 
 
 def pick_data_question(
     candidates: Sequence[MatchingTrack],
     asked_slots: Sequence[str] = (),
+    known_slots: Sequence[str] = (),
 ) -> Optional[ClarifyQuestion]:
     """후보의 메타데이터(성별·장르)로 가를 수 있는 첫 슬롯의 질문. 물을 게 없으면 None.
 
     **분석을 보지 않는다.** 질의에서 온 정보(시기·연령대)는 후보가 어떤 곡들인지에 이미 반영돼 있고,
     여기서는 그 후보가 실제로 어떻게 갈리는지만 본다. 그래서 질문만 조회하는 경로(/search/clarify)는
-    후보 id만 받아 이 함수를 부른다. 사용자에 대한 질문(출생 연도)은 `pick_question`이 따로 다룬다.
+    후보 id와 두 이력만 받아 이 함수를 부른다 — `asked_slots`(실제로 물은 것)와 `known_slots`(최초 질의에서
+    이미 말한 것, /search 응답이 내려준 값). 사용자에 대한 질문(출생 연도)은 `pick_question`이 따로 다룬다.
     """
     if not candidates:
         return None
-    asked = set(asked_slots)
-    for slot in ALLOWED_SLOTS:          # 우선순위 순서 — 앞엣것부터 본다
-        if slot in asked:
-            continue
+    for slot in remaining_data_slots(asked_slots, known_slots):   # 우선순위 순서 — 앞엣것부터 본다
         if can_ask(candidates, slot):
             return build_question(slot, candidates)
     return None

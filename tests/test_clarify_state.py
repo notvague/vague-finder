@@ -283,7 +283,8 @@ def test_widening_does_not_touch_the_no_rejection_path(stub_router) -> None:
 # 요청 스키마 검증
 # ---------------------------------------------------------------------------
 
-def _analysis(query: str = "비 오는 날 여자 가수 발라드") -> QueryAnalysis:
+def _analysis(query: str = "비 오는 날 노래") -> QueryAnalysis:
+    """요청의 query와 같은 원문. 성별·장르를 말하지 않는다 — 말했으면 그 슬롯은 묻지 않으므로(known_slots) 질문 시험이 달라진다."""
     return QueryAnalysis(
         original_query=query,
         intent_type="mood",

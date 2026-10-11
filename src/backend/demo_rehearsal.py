@@ -113,9 +113,14 @@ def _paths_of_top(payload: Dict[str, Any]) -> List[str]:
 
 
 def _clarify_body(convo: Dict[str, Any]) -> Dict[str, Any]:
-    """화면이 "이 중에는 없어요"를 누를 때 보내는 질문 조회. 직전 검색 응답의 상태를 그대로 돌려준다."""
+    """화면이 "이 중에는 없어요"를 누를 때 보내는 질문 조회. 직전 검색 응답의 상태를 그대로 돌려준다.
+
+    known_slots(최초 질의에서 이미 말한 성별·장르)도 그대로 보낸다 — 1번 질의("…잔잔한 발라드")는 장르를 말했으므로
+    서버는 성별만 물을 수 있다. 빠뜨리면 서버가 장르를 또 묻는 리허설이 되어 화면과 다른 왕복을 본다.
+    """
     return {
         "asked_slots": convo["asked_slots"],
+        "known_slots": convo.get("known_slots", []),
         "previous_candidate_ids": convo["candidate_ids"][:MAX_PREVIOUS_CANDIDATES],
         "shown_ids": [r["id"] for r in convo["results"]],
         "rejected_ids": convo["rejected_ids"],
@@ -185,7 +190,9 @@ def rehearse(url: str, timeout: float) -> List[Step]:
     if not deferred:
         step.problems.append("앞 단계의 어느 응답도 질문을 조회하라고 하지 않았다(clarify_deferred)")
     elif question is None:
-        step.problems.append("앞 단계의 어느 결과에서도 물을 질문이 나오지 않았다")
+        # 1번 질의는 장르를 이미 말했으므로 거기서는 성별만 물을 수 있지만, 2·3번 질의는 말한 슬롯이 없다. 세 질의 모두에서
+        # 질문이 안 나오면 후보 메타데이터·판정 어딘가가 잘못된 것이라 문제로 본다.
+        step.problems.append("앞 단계의 어느 결과에서도 물을 질문이 나오지 않았다(이미 말한 슬롯 제외 후)")
     if convo is not None and question is not None:
         shown = [r["id"] for r in convo["results"]]
         answer = {

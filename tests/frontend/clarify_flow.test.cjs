@@ -46,7 +46,7 @@ const QUERY = '중학교 때 듣던 노래';
 function reply(extra = {}) {
   return {
     analysis: { original_query: QUERY }, results: [{ id: 'a' }],
-    candidate_ids: ['a', 'b', 'c'], rejected_ids: [], asked_slots: [], turn: 1,
+    candidate_ids: ['a', 'b', 'c'], rejected_ids: [], asked_slots: [], known_slots: [], turn: 1,
     clarify: null, clarify_deferred: true, ...extra,
   };
 }
@@ -76,7 +76,7 @@ function screen(first = reply()) {
     /* 화면 상태를 이쪽 realm의 값으로 */
     state: () => JSON.parse(ev(`JSON.stringify({
       mode: panelMode, turn: convo && convo.turn, rejected: convo && convo.rejectedIds,
-      shown: shownIds(), asked: convo && convo.askedSlots, answers: convo && convo.answers,
+      shown: shownIds(), asked: convo && convo.askedSlots, known: convo && convo.knownSlots, answers: convo && convo.answers,
       clarify: convo && convo.clarify, query: convo && convo.query,
     })`)),
     /* 서버 자리. handler(body, kind)가 응답을 돌려주거나 던진다. kind는 'search' | 'clarify' */
@@ -124,7 +124,7 @@ test('연도 답은 검색만 다시 한다 · 질문 조회는 그 뒤의 최�
   assert.equal(lookup.timeoutMs, s.ev('CLARIFY_TIMEOUT_MS'));
   // 질문 조회는 최신 후보와 대화 상태만 보낸다 — 질의·분석·연도는 보내지 않는다(서버가 모르는 필드를 거부한다)
   assert.deepEqual(lookup.body, {
-    asked_slots: [], previous_candidate_ids: ['b', 'x', 'y'], shown_ids: ['b'], rejected_ids: [], turn: 1,
+    asked_slots: [], known_slots: [], previous_candidate_ids: ['b', 'x', 'y'], shown_ids: ['b'], rejected_ids: [], turn: 1,
   });
   assert.deepEqual(s.state(), { ...s.state(), mode: 'asking', turn: 1, rejected: [], shown: ['b'] });
 
@@ -344,6 +344,89 @@ test('검색을 내는 세 경로(첫 검색 · 출생 연도 재검색 · 거�
     // 보내지 않으면 서버가 후보를 top_k*3으로 넓혀 검색 깊이가 측정한 구성과 달라진다
     assert.equal(body.candidate_k, 30);
   }
+});
+
+/* ---------- 최초 질의에서 이미 말한 성별·장르(known_slots) ---------- */
+
+test('응답의 known_slots를 보관해 질문 조회에 그대로 보낸다 · 연도 답·닫기 뒤에도 남는다', async () => {
+  // 사용자 예시 1 — 성별은 말했고 출생 연도 질문이 함께 온다
+  const s = screen(reply({ clarify: { slot: 'birth_year', options: [] }, known_slots: ['vocal_gender'] }));
+  assert.deepEqual(s.state().known, ['vocal_gender']);
+  s.serve((body, kind) => (kind === 'clarify'
+    ? { clarify: QUESTION }
+    : reply({ results: [{ id: 'b' }], candidate_ids: ['b', 'x', 'y'], known_slots: ['vocal_gender'],
+              rejected_ids: body.rejected_ids || [], turn: (body.answers || []).length ? 2 : 1 })));
+
+  await s.ev('answerBirthYear("1998")');
+  assert.deepEqual(s.state().known, ['vocal_gender'], '연도 재검색 응답의 값으로 교체된다(같은 원문이라 같다)');
+  await s.ev('onReject()');
+  assert.deepEqual(s.kinds(), ['search', 'clarify']);
+  assert.deepEqual(s.ctx.requests[1].body.known_slots, ['vocal_gender']);
+  assert.deepEqual(s.ctx.requests[1].body.asked_slots, [], 'known_slots는 물은 이력에 끼지 않는다');
+  assert.deepEqual(s.ctx.requests[1].body.previous_candidate_ids, ['b', 'x', 'y'], '연도 반영 뒤의 최신 후보');
+  assert.equal(s.state().clarify.slot, 'genre');
+
+  // 답하고 다시 검색해도 응답의 값이 그대로 실린다
+  await s.ev('submitTurn({slot:"genre", value:"발라드", skipped:false})');
+  assert.deepEqual(s.state().known, ['vocal_gender']);
+  assert.deepEqual(s.ctx.requests[2].body.answers, [{ slot: 'genre', value: '발라드', skipped: false }]);
+  assert.equal('known_slots' in s.ctx.requests[2].body, false, '검색 요청에는 되돌려주지 않는다 — 서버가 원문에서 계산한다');
+});
+
+test('연도 질문을 닫아도 known_slots는 남고, 질문 조회에 함께 간다', async () => {
+  const s = screen(reply({ clarify: { slot: 'birth_year', options: [] }, known_slots: ['vocal_gender'] }));
+  s.serve((body, kind) => (kind === 'clarify' ? { clarify: QUESTION } : reply({ turn: 2 })));
+  s.ev('dismissBirthYearQuestion()');
+  assert.deepEqual(s.state(), { ...s.state(), asked: ['birth_year'], known: ['vocal_gender'] });
+  await s.ev('onReject()');
+  assert.deepEqual(s.ctx.requests[0].body.asked_slots, ['birth_year']);
+  assert.deepEqual(s.ctx.requests[0].body.known_slots, ['vocal_gender']);
+});
+
+test('둘 다 말했으면(clarify_deferred 거짓) 조회 없이 거절 검색 한 번이다', async () => {
+  // 사용자 예시 2
+  const s = screen(reply({ known_slots: ['vocal_gender', 'genre'], clarify_deferred: false }));
+  s.serve(body => reply({ results: [{ id: 'b' }], rejected_ids: body.rejected_ids, turn: 2,
+                          known_slots: ['vocal_gender', 'genre'], clarify_deferred: false }));
+  await s.ev('onReject()');
+  assert.deepEqual(s.kinds(), ['search']);
+  assert.deepEqual(s.ctx.requests[0].body.rejected_ids, ['a']);
+  assert.deepEqual(s.state(), { ...s.state(), mode: 'idle', turn: 2, shown: ['b'], known: ['vocal_gender', 'genre'] });
+});
+
+test('새 검색은 known_slots를 응답 값으로 교체한다 — 이전 검색 값과 합치지 않는다', async () => {
+  const s = screen(reply({ known_slots: ['vocal_gender', 'genre'], clarify_deferred: false }));
+  s.serve((body, kind) => (kind === 'clarify'
+    ? { clarify: QUESTION }
+    : reply({ results: [{ id: 'n1' }], candidate_ids: ['n1', 'n2'], known_slots: ['genre'] })));
+  await s.ev('runSearch("새 검색")');
+  assert.deepEqual(s.state().known, ['genre']);
+  await s.ev('onReject()');
+  assert.deepEqual(s.ctx.requests[1].body.known_slots, ['genre']);
+  // 아무것도 말하지 않은 응답이면 빈 목록
+  s.serve(() => reply({ results: [{ id: 'm1' }] }));
+  await s.ev('runSearch("또 새 검색")');
+  assert.deepEqual(s.state().known, []);
+  // 구버전 서버 응답(필드 없음)도 빈 목록
+  s.serve(() => { const r = reply(); delete r.known_slots; return r; });
+  await s.ev('runSearch("옛 서버")');
+  assert.deepEqual(s.state().known, []);
+});
+
+test('조회 중에 새 검색을 하면 늦은 질문이 새 검색의 known_slots를 건드리지 않는다', async () => {
+  const s = screen(reply({ known_slots: ['vocal_gender'] }));
+  const lookup = deferred();
+  s.serve((body, kind) => (kind === 'clarify'
+    ? lookup.promise
+    : reply({ results: [{ id: 'n1' }], candidate_ids: ['n1', 'n2'], known_slots: ['genre'] })));
+  const pending = s.ev('onReject()');
+  assert.deepEqual(s.ctx.requests[0].body.known_slots, ['vocal_gender']);
+  await s.ev('runSearch("새 검색")');
+  lookup.resolve({ clarify: QUESTION });
+  await pending;
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(s.state(), { ...s.state(), query: '새 검색', known: ['genre'], clarify: null, mode: 'idle' });
+  assert.deepEqual(s.kinds(), ['clarify', 'search']);
 });
 
 test('한 쪽 15곡을 두 번 거절하면 한도에 닿는다', async () => {

@@ -514,7 +514,12 @@ def next_question(
     rejected: Sequence[str],
     top_k: int,
 ) -> Optional[ClarifyQuestion]:
-    """이번 턴 응답에 실릴 질문. 라우트와 같은 조건(`_can_ask_another`)으로 정한다."""
+    """이번 턴 응답에 실릴 질문. 라우트와 같은 조건(`_can_ask_another`)으로 정한다.
+
+    최초 질의에서 이미 말한 성별·장르는 `pick_question`이 원문에서 찾아 뺀다(서비스와 같은 규칙, 2026-10-11).
+    질의에 성별이 틀리게 들어 있는 오기억 항목(c701·c705·q101)은 그 슬롯을 다시 묻지 않으므로 회수율이
+    이전 측정(v02~v09)보다 내려갈 수 있다 — 그 수치를 맞추려고 하네스만 옛 정책을 쓰지 않는다.
+    """
     if not _can_ask_another(turn, list(asked), list(rejected), top_k):
         return None
     return pick_question(analysis, result.remaining, list(asked))
@@ -970,6 +975,12 @@ async def evaluate(args: argparse.Namespace) -> None:
         "flow_target": "정답마다 따로 대화한다 — 답변·종료·성공 판정이 같은 목표 곡",
         "max_rejected_ids": flow_reject_limit(args.top_k),
         "targets_from_vector_db": len(targets),
+        # 질문 선택 정책 표시 — v02~v09까지는 질의에 이미 있는 성별·장르도 다시 물었다(stated_reask). 이 값이 다른
+        # 측정끼리는 rule:*·flow:* 숫자를 비교하지 않는다.
+        "question_policy": "skip_known_slots_2026-10-11",
+        # known_slots 판정 규칙은 v06·v09 dev 원문(과 v10 초안)으로 검토해 정했다. 이 측정의 dev 질의와 겹치므로
+        # rule:*·flow:* 수치는 그 질의에 맞춰진 값일 수 있다. 봉인 test(v09 38건)는 규칙 검토에 쓰지 않았다.
+        "known_slots_rules_reviewed_on": "eval_queries_v06+v09 dev 원문, queries_v10_draft (2026-10-11)",
     }
     (args.output_dir / "clarify_runinfo.json").write_text(
         json.dumps(run_info, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8"

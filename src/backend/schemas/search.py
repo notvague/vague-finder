@@ -24,6 +24,17 @@ MAX_PREVIOUS_CANDIDATES = 30
 # (`qdrant_backend.point_id`가 UUID로 접는다). 코퍼스에 없는 id는 조회에서 조용히 빠진다.
 SongId = Annotated[str, StringConstraints(min_length=1, max_length=64)]
 
+# 최초 질의에서 이미 말한 데이터 슬롯. 재질문이 다시 묻지 않을 것들이며, 묻는 슬롯(clarify.ALLOWED_SLOTS)과 같다.
+# 질문 선택용 상태일 뿐이다 — 검색 필터·답변(answers)·물은 이력(asked_slots)으로 확장하지 않는다.
+KnownSlot = Literal["vocal_gender", "genre"]
+KNOWN_SLOT_ORDER: tuple = ("vocal_gender", "genre")
+
+
+def _normalize_known_slots(values: List[str]) -> List[str]:
+    """중복은 거부하지 않고 접는다(순서 고정). 화면이 같은 응답을 두 번 합쳐 보내도 422가 아니다."""
+    present = set(values)
+    return [slot for slot in KNOWN_SLOT_ORDER if slot in present]
+
 
 class ClarifyAnswer(BaseModel):
     """1턴에서 물은 슬롯에 대한 사용자 응답."""
@@ -174,6 +185,19 @@ class ClarifyRequest(BaseModel):
         max_length=MAX_ASKED_SLOTS,
         description="직전 /search 응답의 asked_slots(건너뛴 출생 연도 포함). 같은 슬롯을 다시 묻지 않는다",
     )
+    known_slots: List[KnownSlot] = Field(
+        default_factory=list,
+        max_length=len(KNOWN_SLOT_ORDER),
+        description=(
+            "직전 /search 응답의 known_slots — 최초 질의에서 이미 말한 성별·장르. 그 슬롯은 묻지 않는다. "
+            "생략하면 빈 목록(구버전 호환)이라 중복 질문을 막지 못한다. 이력·답변이 아니라 한도에 세지 않는다"
+        ),
+    )
+
+    @field_validator("known_slots", mode="after")
+    @classmethod
+    def dedupe_known_slots(cls, values: List[str]) -> List[str]:
+        return _normalize_known_slots(values)
     previous_candidate_ids: List[SongId] = Field(
         default_factory=list,
         max_length=MAX_PREVIOUS_CANDIDATES,
@@ -355,6 +379,14 @@ class SearchResponse(BaseModel):
     asked_slots: List[str] = Field(
         default_factory=list,
         description="지금까지 물어본 슬롯 누적. 다음 요청에 그대로 되돌려준다",
+    )
+    known_slots: List[KnownSlot] = Field(
+        default_factory=list,
+        description=(
+            "최초 질의에서 이미 말한 데이터 슬롯(성별·장르). 재질문이 다시 묻지 않는다. 화면은 이 값을 보관했다가 "
+            "질문 조회(/search/clarify)의 known_slots로 그대로 보낸다 — 이전 검색 값과 합치지 않고 교체한다. "
+            "서버가 원문에서 매번 같게 계산하므로 /search 요청에는 되돌려줄 필요가 없다"
+        ),
     )
     candidate_ids: List[str] = Field(
         default_factory=list,

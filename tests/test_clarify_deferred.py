@@ -6,8 +6,10 @@
 2. **연령대는 후보를 통해 반영된다.** 질문 조회는 출생 연도를 받지 않는다 — 연도로 다시 찾은 결과의
    후보(candidate_ids)를 받아 그 후보가 어떻게 갈리는지로 질문을 만든다.
 3. **질문 조회는 상태를 바꾸지 않는다.** 검색·분석을 다시 하지 않고, 턴·거절 목록도 그대로다.
-4. **/search의 clarify_deferred와 /search/clarify의 판정이 같다**(슬롯·턴·거절 한도, 남은 후보).
+4. **/search의 clarify_deferred와 /search/clarify의 판정이 같다**(슬롯·턴·거절 한도, 남은 후보, 이미 말한 슬롯).
 5. 잘못된 입력은 500이 아니라 422이거나, 없는 곡으로 조용히 빠진다.
+6. **최초 질의에서 이미 말한 성별·장르는 묻지 않는다.** /search가 원문에서 `known_slots`를 내려주고, 화면이 그것을
+   질문 조회에 그대로 보낸다. 둘 다 말했으면 clarify_deferred=false이고, 직접 조회해도 DB를 읽지 않고 None이다.
 """
 from importlib import import_module
 from typing import Any, Dict, List, Optional
@@ -105,6 +107,7 @@ def lookup_body(reply: Dict[str, Any]) -> Dict[str, Any]:
     """화면(map.js requestClarification)이 보내는 것 — 직전 검색 응답의 상태를 그대로 돌려준다."""
     return {
         "asked_slots": reply["asked_slots"],
+        "known_slots": reply["known_slots"],
         "previous_candidate_ids": reply["candidate_ids"][:30],
         "shown_ids": [r["id"] for r in reply["results"]],
         "rejected_ids": reply["rejected_ids"],
@@ -272,6 +275,108 @@ def test_lookup_needs_nothing_but_candidates(setup):
     assert client.post("/search/clarify", json={}).json() == {"clarify": None}
     body = {"previous_candidate_ids": [sid for sid, _, _ in ERA_POOL]}
     assert client.post("/search/clarify", json=body).json()["clarify"]["slot"] == "vocal_gender"
+
+
+# --- 6. 최초 질의에서 이미 말한 슬롯은 묻지 않는다 ------------------------------------
+
+EXAMPLE_GENDER = "중학생 때 나온 엄청 유명한 남자 아이돌 노래"
+EXAMPLE_BOTH = "남자 인디 노래인데 뮤비에 의자가 하늘에 떠있는 장면이 있어"
+
+
+def test_example_1_keeps_birth_year_and_never_asks_gender_round_trip(setup):
+    """사용자 예시 1 — 응답의 known_slots가 화면을 거쳐 질문 조회로 돌아오는 실제 왕복.
+
+    출생 연도 질문은 그대로 나온다. 연도를 답한 뒤의 후보(ERA_POOL)는 성별로도 장르로도 갈리지만 성별은 말했으므로
+    장르를 묻는다. 연도를 건너뛴 뒤(BASE_POOL, 장르로만 갈린다)도 장르다. 성별은 어느 경로에서도 나오지 않는다.
+    """
+    client, index, _, _ = setup
+    first = search(client, query=EXAMPLE_GENDER)
+    assert first["clarify"]["slot"] == "birth_year"
+    assert first["known_slots"] == ["vocal_gender"]
+    assert first["clarify_deferred"] is True, "장르는 아직 물을 수 있다"
+    assert first["asked_slots"] == [], "known_slots는 물은 이력이 아니다"
+
+    # 연도 답 → 프로필로 다시 검색(화면 answerBirthYear) → 응답의 known_slots로 질문 조회
+    answered = search(client, query=EXAMPLE_GENDER, prior_analysis=first["analysis"], birth_year=1998)
+    assert answered["known_slots"] == ["vocal_gender"] and answered["clarify_deferred"] is True
+    body = lookup_body(answered)
+    assert body["known_slots"] == ["vocal_gender"]
+    question = lookup(client, answered)
+    assert question["slot"] == "genre"
+    assert index.calls[-1][0] == ["202", "203", "204", "205"], "최신 후보(연령대 반영)에서 묻는다"
+
+    # 연도 건너뛰기(화면 dismissBirthYearQuestion이 asked_slots에 birth_year를 넣는다)
+    skipped = first | {"asked_slots": ["birth_year"]}
+    assert lookup(client, skipped)["slot"] == "genre"
+    # 장르까지 답하고 나면 — 성별로 되돌아가지 않는다
+    done = search(client, query=EXAMPLE_GENDER, prior_analysis=first["analysis"], birth_year=1998,
+                  asked_slots=["genre"], answers=[{"slot": "genre", "value": "발라드"}],
+                  rejected_ids=[r["id"] for r in answered["results"]], turn=answered["turn"])
+    assert done["clarify_deferred"] is False and done["known_slots"] == ["vocal_gender"]
+    calls = len(index.calls)
+    assert lookup(client, done) is None and len(index.calls) == calls
+
+
+def test_example_2_has_nothing_to_ask_so_rejection_goes_straight_to_the_next_page(setup):
+    """사용자 예시 2 — 성별·장르를 둘 다 말했다. clarify_deferred=false, 직접 조회해도 None이고 후보 fetch가 없다."""
+    client, index, router, _ = setup
+    reply = search(client, query=EXAMPLE_BOTH)
+    assert reply["known_slots"] == ["vocal_gender", "genre"]
+    assert reply["clarify"] is None and reply["clarify_deferred"] is False
+    assert reply["results"] and len(reply["candidate_ids"]) > len(reply["results"]), "후보가 남아 있어도 조회할 것이 없다"
+
+    assert lookup(client, reply) is None
+    assert index.calls == [], "두 슬롯을 이미 알면 후보 메타데이터를 읽지 않는다"
+    # 거절만 해서 다음 후보로 간다 — 이력·턴은 기존 규칙대로
+    nxt = search(client, query=EXAMPLE_BOTH, prior_analysis=reply["analysis"], turn=reply["turn"],
+                 rejected_ids=[r["id"] for r in reply["results"]])
+    assert nxt["turn"] == 2 and nxt["asked_slots"] == [] and nxt["known_slots"] == ["vocal_gender", "genre"]
+    assert nxt["clarify_deferred"] is False
+
+
+@pytest.mark.parametrize("query, known, expected_slot", [
+    ("중학교 때 듣던 노래", [], "vocal_gender"),
+    ("중학교 때 듣던 남자 아이돌 노래", ["vocal_gender"], "genre"),
+    ("중학교 때 듣던 발라드", ["genre"], "vocal_gender"),
+])
+def test_deferred_flag_lookup_and_immediate_question_agree_on_known_slots(setup, query, known, expected_slot):
+    """같은 분석·남은 후보·이력에서 즉시 질문(defer_clarify 없음)과 지연 질문의 슬롯이 같다."""
+    client, _, _, _ = setup
+    deferred_reply = search(client, query=query, birth_year=1998)
+    assert deferred_reply["known_slots"] == known and deferred_reply["clarify_deferred"] is True
+    assert lookup(client, deferred_reply)["slot"] == expected_slot
+    immediate = client.post("/search", json={"query": query, "top_k": 2, "birth_year": 1998}).json()
+    assert immediate["known_slots"] == known
+    assert immediate["clarify"]["slot"] == expected_slot
+
+
+def test_known_slots_are_normalized_or_rejected(setup):
+    client, index, _, _ = setup
+    base = {"previous_candidate_ids": [sid for sid, _, _ in ERA_POOL]}
+    # 중복은 접는다(422가 아니다) — 화면이 같은 응답을 두 번 합쳐 보내도 된다
+    doubled = client.post("/search/clarify", json={**base, "known_slots": ["genre", "genre"]})
+    assert doubled.status_code == 200 and doubled.json()["clarify"]["slot"] == "vocal_gender"
+    # 허용 슬롯 밖·세 개 이상은 거부
+    for bad in (["type"], ["birth_year"], ["vocal_gender", "genre", "vocal_gender"]):
+        assert client.post("/search/clarify", json={**base, "known_slots": bad}).status_code == 422, bad
+    # 둘 다 알면 DB를 읽지 않는다
+    index.calls.clear()
+    both = client.post("/search/clarify", json={**base, "known_slots": ["genre", "vocal_gender"]})
+    assert both.json() == {"clarify": None} and index.calls == []
+    # 하나만 알면 나머지를 묻는다 — asked_slots와 합쳐진다
+    one = client.post("/search/clarify", json={**base, "known_slots": ["vocal_gender"]}).json()["clarify"]
+    assert one["slot"] == "genre"
+    none = client.post("/search/clarify", json={**base, "known_slots": ["vocal_gender"], "asked_slots": ["genre"]})
+    assert none.json() == {"clarify": None}
+
+
+def test_search_request_input_is_unchanged_by_known_slots(setup):
+    """검색 라우터가 받는 분석·답변은 전후 같다 — 질문 정책이 검색 단서나 가짜 답변을 만들지 않는다."""
+    client, _, router, _ = setup
+    search(client, query=EXAMPLE_BOTH)
+    passed = router.seen[-1]
+    assert passed.original_query == EXAMPLE_BOTH
+    assert passed.vocal_gender is None and passed.genre == "", "폴백 분석 그대로 — known_slots가 분석을 채우지 않는다"
 
 
 def test_ids_that_are_not_in_the_corpus_are_skipped_not_errors():
