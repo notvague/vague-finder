@@ -10,20 +10,32 @@ from src.backend.api.dependencies import (
     get_lyrics_exact_search_service,
     get_query_analyzer,
     get_search_router,
+    get_vector_client,
 )
 from src.backend.schemas.explain import SearchExplainOut, to_track_explain
 from src.backend.schemas.query import QueryAnalysis
 from src.backend.schemas.search import (
     MAX_ASKED_SLOTS,
+    MAX_PREVIOUS_CANDIDATES,
     MAX_REJECTED_IDS,
     MAX_TURNS,
+    ClarifyRequest,
+    ClarifyResponse,
     MatchingTrack,
     SearchRequest,
     SearchResponse,
 )
 from src.retrieval import timing
 from src.retrieval.analysis_cache import looks_like_fallback
-from src.retrieval.clarify import pick_question, with_birth_year
+from src.retrieval.clarify import (
+    ALLOWED_SLOTS,
+    BIRTH_YEAR_SLOT,
+    QUESTION_FIELDS,
+    build_birth_year_question,
+    pick_data_question,
+    pick_question,
+    with_birth_year,
+)
 from src.retrieval.explain import NULL_RECORDER, ExplainRecorder, SongExplain
 from src.retrieval.lyrics_exact_search import (
     LyricsExactSearchService,
@@ -31,10 +43,45 @@ from src.retrieval.lyrics_exact_search import (
 )
 from src.retrieval.query_analyzer import QueryAnalyzer, rule_fallback
 from src.retrieval.search_router import SearchRouter
+from src.retrieval.search_service import SearchService
+from src.vector_db.settings import TEXT_HYBRID_INDEX_NAME
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/search", tags=["Search"])
+
+
+@router.post("/clarify", response_model=ClarifyResponse)
+async def clarify_search(
+    request: ClarifyRequest,
+    vector_client: Any = Depends(get_vector_client),
+) -> ClarifyResponse:
+    """현재 후보로 데이터 질문(성별·장르)만 고른다. 검색·분석·리랭킹·턴 갱신은 하지 않는다.
+
+    **연령대를 여기서 다시 계산하지 않는다.** 출생 연도는 /search가 시기 창으로 바꿔 후보를 다시 찾을 때
+    반영되고, 화면은 그 응답의 candidate_ids를 그대로 보낸다 — 질문은 그 최신 후보가 어떻게 갈리는지에서
+    나온다. 출생 연도 질문 자체는 결과와 함께 /search가 이미 냈으므로 여기서는 내지 않는다.
+
+    물을 수 없는 상태(한도 소진·남은 후보 없음)면 DB를 읽지 않고 None을 돌려준다.
+    """
+    rejected = set(request.rejected_ids)
+    shown = [s for s in dict.fromkeys(request.shown_ids) if s not in rejected]
+    # 화면이 다음에 거절할 곡은 지금 보이는 곡이다. /search가 clarify_deferred를 정할 때와 같은 판정.
+    if not _can_ask_data_question(request.turn, request.asked_slots, list(rejected), len(shown)):
+        return ClarifyResponse()
+    excluded = rejected | set(shown)
+    ids = [s for s in dict.fromkeys(request.previous_candidate_ids) if s not in excluded]
+    if not ids:
+        return ClarifyResponse()
+    try:
+        index = vector_client.Index(TEXT_HYBRID_INDEX_NAME)
+        result = await asyncio.to_thread(index.fetch, ids, fields=QUESTION_FIELDS)
+        candidates = [SearchService.track_from_match(m) for m in result["matches"]]
+        return ClarifyResponse(clarify=pick_data_question(candidates, request.asked_slots))
+    except Exception as exc:
+        logger.exception("[clarify] 질문 조회 실패")
+        raise HTTPException(status_code=500, detail="추가 질문을 준비하지 못했습니다.") from exc
+
 
 def _can_ask_another(
     turn: int,
@@ -59,6 +106,26 @@ def _can_ask_another(
     if turn > MAX_TURNS:
         return False
     return len(rejected_ids) + top_k <= MAX_REJECTED_IDS
+
+
+def _can_ask_data_question(
+    turn: int,
+    asked_slots: list,
+    rejected_ids: list,
+    next_rejections: int,
+) -> bool:
+    """데이터 질문(성별·장르)을 낼 수 있는 상태인가 — 지연 조회의 **양쪽이 함께 쓰는** 판정.
+
+    /search는 이것으로 `clarify_deferred`(조회하러 올 가치가 있는가)를 정하고, /search/clarify는
+    같은 값(직전 응답의 turn·asked_slots·rejected_ids, 지금 보이는 곡 수)으로 다시 본다. 판정이
+    갈리면 화면이 조회하러 왔다가 빈손으로 돌아가거나, 물을 수 있는데 묻지 않게 된다.
+
+    `_can_ask_another`에 더해 아직 묻지 않은 데이터 슬롯이 남았는지를 본다. 건너뛴 출생 연도는
+    asked_slots에 들어 있어 슬롯 수에는 세지만(양쪽 같다) 데이터 슬롯은 아니다.
+    """
+    if all(slot in asked_slots for slot in ALLOWED_SLOTS):
+        return False
+    return _can_ask_another(turn, asked_slots, rejected_ids, next_rejections)
 
 
 def _lyric_evidence(
@@ -292,26 +359,45 @@ async def search(
                 ]
                 explain_summary = SearchExplainOut.of(recorder.record)
 
-        # 재질문은 지금 미리 계산해 응답에 실어 둔다. 사용자가 "이 중에는
-        # 없어요"를 눌렀을 때 모델을 다시 부르지 않고 바로 보여주기 위해서다.
-        # 질문은 보여준 곡을 뺀 나머지 후보로 만든다 — 이미 보여준 곡을
-        # 기준으로 물으면 사용자가 아니라고 한 것들을 근거로 삼게 된다.
+        # 재질문은 두 방식이다.
+        #
+        # defer_clarify(화면): 데이터 질문은 여기서 계산하지 않는다 — 사용자가 "이 중에는 없어요"를 누를
+        # 때 화면이 /search/clarify로 조회한다. 정답을 찾아 멈추면 그 계산은 아예 일어나지 않는다. 여기서는
+        # 출생 연도만 결과와 함께 묻고(곡이 아니라 사용자에 대한 질문이라 거절을 기다리지 않는다),
+        # 조회하러 올 가치가 있는지만 clarify_deferred로 알린다.
+        #
+        # 그 외(재질문 측정 `evaluate_clarification`과 같은 방식 · 직접 부르는 호출자): 질문을 지금 계산해
+        # 응답에 싣는다. 질문은 보여준 곡을 뺀 나머지 후보로 만든다 — 이미 보여준 곡을 기준으로 물으면
+        # 사용자가 아니라고 한 것들을 근거로 삼게 된다.
         with timer.step("clarify"):
             shown = {track.id for track in results}
-            remaining = [t for t in candidate_tracks if t.id not in shown]
-            clarify = (
-                pick_question(analysis_for_search, remaining, asked_slots)
-                if _can_ask_another(
-                    turn, asked_slots, request.rejected_ids, request.top_k
+            clarify = None
+            clarify_deferred = False
+            if request.defer_clarify:
+                if (results and analysis_for_search.has_life_stage
+                        and not analysis_for_search.has_release_era
+                        and BIRTH_YEAR_SLOT not in asked_slots):
+                    clarify = build_birth_year_question(analysis_for_search)
+                # 화면은 candidate_ids의 앞 MAX_PREVIOUS_CANDIDATES개만 되돌려준다. 그 안에 보여준 곡 말고
+                # 남은 것이 없으면 질문이 나올 수 없으니 조회하러 오지 않게 한다.
+                has_remaining = any(
+                    song_id not in shown for song_id in candidate_ids[:MAX_PREVIOUS_CANDIDATES]
                 )
-                else None
-            )
+                clarify_deferred = (
+                    bool(results)
+                    and has_remaining
+                    and _can_ask_data_question(turn, asked_slots, request.rejected_ids, len(results))
+                )
+            elif _can_ask_another(turn, asked_slots, request.rejected_ids, request.top_k):
+                remaining = [t for t in candidate_tracks if t.id not in shown]
+                clarify = pick_question(analysis_for_search, remaining, asked_slots)
 
         return SearchResponse(
             results=results,
             total_found=len(results),
             analysis=analysis,
             clarify=clarify,
+            clarify_deferred=clarify_deferred,
             asked_slots=asked_slots,
             candidate_ids=candidate_ids,
             rejected_ids=list(request.rejected_ids),

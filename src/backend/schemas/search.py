@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import List, Literal, Optional
+from typing import Annotated, List, Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
 
 from src.backend.schemas.explain import SearchExplainOut, TrackExplain
 from src.backend.schemas.query import QueryAnalysis
@@ -14,6 +14,12 @@ from src.backend.schemas.query import QueryAnalysis
 MAX_REJECTED_IDS = 20
 MAX_ASKED_SLOTS = 3  # 생애 단계 질의는 출생 연도(birth_year) 하나가 데이터 슬롯 앞에 더 붙는다
 MAX_TURNS = 2
+# 화면이 되돌려주는 후보 수. /search가 "질문을 조회할 후보가 남았는가"를 같은 범위로 판단한다.
+MAX_PREVIOUS_CANDIDATES = 30
+
+# 질문 조회가 받는 곡 id. 빈 문자열과 지나치게 긴 값만 거른다 — 숫자가 아닌 id도 정상 id다
+# (`qdrant_backend.point_id`가 UUID로 접는다). 코퍼스에 없는 id는 조회에서 조용히 빠진다.
+SongId = Annotated[str, StringConstraints(min_length=1, max_length=64)]
 
 
 class ClarifyAnswer(BaseModel):
@@ -57,6 +63,10 @@ class SearchRequest(BaseModel):
     query: str = Field(..., min_length=1, description="자연어 텍스트 형태의 검색 질의어")
     top_k: int = Field(default=10, ge=1, le=50, description="반환할 검색 결과의 개수")
     use_rerank: bool = Field(default=True, description="Cross-Encoder 리랭킹 사용 여부")
+    defer_clarify: bool = Field(
+        default=False,
+        description="출생 연도 외 재질문은 /search/clarify에서 사용자가 요청할 때 계산한다",
+    )
     candidate_k: Optional[int] = Field(
         default=None,
         ge=1,
@@ -94,7 +104,7 @@ class SearchRequest(BaseModel):
     )
     previous_candidate_ids: List[str] = Field(
         default_factory=list,
-        max_length=30,
+        max_length=MAX_PREVIOUS_CANDIDATES,
         description="직전 응답의 candidate_ids를 그대로 되돌려준다",
     )
     rejected_ids: List[str] = Field(
@@ -144,6 +154,46 @@ class SearchRequest(BaseModel):
         if len(set(self.rejected_ids)) != len(self.rejected_ids):
             raise ValueError("rejected_ids에 중복된 곡 id가 있습니다.")
         return self
+
+
+class ClarifyRequest(BaseModel):
+    """검색을 실행하지 않고 현재 후보로 질문만 조회한다. 턴·거절 상태는 바꾸지 않는다.
+
+    **질문 선택이 읽는 것만 받는다.** 질의·분석·출생 연도는 받지 않는다 — 연령대는 그것으로 다시 찾은
+    결과의 후보(`previous_candidate_ids`)에 이미 반영돼 있고, 질문은 그 후보가 어떻게 갈리는지만 본다.
+    모르는 필드는 거부한다(검색 옵션을 실어 보내고 반영됐다고 믿는 일을 막는다).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    asked_slots: List[str] = Field(
+        default_factory=list,
+        max_length=MAX_ASKED_SLOTS,
+        description="직전 /search 응답의 asked_slots(건너뛴 출생 연도 포함). 같은 슬롯을 다시 묻지 않는다",
+    )
+    previous_candidate_ids: List[SongId] = Field(
+        default_factory=list,
+        max_length=MAX_PREVIOUS_CANDIDATES,
+        description="직전 /search 응답의 candidate_ids. 질문은 여기서 보여준 곡·거절한 곡을 뺀 나머지로 만든다",
+    )
+    shown_ids: List[SongId] = Field(
+        default_factory=list,
+        max_length=50,
+        description="지금 화면에 보이는 곡. 사용자가 거절하려는 곡이라 질문 근거에서 뺀다",
+    )
+    rejected_ids: List[SongId] = Field(
+        default_factory=list,
+        max_length=MAX_REJECTED_IDS,
+        description="직전 /search 응답의 rejected_ids. 그대로 보낸다 — 이 요청은 거절을 쌓지 않는다",
+    )
+    turn: int = Field(default=1, ge=1, description="직전 /search 응답의 turn. 그대로 보낸다")
+
+
+class ClarifyResponse(BaseModel):
+    clarify: Optional[ClarifyQuestion] = Field(
+        default=None,
+        description="물을 것이 없으면 None — 화면은 질문 없이 거절만 진행한다",
+    )
 
 
 class LyricSurfaceMatch(BaseModel):
@@ -290,7 +340,14 @@ class SearchResponse(BaseModel):
     )
     clarify: Optional[ClarifyQuestion] = Field(
         default=None,
-        description="되물을 것이 있으면 채워진다. None이면 대화 종료",
+        description="되물을 것이 있으면 채워진다. 지연 조회에서는 None이어도 질문을 아직 계산하지 않은 상태",
+    )
+    clarify_deferred: bool = Field(
+        default=False,
+        description=(
+            "defer_clarify 요청에서만 참이 된다 — 거절 버튼을 누르면 /search/clarify로 질문을 조회하라는 뜻. "
+            "한도(슬롯·턴·거절)를 다 썼거나 보여준 곡 말고 남은 후보가 없으면 거짓이다"
+        ),
     )
     asked_slots: List[str] = Field(
         default_factory=list,

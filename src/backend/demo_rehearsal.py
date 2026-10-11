@@ -12,6 +12,10 @@
 
 확인하는 것: 단계마다 몇 초 걸리는가 · 결과가 나오는가 · 실행 기록이 성한가
 (질의 분석 폴백·죽은 경로·리랭킹 실패가 없는가).
+
+요청은 **화면(map.js)이 보내는 것과 같은 모양**이다 — 검색은 `defer_clarify`로 보내고, 재질문은
+"이 중에는 없어요"를 누를 때처럼 `/search/clarify`로 질문을 조회한 뒤 답을 실어 다시 검색한다.
+화면의 흐름이 바뀌면 여기도 같이 바꾼다. 다른 모양으로 재면 발표에서 누르지 않을 경로의 시간이 나온다.
 """
 
 from __future__ import annotations
@@ -25,7 +29,12 @@ import urllib.request
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from src.backend.schemas.search import MAX_PREVIOUS_CANDIDATES
+
 DEFAULT_URL = "http://127.0.0.1:8000"
+SEARCH_PATH = "/api/v1/search"
+CLARIFY_PATH = "/api/v1/search/clarify"
+TOP_K = 10
 
 # 발표에서 누를 순서. 경로가 겹치지 않게 한 단계에 하나씩 맡긴다.
 SEQUENCE: List[Dict[str, str]] = [
@@ -60,10 +69,14 @@ class Step:
     problems: List[str] = field(default_factory=list)
 
 
-def _post(url: str, body: Dict[str, Any], timeout: float) -> tuple:
+def _health(url: str) -> Dict[str, Any]:
+    return json.loads(urllib.request.urlopen(f"{url}/health", timeout=10).read())
+
+
+def _post(url: str, body: Dict[str, Any], timeout: float, path: str = SEARCH_PATH) -> tuple:
     data = json.dumps(body).encode()
     req = urllib.request.Request(
-        f"{url}/api/v1/search", data=data,
+        f"{url}{path}", data=data,
         headers={"Content-Type": "application/json"}, method="POST",
     )
     started = time.perf_counter()
@@ -98,12 +111,22 @@ def _paths_of_top(payload: Dict[str, Any]) -> List[str]:
     return [p["path"] for p in ((results[0].get("explain") or {}).get("paths") or [])]
 
 
+def _clarify_body(convo: Dict[str, Any]) -> Dict[str, Any]:
+    """화면이 "이 중에는 없어요"를 누를 때 보내는 질문 조회. 직전 검색 응답의 상태를 그대로 돌려준다."""
+    return {
+        "asked_slots": convo["asked_slots"],
+        "previous_candidate_ids": convo["candidate_ids"][:MAX_PREVIOUS_CANDIDATES],
+        "shown_ids": [r["id"] for r in convo["results"]],
+        "rejected_ids": convo["rejected_ids"],
+        "turn": convo["turn"],
+    }
+
+
 def rehearse(url: str, timeout: float) -> List[Step]:
     steps: List[Step] = []
 
     # 0. 예열 상태 — ready가 아니면 첫 검색이 혼자 11초를 낸다
-    health = json.loads(urllib.request.urlopen(f"{url}/health", timeout=10).read())
-    warm = health["warmup"]
+    warm = _health(url)["warmup"]
     failed = [name for name, stage in warm.get("stages", {}).items()
               if str(stage.get("outcome", "")).startswith("failed")]
     step = Step(name="0. 예열", note=f"{warm['state']} · {warm['elapsed_ms']:.0f}ms")
@@ -113,10 +136,13 @@ def rehearse(url: str, timeout: float) -> List[Step]:
         step.problems.append(f"예열 실패 단계: {', '.join(failed)}")
     steps.append(step)
 
-    convo: Optional[Dict[str, Any]] = None
+    # 서버가 "거절하면 질문을 조회하라"고 한 응답들. 화면은 이런 결과에서만 질문을 조회한다.
+    deferred: List[Dict[str, Any]] = []
     for spec in SEQUENCE:
         seconds, status, payload = _post(
-            url, {"query": spec["query"], "top_k": 10, "explain": True}, timeout
+            url,
+            {"query": spec["query"], "top_k": TOP_K, "explain": True, "defer_clarify": True},
+            timeout,
         )
         note, problems = _read_run(payload)
         results = payload.get("results") or []
@@ -136,36 +162,56 @@ def rehearse(url: str, timeout: float) -> List[Step]:
                     f"1위 곡에 {spec['expect']} 경로 기여가 없다(실제: {paths or '없음'})"
                 )
         steps.append(step)
-        if payload.get("clarify"):
-            convo = payload
+        if status == 200 and payload.get("clarify_deferred"):
+            deferred.append(payload)
 
-    # 4. 재질문 — 화면이 하는 것과 같은 왕복
+    # 4. 재질문 — 화면이 하는 것과 같은 왕복: 거절 버튼 → 질문 조회 → 답 → 다시 검색
     step = Step(name="4. 재질문 — '이 중에는 없어요' 뒤 답하기")
-    if convo is None:
-        step.problems.append("앞 단계에서 재질문이 하나도 붙지 않았다")
-    else:
-        question = convo["clarify"]
+    convo: Optional[Dict[str, Any]] = None
+    question: Optional[Dict[str, Any]] = None
+    lookup_seconds = 0.0
+    # 질문은 후보가 갈릴 때만 나온다. 앞 단계의 결과를 차례로 눌러 보고 처음 질문이 뜨는 것으로 답한다.
+    for candidate in deferred:
+        seconds, status, payload = _post(url, _clarify_body(candidate), timeout, path=CLARIFY_PATH)
+        lookup_seconds += seconds
+        if status != 200:
+            step.problems.append(f"질문 조회 HTTP {status}: {payload.get('detail', '')}")
+            continue
+        if payload.get("clarify"):
+            convo, question = candidate, payload["clarify"]
+            break
+    if not deferred:
+        step.problems.append("앞 단계의 어느 응답도 질문을 조회하라고 하지 않았다(clarify_deferred)")
+    elif question is None:
+        step.problems.append("앞 단계의 어느 결과에서도 물을 질문이 나오지 않았다")
+    if convo is not None and question is not None:
         shown = [r["id"] for r in convo["results"]]
+        answer = {
+            "slot": question["slot"],
+            "value": question["options"][0]["value"] if question["options"] else "",
+            "skipped": not question["options"],
+        }
         body = {
             "query": convo["analysis"]["original_query"],
-            "top_k": 10,
+            "top_k": TOP_K,
             "explain": True,
+            "defer_clarify": True,
             "prior_analysis": convo["analysis"],
-            "answers": [{
-                "slot": question["slot"],
-                "value": question["options"][0]["value"] if question["options"] else "",
-                "skipped": not question["options"],
-            }],
+            "answers": [answer],
             "asked_slots": convo["asked_slots"],
-            "rejected_ids": shown,
+            "previous_candidate_ids": convo["candidate_ids"][:MAX_PREVIOUS_CANDIDATES],
+            "rejected_ids": list(dict.fromkeys([*convo["rejected_ids"], *shown])),
             "turn": convo["turn"],
         }
         seconds, status, payload = _post(url, body, timeout)
         note, problems = _read_run(payload)
         results = payload.get("results") or []
         step.seconds, step.status, step.results = seconds, status, len(results)
-        step.note = f"{question['question']} → {body['answers'][0]['value'] or '건너뜀'}"
-        step.problems = problems
+        step.note = (
+            f"{question['question']} → {answer['value'] or '건너뜀'}"
+            f" (질문 조회 {lookup_seconds:.2f}초)"
+        )
+        step.problems.extend(problems)
         if status != 200:
             step.problems.append(f"HTTP {status}: {payload.get('detail', '')}")
         elif not results:
@@ -174,6 +220,8 @@ def rehearse(url: str, timeout: float) -> List[Step]:
             step.top = f"{results[0]['title']} — {results[0].get('artist', '')}"
             if set(r["id"] for r in results) & set(shown):
                 step.problems.append("거절한 곡이 다시 나왔다")
+            if payload.get("turn") != convo["turn"] + 1:
+                step.problems.append(f"턴이 하나 가지 않았다({convo['turn']} → {payload.get('turn')})")
     steps.append(step)
     return steps
 

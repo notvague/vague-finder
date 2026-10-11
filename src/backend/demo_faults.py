@@ -4,13 +4,14 @@
 없다. 실제 서버로 재현하려면 쿼터를 진짜로 태우거나 모델을 망가뜨려야 하므로,
 **장애만 모의하고 나머지는 전부 실물**을 쓴다.
 
-실물인 것 — 검색 라우트(`api/routes/search.py`), 응답 스키마, 실행 기록 직렬화
-(`schemas/explain.py`), 그리고 화면(`frontend/static/*`). 모의인 것은 질의 분석과
-검색 라우터 **두 개의 의존성뿐**이다. 그래서 여기서 본 화면은 실제 서버가 같은
-장애를 만났을 때의 화면과 같다.
+실물인 것 — 검색·질문 조회 라우트(`api/routes/search.py`), 응답 스키마, 실행 기록
+직렬화(`schemas/explain.py`), 그리고 화면(`frontend/static/*`). 모의인 것은 질의 분석,
+검색 라우터, 후보 조회(벡터 DB) **세 개의 의존성뿐**이다. 그래서 여기서 본 화면은
+실제 서버가 같은 장애를 만났을 때의 화면과 같다.
 
 모델을 올리지 않으므로 기동이 즉시 끝나고 로컬 Qdrant 폴더도 열지 않는다 —
-개발 서버가 떠 있는 채로 함께 돌려도 된다.
+개발 서버가 떠 있는 채로 함께 돌려도 된다. 라우트가 벡터 DB에 기대는 의존성을 새로
+쓰면 여기서도 대체해야 한다(`tests/test_demo_faults.py`가 실물이 열리지 않는지 본다).
 
     venv/bin/python -m src.backend.demo_faults        # 8010 포트
     curl -X POST localhost:8010/__fault -d '{"mode":"rerank_fail"}'
@@ -33,7 +34,11 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from src.backend.api.dependencies import get_query_analyzer, get_search_router
+from src.backend.api.dependencies import (
+    get_query_analyzer,
+    get_search_router,
+    get_vector_client,
+)
 from src.backend.api.routes.search import router as search_route
 from src.backend.schemas.query import QueryAnalysis
 from src.backend.schemas.search import MatchingTrack
@@ -55,7 +60,9 @@ MODES: Dict[str, str] = {
     "path_image_fail": "이미지 경로가 예외로 죽음: 가중치는 남고 기여만 사라진다",
     "rerank_fail": "Cross-Encoder 리랭킹 실패: 검색 순서로 폴백",
     "empty": "결과 0건",
-    "server_error": "검색 중 예외 → 500",
+    "server_error": "벡터 DB에 닿지 못함: 검색도 질문 조회도 예외 → 500",
+    "clarify_fail": "질문 조회만 실패(500) — 검색은 정상이라 거절만으로 다음 결과로 간다",
+    "clarify_hang": "질문 조회가 seconds만큼 응답하지 않음 — 화면의 질문 조회 제한 시간 확인(release로 풀 수 있다)",
     "slow_first": "첫 요청만 seconds 지연, 이후는 즉시 — 응답 순서 뒤바뀜 재현",
 }
 
@@ -70,7 +77,7 @@ class Fault:
         # 실제 warmup.status() 대신 내보낼 상태. 빈 문자열이면 실물을 쓴다.
         self.warmup = ""
         self.calls = 0
-        # analysis_hang을 밖에서 풀어 주는 손잡이. 기다림을 끊고 폴백으로 넘어간다.
+        # analysis_hang·clarify_hang을 밖에서 풀어 주는 손잡이. 기다림을 끊고 다음으로 넘어간다.
         self.release = threading.Event()
 
     def set(self, mode: str, seconds: Optional[float], warmup: Optional[str]) -> None:
@@ -156,18 +163,23 @@ def _songs() -> List[Dict[str, Any]]:
     return _songs_cache
 
 
+def _metadata(song: Dict[str, Any]) -> Dict[str, Any]:
+    """지도 데이터 한 곡 → 벡터 DB 페이로드 모양. **검색 결과와 질문 조회가 함께 쓴다.**
+
+    둘이 다른 값을 내면 화면의 질문("남성 12 / 여성 8")이 목록에 보이는 곡들과 맞지 않는다.
+    """
+    return {
+        "title": song.get("ft") or song.get("t", ""),
+        "artist": song.get("a"),
+        "genre": song.get("g"),
+        "release_date": song.get("d"),
+        "cover_url": song.get("c"),
+        "vocal_gender": "여성" if int(str(song["id"])[-1]) % 2 else "남성",
+    }
+
+
 def _track(song: Dict[str, Any], score: float) -> MatchingTrack:
-    return MatchingTrack(
-        id=str(song["id"]),
-        score=score,
-        retrieval_score=score,
-        title=song.get("ft") or song.get("t", ""),
-        artist=song.get("a"),
-        genre=song.get("g"),
-        release_date=song.get("d"),
-        cover_url=song.get("c"),
-        vocal_gender="여성" if int(str(song["id"])[-1]) % 2 else "남성",
-    )
+    return MatchingTrack(id=str(song["id"]), score=score, retrieval_score=score, **_metadata(song))
 
 
 class _FaultRouter:
@@ -300,6 +312,56 @@ class _FaultRouter:
 
 
 # ---------------------------------------------------------------------------
+# 모의 후보 조회 — 질문 조회(/search/clarify)가 읽는 벡터 DB 자리
+# ---------------------------------------------------------------------------
+
+_songs_by_id_cache: Optional[Dict[str, Dict[str, Any]]] = None
+
+
+def _songs_by_id() -> Dict[str, Dict[str, Any]]:
+    global _songs_by_id_cache
+    if _songs_by_id_cache is None:
+        _songs_by_id_cache = {str(song["id"]): song for song in _songs()}
+    return _songs_by_id_cache
+
+
+class _FaultIndex:
+    """`QdrantIndex.fetch`와 같은 호출 모양. 모의 검색이 낸 후보와 **같은 메타데이터**를 돌려준다."""
+
+    def fetch(
+        self,
+        ids: Any,
+        namespace: Optional[str] = None,
+        fields: Optional[Any] = None,
+    ) -> Dict[str, Any]:
+        mode, seconds = fault.peek()  # 세지 않는다 — slow_first의 '첫 요청'은 검색 몫이다
+        if mode == "clarify_hang":
+            # 라우트가 스레드로 옮겨 부르므로 여기서 기다려도 다른 요청은 받는다.
+            fault.release.wait(timeout=seconds)
+        if mode == "server_error":
+            raise RuntimeError("벡터 DB에 연결하지 못했습니다(모의)")
+        if mode == "clarify_fail":
+            raise RuntimeError("후보 메타데이터를 읽지 못했습니다(모의)")
+        matches = []
+        for song_id in dict.fromkeys(str(i) for i in ids):
+            song = _songs_by_id().get(song_id)
+            if song is None:
+                continue
+            metadata = _metadata(song)
+            if fields:
+                metadata = {key: metadata.get(key) for key in fields}
+            matches.append({"id": song_id, "score": 0.0, "metadata": metadata})
+        return {"matches": matches}
+
+
+class _FaultVectorClient:
+    """`get_vector_client()`가 돌려주는 것의 자리. 라우트는 `Index(name).fetch(...)`만 부른다."""
+
+    def Index(self, name: str) -> _FaultIndex:  # noqa: N802 - 실물의 메서드 이름을 따른다
+        return _FaultIndex()
+
+
+# ---------------------------------------------------------------------------
 # 앱
 # ---------------------------------------------------------------------------
 
@@ -317,6 +379,9 @@ def create_app() -> FastAPI:
     app.include_router(search_route, prefix="/api/v1")
     app.dependency_overrides[get_query_analyzer] = _FaultAnalyzer
     app.dependency_overrides[get_search_router] = _FaultRouter
+    # 질문 조회가 후보 메타데이터를 읽는 자리. 대체하지 않으면 실물이 로컬 Qdrant 폴더를 연다 —
+    # 개발 서버가 떠 있으면 500이고, 없으면 이 서버가 폴더를 잡아 개발 서버·적재를 막는다.
+    app.dependency_overrides[get_vector_client] = _FaultVectorClient
 
     @app.get("/__fault")
     async def show() -> Dict[str, Any]:
@@ -333,7 +398,7 @@ def create_app() -> FastAPI:
 
     @app.post("/__fault/release")
     async def release() -> Dict[str, Any]:
-        """멈춰 있는 analysis_hang 요청을 지금 풀어 준다."""
+        """멈춰 있는 analysis_hang·clarify_hang 요청을 지금 풀어 준다."""
         fault.release.set()
         return {"released": True}
 
