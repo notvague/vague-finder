@@ -33,8 +33,10 @@ from src.retrieval.clarify import (
 from src.retrieval.evaluate_clarification import choose_answer, noisy_birth_year, oracle_birth_year, oracle_value
 
 
-def _life_stage_analysis(query: str = "중학교 때 많이 듣던 남자 발라드") -> QueryAnalysis:
-    """규칙 폴백으로 만든 분석 — 생애 단계는 규칙이 잡으므로 Gemini가 필요 없다."""
+def _life_stage_analysis(query: str = "중학교 때 많이 듣던 노래") -> QueryAnalysis:
+    """규칙 폴백으로 만든 분석 — 생애 단계는 규칙이 잡으므로 Gemini가 필요 없다.
+
+    기본 원문은 성별·장르를 말하지 않는다 — 말했으면 그 슬롯은 묻지 않으므로(known_slots) 데이터 슬롯 시험이 달라진다."""
     analysis = qa._fallback(query)
     assert analysis.has_life_stage and not analysis.has_release_era
     return analysis
@@ -60,7 +62,7 @@ def test_birth_year_is_asked_before_data_slots_for_life_stage_queries() -> None:
 
 def test_birth_year_is_not_asked_when_era_is_known_or_already_asked() -> None:
     pool = _split_pool()
-    assert pick_question(qa._fallback("비 오는 날 남자 발라드"), pool).slot == "vocal_gender"
+    assert pick_question(qa._fallback("비 오는 날 노래"), pool).slot == "vocal_gender"
     assert pick_question(qa._fallback("2000년대 중학교 때 듣던 댄스곡"), pool).slot == "vocal_gender"
     assert pick_question(_life_stage_analysis(), pool, asked_slots=[BIRTH_YEAR_SLOT]).slot == "vocal_gender"
     assert pick_question(with_birth_year(_life_stage_analysis(), 2001), pool).slot == "vocal_gender"
@@ -72,6 +74,25 @@ def test_birth_year_is_asked_even_without_remaining_candidates() -> None:
     assert pick_question(_life_stage_analysis(), []).slot == BIRTH_YEAR_SLOT
     assert pick_question(_life_stage_analysis(), [], asked_slots=[BIRTH_YEAR_SLOT]) is None
     assert pick_question(qa._fallback("비 오는 날 남자 발라드"), []) is None
+
+
+def test_stated_gender_does_not_block_birth_year_but_is_never_asked_after_it() -> None:
+    """사용자 예시 1 — "중학생 때 나온 엄청 유명한 남자 아이돌 노래".
+
+    출생 연도는 묻는다(성별을 말했어도 '중학생 때'의 기준점은 모른다). 연도에 답하든 건너뛰든 그 뒤에도 성별은
+    묻지 않는다. 장르는 모르므로 후보가 장르로 갈리면 장르를 묻는다.
+    """
+    analysis = _life_stage_analysis("중학생 때 나온 엄청 유명한 남자 아이돌 노래")
+    split_by_both = [_track("a", "남성", "댄스"), _track("b", "여성", "발라드"), _track("c", "남성", "발라드"), _track("d", "여성", "댄스")]
+    assert pick_question(analysis, split_by_both).slot == BIRTH_YEAR_SLOT
+    # 연도 답(창이 들어간 분석) 뒤 — 성별이 갈려도 건너뛰고 장르
+    assert pick_question(with_birth_year(analysis, 2001), split_by_both).slot == "genre"
+    # 연도 건너뛰기(asked_slots에 birth_year) 뒤 — 같다
+    assert pick_question(analysis, split_by_both, asked_slots=[BIRTH_YEAR_SLOT]).slot == "genre"
+    # 장르로 안 갈리면 물을 것이 없다 — 성별로 되돌아가지 않는다
+    gender_only = _split_pool()
+    assert pick_question(with_birth_year(analysis, 2001), gender_only) is None
+    assert pick_question(analysis, gender_only, asked_slots=[BIRTH_YEAR_SLOT]) is None
 
 
 # --- 2. 답 → 시기 창 ---------------------------------------------------------
@@ -197,7 +218,7 @@ def client():
 
 def test_profile_birth_year_skips_the_question_and_keeps_response_analysis_clean(client) -> None:
     tc, fake = client
-    body = tc.post("/search", json={"query": "중학교 때 많이 듣던 남자 발라드", "birth_year": 2001}).json()
+    body = tc.post("/search", json={"query": "중학교 때 많이 듣던 노래", "birth_year": 2001}).json()
     searched = fake.seen[-1]
     assert (searched.release_era.start_year, searched.release_era.end_year) == (2013, 2017)
     assert body["analysis"]["release_era"]["start_year"] is None, "응답의 분석은 원본 — 프로필이 굳어 들어가지 않는다"
@@ -206,18 +227,46 @@ def test_profile_birth_year_skips_the_question_and_keeps_response_analysis_clean
 
 def test_without_profile_the_route_asks_birth_year_first(client) -> None:
     tc, fake = client
-    body = tc.post("/search", json={"query": "중학교 때 많이 듣던 남자 발라드"}).json()
+    body = tc.post("/search", json={"query": "중학교 때 많이 듣던 노래"}).json()
     assert not fake.seen[-1].has_release_era
     assert body["clarify"]["slot"] == BIRTH_YEAR_SLOT
     assert body["clarify"]["options"][0]["value"] == "1971~1975년생"
+    assert body["known_slots"] == []
     # 2턴: 답을 돌려보내면 라우터가 창을 받고, 다음 질문은 데이터 슬롯이다
     turn2 = tc.post("/search", json={
-        "query": "중학교 때 많이 듣던 남자 발라드", "prior_analysis": body["analysis"],
+        "query": "중학교 때 많이 듣던 노래", "prior_analysis": body["analysis"],
         "answers": [{"slot": BIRTH_YEAR_SLOT, "value": "1996~2000년생", "skipped": False}],
         "asked_slots": [BIRTH_YEAR_SLOT], "rejected_ids": ["a"], "turn": body["turn"],
     }).json()
     assert turn2["clarify"]["slot"] == "vocal_gender"
     assert turn2["asked_slots"] == [BIRTH_YEAR_SLOT]
+
+
+def test_route_keeps_birth_year_but_never_asks_a_stated_gender(client) -> None:
+    """사용자 예시 1을 즉시 질문 경로(defer_clarify 없음)로 — 출생 연도는 그대로, 성별은 답·건너뛰기 뒤에도 없다."""
+    tc, fake = client
+    query = "중학생 때 나온 엄청 유명한 남자 아이돌 노래"
+    first = tc.post("/search", json={"query": query}).json()
+    assert first["clarify"]["slot"] == BIRTH_YEAR_SLOT
+    assert first["known_slots"] == ["vocal_gender"]
+    # 답한 뒤 — 후보(_split_pool)는 성별로만 갈린다 → 성별은 이미 말했으니 물을 것이 없다
+    answered = tc.post("/search", json={
+        "query": query, "prior_analysis": first["analysis"],
+        "answers": [{"slot": BIRTH_YEAR_SLOT, "value": "1996~2000년생", "skipped": False}],
+        "asked_slots": [BIRTH_YEAR_SLOT], "rejected_ids": ["a"], "turn": first["turn"],
+    }).json()
+    assert answered["clarify"] is None and answered["known_slots"] == ["vocal_gender"]
+    assert answered["asked_slots"] == [BIRTH_YEAR_SLOT], "known_slots는 이력에 끼지 않는다"
+    # 건너뛴 뒤 — 같다
+    skipped = tc.post("/search", json={
+        "query": query, "prior_analysis": first["analysis"],
+        "answers": [{"slot": BIRTH_YEAR_SLOT, "skipped": True}],
+        "asked_slots": [BIRTH_YEAR_SLOT], "rejected_ids": ["a"], "turn": first["turn"],
+    }).json()
+    assert skipped["clarify"] is None and skipped["known_slots"] == ["vocal_gender"]
+    # 프로필로 연도를 이미 알면 첫 응답부터 질문이 없다
+    profiled = tc.post("/search", json={"query": query, "birth_year": 2001}).json()
+    assert profiled["clarify"] is None and profiled["known_slots"] == ["vocal_gender"]
 
 
 class _AllShownRouter(_FakeRouter):
@@ -245,10 +294,10 @@ def test_birth_year_is_asked_even_when_every_candidate_is_shown() -> None:
 def test_research_with_prior_analysis_and_profile_keeps_the_turn(client) -> None:
     """출생 연도 답 뒤의 재검색: 화면은 prior_analysis + birth_year만 보낸다(거절·답 없음) — 재분석 없이, 턴도 그대로."""
     tc, fake = client
-    first = tc.post("/search", json={"query": "중학교 때 많이 듣던 남자 발라드"}).json()
+    first = tc.post("/search", json={"query": "중학교 때 많이 듣던 노래"}).json()
     assert first["clarify"]["slot"] == BIRTH_YEAR_SLOT and first["turn"] == 1
     calls = len(fake.seen)
-    again = tc.post("/search", json={"query": "중학교 때 많이 듣던 남자 발라드", "prior_analysis": first["analysis"],
+    again = tc.post("/search", json={"query": "중학교 때 많이 듣던 노래", "prior_analysis": first["analysis"],
                                      "birth_year": 1998, "turn": first["turn"]}).json()
     assert len(fake.seen) == calls + 1
     assert (fake.seen[-1].release_era.start_year, fake.seen[-1].release_era.end_year) == (2010, 2014)

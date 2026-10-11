@@ -55,6 +55,7 @@ def lookup(client: TestClient, reply: Dict[str, Any]):
     """화면이 "이 중에는 없어요"를 누를 때 보내는 질문 조회."""
     return client.post("/api/v1/search/clarify", json={
         "asked_slots": reply["asked_slots"],
+        "known_slots": reply["known_slots"],
         "previous_candidate_ids": reply["candidate_ids"][:30],
         "shown_ids": [r["id"] for r in reply["results"]],
         "rejected_ids": reply["rejected_ids"],
@@ -141,8 +142,10 @@ def test_rehearsal_walks_the_same_round_trip_as_the_screen(server, monkeypatch):
 
     first = client.post(demo_rehearsal.SEARCH_PATH, json=sent[0][1]).json()
     shown = [r["id"] for r in first["results"]]
+    # 1번 질의("…잔잔한 발라드")는 장르를 말했다 — 응답의 known_slots가 질문 조회에 그대로 실려 간다
+    assert first["known_slots"] == ["genre"]
     assert sent[searches][1] == {
-        "asked_slots": [], "previous_candidate_ids": first["candidate_ids"][:30],
+        "asked_slots": [], "known_slots": ["genre"], "previous_candidate_ids": first["candidate_ids"][:30],
         "shown_ids": shown, "rejected_ids": [], "turn": 1,
     }
     answer = sent[-1][1]

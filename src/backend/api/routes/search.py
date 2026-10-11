@@ -2,7 +2,7 @@ import asyncio
 import logging
 import time
 
-from typing import Any, Optional
+from typing import Any, Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
@@ -28,14 +28,15 @@ from src.backend.schemas.search import (
 from src.retrieval import timing
 from src.retrieval.analysis_cache import looks_like_fallback
 from src.retrieval.clarify import (
-    ALLOWED_SLOTS,
     BIRTH_YEAR_SLOT,
     QUESTION_FIELDS,
     build_birth_year_question,
     pick_data_question,
     pick_question,
+    remaining_data_slots,
     with_birth_year,
 )
+from src.retrieval.known_slots import known_slots_from_query
 from src.retrieval.explain import NULL_RECORDER, ExplainRecorder, SongExplain
 from src.retrieval.lyrics_exact_search import (
     LyricsExactSearchService,
@@ -62,12 +63,14 @@ async def clarify_search(
     반영되고, 화면은 그 응답의 candidate_ids를 그대로 보낸다 — 질문은 그 최신 후보가 어떻게 갈리는지에서
     나온다. 출생 연도 질문 자체는 결과와 함께 /search가 이미 냈으므로 여기서는 내지 않는다.
 
-    물을 수 없는 상태(한도 소진·남은 후보 없음)면 DB를 읽지 않고 None을 돌려준다.
+    물을 수 없는 상태(한도 소진·남은 후보 없음·최초 질의에서 성별과 장르를 이미 말함)면 DB를 읽지 않고
+    None을 돌려준다. 이미 말한 슬롯은 /search 응답의 `known_slots`를 화면이 그대로 보낸 것이다 — 원문을
+    다시 분석하지 않는다.
     """
     rejected = set(request.rejected_ids)
     shown = [s for s in dict.fromkeys(request.shown_ids) if s not in rejected]
     # 화면이 다음에 거절할 곡은 지금 보이는 곡이다. /search가 clarify_deferred를 정할 때와 같은 판정.
-    if not _can_ask_data_question(request.turn, request.asked_slots, list(rejected), len(shown)):
+    if not _can_ask_data_question(request.turn, request.asked_slots, list(rejected), len(shown), request.known_slots):
         return ClarifyResponse()
     excluded = rejected | set(shown)
     ids = [s for s in dict.fromkeys(request.previous_candidate_ids) if s not in excluded]
@@ -77,7 +80,7 @@ async def clarify_search(
         index = vector_client.Index(TEXT_HYBRID_INDEX_NAME)
         result = await asyncio.to_thread(index.fetch, ids, fields=QUESTION_FIELDS)
         candidates = [SearchService.track_from_match(m) for m in result["matches"]]
-        return ClarifyResponse(clarify=pick_data_question(candidates, request.asked_slots))
+        return ClarifyResponse(clarify=pick_data_question(candidates, request.asked_slots, request.known_slots))
     except Exception as exc:
         logger.exception("[clarify] 질문 조회 실패")
         raise HTTPException(status_code=500, detail="추가 질문을 준비하지 못했습니다.") from exc
@@ -113,17 +116,19 @@ def _can_ask_data_question(
     asked_slots: list,
     rejected_ids: list,
     next_rejections: int,
+    known_slots: Sequence[str] = (),
 ) -> bool:
     """데이터 질문(성별·장르)을 낼 수 있는 상태인가 — 지연 조회의 **양쪽이 함께 쓰는** 판정.
 
     /search는 이것으로 `clarify_deferred`(조회하러 올 가치가 있는가)를 정하고, /search/clarify는
-    같은 값(직전 응답의 turn·asked_slots·rejected_ids, 지금 보이는 곡 수)으로 다시 본다. 판정이
-    갈리면 화면이 조회하러 왔다가 빈손으로 돌아가거나, 물을 수 있는데 묻지 않게 된다.
+    같은 값(직전 응답의 turn·asked_slots·known_slots·rejected_ids, 지금 보이는 곡 수)으로 다시 본다.
+    판정이 갈리면 화면이 조회하러 왔다가 빈손으로 돌아가거나, 물을 수 있는데 묻지 않게 된다.
 
-    `_can_ask_another`에 더해 아직 묻지 않은 데이터 슬롯이 남았는지를 본다. 건너뛴 출생 연도는
-    asked_slots에 들어 있어 슬롯 수에는 세지만(양쪽 같다) 데이터 슬롯은 아니다.
+    `_can_ask_another`에 더해 아직 물을 수 있는 데이터 슬롯이 남았는지를 본다 — 실제로 물은 것(asked_slots)과
+    최초 질의에서 이미 말한 것(known_slots)을 뺀 나머지. 건너뛴 출생 연도는 asked_slots에 들어 있어 슬롯 수에는
+    세지만(양쪽 같다) 데이터 슬롯은 아니다. known_slots는 슬롯·턴·거절 한도에 세지 않는다.
     """
-    if all(slot in asked_slots for slot in ALLOWED_SLOTS):
+    if not remaining_data_slots(asked_slots, known_slots):
         return False
     return _can_ask_another(turn, asked_slots, rejected_ids, next_rejections)
 
@@ -289,6 +294,11 @@ async def search(
         if analysis_for_search is not analysis:
             timer.note(birth_year_window=f"{analysis_for_search.release_era.start_year}-{analysis_for_search.release_era.end_year}")
 
+        # 최초 질의에서 이미 말한 성별·장르 — 재질문이 다시 묻지 않는다. 원문에서 매번 같게 계산하므로 요청이
+        # 되돌려줄 필요가 없고, 출생 연도·답변을 합친 검색용 분석과는 무관하다(원문은 같다). 응답에 실어 화면이
+        # 질문 조회에 그대로 보낸다. asked_slots·answers와 섞지 않는다 — 한도에 세면 안 된다.
+        known_slots = known_slots_from_query(analysis)
+
         # 물어본 슬롯 누적 — 다음 턴에서 같은 것을 다시 묻지 않기 위해.
         asked_slots = list(request.asked_slots)
         for answer in request.answers:
@@ -383,13 +393,15 @@ async def search(
                 has_remaining = any(
                     song_id not in shown for song_id in candidate_ids[:MAX_PREVIOUS_CANDIDATES]
                 )
+                # 성별과 장르를 둘 다 이미 말했으면 조회할 데이터 질문이 없다 — 거절 버튼은 바로 다음 후보로 간다.
                 clarify_deferred = (
                     bool(results)
                     and has_remaining
-                    and _can_ask_data_question(turn, asked_slots, request.rejected_ids, len(results))
+                    and _can_ask_data_question(turn, asked_slots, request.rejected_ids, len(results), known_slots)
                 )
             elif _can_ask_another(turn, asked_slots, request.rejected_ids, request.top_k):
                 remaining = [t for t in candidate_tracks if t.id not in shown]
+                # pick_question이 같은 원문에서 known_slots를 다시 계산해 뺀다 — 지연 조회와 같은 규칙.
                 clarify = pick_question(analysis_for_search, remaining, asked_slots)
 
         return SearchResponse(
@@ -399,6 +411,7 @@ async def search(
             clarify=clarify,
             clarify_deferred=clarify_deferred,
             asked_slots=asked_slots,
+            known_slots=known_slots,
             candidate_ids=candidate_ids,
             rejected_ids=list(request.rejected_ids),
             turn=turn,
