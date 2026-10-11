@@ -33,7 +33,8 @@ TARGET = "s030"          # 정답. 기본 풀에서 31번째라 Top-10 밖이다
 POOL = [f"s{i:03d}" for i in range(50)]
 
 
-def _analysis(query: str = "비 오는 날 발라드") -> QueryAnalysis:
+def _analysis(query: str = "비 오는 날 노래") -> QueryAnalysis:
+    """성별·장르를 말하지 않은 원문 — 말했으면 하네스도 그 슬롯을 묻지 않는다(서비스와 같은 규칙)."""
     return QueryAnalysis(
         original_query=query,
         intent_type="mood",
@@ -402,6 +403,23 @@ def test_rule_asks_the_slot_the_selector_picked() -> None:
     assert picked == "vocal_gender"
     # 오라클 답변("여성")이 반영되면 가짜 라우터가 정답을 1위로 올린다.
     assert results["rule:oracle"].rank == 1
+
+
+def test_rule_does_not_ask_a_slot_the_query_already_stated() -> None:
+    """하네스도 서비스와 같은 정책이다 — 질의에 성별이 있으면 후보가 성별로 갈려도 묻지 않는다(2026-10-11).
+
+    v02까지의 측정은 이 경우에도 성별을 물어 오기억(c701·c705·q101)을 회수했다. 그 회수율은 이 정책에서
+    내려갈 수 있다 — 평가만 옛 정책을 쓰는 상태를 남기지 않는다.
+    """
+    router = _MetaRouter()                                   # 성별로 갈리고 장르는 전부 발라드
+    stated = _analysis("남자 아이돌 노래인데 비 오는 날 듣기 좋았어")
+    results, picked = _run_with_slot(router, stated, _song(gender="여성"))
+    assert picked is None, "성별은 말했고 장르는 가르지 못한다 — 물을 것이 없다"
+    for mode in ("oracle", "noisy", "skip"):
+        assert results[f"rule:{mode}"].rank == results["reject_only"].rank
+    # 서비스 2턴 흐름(flow:*)이 쓰는 next_question도 같다
+    assert next_question(stated, results["reject_only"], 1, [], [], 10) is None
+    assert next_question(_analysis(), results["reject_only"], 1, [], [], 10).slot == "vocal_gender"
 
 
 def test_rule_skip_matches_plain_skip() -> None:

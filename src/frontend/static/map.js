@@ -726,8 +726,9 @@ function searchFailureText(err) {
 
 /* ---------- 재질문 (2턴) ----------
  *
- * 서버는 상태를 저장하지 않는다. 응답의 analysis·asked_slots·rejected_ids·turn을
- * 여기 보관했다가 다음 요청에 그대로 되돌려준다.
+ * 서버는 상태를 저장하지 않는다. 응답의 analysis·asked_slots·known_slots·rejected_ids·turn을
+ * 여기 보관했다가 다음 요청에 그대로 되돌려준다. known_slots(최초 질의에서 이미 말한 성별·장르)는 질문 조회에만 실린다 —
+ * 서버가 그 슬롯을 묻지 않는다. 둘 다 말했으면 서버가 clarify_deferred를 거짓으로 내려 조회 없이 거절만 한다.
  *
  * 흐름:
  *   검색 → Top-15 (출생 연도 질문만 즉시 표시)
@@ -781,6 +782,9 @@ function startConvo(query, data) {
 function applyResponse(data) {
   convo.analysis = data.analysis || null;
   convo.askedSlots = data.asked_slots || [];
+  // 최초 질의에서 이미 말한 성별·장르 — 질문 조회가 다시 묻지 않게 그대로 보낸다. 응답 값으로 **교체**한다(이전 검색 값과
+  // 합치지 않는다). 서버가 원문에서 계산하므로 연도 재검색·거절 검색 응답에도 같은 값이 실려 온다
+  convo.knownSlots = data.known_slots || [];
   convo.rejectedIds = data.rejected_ids || [];
   convo.candidateIds = data.candidate_ids || [];
   convo.turn = data.turn || 1;
@@ -1477,6 +1481,7 @@ async function requestClarification() {
   try {
     const data = await requestSearch({
       asked_slots: current.askedSlots,
+      known_slots: current.knownSlots,
       previous_candidate_ids: current.candidateIds.slice(0, MAX_PREVIOUS_CANDIDATES),
       shown_ids: shownIds(),
       rejected_ids: current.rejectedIds,
