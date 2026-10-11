@@ -288,6 +288,21 @@ def test_property_lead_in_negations_do_not_change_the_verdict():
         assert not flipped, flipped[:5]
 
 
+@pytest.mark.parametrize("query", [
+    "뮤비에 트램펄린이 나와",                                  # 명사 목록 밖 + 구조어
+    "교복 입고 춤추는 뮤비",                                    # 표지 앞 관형절이 마지막 절 경계 뒤부터
+    "뮤비는 기억이 잘 안 나지만 의자가 떠 있었던 건 확실해",   # 뮤비 부정 뒤의 확신
+    "뮤비 나왔을 때 봤는데 의자가 하늘에 떠 있었어",            # 공개 시점 부사구 뒤의 장면(PR #44 참고)
+])
+def test_known_limitations_are_missed_on_purpose(query):
+    """알려진 한계 — 장면이지만 비대상으로 남긴 문형. 놓치면 현행 동작(리랭킹)이라 안전한 쪽의 오류다.
+
+    이 시험이 깨지면 규칙이 넓어진 것이다. 그때는 docstring의 '한계'와 이 목록을 함께 고치고,
+    위 오탐 성질 시험(dev × 장면 없는 뮤비 언급)이 여전히 0건인지 확인한다.
+    """
+    assert not is_specific_mv_scene_query(query), query
+
+
 def test_property_trailing_uncertainty_about_other_things_keeps_targets():
     """누락 성질: 뒤에 붙은 다른 대상의 불확실(누가·언제·가수)은 앞 절의 장면을 지우지 않는다(3차 5)."""
     for make in TRAILING_UNCERTAINTIES:
