@@ -978,6 +978,9 @@ async def evaluate(args: argparse.Namespace) -> None:
         # 질문 선택 정책 표시 — v02~v09까지는 질의에 이미 있는 성별·장르도 다시 물었다(stated_reask). 이 값이 다른
         # 측정끼리는 rule:*·flow:* 숫자를 비교하지 않는다.
         "question_policy": "skip_known_slots_2026-10-11",
+        # known_slots 판정 규칙은 v06·v09 dev 원문(과 v10 초안)으로 검토해 정했다. 이 측정의 dev 질의와 겹치므로
+        # rule:*·flow:* 수치는 그 질의에 맞춰진 값일 수 있다. 봉인 test(v09 38건)는 규칙 검토에 쓰지 않았다.
+        "known_slots_rules_reviewed_on": "eval_queries_v06+v09 dev 원문, queries_v10_draft (2026-10-11)",
     }
     (args.output_dir / "clarify_runinfo.json").write_text(
         json.dumps(run_info, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8"
