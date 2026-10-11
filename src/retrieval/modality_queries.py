@@ -171,13 +171,24 @@ _IMPLICIT_ARTWORK_EVIDENCE = {
 
 # "…한 이미지"로 끝나는 묘사 — '표지'라는 말 없이 그림 자체를 설명한 질의다
 # (results_v38 t086·t099: 이 꼴을 못 읽어 모델이 낸 표지 프롬프트를 지웠다).
-# '이미지'는 "청순한 이미지의 가수"처럼 **인상**도 뜻한다. 그래서 묘사가 '이미지'에서 끝날 때만
-# (절의 끝이거나 서술격으로 맺을 때) 받고, 뒤에 꾸밈받는 명사가 오는 꼴(이미지의·이미지였던 …)은 받지 않는다.
+# '이미지'는 "청순한 이미지의 가수"처럼 **인상**도 뜻한다. 규칙이 참인데 모델이 표지 프롬프트를
+# 내지 않으면 분석 전체가 폴백으로 떨어지므로, 애매하면 받지 않는다:
+# - 묘사가 '이미지'에서 **끝날 때만** 받는다(절의 끝이거나 서술격으로 맺을 때). 뒤에 꾸밈받는 명사가
+#   오는 꼴은 받지 않는다 — "이미지의 가수", "이미지였던 가수", "이미지가 있는 가수".
+# - 같은 절에서 '이미지' 앞에 노래·듣기 낱말이 오면 노래가 주는 심상이다 — "노래가 … 같은 이미지야".
+# - 시각 축은 그 절의 '이미지' **앞**에서만 센다(`_has_implicit_artwork_description`).
 # 절 단위로 본다 — `_CLAUSE_BREAK_RE`가 "이미지인데/이미지였고"를 이미 끊어 준다.
 _IMAGE_HEAD_NOUN_RE = re.compile(
     r"이미지\s*(?:$|(?:였|이었)(?:어|다|지|음|는데|던\s*(?:거|것|걸|듯))|"
     r"(?:이)?야(?:\s|$)|임(?:\s|$)|입니다|이에요|예요|"
-    r"같(?:아|은데|았)|가\s*(?:있|그려|찍혀|나와|보였|보이|들어가))"
+    r"같(?:아|은데|았)|"
+    r"가\s*(?:있(?:었(?:어|다|지|음|는데)|어(?:\s|$)|다(?:\s|$)|음(?:\s|$))|"
+    r"그려져\s*있(?:었|어|다|음)|찍혀\s*있(?:었|어|다|음)))"
+)
+
+_LISTENING_BEFORE_IMAGE_RE = re.compile(
+    r"(?:노래|음악|멜로디|사운드|(?<![가-힣])곡(?:이|은|는|을|도)?(?=\s)|"
+    r"들으면|들을\s*때|듣다\s*보면|듣고\s*있으면|들었을\s*때)"
 )
 
 _STATIC_VISUAL_PREDICATE_RE = re.compile(
@@ -502,14 +513,26 @@ def _has_implicit_artwork_description(text: str) -> bool:
     hand-drawn flowers, rough paper texture, and handwritten titles.
     """
     evidence_text_parts: list[str] = []
-    image_head_noun = False
+    image_head_axes = 0
     for raw_part in _CLAUSE_BREAK_RE.split(text):
         part = raw_part.strip()
         if not part or _NON_COVER_VISUAL_CONTEXT_RE.search(part):
             continue
         evidence_text_parts.append(part)
-        if _IMAGE_HEAD_NOUN_RE.search(part):
-            image_head_noun = True
+        head = _IMAGE_HEAD_NOUN_RE.search(part)
+        if head is None:
+            continue
+        # 묘사는 '이미지' 앞에 온다. 다른 절의 가수 설명("…이미지였어, 노란 옷 입은 여자 가수")이
+        # 축을 채우지 않도록 그 절의 앞부분만 본다.
+        described = part[: head.start()]
+        if _LISTENING_BEFORE_IMAGE_RE.search(described):
+            continue
+        axes = sum(
+            1
+            for pattern in _IMPLICIT_ARTWORK_EVIDENCE.values()
+            if pattern.search(described)
+        )
+        image_head_axes = max(image_head_axes, axes)
     evidence_text = " ".join(evidence_text_parts)
     if not evidence_text:
         return False
@@ -522,9 +545,8 @@ def _has_implicit_artwork_description(text: str) -> bool:
     form_anchor = bool(matched & {"medium", "surface", "typography"})
     if form_anchor and len(matched) >= 2:
         return True
-    # '이미지'로 맺은 묘사는 그 자체가 형태 근거다. 다른 축이 둘 있어야 한다 —
-    # 하나면 "청순한 이미지였어, 여자 가수"처럼 인상만 말한 문장이 걸린다.
-    if image_head_noun and len(matched) >= 2:
+    # '이미지'로 맺은 묘사는 그 자체가 형태 근거다. 그 묘사 안에 다른 축이 둘 있어야 한다.
+    if image_head_axes >= 2:
         return True
     return bool(
         len(matched) >= 3

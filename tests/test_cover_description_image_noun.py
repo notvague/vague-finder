@@ -22,6 +22,10 @@ from src.retrieval.modality_queries import (
     "검은 배경에 노란 꽃 한 송이가 있는 이미지인데 노래는 잔잔해",
     "분홍 구름 사이로 여자가 누워 있는 이미지야",
     "노란 우산 쓴 남자가 서 있는 이미지 같아",
+    "빨간 드레스 입은 여자 이미지가 있었는데 노래는 잔잔했어",
+    "검은 바탕에 하얀 고양이 이미지가 그려져 있었어",
+    # "작곡가"의 '곡'은 듣기 낱말이 아니다.
+    "작곡가 얼굴 대신 파란 하늘에 노란 풍선이 떠 있는 이미지였어",
 ])
 def test_description_ending_on_image_noun_is_a_cover_clue(query: str) -> None:
     assert has_explicit_visual_clue(query)
@@ -42,6 +46,17 @@ def test_description_ending_on_image_noun_is_a_cover_clue(query: str) -> None:
     "이 노래 들으면 생각나는 이미지가 검은색?",
     # 재료 낱말이 비유로 쓰인 경우.
     "물감처럼 번지는 멜로디의 노래",
+    # 리뷰 반영 ① "이미지가 있는/있던 + 명사" — 관형형은 뒤 명사를 꾸민다.
+    "청순한 이미지가 있는 빨간 머리 여자 가수",
+    "청순한 이미지가 있던 빨간 머리 여자 가수",
+    # 리뷰 반영 ② 시각 축은 '이미지' 절 안에서만 센다 — 다른 절의 가수 설명이 채우지 않는다.
+    "청순한 이미지였어, 노란 옷 입은 여자 가수",
+    # 리뷰 반영 ③ 노래가 주는 심상을 '이미지'로 맺은 문장.
+    "노래가 파란 바다에 떠 있는 하얀 배 같은 이미지야",
+    "노래 들으면 파란 바다에 하얀 배 이미지 같아",
+    "이 곡은 파란 바다에 하얀 배가 떠 있는 이미지야",
+    "음악이 노란 꽃밭에 여자가 서 있는 이미지 같아",
+    "들을 때 빨간 노을에 남자가 걷는 이미지였어",
 ])
 def test_image_as_impression_is_not_a_cover_clue(query: str) -> None:
     assert not has_explicit_visual_clue(query)
