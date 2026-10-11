@@ -34,7 +34,8 @@ from src.backend.schemas.search import MAX_PREVIOUS_CANDIDATES
 DEFAULT_URL = "http://127.0.0.1:8000"
 SEARCH_PATH = "/api/v1/search"
 CLARIFY_PATH = "/api/v1/search/clarify"
-TOP_K = 10
+TOP_K = 15
+CANDIDATE_K = 30   # 화면(map.js)과 같은 값 — 후보 수를 측정 구성에 고정한다
 
 # 발표에서 누를 순서. 경로가 겹치지 않게 한 단계에 하나씩 맡긴다.
 SEQUENCE: List[Dict[str, str]] = [
@@ -141,7 +142,8 @@ def rehearse(url: str, timeout: float) -> List[Step]:
     for spec in SEQUENCE:
         seconds, status, payload = _post(
             url,
-            {"query": spec["query"], "top_k": TOP_K, "explain": True, "defer_clarify": True},
+            {"query": spec["query"], "top_k": TOP_K, "candidate_k": CANDIDATE_K,
+             "explain": True, "defer_clarify": True},
             timeout,
         )
         note, problems = _read_run(payload)
@@ -194,6 +196,7 @@ def rehearse(url: str, timeout: float) -> List[Step]:
         body = {
             "query": convo["analysis"]["original_query"],
             "top_k": TOP_K,
+            "candidate_k": CANDIDATE_K,
             "explain": True,
             "defer_clarify": True,
             "prior_analysis": convo["analysis"],

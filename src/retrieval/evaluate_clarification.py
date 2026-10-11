@@ -106,6 +106,7 @@ from src.retrieval.clarify import (
 )
 from src.backend.schemas.query import QueryAnalysis
 from src.backend.schemas.search import (
+    MAX_REJECT_ROUNDS,
     MAX_REJECTED_IDS,
     ClarifyAnswer,
     ClarifyQuestion,
@@ -519,6 +520,15 @@ def next_question(
     return pick_question(analysis, result.remaining, list(asked))
 
 
+def flow_reject_limit(top_k: int) -> int:
+    """거절 목록 한도 — 한 번에 보여 주는 곡 수 × 거절 횟수, 서비스 상한 안에서.
+
+    서비스는 15곡씩 두 번(30)이고 기준선(재질문 v09 등)은 10곡씩 두 번(20)으로 쟀다. 서비스 상한을 그대로
+    쓰면 `--top-k 10` 측정에서 거절이 세 번 돌아 기준선과 다른 흐름이 된다.
+    """
+    return min(MAX_REJECTED_IDS, MAX_REJECT_ROUNDS * top_k)
+
+
 async def run_flow(
     router,
     reranker,
@@ -536,9 +546,10 @@ async def run_flow(
     """서비스의 재질문 대화를 한 번 밟는다. 정답이 보이면 사용자는 멈춘다.
 
     매 턴 화면이 보내는 것 — 이전 분석(다시 분석하지 않는다), 지금까지의 답변 전부,
-    지금까지 보여 준 곡 전부(거절 목록), 물은 슬롯. 거절 목록이 한도(20)를 넘으면
+    지금까지 보여 준 곡 전부(거절 목록), 물은 슬롯. 거절 목록이 한도(`flow_reject_limit`)를 넘으면
     더 거절할 수 없다(`map.js`의 canRejectMore).
     """
+    reject_limit = flow_reject_limit(top_k)
     steps = [FlowStep(turn=1, result=initial)]
     current, turn = initial, 1
     rejected: List[str] = []
@@ -549,7 +560,7 @@ async def run_flow(
     )
     while not current.found:
         nxt = list(dict.fromkeys([*rejected, *current.shown_ids]))
-        if not current.shown_ids or len(nxt) > MAX_REJECTED_IDS:
+        if not current.shown_ids or len(nxt) > reject_limit:
             break
         step = FlowStep(turn=turn + 1, result=current, answer_kind="none")
         if question is not None:
@@ -957,7 +968,7 @@ async def evaluate(args: argparse.Namespace) -> None:
     run_info["clarify"] = {
         "flow_modes": list(FLOW_MODES),
         "flow_target": "정답마다 따로 대화한다 — 답변·종료·성공 판정이 같은 목표 곡",
-        "max_rejected_ids": MAX_REJECTED_IDS,
+        "max_rejected_ids": flow_reject_limit(args.top_k),
         "targets_from_vector_db": len(targets),
     }
     (args.output_dir / "clarify_runinfo.json").write_text(

@@ -45,7 +45,8 @@ def server(monkeypatch):
 
 def search(client: TestClient, **body: Any) -> Dict[str, Any]:
     response = client.post("/api/v1/search", json={
-        "query": QUERY, "top_k": 10, "explain": True, "defer_clarify": True, **body})
+        "query": QUERY, "top_k": demo_rehearsal.TOP_K, "candidate_k": demo_rehearsal.CANDIDATE_K,
+        "explain": True, "defer_clarify": True, **body})
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -72,7 +73,7 @@ def test_every_real_backend_the_routes_depend_on_is_replaced(server):
                     asked_slots=first["asked_slots"], answers=[{"slot": slot, "value": "", "skipped": True}],
                     previous_candidate_ids=first["candidate_ids"][:30],
                     rejected_ids=[r["id"] for r in first["results"]])
-    assert second["turn"] == 2 and len(second["results"]) == 10
+    assert second["turn"] == 2 and len(second["results"]) == demo_rehearsal.TOP_K
     assert lookup(client, second).status_code == 200
     assert client.get("/health").status_code == 200
     assert opened == []
@@ -86,7 +87,7 @@ def test_question_matches_the_candidates_the_mock_search_returned(server):
     shown = {r["id"] for r in reply["results"]}
     by_id = {str(song["id"]): song for song in demo_faults._songs()}
     remaining = [demo_faults._track(by_id[i], 0.0) for i in reply["candidate_ids"] if i not in shown]
-    assert len(remaining) == 20
+    assert len(remaining) == demo_rehearsal.CANDIDATE_K - demo_rehearsal.TOP_K
 
     question = lookup(client, reply).json()["clarify"]
     assert question["slot"] == "vocal_gender"
@@ -150,6 +151,9 @@ def test_rehearsal_walks_the_same_round_trip_as_the_screen(server, monkeypatch):
     assert answer["prior_analysis"] == first["analysis"]
 
     last = steps[-1]
-    assert last.name.startswith("4.") and last.status == 200 and last.results == 10
+    assert last.name.startswith("4.") and last.status == 200 and last.results == demo_rehearsal.TOP_K
+    # 화면과 같은 후보 수를 보낸다 — 빠지면 서버가 top_k*3으로 넓혀 측정 구성과 달라진다
+    assert all(body["candidate_k"] == demo_rehearsal.CANDIDATE_K
+               for path, body in sent if path == demo_rehearsal.SEARCH_PATH)
     assert last.problems == [], last.problems
     assert opened == []
