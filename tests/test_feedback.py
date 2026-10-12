@@ -157,12 +157,30 @@ def test_concurrent_submissions_never_overwrite_each_other(setup, revision):
     assert len(db["search_feedback"].documents[receipt.search_id]["history"]) == revision + 1
 
 
-def test_last_revision_can_always_be_withdrawn(setup):
+def test_last_revision_can_always_be_withdrawn(setup, monkeypatch):
     store, receipt, _ = setup
     for index in range(MAX_REVISIONS):
         store.submit(submission(receipt, submission_id=f"submission_{index:08d}", expected_revision=index))
-    with pytest.raises(FeedbackError):
+    with pytest.raises(FeedbackError) as error:
         store.submit(submission(receipt, submission_id="submission_over_limit", expected_revision=MAX_REVISIONS))
+    assert error.value.code == "revision_limit"
+    route = import_module("src.backend.api.routes.feedback")
+    monkeypatch.setattr(route, "get_feedback_store", lambda: store)
+    app = FastAPI()
+    app.include_router(route.router)
+    with TestClient(app) as client:
+        response = client.post("/feedback", json=submission(
+            receipt, submission_id="submission_over_limit", expected_revision=MAX_REVISIONS,
+        ).model_dump())
+    assert response.status_code == 409
+    assert response.json()["detail"] == {
+        "code": "revision_limit", "message": "이 검색의 수정 횟수를 모두 사용했습니다.",
+        "current": error.value.current.model_dump(),
+    }
+    # 한도에 도달한 마지막 제출도 응답 유실 시 같은 키로 재시도할 수 있다.
+    replay = store.submit(submission(receipt, submission_id=f"submission_{MAX_REVISIONS - 1:08d}",
+                                    expected_revision=MAX_REVISIONS - 1))
+    assert replay.revision == MAX_REVISIONS
     result = store.submit(submission(receipt, submission_id="submission_withdraw", expected_revision=MAX_REVISIONS,
                                     action="withdraw", selected_song_id=None, reason=""))
     assert result.status == "withdrawn"
@@ -228,6 +246,43 @@ def test_capture_keeps_effective_era_but_not_birth_year_answer(setup, monkeypatc
     stored = db["search_runs"].documents[receipt.search_id]
     assert stored["answers"] == [] and "birth_year" not in stored
     assert stored["analysis"]["release_era"] is not None
+
+
+def test_capture_file_reads_and_storage_run_outside_event_loop(setup, monkeypatch):
+    store, _, db = setup
+    from src.retrieval import analysis_cache
+    loop_thread = threading.get_ident()
+    observed = []
+
+    def fingerprint(name, result):
+        observed.append((name, threading.get_ident()))
+        return result
+
+    original_record = store.record_search
+    def record(*args):
+        observed.append(("store", threading.get_ident()))
+        return original_record(*args)
+
+    monkeypatch.setattr(capture, "source_version", lambda: fingerprint("source", "source-version"))
+    monkeypatch.setattr(analysis_cache, "analyzer_fingerprint", lambda: fingerprint("analyzer", {"version": "test"}))
+    monkeypatch.setattr(capture, "get_feedback_store", lambda: store)
+    monkeypatch.setattr(store, "record_search", record)
+    request = SearchRequest(query="휘파람")
+    analysis = rule_fallback(request.query)
+    tracks = [MatchingTrack(id="a", title="A", score=1)]
+
+    receipt = asyncio.run(capture.capture_search(request, analysis, tracks, ["a"], 1, None))
+    assert receipt is not None
+    assert [name for name, _ in observed] == ["source", "analyzer", "store"]
+    assert all(thread_id != loop_thread for _, thread_id in observed)
+    versions = db["search_runs"].documents[receipt.search_id]["versions"]
+    assert versions["source_sha"] == "source-version" and versions["analyzer"] == {"version": "test"}
+
+    observed.clear()
+    assert asyncio.run(capture.capture_search(request, analysis, [], [], 1, None)) is None
+    monkeypatch.setenv("FEEDBACK_COLLECTION_ENABLED", "0")
+    assert asyncio.run(capture.capture_search(request, analysis, tracks, ["a"], 1, None)) is None
+    assert observed == []
 
 
 def test_real_search_route_receipt_submission_and_storage_failure(setup, monkeypatch):

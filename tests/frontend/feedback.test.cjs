@@ -150,3 +150,55 @@ test('사유 없이 제출 가능, 너무 긴 사유는 요청하지 않는다',
   ui.draft.reason = ''; await ui.submit();
   assert.equal(calls[0].reason, '');
 });
+
+test('수정 한도는 초안을 닫고 새 선택을 막지만 철회·새 검색은 가능하다', async () => {
+  const message = '이 검색의 수정 횟수를 모두 사용했습니다.';
+  const { ui, root, calls, doc } = screen(body => {
+    if (body.search_id === 'first' && body.action === 'select') {
+      throw Object.assign(new Error(message), {
+        status: 409, code: 'revision_limit',
+        current: { search_id: 'first', revision: 20, status: 'pending', selected_song_id: 'a', reason: '' },
+      });
+    }
+    return saved(body, body.expected_revision + 1);
+  });
+  const row = element('span', doc);
+  ui.attach(row, reply().results[1]);
+  ui.choose('b'); await ui.submit();
+  assert.equal(ui.draft, null);
+  assert.equal(ui.pending, null);
+  assert.equal(root.querySelector('textarea'), null);
+  assert.match(text(root), /이 검색의 수정 횟수를 모두 사용했습니다\./);
+  assert.doesNotMatch(text(root), /다시 제출/);
+  assert.equal(row.children[0].disabled, true);
+  ui.choose('b'); await ui.submit();
+  assert.equal(calls.length, 1, '제출을 반복해도 같은 409를 계속 요청하지 않는다');
+
+  ui.setBusy(false); // 결과 목록을 다시 그려도 선택 버튼은 계속 비활성이다.
+  const redrawn = element('span', doc);
+  ui.attach(redrawn, reply().results[1]);
+  assert.equal(redrawn.children[0].disabled, true);
+  await ui.submit('withdraw');
+  assert.equal(calls[1].expected_revision, 20);
+  assert.equal(ui.saved.status, 'withdrawn');
+  assert.match(text(root), /철회했어요/);
+
+  ui.reset(reply('second'));
+  ui.choose('b'); await ui.submit();
+  assert.equal(calls[2].search_id, 'second');
+  assert.equal(ui.saved.selected_song_id, 'b');
+});
+
+test('HTTP 오류의 revision_limit 코드와 서버 문구를 보존한다', async (t) => {
+  const message = '이 검색의 수정 횟수를 모두 사용했습니다.';
+  t.mock.method(globalThis, 'fetch', async () => ({
+    ok: false, status: 409,
+    json: async () => ({ detail: { code: 'revision_limit', message, current: { revision: 20 } } }),
+  }));
+  await assert.rejects(FeedbackController.send({}), err => {
+    assert.equal(err.code, 'revision_limit');
+    assert.equal(err.message, message);
+    assert.equal(err.current.revision, 20);
+    return true;
+  });
+});

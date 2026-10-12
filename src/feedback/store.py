@@ -24,8 +24,9 @@ DB_BUDGET_SECONDS = 0.75
 
 
 class FeedbackError(Exception):
-    def __init__(self, status: int, message: str, current=None):
+    def __init__(self, status: int, message: str, current=None, *, code=None):
         self.status, self.message, self.current = status, message, current
+        self.code = code
         super().__init__(message)
 
 
@@ -109,7 +110,8 @@ class FeedbackStore:
             revision = request.expected_revision + 1
             # 수정 한도를 다 써도 마지막 철회 한 번은 허용한다.
             if revision > MAX_REVISIONS and request.action != "withdraw":
-                raise FeedbackError(409, "이 검색의 수정 횟수를 모두 사용했습니다.", _response(current))
+                raise FeedbackError(409, "이 검색의 수정 횟수를 모두 사용했습니다.", _response(current),
+                                    code="revision_limit")
             selection = {
                 "revision": revision, "status": "withdrawn" if request.action == "withdraw" else "pending",
                 "selected_song_id": request.selected_song_id, "reason": request.reason, "updated_at": now,

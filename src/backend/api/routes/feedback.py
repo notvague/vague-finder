@@ -19,6 +19,8 @@ async def submit_feedback(request: FeedbackRequest, response: Response):
         return await asyncio.to_thread(lambda: get_feedback_store().submit(request))
     except FeedbackError as exc:
         detail = {"message": exc.message}
+        if exc.code:
+            detail["code"] = exc.code
         if exc.current:
             detail["current"] = exc.current.model_dump()
         raise HTTPException(exc.status, detail=detail, headers={"Cache-Control": "no-store"}) from None

@@ -22,38 +22,44 @@ def source_version():
     return digest.hexdigest()[:16]
 
 
+def _capture_search(request, analysis, results, candidate_ids, turn, search_router):
+    # 파일 읽기·해시·직렬화부터 DB 기록까지 같은 작업 스레드에서 처리한다.
+    # 출생 연도 슬롯 원값 대신 실제 검색에서 사용하는 연도 창을 기록한다.
+    from src.retrieval.clarify import apply_birth_year_answers
+    from src.retrieval.analysis_cache import analyzer_fingerprint
+
+    effective = apply_birth_year_answers(analysis, request.answers)
+    reranker = getattr(search_router, "_reranker", None)
+    config = getattr(reranker, "config", None)
+    snapshot = {
+        "query": request.query, "analysis": effective.model_dump(mode="json"),
+        "answers": [a.model_dump(mode="json") for a in request.answers if a.slot != "birth_year"],
+        "asked_slots": request.asked_slots, "rejected_ids": request.rejected_ids,
+        "turn": turn, "shown_ids": [str(t.id) for t in results],
+        "shown": [{"id": str(t.id), "rank": rank, "title": t.title, "artist": t.artist}
+                  for rank, t in enumerate(results, 1)],
+        "candidate_ids": list(candidate_ids),
+        "versions": {
+            "source_sha": source_version(), "analyzer": analyzer_fingerprint(),
+            "corpus": os.getenv("FEEDBACK_CORPUS_VERSION", "unknown"),
+            "reranker": type(reranker).__name__ if reranker else None,
+            "reranker_model": getattr(config, "model_name", None),
+            "reranker_config": asdict(config) if is_dataclass(config) else None,
+            "retrieval_backend": os.getenv("GEMINI_RETRIEVAL_BACKEND", "auto"),
+            "feedback_index": None,
+        },
+        "options": {"top_k": request.top_k, "candidate_k": request.candidate_k,
+                    "use_rerank": request.use_rerank},
+    }
+    return get_feedback_store().record_search(snapshot, request.feedback_parent)
+
+
 async def capture_search(request, analysis, results, candidate_ids, turn, search_router):
     if not collection_enabled() or not results:
         return None
     try:
-        # 출생 연도 슬롯 원값 대신 실제 검색에서 사용하는 연도 창을 기록한다.
-        from src.retrieval.clarify import apply_birth_year_answers
-        from src.retrieval.analysis_cache import analyzer_fingerprint
-
-        effective = apply_birth_year_answers(analysis, request.answers)
-        reranker = getattr(search_router, "_reranker", None)
-        config = getattr(reranker, "config", None)
-        snapshot = {
-            "query": request.query, "analysis": effective.model_dump(mode="json"),
-            "answers": [a.model_dump(mode="json") for a in request.answers if a.slot != "birth_year"],
-            "asked_slots": request.asked_slots, "rejected_ids": request.rejected_ids,
-            "turn": turn, "shown_ids": [str(t.id) for t in results],
-            "shown": [{"id": str(t.id), "rank": rank, "title": t.title, "artist": t.artist}
-                      for rank, t in enumerate(results, 1)],
-            "candidate_ids": list(candidate_ids),
-            "versions": {
-                "source_sha": source_version(), "analyzer": analyzer_fingerprint(),
-                "corpus": os.getenv("FEEDBACK_CORPUS_VERSION", "unknown"),
-                "reranker": type(reranker).__name__ if reranker else None,
-                "reranker_model": getattr(config, "model_name", None),
-                "reranker_config": asdict(config) if is_dataclass(config) else None,
-                "retrieval_backend": os.getenv("GEMINI_RETRIEVAL_BACKEND", "auto"),
-                "feedback_index": None,
-            },
-            "options": {"top_k": request.top_k, "candidate_k": request.candidate_k,
-                        "use_rerank": request.use_rerank},
-        }
-        return await asyncio.to_thread(lambda: get_feedback_store().record_search(snapshot, request.feedback_parent))
+        # 기록이 저장돼야 제출 권한을 발급할 수 있으므로 완료를 기다린다.
+        return await asyncio.to_thread(_capture_search, request, analysis, results, candidate_ids, turn, search_router)
     except Exception as exc:
         # DB 예외에는 URI·명령 문서가 포함될 수 있어 예외 종류만 남긴다.
         logger.warning("feedback capture unavailable: %s", type(exc).__name__)

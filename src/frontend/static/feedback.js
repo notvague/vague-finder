@@ -27,6 +27,7 @@ class FeedbackController {
     if (!res.ok) {
       const err = new Error(typeof data.detail === "string" ? data.detail : data.detail?.message || "저장 여부를 확인하지 못했습니다.");
       err.status = res.status;
+      err.code = data.detail?.code;
       err.current = data.detail?.current;
       throw err;
     }
@@ -43,6 +44,7 @@ class FeedbackController {
     this.sending = false;
     this.busy = false;
     this.message = "";
+    this.selectionLimitMessage = "";
     this.buttons = [];
     this.render();
   }
@@ -59,7 +61,7 @@ class FeedbackController {
     const button = this.element("button", "feedbackpick", "찾던 곡이에요");
     button.type = "button";
     button.setAttribute("aria-label", `${track.title} — 찾던 곡이에요`);
-    button.disabled = this.busy || this.sending;
+    button.disabled = this.busy || this.sending || Boolean(this.selectionLimitMessage);
     button.addEventListener("click", event => {
       event.stopPropagation();
       this.choose(String(track.id));
@@ -69,7 +71,7 @@ class FeedbackController {
   }
 
   choose(id) {
-    if (!this.receipt || this.busy || this.sending || !this.tracks.some(t => String(t.id) === id)) return;
+    if (!this.receipt || this.busy || this.sending || this.selectionLimitMessage || !this.tracks.some(t => String(t.id) === id)) return;
     this.draft = { id, reason: this.saved?.selected_song_id === id ? this.saved.reason : "" };
     this.pending = null;
     this.message = "";
@@ -93,7 +95,7 @@ class FeedbackController {
   }
 
   async submit(action = "select") {
-    if (!this.receipt || this.busy || this.sending || (action === "select" && !this.draft)) return;
+    if (!this.receipt || this.busy || this.sending || (action === "select" && (!this.draft || this.selectionLimitMessage))) return;
     const payload = {
       search_id: this.receipt.search_id, token: this.receipt.token,
       expected_revision: this.saved?.revision || 0, action,
@@ -117,9 +119,15 @@ class FeedbackController {
     } catch (err) {
       if (epoch !== this.epoch) return;
       if (err.current) { this.saved = err.current; this.pending = null; }
-      this.message = err.status === 409 ? "저장된 선택을 확인해 주세요. 지금 입력한 내용으로 바꾸려면 다시 제출해 주세요."
-        : err.status === 404 ? "이 검색에는 더 이상 제출할 수 없습니다. 다시 검색해 주세요."
-        : "저장 여부를 확인하지 못했습니다. 입력은 남아 있어요. 다시 제출해 주세요.";
+      if (err.code === "revision_limit") {
+        this.selectionLimitMessage = err.message;
+        this.draft = null;
+        this.pending = null;
+      } else {
+        this.message = err.status === 409 ? "저장된 선택을 확인해 주세요. 지금 입력한 내용으로 바꾸려면 다시 제출해 주세요."
+          : err.status === 404 ? "이 검색에는 더 이상 제출할 수 없습니다. 다시 검색해 주세요."
+          : "저장 여부를 확인하지 못했습니다. 입력은 남아 있어요. 다시 제출해 주세요.";
+      }
     } finally {
       if (epoch === this.epoch) { this.sending = false; this.render(); }
     }
@@ -127,8 +135,8 @@ class FeedbackController {
 
   render() {
     this.root.replaceChildren();
-    this.root.hidden = !this.receipt || (!this.draft && !this.saved && !this.message);
-    for (const button of this.buttons) button.disabled = this.busy || this.sending;
+    this.root.hidden = !this.receipt || (!this.draft && !this.saved && !this.message && !this.selectionLimitMessage);
+    for (const button of this.buttons) button.disabled = this.busy || this.sending || Boolean(this.selectionLimitMessage);
     if (this.root.hidden) { this.onChange(); return; }
     if (this.saved) {
       const track = this.tracks.find(t => String(t.id) === this.saved.selected_song_id);
@@ -162,8 +170,8 @@ class FeedbackController {
         this.action("닫기", () => { this.draft = null; this.render(); }));
       this.root.append(actions);
     }
-    if (this.message) {
-      const note = this.element("p", "feedbackerror", this.message);
+    if (this.message || this.selectionLimitMessage) {
+      const note = this.element("p", "feedbackerror", this.message || this.selectionLimitMessage);
       note.setAttribute("role", "alert");
       this.root.append(note);
     }
