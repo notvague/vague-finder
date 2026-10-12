@@ -52,6 +52,7 @@ from src.retrieval.lyrics_exact_search import (
 from src.retrieval.query_analyzer import QueryAnalyzer, rule_fallback
 from src.retrieval.search_router import SearchRouter
 from src.retrieval.search_service import SearchService
+from src.feedback.capture import capture_search
 from src.vector_db.settings import TEXT_HYBRID_INDEX_NAME
 
 logger = logging.getLogger(__name__)
@@ -425,6 +426,9 @@ async def search(
                 clarify = pick_question(analysis_for_search, remaining, asked_slots)
 
         return SearchResponse(
+            feedback=await capture_search(
+                request, analysis_for_search, results, candidate_ids, turn, search_router,
+            ),
             results=results,
             notice=notice,
             total_found=len(results),

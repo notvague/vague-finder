@@ -42,7 +42,7 @@ soundfile>=0.12.0           # 오디오 파일 읽기/쓰기
 python-dotenv==1.2.3        # .env 파일 로드
 requests==2.34.2            # HTTP 요청 라이브러리
 tqdm>=4.66.0                # 진행률 바 표시
-pymongo>=4.0.0              # MongoDB Atlas 연결
+pymongo>=4.2.0              # MongoDB Atlas 연결 · 피드백 작업의 전체 시간 예산(pymongo.timeout)
 huggingface-hub>=0.26.0,<1.0  # HuggingFace 모델 허브 (transformers 4.47.x 요구사항)
 umap-learn>=0.5.12          # 노래 맵 2D 투영 (src/pipelines/build_map.py)
 Protego==0.6.2              # 나무위키 크롤링

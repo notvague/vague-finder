@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_vali
 
 from src.backend.schemas.explain import SearchExplainOut, TrackExplain
 from src.backend.schemas.query import QueryAnalysis
+from src.backend.schemas.feedback import FeedbackReceipt
 
 
 # 거절·질문 한도. 라우트가 종료 판정에 같은 값을 써야 해서 상수로 노출한다.
@@ -74,6 +75,9 @@ class ClarifyQuestion(BaseModel):
 
 
 class SearchRequest(BaseModel):
+    feedback_parent: Optional[FeedbackReceipt] = Field(
+        default=None, description="재검색 전 실행의 피드백 권한. 대화 기록 연결용이며 검색에는 사용하지 않는다",
+    )
     query: str = Field(..., min_length=1, description="자연어 텍스트 형태의 검색 질의어")
     top_k: int = Field(default=10, ge=1, le=50, description="반환할 검색 결과의 개수")
     use_rerank: bool = Field(default=True, description="Cross-Encoder 리랭킹 사용 여부")
@@ -365,6 +369,10 @@ class SearchNotice(BaseModel):
 
 
 class SearchResponse(BaseModel):
+    feedback: Optional[FeedbackReceipt] = Field(
+        default=None,
+        description="이 실행의 표시 결과를 저장했을 때만 발급하는 피드백 제출 권한. 없으면 제출 불가",
+    )
     results: List[MatchingTrack] = Field(
         default_factory=list,
         description="검색된 상위 K개의 음악 리스트",

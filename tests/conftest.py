@@ -11,3 +11,4 @@ Qdrant 저장 폴더까지 연다. 개발 서버가 떠 있는 채로 테스트�
 import os
 
 os.environ.setdefault("SEARCH_WARMUP", "0")
+os.environ.setdefault("FEEDBACK_COLLECTION_ENABLED", "0")
