@@ -106,6 +106,8 @@ experiments/reranking/results_*/*/*_explain.jsonl
 !experiments/reranking/results_*/*/search_eval_*_summary.csv
 !experiments/reranking/results_*/ce_batch_*_summary.csv
 !experiments/reranking/results_*/*/latency_summary.csv
+# Context evaluation labels are shared privately.
+/experiments/namuwiki/queries_context_v01.json
 
 # 모달리티 규칙 토큰 경계 수정(results_v40) — 규칙 판정 전후표·가정 실험 입력·두 단계 아래 요약
 !experiments/reranking/results_v40_modality_token_fix/*.csv

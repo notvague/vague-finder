@@ -173,6 +173,8 @@ _COMMENT_DERIVED_PATHS = (
 
 # 일반적인 빈값 검사 대신 전용 결합 규칙으로 검사할 필드
 _ALLOW_EMPTY_SEQUENCE_PATHS = {
+    # Playlist mentions are optional; their absence does not invalidate the song.
+    "semantic_analysis.melon_playlist_tags",
     "crawl_status.warnings",
     *COMMENT_PATHS,
 }

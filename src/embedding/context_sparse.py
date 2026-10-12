@@ -555,6 +555,12 @@ def _validate_published(
     manifest = _read_manifest(root)
     if manifest.get("source_input_sha256") != inputs.source_input_sha256:
         raise ValueError("context artifacts changed after context BM25 fitting")
+    # Artifact-only runs may republish an otherwise identical context catalogue
+    # with a new generated_at. Its searchable profiles are unchanged, but the
+    # final Qdrant loader requires both vector manifests to target these exact
+    # source-manifest bytes. Refit/re-publish rather than reusing a stale hash.
+    if manifest.get("source_manifest_sha256") != inputs.source_manifest_sha256:
+        raise ValueError("context sparse publication targets another context manifest")
     config = manifest["bm25"]
     if expected_config is not None and config.get("config_sha256") != expected_config.get(
         "config_sha256"

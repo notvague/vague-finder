@@ -1,0 +1,22 @@
+{
+  "schema": "context_review_cleanup_offline_checks_v1",
+  "status": "passed_selected_offline_tests",
+  "python": "3.12",
+  "pytest": "9.1.1",
+  "passed": 2668,
+  "skipped": 0,
+  "scope": [
+    "new review cleanup settings, factory AST, transactional installer and runner/export tests",
+    "existing QueryAnalyzer Context tests and six existing modality boundary test files",
+    "existing validated activation and HTTP contract tests with synthetic responses"
+  ],
+  "additional_isolated_lifecycle_checks": {
+    "passed": 2,
+    "uses_real_patched_factory_and_real_context_constructor": true,
+    "optional_ml_imports_isolated": true
+  },
+  "fresh_gemini_evaluation_run_here": false,
+  "user_merged_full_suite_run_here": false,
+  "real_qdrant_and_http_evaluation_run_here": false,
+  "note": "These are offline code checks, not retrieval accuracy metrics. Use the Windows runner for the current merged project and real corpus/API."
+}

@@ -272,6 +272,61 @@ class QdrantIndex:
             ]
         }
 
+    def fetch(
+        self,
+        ids: Sequence[str],
+        namespace: str = NAMESPACE,
+        fields: Optional[Sequence[str]] = None,
+    ) -> Dict[str, Any]:
+        """Look up song payloads by ID, without a similarity search.
+
+        The Context collection's title/artist are only profile hints. Search
+        results must use the canonical song metadata from the Text index.
+        Verify the payload ID too: a missing or mismatched point must not
+        produce an invented ``Unknown`` track in the candidate pool. Return
+        ``matches`` for deferred clarification; the Context catalogue adapter
+        in SearchService also accepts this shape. Only named fields are read
+        when a caller asks for a narrower payload.
+        """
+        wanted = list(dict.fromkeys(
+            song_id for item in ids if (song_id := str(item).strip())
+        ))
+        if not wanted:
+            return {"matches": []}
+        collection = collection_name(self._index_name, namespace)
+        payload_fields = list(dict.fromkeys(("song_id", *fields))) if fields is not None else True
+        try:
+            points = self._client.retrieve(
+                collection_name=collection,
+                ids=[point_id(song_id) for song_id in wanted],
+                with_payload=payload_fields,
+                with_vectors=False,
+            )
+        except Exception as exc:
+            logger.error("[Qdrant] %s metadata 조회 실패: %s", collection, exc)
+            raise
+
+        requested = set(wanted)
+        vectors: Dict[str, Dict[str, Any]] = {}
+        for point in points:
+            payload = dict(point.payload or {})
+            song_id = str(payload.pop("song_id", "")).strip()
+            if song_id not in requested or point.id != point_id(song_id):
+                logger.warning(
+                    "[Qdrant] %s의 곡 ID와 payload가 일치하지 않습니다: %s",
+                    collection, point.id,
+                )
+                continue
+            if fields is not None:
+                payload = {field: payload[field] for field in fields if field in payload}
+            vectors[song_id] = {"id": song_id, "metadata": payload}
+        return {
+            "matches": [
+                {"id": song_id, "score": 0.0, "metadata": vectors[song_id]["metadata"]}
+                for song_id in wanted if song_id in vectors
+            ],
+        }
+
     def _payloads(
         self,
         collection: str,
@@ -281,6 +336,7 @@ class QdrantIndex:
         """point id → 페이로드. 합산 뒤 남긴 곡만 읽는다. fields가 있으면 그 키만."""
         if not ids:
             return {}
+
         try:
             records = self._client.retrieve(
                 collection_name=collection,
@@ -289,9 +345,17 @@ class QdrantIndex:
                 with_vectors=False,
             )
         except Exception as exc:
-            logger.error("[Qdrant] %s 페이로드 조회 실패: %s", collection, exc)
+            logger.error(
+                "[Qdrant] %s 페이로드 조회 실패: %s",
+                collection,
+                exc,
+            )
             raise
-        return {record.id: record.payload or {} for record in records}
+
+        return {
+            record.id: record.payload or {}
+            for record in records
+        }
 
     def _search(
         self,

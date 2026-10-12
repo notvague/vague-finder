@@ -1,0 +1,58 @@
+{
+  "schema": "context_lyric_scope_local_checks_v1",
+  "status": "passed_local_code_checks",
+  "execution_environment": "Linux, Python 3.12; user Docker/Gemini/API re-evaluation remains required",
+  "pytest": {
+    "passed": 3883,
+    "subtests_passed": 32,
+    "warnings": 1,
+    "suite": [
+      "tests/context",
+      "tests/test_qdrant_backend.py",
+      "tests/test_clarify_state.py",
+      "tests/test_search_explain.py",
+      "tests/test_lyric_evidence.py"
+    ]
+  },
+  "saved_analysis_guard_audit": {
+    "policy": "saved-analysis guard replay; no new Gemini call or search metric",
+    "entries": 152,
+    "new_errors": [],
+    "changed": [],
+    "old_errors": [],
+    "fresh047_old_error": "explicit auditory clue requires audio_english_query",
+    "fresh047_simulated_response": {
+      "policy": "synthetic valid response, not an actual Gemini call",
+      "original_query_preserved": true,
+      "lyric_clues": 1,
+      "confidence": 0.8,
+      "audio_prompt_empty": true,
+      "image_prompt_empty": true
+    }
+  },
+  "installer": {
+    "status": "passed",
+    "installed_files": [
+      "src/retrieval/modality_queries.py"
+    ],
+    "backup_verified": true,
+    "reinstall_idempotent": true,
+    "unchanged_registered_retrieval_files": 7,
+    "env_modified": false
+  },
+  "synthetic_parser_boundary_cases": {
+    "passed": 7,
+    "gemini_calls": 0
+  },
+  "remaining_14_queries_guard_check": "fresh047-048: lyric only; fresh049-054: audio; fresh055-060: image. This is not a retrieval measurement.",
+  "fresh_user_environment_evaluation_performed_here": false,
+  "unchanged_sources": {
+    "src/retrieval/search_router.py": "71c3e1931578cc4af4bd8849cda488c5865f443a35b8615a172574b1467747e8",
+    "src/vector_db/qdrant_backend.py": "4384ddd916a9210b1a9ac8196c1f8d586690f79a6cf5475a619bb2709badc652",
+    "src/backend/api/dependencies.py": "16b9878de8b6f2e17b1c4dda4908448aa37e713149f328f894e81bcaea599b83",
+    "src/retrieval/query_analyzer.py": "4f166781c22450b0d851bb234f71033f2b8c11460ed43849c8eb2b759fb45586",
+    "src/retrieval/context_query.py": "033fa9d5ab272f5d834a1ccfb97e8906c68d1047b6b22fda2de4ac60ef3a7780",
+    "src/retrieval/context_evidence.py": "f1c0f46f39cf46fee12cedba11b9317b10c3ca70b909c1bd4f570bcf9bf59443",
+    "src/retrieval/context_qdrant_search.py": "aafdbe12e1fdcba88753fec8085c1920d5c79b1e6f14e765280da1ae5e04280c"
+  }
+}

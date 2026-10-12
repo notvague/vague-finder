@@ -1717,4 +1717,3 @@ def test_same_youtube_url_keeps_the_staged_folder(pipeline, monkeypatch) -> None
     assert crawler.process_song("가수", "밤편지", crawler.Registry(),
                                 song_id=str(state["melon"]["id"]), youtube_url=MANUAL_URL) == "done"
     assert (calls.melon, calls.youtube) == before
-

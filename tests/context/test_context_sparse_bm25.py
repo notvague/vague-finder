@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import math
 import zlib
 from pathlib import Path
@@ -163,6 +164,31 @@ def test_second_run_reuses_the_whole_valid_corpus(tmp_path: Path):
     assert result["action"] == "reuse"
     assert result["documents_to_fit"] == 0
     assert result["reused_corpus"] is True
+
+
+def test_same_profiles_republished_context_manifest_refreshes_sparse_publication(tmp_path: Path):
+    context = _publish(tmp_path / "context")
+    output = tmp_path / "sparse"
+    build_context_bm25(context_dir=context, output_dir=output, hash_fn=_hash)
+    first = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+
+    # A no-op artifact batch writes a fresh context manifest. The profile
+    # vocabulary and vectors have not changed, but Qdrant checks its file hash.
+    _publish(context)
+    current_hash = hashlib.sha256((context / "manifest.json").read_bytes()).hexdigest()
+    assert first["source_manifest_sha256"] != current_hash
+
+    dry = build_context_bm25(
+        context_dir=context, output_dir=output, dry_run=True, hash_fn=_hash,
+    )
+    assert dry["action"] == "build"
+    assert dry["documents_to_fit"] == len(SONGS)
+    assert "another context manifest" in dry["cache_rejection_reason"]
+
+    rebuilt = build_context_bm25(context_dir=context, output_dir=output, hash_fn=_hash)
+    assert rebuilt["reused_corpus"] is False
+    final = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    assert final["source_manifest_sha256"] == current_hash
 
 
 def test_any_corpus_change_refits_all_current_profiles(tmp_path: Path):
