@@ -233,7 +233,11 @@ def timed_app(tmp_path, monkeypatch):
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
-    from src.backend.api.dependencies import get_query_analyzer, get_search_router
+    from src.backend.api.dependencies import (
+        get_query_analyzer,
+        get_search_router,
+        get_vector_client,
+    )
     from src.backend.api.routes.search import router as search_route
     from src.backend.main import record_request_timing
 
@@ -246,6 +250,8 @@ def timed_app(tmp_path, monkeypatch):
     app.include_router(search_route, prefix="/api/v1")
     app.dependency_overrides[get_query_analyzer] = lambda: _FakeAnalyzer()
     app.dependency_overrides[get_search_router] = lambda: searcher
+    # 질문 조회 라우트의 의존성. 대체하지 않으면 실물이 로컬 Qdrant 폴더를 연다.
+    app.dependency_overrides[get_vector_client] = lambda: None
 
     with TestClient(app) as client:
         yield client, searcher, tmp_path / "timing.jsonl"
@@ -296,6 +302,33 @@ def test_untimed_paths_leave_no_record(timed_app):
     client, _, log = timed_app
     client.get("/api/v1/does-not-exist")
     assert not log.exists()
+
+
+def test_question_lookup_is_not_recorded_as_a_search(timed_app):
+    """질문 조회(/search/clarify)는 검색 경로 **아래에** 있지만 검색이 아니다.
+
+    접두사로 대상을 고르면 거절 클릭마다 질의도 구간도 없는 0초대 행이 검색 기록에 쌓여, 검색 시간
+    분포와 "route 구간이 있다"는 전제(`measure_search_latency`)를 함께 깬다. 경로가 정확히 검색일 때만 잰다.
+    """
+    client, _, log = timed_app
+    lookup = client.post("/api/v1/search/clarify", json={})
+    assert lookup.status_code == 200 and lookup.json() == {"clarify": None}
+    assert "X-Request-Id" not in lookup.headers
+    assert not log.exists(), "질문 조회만으로는 검색 시간 기록이 생기지 않는다"
+
+    searched = client.post("/api/v1/search", json={"query": "비 오는 날 발라드", "defer_clarify": True})
+    client.post("/api/v1/search/clarify", json={})
+    records = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
+    assert [r["request_id"] for r in records] == [searched.headers["X-Request-Id"]]
+    assert records[0]["query"] == "비 오는 날 발라드"
+    assert any(span["name"] == "route" for span in records[0]["spans"])
+
+
+def test_only_the_exact_search_path_is_timed():
+    from src.backend.main import TIMED_PATHS
+
+    assert "/api/v1/search" in TIMED_PATHS
+    assert "/api/v1/search/clarify" not in TIMED_PATHS
 
 
 def test_analysis_does_not_block_the_event_loop():

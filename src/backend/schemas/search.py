@@ -1,19 +1,48 @@
 from __future__ import annotations
 
-from typing import List, Literal, Optional
+from typing import Annotated, List, Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 from src.backend.schemas.explain import SearchExplainOut, TrackExplain
 from src.backend.schemas.query import QueryAnalysis
+from src.backend.schemas.feedback import FeedbackReceipt
 
 
 # 거절·질문 한도. 라우트가 종료 판정에 같은 값을 써야 해서 상수로 노출한다.
 # 숫자가 두 곳에 흩어지면 스키마는 거부하는데 라우트는 질문을 계속 내주는
 # 상태가 된다 — 실제로 그렇게 422가 났다.
-MAX_REJECTED_IDS = 20
-MAX_ASKED_SLOTS = 2
+# 거절 한도는 화면이 한 번에 보여 주는 곡 수(map.js TOP_K=15) × 거절 두 번이다.
+# 화면의 MAX_REJECTED와 같아야 한다.
+MAX_REJECT_ROUNDS = 2
+MAX_REJECTED_IDS = 30
+MAX_ASKED_SLOTS = 3  # 생애 단계 질의는 출생 연도(birth_year) 하나가 데이터 슬롯 앞에 더 붙는다
 MAX_TURNS = 2
+# 화면이 되돌려주는 후보 수. /search가 "질문을 조회할 후보가 남았는가"를 같은 범위로 판단한다.
+MAX_PREVIOUS_CANDIDATES = 30
+
+# 질문 조회가 받는 곡 id. 빈 문자열과 지나치게 긴 값만 거른다 — 숫자가 아닌 id도 정상 id다
+# (`qdrant_backend.point_id`가 UUID로 접는다). 코퍼스에 없는 id는 조회에서 조용히 빠진다.
+SongId = Annotated[str, StringConstraints(min_length=1, max_length=64)]
+
+# 최초 질의에서 이미 말한 데이터 슬롯. 재질문이 다시 묻지 않을 것들이며, 묻는 슬롯(clarify.ALLOWED_SLOTS)과 같다.
+# 질문 선택용 상태일 뿐이다 — 검색 필터·답변(answers)·물은 이력(asked_slots)으로 확장하지 않는다.
+KnownSlot = Literal["vocal_gender", "genre"]
+KNOWN_SLOT_ORDER: tuple = ("vocal_gender", "genre")
+
+
+def _normalize_known_slots(values: List[str]) -> List[str]:
+    """중복은 거부하지 않고 접는다(순서 고정). 화면이 같은 응답을 두 번 합쳐 보내도 422가 아니다."""
+    present = set(values)
+    return [slot for slot in KNOWN_SLOT_ORDER if slot in present]
 
 
 class ClarifyAnswer(BaseModel):
@@ -54,9 +83,32 @@ class ClarifyQuestion(BaseModel):
 
 
 class SearchRequest(BaseModel):
+    feedback_parent: Optional[FeedbackReceipt] = Field(
+        default=None, description="재검색 전 실행의 피드백 권한. 대화 기록 연결용이며 검색에는 사용하지 않는다",
+    )
+
+    @field_validator("feedback_parent", mode="before")
+    @classmethod
+    def drop_unusable_feedback_parent(cls, value: object) -> object:
+        """형식이 틀린 연결은 버리고 검색은 받는다 — 새 대화로 기록될 뿐이다.
+
+        검색에 쓰지 않는 값인데 검증에 걸리면 요청 전체가 422가 된다. 잘린 토큰이나 예전 화면이
+        보낸 값 때문에 검색이 막히면 안 된다(저장소도 같은 원칙이다: 잘못된 연결은 무시한다).
+        """
+        if value is None or isinstance(value, FeedbackReceipt):
+            return value
+        try:
+            return FeedbackReceipt.model_validate(value)
+        except ValidationError:
+            return None
+
     query: str = Field(..., min_length=1, description="자연어 텍스트 형태의 검색 질의어")
     top_k: int = Field(default=10, ge=1, le=50, description="반환할 검색 결과의 개수")
     use_rerank: bool = Field(default=True, description="Cross-Encoder 리랭킹 사용 여부")
+    defer_clarify: bool = Field(
+        default=False,
+        description="출생 연도 외 재질문은 /search/clarify에서 사용자가 요청할 때 계산한다",
+    )
     candidate_k: Optional[int] = Field(
         default=None,
         ge=1,
@@ -81,7 +133,7 @@ class SearchRequest(BaseModel):
     )
     answers: List[ClarifyAnswer] = Field(
         default_factory=list,
-        max_length=2,
+        max_length=MAX_ASKED_SLOTS,
         description=(
             "지금까지의 재질문 응답 누적. 2턴 누적 호환도 계산에 답변 이력이 "
             "모두 필요해서 단수 answer가 아니라 리스트다"
@@ -89,12 +141,12 @@ class SearchRequest(BaseModel):
     )
     asked_slots: List[str] = Field(
         default_factory=list,
-        max_length=2,
+        max_length=MAX_ASKED_SLOTS,
         description="직전 응답의 asked_slots를 그대로 되돌려준다. 같은 슬롯 재질문 방지",
     )
     previous_candidate_ids: List[str] = Field(
         default_factory=list,
-        max_length=30,
+        max_length=MAX_PREVIOUS_CANDIDATES,
         description="직전 응답의 candidate_ids를 그대로 되돌려준다",
     )
     rejected_ids: List[str] = Field(
@@ -109,6 +161,16 @@ class SearchRequest(BaseModel):
         default=1,
         ge=1,
         description="직전 응답의 turn을 그대로 되돌려준다. 서버가 +1해서 내려보낸다",
+    )
+    birth_year: Optional[int] = Field(
+        default=None,
+        ge=1900,
+        le=2100,
+        description=(
+            "사용자 출생 연도(브라우저에 저장된 프로필, 5년 밴드면 중앙값). 질의에 생애 단계 표현"
+            "(\"중학교 때\")이 있고 발매 시기가 없을 때만 쓴다 — 출생 연도 + 단계 나이 범위로 시기 가산 창을"
+            " 만든다. 없으면 서버가 birth_year 슬롯으로 한 번 묻는다"
+        ),
     )
 
     @model_validator(mode="after")
@@ -130,10 +192,63 @@ class SearchRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_unique_rejections(self) -> "SearchRequest":
-        # 같은 id가 쌓이면 max_length=20에 금방 걸려 실제 거절 곡이 잘린다.
+        # 같은 id가 쌓이면 상한(MAX_REJECTED_IDS)에 금방 걸려 실제 거절 곡이 잘린다.
         if len(set(self.rejected_ids)) != len(self.rejected_ids):
             raise ValueError("rejected_ids에 중복된 곡 id가 있습니다.")
         return self
+
+
+class ClarifyRequest(BaseModel):
+    """검색을 실행하지 않고 현재 후보로 질문만 조회한다. 턴·거절 상태는 바꾸지 않는다.
+
+    **질문 선택이 읽는 것만 받는다.** 질의·분석·출생 연도는 받지 않는다 — 연령대는 그것으로 다시 찾은
+    결과의 후보(`previous_candidate_ids`)에 이미 반영돼 있고, 질문은 그 후보가 어떻게 갈리는지만 본다.
+    모르는 필드는 거부한다(검색 옵션을 실어 보내고 반영됐다고 믿는 일을 막는다).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    asked_slots: List[str] = Field(
+        default_factory=list,
+        max_length=MAX_ASKED_SLOTS,
+        description="직전 /search 응답의 asked_slots(건너뛴 출생 연도 포함). 같은 슬롯을 다시 묻지 않는다",
+    )
+    known_slots: List[KnownSlot] = Field(
+        default_factory=list,
+        max_length=len(KNOWN_SLOT_ORDER),
+        description=(
+            "직전 /search 응답의 known_slots — 최초 질의에서 이미 말한 성별·장르. 그 슬롯은 묻지 않는다. "
+            "생략하면 빈 목록(구버전 호환)이라 중복 질문을 막지 못한다. 이력·답변이 아니라 한도에 세지 않는다"
+        ),
+    )
+
+    @field_validator("known_slots", mode="after")
+    @classmethod
+    def dedupe_known_slots(cls, values: List[str]) -> List[str]:
+        return _normalize_known_slots(values)
+    previous_candidate_ids: List[SongId] = Field(
+        default_factory=list,
+        max_length=MAX_PREVIOUS_CANDIDATES,
+        description="직전 /search 응답의 candidate_ids. 질문은 여기서 보여준 곡·거절한 곡을 뺀 나머지로 만든다",
+    )
+    shown_ids: List[SongId] = Field(
+        default_factory=list,
+        max_length=50,
+        description="지금 화면에 보이는 곡. 사용자가 거절하려는 곡이라 질문 근거에서 뺀다",
+    )
+    rejected_ids: List[SongId] = Field(
+        default_factory=list,
+        max_length=MAX_REJECTED_IDS,
+        description="직전 /search 응답의 rejected_ids. 그대로 보낸다 — 이 요청은 거절을 쌓지 않는다",
+    )
+    turn: int = Field(default=1, ge=1, description="직전 /search 응답의 turn. 그대로 보낸다")
+
+
+class ClarifyResponse(BaseModel):
+    clarify: Optional[ClarifyQuestion] = Field(
+        default=None,
+        description="물을 것이 없으면 None — 화면은 질문 없이 거절만 진행한다",
+    )
 
 
 class LyricSurfaceMatch(BaseModel):
@@ -280,10 +395,31 @@ class MatchingTrack(BaseModel):
 
 
 
+class SearchNotice(BaseModel):
+    """요청 전체에 대한 안내 — 서버가 **구조화된 코드와 고정 문구**로 준다. LLM이 짓지 않는다.
+
+    지금은 자료 없는 MV 장면 질의의 리랭킹 생략 하나뿐이다. explain 여부와 무관하게 실린다 —
+    "말씀하신 뮤직비디오 장면은 확인할 자료가 없어 다른 단서로 찾았다"는 사용자가 알아야 할
+    결과의 성격이지 진단 정보가 아니다. 표지 지배 생략은 기존 동작이라 안내하지 않는다
+    (explain의 `rerank_skip_reason`에만 남는다).
+    """
+
+    code: Literal["mv_scene_unverifiable"] = Field(..., description="사유 코드")
+    message: str = Field(..., description="화면에 그대로 보여줄 고정 문구")
+
+
 class SearchResponse(BaseModel):
+    feedback: Optional[FeedbackReceipt] = Field(
+        default=None,
+        description="이 실행의 표시 결과를 저장했을 때만 발급하는 피드백 제출 권한. 없으면 제출 불가",
+    )
     results: List[MatchingTrack] = Field(
         default_factory=list,
         description="검색된 상위 K개의 음악 리스트",
+    )
+    notice: Optional[SearchNotice] = Field(
+        default=None,
+        description="요청 전체 안내. 리랭킹을 정책으로 생략했을 때만 채워진다. None이면 안내할 것이 없다",
     )
     total_found: int = Field(default=0, description="발견된 곡의 수")
 
@@ -296,11 +432,26 @@ class SearchResponse(BaseModel):
     )
     clarify: Optional[ClarifyQuestion] = Field(
         default=None,
-        description="되물을 것이 있으면 채워진다. None이면 대화 종료",
+        description="되물을 것이 있으면 채워진다. 지연 조회에서는 None이어도 질문을 아직 계산하지 않은 상태",
+    )
+    clarify_deferred: bool = Field(
+        default=False,
+        description=(
+            "defer_clarify 요청에서만 참이 된다 — 거절 버튼을 누르면 /search/clarify로 질문을 조회하라는 뜻. "
+            "한도(슬롯·턴·거절)를 다 썼거나 보여준 곡 말고 남은 후보가 없으면 거짓이다"
+        ),
     )
     asked_slots: List[str] = Field(
         default_factory=list,
         description="지금까지 물어본 슬롯 누적. 다음 요청에 그대로 되돌려준다",
+    )
+    known_slots: List[KnownSlot] = Field(
+        default_factory=list,
+        description=(
+            "최초 질의에서 이미 말한 데이터 슬롯(성별·장르). 재질문이 다시 묻지 않는다. 화면은 이 값을 보관했다가 "
+            "질문 조회(/search/clarify)의 known_slots로 그대로 보낸다 — 이전 검색 값과 합치지 않고 교체한다. "
+            "서버가 원문에서 매번 같게 계산하므로 /search 요청에는 되돌려줄 필요가 없다"
+        ),
     )
     candidate_ids: List[str] = Field(
         default_factory=list,

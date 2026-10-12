@@ -45,24 +45,37 @@ q203이 그런 경우다 — 성별을 정확히 답해도 순위가 그대로�
 첫 구현은 점수(1 - Σp² × 슬롯 가중치)로 슬롯을 골랐고 **5/9에 그쳤다.**
 항상 성별만 묻는 것(7/9)보다 못했다. 원인 둘을 고쳤다.
 
-**"이미 말한 슬롯은 묻지 않는다"가 3건을 날렸다.** c701·c705·q101 전부 질의에
-성별이 들어 있어 건너뛰었는데, 셋 다 그 성별이 **틀렸다**. 사람이 잘못 기억하는
-것이 이 프로젝트의 전제이므로 이미 말한 슬롯도 다시 확인한다.
-자세한 근거는 `stated_in_query()` 참조.
-
 **점수 방식이 장르를 3/4번 골랐다.** 장르는 값이 4~6종이라 2~3종인 성별보다
 점수가 높게 나오지만 실제 회수 효과는 반대다. 점수 비교를 버리고
 `ALLOWED_SLOTS` 순서대로 "가를 수 있는 첫 슬롯"을 고른다.
+
+**v02에서는 "이미 말한 슬롯"도 다시 물었다.** c701·c705·q101은 질의의 성별이 틀린
+오기억 질의라, 다시 물어야 회수됐다(3/9). 그 뒤로 실제 화면에서는 "남자 아이돌 노래"라고
+한 사용자에게 성별을 또 묻는 것이 되돌아왔다 — 사용자는 방금 말한 것을 왜 묻는지 모른다.
+
+## 2026-10-11 — 최초 질의에 명시한 슬롯은 묻지 않는다
+
+`known_slots.known_slots_from_query()`가 **원문**에서 이미 말한 성별·장르를 찾고, 질문 선택은
+그 슬롯을 `asked_slots`와 같이 뺀다(`pick_data_question`). 후보가 반대쪽으로 갈려도 뒤집지
+않는다 — 후보가 다양하다는 것은 사용자의 기억이 틀렸다는 증거가 아니다. 그래서 c701·c705·q101
+같은 오기억 질의의 회수율은 내려갈 수 있다. 그 수치를 맞추려고 중복 질문을 되살리지 않는다.
+오기억을 잡는 재확인은 별도 설계다(로컬 계획서 docs/plans/clarification-known-slots-plan.md — 커밋 여부는 미정).
+
+known_slots는 질문 선택에만 쓰는 상태다. `asked_slots`·`answers`·turn에 끼워 넣지 않는다 —
+가짜 답은 순위 보정을 바꾸고, 이력에 넣으면 질문·턴 한도를 소비한다.
 """
 from __future__ import annotations
 
 import logging
+import os
 import re
 from collections import Counter
 from typing import Dict, Iterable, Optional, Sequence
 
 from src.backend.schemas.query import QueryAnalysis
 from src.backend.schemas.search import ClarifyAnswer, ClarifyOption, ClarifyQuestion, MatchingTrack
+from src.retrieval.known_slots import known_slots_from_query
+from src.retrieval.query_analyzer import _extract_release_era, release_era_from_birth_year
 
 logger = logging.getLogger(__name__)
 
@@ -79,10 +92,79 @@ ANSWER_CONFIDENCE = 0.8
 # 그 경우는 성별이 skip 조건에 걸려 자연히 장르로 넘어간다.
 ALLOWED_SLOTS: Sequence[str] = ("vocal_gender", "genre")
 
+# `slot_value`가 후보에서 읽는 칸. 질문만 조회하는 경로(/search/clarify)는 후보 페이로드에서 이것만 읽는다.
+# 슬롯을 늘리면 여기도 함께 늘린다.
+QUESTION_FIELDS: Sequence[str] = ("vocal_gender", "genre")
+
+# 생애 단계 질의("중학교 때 듣던")의 기준점. 데이터 슬롯이 아니라 **사용자에 대한** 질문이라
+# ALLOWED_SLOTS 밖에 두고, 생애 단계가 있는데 발매 시기를 모를 때만 데이터 슬롯보다 먼저 묻는다.
+# 답은 후보 재정렬 보너스(answer_matches)가 아니라 분석의 release_era 창(출생 연도 + 단계 나이 범위,
+# query_analyzer.release_era_from_birth_year)으로 들어가 검색의 시기 soft boost가 된다 — NEXT_WORK §2-13.
+# 화면은 답을 브라우저에 저장해 두고 다음 검색부터 요청의 birth_year로 보내므로 같은 사람에게는 한 번만 묻는다.
+BIRTH_YEAR_SLOT = "birth_year"
+# 5년 밴드 — 10년 연령대는 단계 폭(중학교 3년)을 더하면 13년 창이 돼 가산 의미가 없다.
+BIRTH_YEAR_BAND_STARTS: Sequence[int] = (1971, 1976, 1981, 1986, 1991, 1996, 2001, 2006, 2011)
+
 QUESTION_TEXT: Dict[str, str] = {
     "vocal_gender": "부른 사람 목소리는 어느 쪽이었나요?",
     "genre": "어떤 장르에 가까웠나요?",
+    BIRTH_YEAR_SLOT: "그 시절을 연도로 바꾸려고요 — 몇 년생이세요?",
 }
+
+
+def birth_year_band(start: int) -> str:
+    return f"{start}~{start + 4}년생"
+
+
+def parse_birth_year(value: str) -> Optional[int]:
+    """'1996~2000년생' → 1998(밴드 중앙), '1998' / '1998년생' → 1998. 못 읽으면 None."""
+    years = [int(y) for y in re.findall(r"(?<!\d)(19\d{2}|20\d{2})(?!\d)", str(value or ""))]
+    if not years:
+        return None
+    year = round(sum(years[:2]) / len(years[:2]))
+    return year if 1900 <= year <= 2100 else None
+
+
+def with_birth_year(analysis: QueryAnalysis, birth_year: Optional[int]) -> QueryAnalysis:
+    """출생 연도로 생애 단계를 발매 시기 창으로 바꾼 분석 사본. 바꿀 게 없으면 원본 그대로.
+
+    생애 단계가 없거나 이미 발매 시기가 있으면(절대 연도·연대 답변) 손대지 않는다.
+    창은 가산(soft boost)에만 쓰인다 — 필터가 아니라 틀려도 정답이 후보에서 사라지지 않는다.
+    """
+    if birth_year is None or not analysis.has_life_stage or analysis.has_release_era:
+        return analysis
+    era = release_era_from_birth_year(analysis.life_stage.model_dump(), int(birth_year))
+    if era is None:
+        return analysis
+    merged = analysis.model_copy(deep=True)
+    merged.release_era.start_year = era["start_year"]
+    merged.release_era.end_year = era["end_year"]
+    merged.release_era.confidence = era["confidence"]
+    return merged
+
+
+def birth_year_from_answers(answers: Sequence[ClarifyAnswer]) -> Optional[int]:
+    for answer in answers or ():
+        if answer.slot == BIRTH_YEAR_SLOT and not answer.skipped:
+            year = parse_birth_year(answer.value)
+            if year is not None:
+                return year
+    return None
+
+
+def apply_birth_year_answers(analysis: QueryAnalysis, answers: Optional[Sequence[ClarifyAnswer]]) -> QueryAnalysis:
+    """라우터 입구용 — birth_year 답이 있으면 그 창을 넣은 분석으로 검색한다(없으면 원본)."""
+    return with_birth_year(analysis, birth_year_from_answers(answers or ()))
+
+
+def build_birth_year_question(analysis: QueryAnalysis) -> ClarifyQuestion:
+    stage_text = analysis.life_stage.text or "그때"
+    return ClarifyQuestion(
+        slot=BIRTH_YEAR_SLOT,
+        question=QUESTION_TEXT[BIRTH_YEAR_SLOT],
+        options=[ClarifyOption(value=birth_year_band(start), count=0) for start in BIRTH_YEAR_BAND_STARTS],
+        reason=f"'{stage_text}'가 몇 년도인지는 나이에 따라 달라서",
+    )
 
 # 남은 후보 중 이 비율 이상이 값을 갖고 있어야 묻는다. 메타데이터가 비어 있는
 # 후보가 많으면 답변을 받아도 대부분을 판별할 수 없다.
@@ -172,25 +254,16 @@ def coverage(counts: Counter, candidate_count: int) -> float:
 # 질문 선택
 # ---------------------------------------------------------------------------
 
-def stated_in_query(analysis: QueryAnalysis, slot: str) -> bool:
-    """사용자가 최초 질의에서 이미 말한 슬롯인지.
+def excluded_slots(asked_slots: Sequence[str] = (), known_slots: Sequence[str] = ()) -> set:
+    """데이터 질문에서 뺄 슬롯 — 실제로 물은 이력 + 최초 질의에서 이미 말한 것. 즉시 질문·지연 질문·
+    `clarify_deferred` 판정·측정 하네스가 모두 이 한 기준을 쓴다(갈리면 화면이 빈손으로 조회하러 온다)."""
+    return set(asked_slots) | set(known_slots)
 
-    **이걸 이유로 건너뛰지 않는다.** 계획서는 "이미 명시한 슬롯"을 질문하지 않을
-    조건 맨 앞에 뒀고 당연해 보이지만, v02 측정에서 그 조건이 9건 중 3건을
-    통째로 날렸다(c701·c705·q101 — 전부 성별을 물었으면 회수됐다).
 
-    사람이 잘못 기억하는 것이 이 프로젝트의 전제다. 이미 말한 속성을 다시
-    확인하는 것이 바로 그 오기억을 잡는 방법이고, 비대칭이 유리하다 —
-    맞게 답했으면 같은 값이 다시 들어와 아무것도 바뀌지 않고, 틀렸을 때만 크게
-    이득이다. 화면에서는 "혹시 남자 목소리가 맞나요?" 같은 재확인으로 보이면 된다.
-
-    판정 자체는 남겨 둔다. 질문 문구를 확인형으로 바꾸는 데 쓸 수 있다.
-    """
-    if slot == "vocal_gender":
-        return analysis.vocal_gender is not None
-    if slot == "genre":
-        return bool((analysis.genre or "").strip())
-    return False
+def remaining_data_slots(asked_slots: Sequence[str] = (), known_slots: Sequence[str] = ()) -> list:
+    """아직 물을 수 있는 데이터 슬롯. 비어 있으면 질문 조회는 DB를 읽지 않고 None이다."""
+    excluded = excluded_slots(asked_slots, known_slots)
+    return [slot for slot in ALLOWED_SLOTS if slot not in excluded]
 
 
 def can_ask(candidates: Sequence[MatchingTrack], slot: str) -> bool:
@@ -230,14 +303,33 @@ def pick_question(
 
     None을 돌려주는 것은 실패가 아니라 정상 동작이다. 호출부는 질문 없이
     Reject-only로 진행하면 된다.
+
+    최초 질의에서 이미 말한 성별·장르(`known_slots_from_query`)는 묻지 않는다. 출생 연도 질문은 그것과
+    무관하다 — "남자 아이돌 노래"라고 했어도 "중학생 때"의 기준점은 여전히 모른다.
+    """
+    # 생애 단계 질의인데 시기를 모른다 — 데이터 슬롯보다 먼저 기준점을 묻는다. 프로필(요청의 birth_year)이
+    # 있으면 라우트가 이미 창을 넣어 has_release_era라 여기 오지 않는다.
+    # 남은 후보가 없어도 묻는다 — 출생 연도는 곡을 고르는 질문이 아니라 **지금 보이는 결과에도** 적용되는 정보다(리뷰).
+    if analysis.has_life_stage and not analysis.has_release_era and BIRTH_YEAR_SLOT not in set(asked_slots):
+        return build_birth_year_question(analysis)
+    return pick_data_question(candidates, asked_slots, known_slots_from_query(analysis))
+
+
+def pick_data_question(
+    candidates: Sequence[MatchingTrack],
+    asked_slots: Sequence[str] = (),
+    known_slots: Sequence[str] = (),
+) -> Optional[ClarifyQuestion]:
+    """후보의 메타데이터(성별·장르)로 가를 수 있는 첫 슬롯의 질문. 물을 게 없으면 None.
+
+    **분석을 보지 않는다.** 질의에서 온 정보(시기·연령대)는 후보가 어떤 곡들인지에 이미 반영돼 있고,
+    여기서는 그 후보가 실제로 어떻게 갈리는지만 본다. 그래서 질문만 조회하는 경로(/search/clarify)는
+    후보 id와 두 이력만 받아 이 함수를 부른다 — `asked_slots`(실제로 물은 것)와 `known_slots`(최초 질의에서
+    이미 말한 것, /search 응답이 내려준 값). 사용자에 대한 질문(출생 연도)은 `pick_question`이 따로 다룬다.
     """
     if not candidates:
         return None
-
-    asked = set(asked_slots)
-    for slot in ALLOWED_SLOTS:          # 우선순위 순서 — 앞엣것부터 본다
-        if slot in asked:
-            continue
+    for slot in remaining_data_slots(asked_slots, known_slots):   # 우선순위 순서 — 앞엣것부터 본다
         if can_ask(candidates, slot):
             return build_question(slot, candidates)
     return None
@@ -310,6 +402,10 @@ def answer_matches(track: MatchingTrack, answer: ClarifyAnswer) -> bool:
         actual = _parse_decade(track.release_date or "")
         return want is not None and want == actual
 
+    if answer.slot == BIRTH_YEAR_SLOT:
+        # 곡 혼자서는 판정할 수 없다(질의의 생애 단계가 필요). 보너스가 아니라 분석의 시기 창으로 반영된다.
+        return False
+
     return slot_value(track, answer.slot) == value
 
 
@@ -357,6 +453,8 @@ def apply_answer_bonus(
                             "answer_match",
                             boost_unit * weight,
                             f"{answer.slot}={answer.value}",
+                            slot=answer.slot,
+                            value=answer.value,
                         )
         adjusted.append((song_id, score))
 
@@ -392,6 +490,144 @@ def analysis_with_answers(
 # ---------------------------------------------------------------------------
 # 답변 병합 (구 방식 — 재검색 경로에서는 더 이상 쓰지 않는다)
 # ---------------------------------------------------------------------------
+
+def answer_confirms_analysis(analysis: QueryAnalysis, answer: ClarifyAnswer) -> bool:
+    """답이 원래 질의 분석과 **같은 값**인지 — 새 정보가 아니라 확인만 해 준 답인지.
+
+    병합해도 분석의 해당 슬롯 값이 바뀌지 않으면 확인용 답이다(확신도는 보지 않는다).
+    스킵·빈 값·모르는 슬롯은 정보가 없으므로 False다.
+    """
+    if answer.skipped or not answer.value.strip():
+        return False
+    value = answer.value.strip()
+    slot = answer.slot
+    # merge_answer가 무시하는 값(목록 밖 성별·유형, 연대로 못 읽는 값)은 분석을 안 바꾸지만 확인용이 아니라
+    # 정보 없음이다 — 리뷰. 그대로 두면 "같은 값"으로 분류돼 빠진다.
+    if slot == "vocal_gender" and value not in _VOCAL_GENDERS:
+        return False
+    if slot in ("type", "artist_type") and value not in _ARTIST_TYPES:
+        return False
+    if slot == "release_era" and _parse_decade(value) is None:
+        return False
+    if slot not in ("vocal_gender", "genre", "type", "artist_type", "release_era"):
+        return False  # birth_year 포함 — 분석에 있던 값을 확인해 주는 답이 아니다. 모르는 슬롯은 정보 없음
+    merged = merge_answer(analysis.model_copy(deep=True), answer)
+    if slot == "vocal_gender":
+        return bool(analysis.vocal_gender) and merged.vocal_gender == analysis.vocal_gender
+    if slot == "genre":
+        return bool(analysis.genre) and merged.genre == analysis.genre
+    if slot in ("type", "artist_type"):
+        return bool(analysis.artist_type.values) and list(merged.artist_type.values) == list(analysis.artist_type.values)
+    if slot == "release_era":
+        return (
+            analysis.release_era.start_year is not None
+            and merged.release_era.start_year == analysis.release_era.start_year
+            and merged.release_era.end_year == analysis.release_era.end_year
+        )
+    return False
+
+
+def answers_for_reranker(
+    analysis: QueryAnalysis,
+    answers: Sequence[ClarifyAnswer],
+) -> list[ClarifyAnswer]:
+    """LLM 리랭커 프롬프트에 넘길 답변. 실험 스위치 `GEMINI_RERANK_CORRECTIONS`.
+
+    - all(기본): 전부 넘긴다 — v09 재질문 측정까지의 동작
+    - new_only: 원래 분석과 같은 값을 확인해 준 답은 뺀다. listwise가 확인용 답을 "more reliable than
+      the original query"로 받고 일반 속성을 과하게 따라 정답을 Top-10 밖으로 보낸 m402(남성·발라드)가 근거
+      (results_clarify_v09). 답변 보너스·가사 exact 묶음은 이 함수를 거치지 않는다 — 거기서는 전부 쓴다.
+    """
+    if reranker_input_order_mode().startswith("placebo"):
+        return []  # 위약 대조: 순서만 바꾸고 답은 프롬프트에 넣지 않는다
+    answers = _birth_year_as_era_answers(analysis, answers)
+    if reranker_corrections_mode() != "new_only":
+        return list(answers)
+    return [a for a in answers if not answer_confirms_analysis(analysis, a)]
+
+
+def birth_year_window_answer(analysis: QueryAnalysis, answers: Sequence[ClarifyAnswer] = ()) -> Optional[ClarifyAnswer]:
+    """출생 연도로 만든 발매 시기 창을 리랭커용 답 하나로. 창은 두 길로 들어온다 — 프로필·라우터 입구가 **분석에 이미 넣은** 창,
+    또는 answers의 birth_year 답. 둘 다 없으면 None. 질의 자체에 시기가 있는 분석("2000년대 중학교 때")은 프롬프트의 질의가
+    이미 말하므로 보내지 않는다."""
+    windowed = analysis if analysis.has_release_era else with_birth_year(analysis, birth_year_from_answers(answers))
+    if not windowed.has_life_stage or not windowed.has_release_era:
+        return None
+    if _extract_release_era(windowed.original_query) is not None:
+        return None
+    return ClarifyAnswer(slot="release_era", value=f"{windowed.release_era.start_year}~{windowed.release_era.end_year}년쯤")
+
+
+def _birth_year_as_era_answers(analysis: QueryAnalysis, answers: Sequence[ClarifyAnswer]) -> list[ClarifyAnswer]:
+    """리랭커 프롬프트에는 출생 연도가 아니라 그것으로 만든 발매 시기 창을 보낸다 — 출생 연도 자체는
+    곡과 무관한 사용자 정보라 프롬프트에 넣지 않는다. 분석에 창이 이미 들어 있어도(라우터 입구·프로필) 창은 간다(리뷰)."""
+    out = [a for a in answers if a.slot != BIRTH_YEAR_SLOT]
+    era = birth_year_window_answer(analysis, answers)
+    if era is not None and not any(a.slot == era.slot for a in out):
+        out.insert(0, era)
+    return out
+
+
+def reranker_input_order_mode() -> str:
+    """`CLARIFY_RERANK_INPUT_ORDER`의 실제 적용값 — bonus(기본) / pre_bonus / placebo:<seed>. runinfo에도 이 함수로 적는다."""
+    mode = os.getenv("CLARIFY_RERANK_INPUT_ORDER", "bonus").strip().lower()
+    if mode in ("pre_bonus", "prebonus", "pre-bonus"):
+        return "pre_bonus"
+    if mode.startswith("placebo"):
+        seed = mode.split(":", 1)[1] if ":" in mode else "0"
+        return f"placebo:{int(seed) if seed.isdigit() else 0}"
+    return "bonus"
+
+
+def candidates_for_reranker(
+    pre_bonus: Sequence[tuple[str, float]],
+    boosted: Sequence[tuple[str, float]],
+    answers: Sequence[ClarifyAnswer],
+) -> list[tuple[str, float]]:
+    """**답을 쓰는 리랭커의 입력**으로 넘길 후보 순서. 실험 스위치 `CLARIFY_RERANK_INPUT_ORDER` (a).
+
+    - bonus(기본): 답변 보너스를 적용한 순서 — v09·v10까지의 동작
+    - pre_bonus: 답변이 있어도 리랭커에는 **보너스 전 순서·점수**를 넘긴다. listwise는 같은 후보 집합에서 순서만
+      바뀌어도 결과가 갈린다(results_clarify_v10_corrections: m402 발라드·솔로). 답이 후보 대부분과 맞을 때는 보너스가
+      정답과 경쟁곡에 같이 붙어 순서만 흔들고, 답이 정답을 가려내는 경우(m402 2000년대 7→3, c603 록/메탈 22→1)에는
+      정답만 올린다 — 그 이득이 리랭킹 경로에서 사라지는지가 측정 항목이다.
+    - placebo:<seed>: 위약 대조. 보너스가 바꾼 바로 그 자리들의 곡을 고정 시드(+후보 id)로 섞고, 답은 프롬프트에
+      넣지 않는다(`answers_for_reranker`가 빈 목록). 순서만 바뀌었을 때의 흔들림을 재서 (a)·①의 득실과 비교한다.
+
+    이 순서는 **답을 쓰는 리랭커가 실제로 돌 때 그 입력에만** 쓴다(라우터·하네스). 리랭킹 폴백·생략·use_rerank=False·
+    답을 안 받는 리랭커(CE) 경로는 보너스 순서를 그대로 쓴다 — 그러지 않으면 재질문 답이 서비스에서 통째로 사라진다(리뷰).
+    답변이 없으면 두 순서가 같다. 후보 풀(집합)은 어느 쪽이든 같다.
+    """
+    mode = reranker_input_order_mode()
+    if not answers or mode == "bonus":
+        return list(boosted)
+    if mode == "pre_bonus":
+        return list(pre_bonus)
+    # placebo: 보너스가 **바꾼 바로 그 자리들**의 곡을 고정 시드로 섞는다(같은 자리 수·같은 범위). 30자리 전체에서
+    # 고르면 보너스보다 2~4배 크게 흔들려(평균 이동 1.07 vs 2.4~4.2, 리뷰) 실제 효과가 노이즈처럼 보인다.
+    # 시드에 후보 id 목록을 섞어 행마다 독립된 표본이 되게 한다 — Random(seed)만 쓰면 k가 같은 행이 전부 같은 패턴이다.
+    import random
+
+    pre = list(pre_bonus)
+    changed = [i for i in range(min(len(pre), len(boosted))) if pre[i][0] != boosted[i][0]]
+    if len(changed) < 2:
+        return pre
+    rng = random.Random(f"{mode}|{','.join(sid for sid, _ in pre)}")
+    values = [pre[i] for i in changed]
+    for _ in range(10):  # 항등 순열이면 다시 섞는다(가능한 범위에서)
+        rng.shuffle(values)
+        if [v[0] for v in values] != [pre[i][0] for i in changed]:
+            break
+    for i, v in zip(changed, values):
+        pre[i] = v
+    return pre
+
+
+def reranker_corrections_mode() -> str:
+    """`GEMINI_RERANK_CORRECTIONS`의 실제 적용값 — 측정 runinfo에도 이 함수로 적는다."""
+    mode = os.getenv("GEMINI_RERANK_CORRECTIONS", "all").strip().lower()
+    return "new_only" if mode == "new_only" else "all"
+
 
 def merge_answer(analysis: QueryAnalysis, answer: ClarifyAnswer) -> QueryAnalysis:
     """사용자 답변을 분석 객체의 해당 슬롯에 채운다.
@@ -443,6 +679,17 @@ def merge_answer(analysis: QueryAnalysis, answer: ClarifyAnswer) -> QueryAnalysi
         analysis.release_era.start_year = start
         analysis.release_era.end_year = start + 9
         analysis.release_era.confidence = ANSWER_CONFIDENCE
+
+    elif slot == BIRTH_YEAR_SLOT:
+        year = parse_birth_year(value)
+        if year is None:
+            logger.warning("[clarify] 출생 연도로 해석할 수 없는 값 무시: %r", value)
+            return analysis
+        merged = with_birth_year(analysis, year)
+        if merged is analysis:
+            logger.info("[clarify] 생애 단계가 없거나 시기가 이미 있어 출생 연도를 쓰지 않는다")
+            return analysis
+        analysis.release_era = merged.release_era
 
     else:
         # 모르는 슬롯을 조용히 무시하면 원인 추적이 어려워진다.

@@ -31,7 +31,7 @@ def comment(text, likes=0):
 @pytest.fixture
 def fake_gemini(monkeypatch):
     """배치마다 verdicts(list) 또는 예외를 순서대로 돌려준다."""
-    monkeypatch.setattr(llm_utils, "GEMINI_API_KEY", "dummy")
+    monkeypatch.setattr(llm_utils, "GEMINI_CONFIGURED", True)
     monkeypatch.setattr(llm_utils.time, "sleep", lambda s: None)
     calls = []
 
@@ -47,10 +47,11 @@ def fake_gemini(monkeypatch):
                 return types.SimpleNamespace(text=json.dumps(item, ensure_ascii=False))
 
         class _Client:
-            def __init__(self, api_key=None):
+            def __init__(self):
                 self.models = _Models()
 
-        monkeypatch.setattr(llm_utils.genai, "Client", _Client)
+        # 클라이언트는 공용 헬퍼가 만든다(Vertex·AI Studio 키) — 그 자리를 가짜로 바꾼다
+        monkeypatch.setattr(llm_utils, "make_genai_client", lambda **kwargs: _Client())
         return calls
     return install
 
@@ -166,3 +167,17 @@ def test_youtube_filter_propagates_the_outage(fake_gemini) -> None:
     fake_gemini([RuntimeError("429")] * (llm_utils.BATCH_RETRIES + 1))
     with pytest.raises(llm_utils.CommentSelectionUnavailable):
         cr.filter_comments([{"text": "새벽에 혼자 듣기 좋은 노래예요", "like_count": 10}])
+
+
+def test_comment_selection_uses_crawl_model_not_retrieval_model(fake_gemini, monkeypatch) -> None:
+    """크롤링 모델은 검색 모델(GEMINI_MODEL_NAME — 질의 분석·리랭커)과 따로 간다. 검색 기준선을 건드리지 않고 바꾼다."""
+    monkeypatch.setenv("GEMINI_MODEL_NAME", "검색-모델")
+    monkeypatch.delenv("GEMINI_CRAWL_MODEL_NAME", raising=False)
+    calls = fake_gemini([[verdict(0, False, 0)]])
+    llm_utils.select_emotional_comments_detailed([comment("비 오는 날 들으면 그 사람이 생각나요", 10)], target_count=1, batch_size=10)
+    assert calls[0]["model"] == "gemini-3.5-flash-lite"
+
+    monkeypatch.setenv("GEMINI_CRAWL_MODEL_NAME", "다른-크롤링-모델")
+    calls = fake_gemini([[verdict(0, False, 0)]])  # 같은 calls 목록에 이어 쌓인다
+    llm_utils.select_emotional_comments_detailed([comment("비 오는 날 들으면 그 사람이 생각나요", 10)], target_count=1, batch_size=10)
+    assert [c["model"] for c in calls] == ["gemini-3.5-flash-lite", "다른-크롤링-모델"]

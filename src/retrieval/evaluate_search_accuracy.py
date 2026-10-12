@@ -13,7 +13,7 @@ import sys
 import time
 from pathlib import Path
 from collections import Counter
-from typing import Iterable, Optional, Sequence
+from typing import Any, Iterable, List, Optional, Sequence
 
 # 이 파일을 retrieval/ 아래에 두고 실행하는 것을 기준으로
 # 프로젝트 루트를 Python import 경로에 추가한다.
@@ -23,10 +23,13 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.backend.api.dependencies import (
     get_query_analyzer,
+    DEFAULT_RERANKER_BACKEND,
     get_reranker,
     get_search_router,
 )
 from src.backend.schemas.explain import to_track_explain
+from src.backend.schemas.search import MatchingTrack
+from src.eval.relaxed_metrics import top10_path, write_top10
 from src.retrieval.analysis_cache import (
     AnalysisCacheError,
     analyzer_fingerprint,
@@ -36,19 +39,30 @@ from src.retrieval.explain import (
     NULL_RECORDER,
     RERANK_APPLIED,
     RERANK_FAILED,
+    RERANK_SKIP_MV_SCENE_UNVERIFIABLE,
     RERANK_UNKNOWN,
     ExplainRecorder,
     render_ko,
 )
+from src.common.gemini_client import RETRIEVAL, gemini_route_info
 from src.retrieval import search_router as _search_router
+from src.retrieval.clarify import reranker_corrections_mode, reranker_input_order_mode
+from src.retrieval.gemini_listwise_reranker import type_slot_label
+from src.retrieval.rerank_policy import rerank_skip_reason
 from src.retrieval.search_router import (
     call_reranker,
     exact_lyric_constraint_score,
     lyric_priority_rule,
+    place_protected_lyrics_first,
     select_protected_lyric_ids,
-    should_skip_rerank_for_image,
 )
 
+
+
+def _actual_backend(reranker: Any) -> str:
+    """실제로 만들어진 리랭커의 백엔드 이름. 환경변수가 아니라 객체에서 읽는다."""
+    name = type(reranker).__name__
+    return {"GeminiListwiseReranker": "gemini_listwise", "MusicReranker": "cross_encoder"}.get(name, name)
 
 def parse_relevant_ids(raw: str) -> set[str]:
     """여러 정답 ID는 | 로 구분한다."""
@@ -119,10 +133,15 @@ def rerank_preserving_exact_lyrics(
     recorder=NULL_RECORDER,
     errors=None,
     statuses=None,
+    fallback_candidates=None,
+    skips=None,
 ):
-    """실서비스와 동일하게 이미지 지배/가사 exact 보호 규칙을 적용한다.
+    """실서비스와 동일하게 리랭킹 생략 정책(표지 지배·자료 없는 MV 장면)과 가사 exact 보호 규칙을 적용한다.
 
     answers는 재질문 답변이다. 답변을 쓰는 리랭커에만 전달된다(call_reranker).
+
+    skips에 리스트를 넘기면 **정책으로 생략한 사유**(RERANK_SKIP_*)가 담긴다. statuses처럼 기록기와
+    별개의 통로다 — 생략은 실패가 아니고, 기록을 꺼도 "리랭킹이 없었던 이유"는 측정 결과에 남아야 한다.
 
     recorder는 SearchRouter.search()와 **같은 것을 같은 순서로** 기록한다. 이 함수는
     라우터의 보호 로직을 평가용으로 옮겨 놓은 사본이라, 기록도 함께 옮겨야 평가
@@ -138,14 +157,33 @@ def rerank_preserving_exact_lyrics(
     순서로 돌아간다. 평가만 예외로 멈추면 질의 하나의 추론 실패로 **측정 전체가
     중단되고 요약 파일도 생성되지 않는다.**
     """
-    if should_skip_rerank_for_image(reranker, analysis):
-        # 시도 자체가 없었다. attempted를 올리면 "실패"로 읽힌다.
-        return list(candidates)[:top_k]
+    # 라우터와 같은 함수로 판정한다. 시도 자체가 없었으므로 attempted를 올리지 않는다 —
+    # 올리면 "실패"로 읽힌다. 사유는 기록과 skips 양쪽에 남긴다.
+    #
+    # 돌려주는 순서는 라우터와 같이 **후보 목록(보정 반영)** 이다. 실험 스위치로 리랭커 입력
+    # (candidates)이 보정 전 순서일 때 그것을 돌려주면 생략이 곧 답변을 버리는 일이 된다.
+    #
+    # 라우터와 같은 게이트 — 리랭커가 꺼져 있거나 후보가 하나뿐이면 부를 수 없는 요청이라 생략을 적지 않는다
+    # (서비스는 그 요청을 not_attempted로 적는다).
+    eligible = bool(getattr(reranker, "enabled", True)) and len(candidates) > 1
+    skip_reason = rerank_skip_reason(reranker, analysis, candidates) if eligible else ""
+    if skip_reason:
+        recorder.set_rerank_policy_skip(skip_reason)
+        if skips is not None:
+            skips.append(skip_reason)
+        base = fallback_candidates if fallback_candidates is not None else candidates
+        if skip_reason == RERANK_SKIP_MV_SCENE_UNVERIFIABLE:
+            # 라우터와 같은 함수 — 모델 없이 가사 exact 보호 배치만. 표지 지배는 기존 동작 그대로.
+            final = place_protected_lyrics_first(analysis, base, top_k, recorder)
+        else:
+            final = list(base)[:top_k]
+        recorder.set_rank_after([track.id for track in final])
+        return final
 
     recorder.set_reorder_attempted(True)
     try:
         return _rerank_with_lyric_protection(
-            reranker, analysis, candidates, top_k, answers, recorder, statuses
+            reranker, analysis, candidates, top_k, answers, recorder, statuses, fallback_candidates
         )
     except Exception as exc:
         # 라우터와 같은 순서로 취소한다 — 잠정 기록을 남기면 반영되지 않은 처리가
@@ -162,19 +200,39 @@ def rerank_preserving_exact_lyrics(
         return final
 
 
+def _bonus_order(fallback: Sequence[MatchingTrack], subset: Sequence[MatchingTrack]) -> List[MatchingTrack]:
+    ids = {t.id for t in subset}
+    return [t for t in fallback if t.id in ids]
+
+
 def _rerank_with_lyric_protection(
-    reranker, analysis, candidates, top_k: int, answers, recorder, statuses=None
+    reranker, analysis, candidates, top_k: int, answers, recorder, statuses=None, fallback_candidates=None
 ):
-    """보호 규칙 본체. 예외는 호출부가 폴백으로 처리한다."""
+    """보호 규칙 본체. 예외는 호출부가 폴백으로 처리한다.
+
+    fallback_candidates는 라우터의 후보 목록(보너스 순서). 실험 스위치로 리랭커 입력(candidates)이 그와 다를 때,
+    **적용되지 않은 호출의 그룹**은 입력 순서 대신 이 순서로 돌아간다 — 라우터와 같은 호출 단위 폴백.
+    """
+    if statuses is None:
+        statuses = []
+
+    def _after_call(result, subset):
+        n_before = _after_call.n_before
+        if fallback_candidates is not None and RERANK_APPLIED not in statuses[n_before:]:
+            return _bonus_order(fallback_candidates, subset)
+        return result
+
     # 보호 판정은 라우터와 **같은 함수**로 한다. 규칙을 바꿀 때 한쪽만 고치면
     # 평가와 서비스가 다른 규칙으로 동작한다.
     protected_ids = select_protected_lyric_ids(candidates)
     protected = [track for track in candidates if track.id in protected_ids]
     if not protected:
+        _after_call.n_before = len(statuses)
         reranked = call_reranker(
             reranker, analysis.original_query, candidates, top_k, answers, recorder,
             runs_out=statuses,
         )
+        reranked = _after_call(reranked, candidates)[:top_k]
         recorder.commit_reorder()
         recorder.set_rank_after([track.id for track in reranked])
         for track in reranked:
@@ -192,6 +250,8 @@ def _rerank_with_lyric_protection(
         if slots <= 0:
             break
         if len(group) > 1:
+            _after_call.n_before = len(statuses)
+            group_in = group
             group = call_reranker(
                 reranker,
                 analysis.original_query,
@@ -201,11 +261,14 @@ def _rerank_with_lyric_protection(
                 recorder,
                 runs_out=statuses,
             )
+            group = _after_call(group, group_in)
         ordered_protected.extend(group[:slots])
     protected = ordered_protected
     remaining = max(0, top_k - len(protected))
-    reranked_others = (
-        call_reranker(
+    reranked_others: List[MatchingTrack] = []
+    if remaining and others:
+        _after_call.n_before = len(statuses)
+        reranked_others = call_reranker(
             reranker,
             analysis.original_query,
             others,
@@ -214,9 +277,7 @@ def _rerank_with_lyric_protection(
             recorder,
             runs_out=statuses,
         )
-        if remaining and others
-        else []
-    )
+        reranked_others = _after_call(reranked_others, others)[:remaining]
     final = [*protected, *reranked_others][:top_k]
     # 보호 배치가 실제로 성사된 뒤에만 기록한다(라우터와 동일).
     final_ids = {track.id for track in final}
@@ -281,21 +342,27 @@ OUTCOME_FALLBACK = "fallback"              # 예외 없이 실패, 반영 0건
 OUTCOME_PARTIAL_FAILURE = "partial_failure"  # 일부 그룹만 실패
 OUTCOME_APPLIED = "applied"                # 모델이 순서를 정했다
 OUTCOME_SKIPPED = "skipped"                # 부를 조건이 아니었다(정상)
+OUTCOME_POLICY_SKIPPED = "policy_skipped"  # 부를 수 있었지만 정책으로 부르지 않았다(표지 지배·자료 없는 MV 장면)
 OUTCOME_UNKNOWN = "unknown"                # 상태를 보고하지 않는 백엔드
 
 
-def rerank_outcome(statuses, rerank_error: str) -> str:
+def rerank_outcome(statuses, rerank_error: str, policy_skip: str = "") -> str:
     """리랭킹 결말 한 단어. **실패와 정상 건너뜀을 섞지 않는다.**
 
     `skipped`를 실패로 세면 안 된다 — 후보가 1곡뿐이거나 리랭킹이 꺼져 있으면
     백엔드는 정상적으로 호출을 생략하고 `skipped`를 돌려준다. 그것을 폴백으로
     집계하면 아무 문제 없는 질의가 실패 목록에 올라간다.
 
+    `policy_skipped`는 그와도 다르다 — 부를 수 있었는데 **일부러** 부르지 않은 것이다
+    (`rerank_policy.rerank_skip_reason`). 호출이 없으니 statuses는 비어 있고, 사유는 따로 온다.
+
     `unknown`도 실패가 아니다. 상태를 보고하지 않는 백엔드라 **모른다**는 뜻이고,
     모르는 것을 실패로 단정하면 이 기록의 원칙이 무너진다.
     """
     if rerank_error:
         return OUTCOME_EXCEPTION
+    if policy_skip:
+        return OUTCOME_POLICY_SKIPPED
     failed = any(status == RERANK_FAILED for status in statuses)
     applied = any(status == RERANK_APPLIED for status in statuses)
     if failed and applied:
@@ -370,22 +437,21 @@ def collect_run_info(args, *, reranker, analysis_source: dict) -> dict:
         # 조건 간 비교가 성립하려면 이것도 고정돼 있어야 하므로 지문을 남긴다.
         "lyrics_source": _lyrics_fingerprint(),
         "reranker": {
-            "backend": os.getenv("RERANKER_BACKEND", "cross_encoder"),
+            # 요청(환경변수)과 실제 선택을 구분해 적는다 — 키가 없어 CE로 내려가거나
+            # 기본값이 바뀌면 환경변수만으로는 무엇이 돌았는지 알 수 없다 (PR 리뷰 P2).
+            "backend": _actual_backend(reranker),
+            "requested_backend": os.getenv("RERANKER_BACKEND", DEFAULT_RERANKER_BACKEND),
             "class": type(reranker).__name__,
             "enabled": bool(getattr(reranker, "enabled", False)),
             "config": reranker_config,
         },
+        # 검색(질의 분석·리랭커)이 Gemini를 어느 경로로 불렀는지(vertex·api_key)와 용도 설정(GEMINI_RETRIEVAL_BACKEND).
+        # 같은 모델이어도 경로가 바뀌면 출력이 달라진다(results_clarify_v11_prebonus) — 경로가 다른 실행끼리는 비교하지 않는다.
+        "gemini": gemini_route_info(RETRIEVAL),
         # 실험 스위치. **실제로 적용된 값을 코드에서 읽는다** — 환경변수를 다시
         # 읽으면 기록과 적용이 갈릴 수 있고, 폴더명과 수기 문서에만 의존하면
         # 나중에 어느 조건의 결과인지 알 수 없다.
-        "ranking_switches": {
-            "lyric_protect_phonetic_top1": _search_router._protect_phonetic_top1(),
-            "lyric_protect_min_confidence": _search_router._lyric_protect_min_confidence(),
-            "lyric_boost_scale": _search_router._lyric_boost_scale(),
-            "reranker_min_spread": float(getattr(config, "min_spread", 0.0) or 0.0)
-            if config is not None
-            else None,
-        },
+        "ranking_switches": _ranking_switches(config),
         "search_reference_year_env": os.getenv("SEARCH_REFERENCE_YEAR", "").strip(),
     }
 
@@ -396,6 +462,31 @@ def collect_run_info(args, *, reranker, analysis_source: dict) -> dict:
     except Exception as exc:  # noqa: BLE001 - 기록용이므로 사유만 남긴다
         info["corpus"]["point_count_error"] = f"{type(exc).__name__}: {exc}"
     return info
+
+
+def _ranking_switches(config: Any) -> dict:
+    """순위를 바꾸는 스위치의 **실제 적용값**. 환경 변수 문자열이 아니라 search_router가 읽는 함수를 부른다.
+
+    가산 배율 세 개(`BOOST_SCALE`·`ATTR_BOOST_SCALE`·`GENDER_MISMATCH_SCALE`, PR #16~#18)가 빠져 있어
+    v27~v31의 runinfo로는 조건을 구분할 수 없었다(PR #16~#22 리뷰). 기본값이어도 적는다.
+    """
+    return {
+        "boost_scale": _search_router._explicit_boost_scale(),
+        "attr_boost_scale": _search_router._attr_boost_scale(),
+        "gender_mismatch_scale": _search_router._gender_mismatch_scale(),
+        "audio_fusion_scale": _search_router._audio_fusion_scale(),
+        "text_sparse_source": _search_router._text_sparse_source(),
+        "lyric_protect_phonetic_top1": _search_router._protect_phonetic_top1(),
+        "lyric_protect_min_confidence": _search_router._lyric_protect_min_confidence(),
+        "lyric_boost_scale": _search_router._lyric_boost_scale(),
+        "reranker_min_spread": float(getattr(config, "min_spread", 0.0) or 0.0)
+        if config is not None
+        else None,
+        # 재질문 답변이 LLM 리랭커 프롬프트에 들어가는 방식 (results_clarify_v10_corrections 리뷰)
+        "gemini_rerank_corrections": reranker_corrections_mode(),
+        "gemini_rerank_type_slot_label": type_slot_label(),
+        "clarify_rerank_input_order": reranker_input_order_mode(),
+    }
 
 
 def _lyrics_fingerprint() -> dict:
@@ -488,12 +579,12 @@ def _count_points(vsettings) -> Optional[int]:
 
 
 def explain_columns(
-    record, *, enabled: bool, rerank_error: str = "", statuses=None
+    record, *, enabled: bool, rerank_error: str = "", statuses=None, skips=None
 ) -> dict:
     """detail CSV의 실행 상태 열.
 
-    **백엔드가 보고한 상태(`rerank_run_statuses`)와 폴백 사유는 기록 여부와 무관하게
-    남긴다.** 리랭킹이 실제로 일어났는지는 설명 기능의 부산물이 아니라 측정 결과를
+    **백엔드가 보고한 상태(`rerank_run_statuses`)·폴백 사유·정책 생략 사유는 기록 여부와
+    무관하게 남긴다.** 리랭킹이 실제로 일어났는지는 설명 기능의 부산물이 아니라 측정 결과를
     읽는 데 필요한 사실이다.
 
     나머지 열은 기록을 끄면 빈 값으로 남긴다. NULL_RECORDER의 빈 기록은 "리랭킹이
@@ -501,10 +592,12 @@ def explain_columns(
     돌아간 실행에 not_attempted / 호출 0회가 남는다.
     """
     statuses = list(statuses or [])
-    outcome = rerank_outcome(statuses, rerank_error)
+    policy_skip = "|".join(skips or [])
+    outcome = rerank_outcome(statuses, rerank_error, policy_skip)
     always = {
         "rerank_run_statuses": "|".join(statuses),
         "rerank_outcome": outcome,
+        "rerank_policy_skip": policy_skip,
         "rerank_error": rerank_error,
         "rerank_fell_back": int(outcome in {OUTCOME_EXCEPTION, OUTCOME_FALLBACK}),
         "rerank_partial_failure": int(outcome == OUTCOME_PARTIAL_FAILURE),
@@ -566,6 +659,10 @@ def build_explain_payload(
             row["explain"] = None
             return row
         row["explain"] = to_track_explain(song, reorder_stage=stage).model_dump()
+        # 모델이 스스로 쓴 이유 문장의 **원문**. 일반 API(`explain.model_notes`)에는 싣지 않지만
+        # 진단 기록에는 보존한다 — "모델이 무엇을 보고 그렇게 말했나"를 되짚을 유일한 단서다.
+        # 검증된 기록이 아니므로 explain 안이 아니라 옆에 둔다.
+        row["model_notes_internal"] = list(song.model_notes)
         return row
 
     songs = [entry(str(track.id), "result") for track in ordered[:top_k]]
@@ -755,6 +852,7 @@ async def evaluate(args: argparse.Namespace) -> None:
 
         rerank_errors: list[str] = []
         rerank_statuses: list[str] = []
+        rerank_skips: list[str] = []
         if not candidates:
             print("  경고: 검색 후보가 없습니다.")
             baseline = []
@@ -784,6 +882,7 @@ async def evaluate(args: argparse.Namespace) -> None:
                 recorder=recorder,
                 errors=rerank_errors,
                 statuses=rerank_statuses,
+                skips=rerank_skips,
             )
             rerank_ms = (time.perf_counter() - rerank_started) * 1000
             reranked = reranked_all[: args.top_k]
@@ -966,6 +1065,7 @@ async def evaluate(args: argparse.Namespace) -> None:
                     enabled=args.explain,
                     rerank_error=rerank_errors[0] if rerank_errors else "",
                     statuses=rerank_statuses,
+                    skips=rerank_skips,
                 ),
                 "explain_top1": explain_top1,
                 "explain_relevant": explain_relevant,
@@ -1022,6 +1122,8 @@ async def evaluate(args: argparse.Namespace) -> None:
     # 정상 완료 시에도 마지막 상태를 한 번 더 확정 저장한다.
     write_detail_checkpoint(detail_path, detail_rows)
     write_detail_checkpoint(lyric_path, lyric_rows)
+    # detail은 제목·설명 문장이 있어 커밋하지 않는다. 곡 ID만 담은 경량본을 따로 남긴다.
+    write_top10(detail_rows, top10_path(output_dir, suffix))
     if explain_file is not None:
         explain_file.close()
 
@@ -1125,6 +1227,7 @@ async def evaluate(args: argparse.Namespace) -> None:
 
     print()
     print(f"상세 결과: {detail_path}")
+    print(f"top-10 경량본: {top10_path(output_dir, suffix)}")
     print(f"요약 결과: {summary_path}")
     if args.explain:
         print(f"실행 기록: {explain_path}")

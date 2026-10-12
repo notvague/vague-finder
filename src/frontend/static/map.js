@@ -120,6 +120,52 @@ function clearHeard() {
 window.clearHeard = clearHeard; // 콘솔에서 기록 초기화용
 
 /*
+ * 출생 연도 — "중학교 때 듣던" 같은 생애 단계 질의를 연도로 바꾸는 기준점. 서버가 birth_year 슬롯으로
+ * 한 번 묻고, 답은 여기 저장해 다음 검색부터 요청의 birth_year로 보낸다(같은 사람에게 다시 묻지 않는다).
+ * 서버는 저장하지 않는다. 지우려면 콘솔에서 clearBirthYear().
+ */
+const BIRTH_YEAR_KEY = "vf.birthYear";
+let sessionBirthYear = null; // 저장소를 못 쓰는 브라우저(사생활 창 등)에서도 이 탭 안에서는 다시 묻지 않게
+
+function loadBirthYear() {
+  try {
+    const raw = localStorage.getItem(BIRTH_YEAR_KEY);
+    const year = raw ? Number(raw) : NaN;
+    if (Number.isInteger(year) && year >= 1900 && year <= 2100) return year;
+  } catch {
+    /* 저장소를 못 읽으면 이 탭의 값으로 */
+  }
+  return sessionBirthYear;
+}
+
+function saveBirthYear(year) {
+  sessionBirthYear = year;
+  try {
+    localStorage.setItem(BIRTH_YEAR_KEY, String(year));
+  } catch {
+    /* 저장 못 해도 이 탭 안에서는 sessionBirthYear로 보낸다 */
+  }
+}
+
+function clearBirthYear() {
+  sessionBirthYear = null;
+  try {
+    localStorage.removeItem(BIRTH_YEAR_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+window.clearBirthYear = clearBirthYear;
+
+/* '1996~2000년생' → 1998(밴드 중앙). 서버 parse_birth_year와 같은 규칙 */
+function parseBirthYear(value) {
+  const years = String(value || "").match(/(?:19|20)\d{2}/g);
+  if (!years) return null;
+  const nums = years.slice(0, 2).map(Number);
+  return Math.round(nums.reduce((a, b) => a + b, 0) / nums.length);
+}
+
+/*
  * 맵은 두 종류다. 두 임베딩의 이웃 집합이 3.3%밖에 겹치지 않아
  * (소리가 닮은 곡과 정서가 닮은 곡은 서로 다른 집합) 한 장에 합치지 않고
  * 탭으로 나눈다. 곡 목록은 그대로 두고 좌표만 바꿔 끼운다.
@@ -256,6 +302,8 @@ async function init() {
   applyAxisLabels();
   fillGenreOptions();
   buildLegend();
+  // 첫 화면이 그릴 준비가 됐다 — 로딩 인트로가 나가도 된다 (intro.js)
+  if (window.VagueIntro && window.VagueIntro.ready) window.VagueIntro.ready();
 }
 
 /*
@@ -640,13 +688,23 @@ function localSearch(q) {
  * 서버 쪽 질의 분석에도 따로 20초 예산이 있다(QUERY_ANALYSIS_TIMEOUT_SECONDS).
  */
 const SEARCH_TIMEOUT_MS = 30000;
+const SEARCH_PATH = "/api/v1/search";
+/*
+ * 질문 조회는 검색이 아니다 — 후보 15곡 안팎의 메타데이터만 읽는다. 검색과 같은 30초를 주면 서버가
+ * 멈췄을 때 "이 중에는 없어요"가 30초 동안 먹통이 된다. 이 시간이 지나면 질문 없이 거절만 진행한다.
+ */
+const CLARIFY_PATH = "/api/v1/search/clarify";
+const CLARIFY_TIMEOUT_MS = 8000;
 
-async function requestSearch(body) {
-  const res = await fetch("/api/v1/search", {
+async function requestSearch(body, path = SEARCH_PATH, timeoutMs = SEARCH_TIMEOUT_MS) {
+  if (path === SEARCH_PATH && typeof VagueFeedback !== "undefined" && VagueFeedback.receipt) {
+    body = { ...body, feedback_parent: VagueFeedback.receipt };
+  }
+  const res = await fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) {
     const err = new Error(`search ${res.status}`);
@@ -673,20 +731,34 @@ function searchFailureText(err) {
 
 /* ---------- 재질문 (2턴) ----------
  *
- * 서버는 상태를 저장하지 않는다. 응답의 analysis·asked_slots·rejected_ids·turn을
- * 여기 보관했다가 다음 요청에 그대로 되돌려준다.
+ * 서버는 상태를 저장하지 않는다. 응답의 analysis·asked_slots·known_slots·rejected_ids·turn을
+ * 여기 보관했다가 다음 요청에 그대로 되돌려준다. known_slots(최초 질의에서 이미 말한 성별·장르)는 질문 조회에만 실린다 —
+ * 서버가 그 슬롯을 묻지 않는다. 둘 다 말했으면 서버가 clarify_deferred를 거짓으로 내려 조회 없이 거절만 한다.
  *
  * 흐름:
- *   검색 → Top-10 + (응답에 미리 실린) 질문
- *   "이 중에는 없어요" → 질문이 있으면 보여주고, 없으면 거절만 해서 다시 검색
- *   답 선택 / "잘 모르겠어요" → 보여준 10곡을 거절 + 답변을 실어 다시 검색
+ *   검색 → Top-15 (출생 연도 질문만 즉시 표시)
+ *   "이 중에는 없어요" → 현재 후보로 질문을 조회하고(/search/clarify), 없으면 거절만 해서 다시 검색
+ *   답 선택 / "잘 모르겠어요" → 보여준 15곡을 거절 + 답변을 실어 다시 검색
  *
- * 질문을 더 할지는 서버가 정한다(clarify가 null이면 끝). 화면은 거절 한도만
- * 따로 확인한다 — 질문 없이 거절만 하는 경로가 있어서다.
+ * 질문 조회는 **질문만** 가져온다 — 턴·거절 목록·결과를 바꾸지 않는다. 그래서 질문을 닫아도 잃는 것이
+ * 없고, 다시 누르면 받아 둔 질문을 그대로 연다(결과가 바뀌면 applyResponse가 버린다). 조회가 실패하거나
+ * 제한 시간을 넘기면 안내를 남기고 질문 없이 거절만 진행한다 — 거절에는 질문이 필요 없다.
+ *
+ * 예외 — 출생 연도(birth_year) 질문은 곡이 아니라 사용자에 대한 것이라 거절을 기다리지 않고 **결과와 함께 바로** 묻는다.
+ * 답하면 저장하고 같은 질의를 **기존 분석 + birth_year로** 다시 검색한다(재분석 없음·거절 없음·턴 그대로 — 첫 결과부터
+ * 시기 창이 들어가야 한다). 실패하면 앞의 결과를 그대로 둔다. 답은 저장돼 있으니 다음 검색부터 반영된다.
+ * 연령대는 이 재검색이 돌려준 후보(candidateIds)에 반영된다 — 그 뒤의 질문 조회는 그 후보를 보낼 뿐 연도를 다시 보내지 않는다.
+ * "잘 모르겠어요"·닫기는 이 검색에서는 다시 묻지 않고, 그 뒤 "이 중에는 없어요"를 누르면 데이터 질문을 조회한다.
+ *
+ * 질문을 조회할지는 서버가 정한다(clarify_deferred — 한도가 남았고 보여준 곡 말고 후보가 있을 때). 화면은 거절
+ * 한도만 따로 확인한다 — 질문 없이 거절만 하는 경로가 있어서다.
  */
-const TOP_K = 10;
-// 서버 스키마 MAX_REJECTED_IDS와 같아야 한다. 넘기면 요청이 422로 막힌다.
-const MAX_REJECTED = 20;
+const TOP_K = 15;
+// 후보 수는 보여주는 곡 수와 따로 고정한다. 보내지 않으면 서버가 max(top_k*3, 30)=45로 넓혀
+// 검색 깊이와 리랭커 입력이 측정한 구성(후보 30)과 달라진다. 15곡은 그 30곡 순위의 앞부분이다.
+const CANDIDATE_K = 30;
+// 서버 스키마 MAX_REJECTED_IDS와 같아야 한다. 넘기면 요청이 422로 막힌다. 보여주는 곡 수 × 거절 두 번.
+const MAX_REJECTED = 30;
 // 서버 스키마의 previous_candidate_ids max_length
 const MAX_PREVIOUS_CANDIDATES = 30;
 
@@ -697,27 +769,42 @@ const resultList = document.getElementById("resultList");
 const clarifyBox = document.getElementById("clarifyBox");
 
 let convo = null;       // 진행 중인 재질문 대화. 새 검색마다 초기화
-let panelMode = "idle"; // idle | asking | loading
+let panelMode = "idle"; // idle | asking | loading(다시 찾는 중) | question_loading(질문 조회 중)
 let searchSeq = 0;      // 늦게 도착한 옛 응답이 새 검색 결과를 덮지 않게
 
+/* 요청이 나가 있는 동안에는 버튼·답·거절을 모두 막는다 — 같은 거절이 두 번 나가지 않게 */
+function isBusy() {
+  return panelMode === "loading" || panelMode === "question_loading";
+}
+
 function startConvo(query, data) {
-  convo = { query, answers: [] };
+  convo = { query, answers: [], birthYearSkipped: false };
   // 좁은 화면은 접힌 상태에서도 검색줄이 보인다. 거기서 검색했으면 펼쳐 준다
   setRailClosed(false);
   applyResponse(data);
 }
 
 function applyResponse(data) {
+  if (typeof VagueFeedback !== "undefined") VagueFeedback.reset(data);
   convo.analysis = data.analysis || null;
   convo.askedSlots = data.asked_slots || [];
+  // 최초 질의에서 이미 말한 성별·장르 — 질문 조회가 다시 묻지 않게 그대로 보낸다. 응답 값으로 **교체**한다(이전 검색 값과
+  // 합치지 않는다). 서버가 원문에서 계산하므로 연도 재검색·거절 검색 응답에도 같은 값이 실려 온다
+  convo.knownSlots = data.known_slots || [];
   convo.rejectedIds = data.rejected_ids || [];
   convo.candidateIds = data.candidate_ids || [];
   convo.turn = data.turn || 1;
   convo.results = data.results || [];
+  // 결과·후보가 바뀌었다 — 앞 결과로 받아 둔 데이터 질문은 여기서 버려진다(서버는 출생 연도 질문만 싣는다)
   convo.clarify = data.clarify || null;
+  convo.clarifyDeferred = Boolean(data.clarify_deferred);
   convo.explain = data.explain || null;
+  // 서버의 요청 단위 안내(리랭킹 정책 생략 사유·고정 문구). 응답 값으로 교체한다 — 앞 결과의 안내가 남으면 안 된다
+  convo.notice = data.notice || null;
   explainOpen.clear(); // 새 결과다 — 앞 목록에서 펼쳐 둔 곡은 여기 없다
-  panelMode = "idle";
+  explainDetailsOpen.clear();
+  // 출생 연도 질문은 결과와 함께 바로 띄운다(위 '예외'). 건너뛴 뒤에는 거절 버튼만 보인다
+  panelMode = isBirthYearQuestion() && !convo.birthYearSkipped && convo.results.length > 0 ? "asking" : "idle";
   markHits(convo.results.map((r) => String(r.id)));
   renderPanel();
   resultList.scrollTop = 0; // 새 결과는 1위부터 보이게
@@ -725,6 +812,116 @@ function applyResponse(data) {
 
 function shownIds() {
   return convo ? convo.results.map((r) => String(r.id)) : [];
+}
+
+function isBirthYearQuestion() {
+  return Boolean(convo && convo.clarify && convo.clarify.slot === "birth_year");
+}
+
+/* 출생 연도 질문을 이 검색에서는 더 묻지 않는다 — "잘 모르겠어요"·닫기·Esc.
+   물어본 슬롯으로 적어 두면 다음 요청(질문 조회·거절)에 실려 가 서버도 다시 묻지 않는다 */
+function dismissBirthYearQuestion() {
+  convo.birthYearSkipped = true;
+  if (!convo.askedSlots.includes("birth_year")) convo.askedSlots.push("birth_year");
+  panelMode = "idle";
+  renderPanel();
+}
+
+/*
+ * 출생 연도 휠 — 슬롯처럼 세로로 돌려 한 해를 고른다. 스크롤 스냅으로 가운데 줄에 멈추고(마우스 휠·트랙패드·터치·
+ * 방향키·클릭 모두 네이티브 스크롤), 가운데 줄의 연도가 값이다. 처음 열릴 때 위에서 기본 연도까지 굴러 내려온다.
+ * 줄 높이는 style.css의 .wheel li와 같아야 한다.
+ */
+const WHEEL_ROW = 36;
+const WHEEL_PAD = 2;                 // 가운데 줄이 첫·끝 연도도 가리킬 수 있게 위아래 빈 줄
+const WHEEL_DEFAULT_YEAR = 2000;
+
+function yearWheel(options) {
+  const seen = (options || []).flatMap((o) => (String(o.value || "").match(/(?:19|20)\d{2}/g) || []).map(Number));
+  const first = seen.length ? Math.min(...seen) : 1970;
+  const last = seen.length ? Math.max(...seen) : 2015;
+  const years = [];
+  for (let y = first; y <= last; y += 1) years.push(y);
+  const clamp = (y) => Math.min(last, Math.max(first, y));
+  const start = clamp(convo.wheelYear || loadBirthYear() || WHEEL_DEFAULT_YEAR);
+
+  const el = makeEl("div", "wheel");
+  el.setAttribute("role", "group");
+  el.setAttribute("aria-label", "출생 연도 고르기");
+  const list = makeEl("ul", "wheellist");
+  list.tabIndex = 0;
+  list.setAttribute("aria-label", "연도를 돌려서 고르세요");
+  for (let i = 0; i < WHEEL_PAD; i += 1) list.append(makeEl("li", "wheelpad"));
+  for (const y of years) {
+    const li = makeEl("li", "", String(y));
+    li.dataset.year = String(y);
+    li.addEventListener("click", () => list.scrollTo({ top: (y - first) * WHEEL_ROW, behavior: "smooth" }));
+    list.append(li);
+  }
+  for (let i = 0; i < WHEEL_PAD; i += 1) list.append(makeEl("li", "wheelpad"));
+  const label = makeEl("div", "wheelvalue");
+  el.append(list, label);
+
+  const index = () => Math.min(years.length - 1, Math.max(0, Math.round(list.scrollTop / WHEEL_ROW)));
+  const value = () => years[index()];
+  let raf = 0;
+  const paint = () => {
+    raf = 0;
+    const y = value();
+    convo.wheelYear = y; // 다시 그려져도(로딩 등) 돌려 둔 자리를 잃지 않게
+    label.textContent = `${y}년생`;
+    list.querySelectorAll("li[data-year]").forEach((li) => li.classList.toggle("active", Number(li.dataset.year) === y));
+  };
+  list.addEventListener("scroll", () => {
+    if (!raf) raf = requestAnimationFrame(paint);
+  });
+  list.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    e.preventDefault();
+    list.scrollTo({ top: (index() + (e.key === "ArrowDown" ? 1 : -1)) * WHEEL_ROW, behavior: "smooth" });
+  });
+  // 붙은 뒤에 위치를 잡는다 — 처음엔 맨 위에서 기본 연도까지 굴러 내려오고, 이미 돌려 둔 값이면 바로 그 자리
+  requestAnimationFrame(() => {
+    const top = (start - first) * WHEEL_ROW;
+    if (convo.wheelYear) {
+      list.scrollTop = top;
+    } else {
+      list.scrollTop = 0;
+      requestAnimationFrame(() => list.scrollTo({ top, behavior: "smooth" }));
+    }
+    paint();
+  });
+  return { el, value };
+}
+
+/* 출생 연도 답 — 저장하고 같은 질의를 기존 분석 + birth_year로 다시 검색한다. 거절할 곡이 없으므로 턴을 쌓지 않고,
+   실패하면 앞의 결과·대화를 그대로 둔다(답은 저장됐으므로 다음 검색부터 반영된다) */
+async function answerBirthYear(value) {
+  if (!convo || isBusy()) return;
+  const year = parseBirthYear(value);
+  if (!year) {
+    dismissBirthYearQuestion();
+    return;
+  }
+  saveBirthYear(year);
+  const seq = searchSeq;
+  const current = convo;
+  current.birthYearSkipped = true; // 성공하든 실패하든 이 검색에서 다시 묻지 않는다
+  panelMode = "loading";
+  renderPanel();
+  const body = { query: current.query, top_k: TOP_K, candidate_k: CANDIDATE_K, explain: true, birth_year: year, turn: current.turn, defer_clarify: true };
+  if (current.analysis) body.prior_analysis = current.analysis; // 재분석(Gemini 호출) 없이 창만 넣어 다시 찾는다
+  try {
+    const data = await requestSearch(body);
+    if (seq !== searchSeq || convo !== current) return; // 그 사이 새 검색을 했다
+    showStatus("");
+    applyResponse(data);
+  } catch (err) {
+    if (seq !== searchSeq || convo !== current) return;
+    panelMode = "idle";
+    renderPanel(); // 앞의 결과를 그대로 보여준다
+    showStatus(`${searchFailureText(err)} 시기를 반영한 재검색은 실패해 앞의 결과를 그대로 둡니다.`, "warn");
+  }
 }
 
 function canRejectMore() {
@@ -743,7 +940,7 @@ function makeEl(tag, className, text) {
 function button(className, text, onClick) {
   const b = makeEl("button", className, text);
   b.type = "button";
-  b.disabled = panelMode === "loading";
+  b.disabled = isBusy();
   b.addEventListener("click", (e) => {
     e.stopPropagation(); // document 핸들러가 곡 카드를 닫지 않게
     onClick();
@@ -752,6 +949,10 @@ function button(className, text, onClick) {
 }
 
 function renderPanel() {
+  if (typeof VagueFeedback !== "undefined") {
+    if (!convo) VagueFeedback.reset(null);
+    VagueFeedback.setBusy(isBusy());
+  }
   updateLegendVisibility();
   if (!convo) {
     resultBlock.hidden = true;
@@ -823,6 +1024,7 @@ function renderPanel() {
       } catch (_) { /* 출처 주소가 유효하지 않으면 링크를 생략한다. */ }
       text.append(proof);
     }
+    if (typeof VagueFeedback !== "undefined") VagueFeedback.attach(text, r);
     li.append(text);
 
     /*
@@ -843,6 +1045,9 @@ function renderPanel() {
 }
 
 function clarifyContent() {
+  if (panelMode === "question_loading") {
+    return [makeEl("p", "clarifynote", "추가 질문을 준비하는 중…")];
+  }
   if (panelMode === "loading") {
     return [makeEl("p", "clarifynote", "다시 찾는 중…")];
   }
@@ -854,16 +1059,32 @@ function clarifyContent() {
     const bubble = makeEl("div", "bubble");
     bubble.append(makeEl("p", "bubbleq", q.question));
     const options = makeEl("div", "options");
-    for (const opt of q.options) {
-      const b = button("option", "", () => submitTurn({ slot: q.slot, value: opt.value, skipped: false }));
-      b.append(makeEl("span", "", opt.value), makeEl("span", "optioncount", `${opt.count}곡`));
-      options.append(b);
+    const aboutUser = q.slot === "birth_year"; // 곡이 아니라 사용자에 대한 질문 — 후보 수가 없고, 거절 없이 바로 다시 검색한다
+    if (aboutUser) {
+      // 밴드 버튼 대신 돌려서 고르는 연도 휠. 서버의 밴드 목록은 연도 범위로만 쓴다(답은 '1998' 한 해로 보낸다)
+      const wheel = yearWheel(q.options);
+      bubble.append(wheel.el);
+      bubble.append(makeEl("p", "clarifynote", "답하면 그 시기의 곡을 먼저 보여드려요. 이 브라우저에만 저장돼요. 다음부터는 묻지 않아요."));
+      options.append(button("option primary", "이 연도로 찾기", () => answerBirthYear(String(wheel.value()))));
+    } else {
+      for (const opt of q.options) {
+        const b = button("option", "", () => submitTurn({ slot: q.slot, value: opt.value, skipped: false }));
+        b.append(makeEl("span", "", opt.value));
+        b.append(makeEl("span", "optioncount", `${opt.count}곡`));
+        options.append(b);
+      }
     }
     options.append(
-      button("option skip", "잘 모르겠어요", () => submitTurn({ slot: q.slot, value: "", skipped: true }))
+      button("option skip", "잘 모르겠어요", () =>
+        aboutUser ? dismissBirthYearQuestion() : submitTurn({ slot: q.slot, value: "", skipped: true })
+      )
     );
     bubble.append(options);
-    const cancel = button("linkbtn", "결과로 돌아가기", () => {
+    const cancel = button("linkbtn", aboutUser ? "그냥 결과 볼게요" : "결과로 돌아가기", () => {
+      if (aboutUser) {
+        dismissBirthYearQuestion();
+        return;
+      }
       panelMode = "idle";
       renderPanel();
     });
@@ -889,6 +1110,8 @@ function clarifyContent() {
 
 // 펼쳐 둔 곡. 목록을 다시 그려도 펼친 상태가 남게 화면 밖에 둔다
 const explainOpen = new Set();
+// 그 안에서 "점수 상세 보기"까지 펼친 곡. 질문이 뜨거나 닫혀 목록을 다시 그려도 접히지 않게 따로 둔다
+const explainDetailsOpen = new Set();
 
 // 서버의 _fmt와 같은 표기여야 요약문과 표의 숫자가 어긋나 보이지 않는다
 function exDelta(v) {
@@ -947,6 +1170,7 @@ function toggleExplain(id, btn, x) {
   const open = explainOpen.has(id);
   if (open) {
     explainOpen.delete(id);
+    explainDetailsOpen.delete(id); // 근거를 닫았다 — 다시 열면 점수 상세는 기본(접힘)으로 돌아간다
     const panel = li.nextElementSibling;
     if (panel && panel.classList.contains("explainrow")) panel.remove();
   } else {
@@ -957,13 +1181,90 @@ function toggleExplain(id, btn, x) {
   syncRailMetrics(); // 좁은 화면에서는 레일이 높아진다 — 지도가 그만큼 내려간다
 }
 
+/*
+ * 패널의 순서: 짧은 설명 → 기억한 단서 대조 → 접힌 "점수 상세 보기".
+ *
+ * 사용자용 설명(user_explanation)은 서버가 원문·답변·곡 자료·실행 기록을 대조해 만든 것이다.
+ * 여기서는 그 문장과 표를 그대로 그린다 — "곡 정보가 맞다"와 "점수에 반영됐다"를 화면이 합치거나
+ * 바꿔 말하지 않는다(둘은 서버가 따로 적어 보낸다). 숫자·경로·순위 기록은 지우지 않고 접힌
+ * <details>에 보존한다. 네이티브 <details>라 키보드(Enter·Space)로 펼칠 수 있다.
+ *
+ * user_explanation이 없는 응답(구형 서버·평가 도구)은 예전 배치 그대로 — 기록 요약과 표를 바로 보인다.
+ */
 function explainPanel(x) {
   const li = makeEl("li", "explainrow");
   const box = makeEl("div", "explain");
+  const ux = x.user_explanation;
 
-  // 서버가 기록만으로 만든 문장. 화면이 고쳐 쓰지 않는다
-  box.append(makeEl("p", "exsummary", x.summary));
+  if (ux && typeof ux.summary === "string") {
+    box.append(makeEl("p", "exsummary exuser", ux.summary));
+    const checks = Array.isArray(ux.clue_checks) ? ux.clue_checks : [];
+    if (checks.length) box.append(explainClues(checks));
 
+    const details = makeEl("details", "exdetails");
+    const songId = String(x.song_id || "");
+    details.open = explainDetailsOpen.has(songId); // 다시 그려도 펼쳐 둔 상세는 펼친 채로
+    details.append(makeEl("summary", "exdetailsum", "점수 상세 보기"));
+    const body = makeEl("div", "exdetailbody");
+    // 서버가 기록만으로 만든 문장. 화면이 고쳐 쓰지 않는다
+    body.append(makeEl("p", "exsummary exrecord", x.summary));
+    explainRecord(body, x);
+    details.append(body);
+    details.addEventListener("toggle", () => {
+      if (details.open) explainDetailsOpen.add(songId);
+      else explainDetailsOpen.delete(songId);
+      syncRailMetrics(); // 펼치면 좁은 화면에서 레일이 높아진다 — 지도가 그만큼 내려가야 한다
+    });
+    box.append(details);
+  } else {
+    box.append(makeEl("p", "exsummary", x.summary));
+    explainRecord(box, x);
+  }
+
+  li.append(box);
+  return li;
+}
+
+/*
+ * 기억한 단서 / 이 곡에서 확인한 내용 / 상태. 모든 칸은 텍스트 노드다 — 질의·가사·곡 설명에
+ * 어떤 글자가 와도 마크업으로 해석되지 않는다. 상태는 색뿐 아니라 글자(일치·부분 일치·다름·미확인)로
+ * 보인다. 행 수를 제한하지 않는다 — 미확인 단서를 숨기면 "확인됐다"로 읽힌다.
+ */
+function explainClues(checks) {
+  const table = makeEl("table", "exclues");
+  const head = makeEl("thead");
+  const headRow = makeEl("tr");
+  for (const title of ["기억한 단서", "이 곡에서 확인한 내용", "상태"]) headRow.append(makeEl("th", "", title));
+  head.append(headRow);
+  table.append(head);
+
+  const body = makeEl("tbody");
+  for (const c of checks) {
+    const status = c.status || "unverified";
+    const tr = makeEl("tr", `exclue exclue-${status}`);
+
+    const clue = makeEl("td", "excluetext", c.clue || "");
+    clue.setAttribute("data-label", "기억한 단서");
+
+    const observed = makeEl("td", "exclueobs");
+    observed.setAttribute("data-label", "확인한 내용");
+    observed.append(document.createTextNode(c.observed || ""));
+    // 순위 기여는 곡 정보 일치와 별개다. 기록이 있을 때만 "반영"이라고 적힌 서버 문구를 그대로 쓴다
+    if (c.basis_label) observed.append(makeEl("span", "excluebasis", c.basis_label));
+
+    const state = makeEl("td", "excluestatus");
+    state.setAttribute("data-label", "상태");
+    state.append(makeEl("span", `exstatus exstatus-${status}`, c.status_label || "미확인"));
+
+    tr.append(clue, observed, state);
+    body.append(tr);
+  }
+  table.append(body);
+  return table;
+}
+
+/* 실행 기록 — 순위·순서 규칙·경로 기여·가감점·리랭킹·가사 일치·원문 인용. 숫자 장부는 여기 전부 남는다 */
+function explainRecord(box, x) {
   // 이 곡이 어디서 어디로 갔는가. 아래는 전부 그 이유다
   if (x.rank_before_rerank != null && x.rank_after_rerank != null) {
     box.append(
@@ -975,9 +1276,9 @@ function explainPanel(x) {
    * 순서 규칙이 점수표보다 먼저 온다. 점수와 무관하게 자리를 정하는 규칙이라,
    * 점수를 먼저 보여주면 그 점수가 순서를 정했다고 읽힌다.
    */
-  if (x.order_rules.length) {
+  if ((x.order_rules || []).length) {
     const g = exGroup("순서 규칙", "점수와 무관하게 순서만 바꿈");
-    for (const rule of x.order_rules) {
+    for (const rule of x.order_rules || []) {
       const row = makeEl("div", "exrow");
       const left = makeEl("span", "exlabel", rule.label);
       if (rule.detail) left.append(makeEl("span", "exdetail", rule.detail));
@@ -991,15 +1292,18 @@ function explainPanel(x) {
    * 경로 기여 + 가감점 = 검색 점수. 합이 실제로 맞는 장부다 — 그래야 보는
    * 사람이 "이 줄들이 정말 저 점수를 만들었나"를 직접 확인할 수 있다.
    */
-  if (x.paths.length) {
+  if ((x.paths || []).length) {
     const g = exGroup("경로 기여");
-    for (const path of x.paths) g.append(exItem(path.label, exPathDetail(path), path.delta));
+    for (const path of x.paths || []) g.append(exItem(path.label, exPathDetail(path), path.delta));
     g.append(exSum(exDelta(x.path_total)));
     box.append(g);
   }
-  if (x.adjustments.length) {
+  if ((x.adjustments || []).length) {
     const g = exGroup("가감점");
-    for (const adj of x.adjustments) g.append(exItem(adj.label, adj.detail, adj.delta));
+    // adj.note는 서버 문구 — 정정 전 답·검색 해석값으로 계산된 줄의 표시. 화면이 짓지 않는다
+    for (const adj of x.adjustments || []) {
+      g.append(exItem(adj.label, [adj.detail, adj.note].filter(Boolean).join(" · "), adj.delta));
+    }
     g.append(exSum(exDelta(x.adjustment_total)));
     box.append(g);
   }
@@ -1017,9 +1321,9 @@ function explainPanel(x) {
   }
 
   // 1차 절단에서 탈락한 기여. 위 합계에 넣으면 설명이 실제 점수보다 커진다
-  if (x.dropped_paths.length) {
+  if ((x.dropped_paths || []).length) {
     const g = exGroup("반영 안 된 기여", "1차 절단에서 탈락 · 최종 점수에 없음");
-    for (const path of x.dropped_paths) {
+    for (const path of x.dropped_paths || []) {
       const row = exItem(path.label, exPathDetail(path), path.delta);
       row.classList.add("dim");
       g.append(row);
@@ -1046,10 +1350,12 @@ function explainPanel(x) {
   if (x.score_mix) box.append(explainMix(x));
   if (x.lyric_match) box.append(explainLyric(x));
   for (const item of x.evidence || []) box.append(explainEvidence(item));
-  if (x.model_notes.length) box.append(explainModelNotes(x));
-
-  li.append(box);
-  return li;
+  /*
+   * 모델이 스스로 쓴 이유(model_notes)는 **그리지 않는다.** 서버도 더 이상 보내지 않지만
+   * (항상 빈 배열), 구형 서버가 문장을 실어 보내도 여기서 근거로 보이게 하지 않는다 —
+   * 입력 어디에도 없는 뮤직비디오 장면을 사실처럼 쓴 사례가 있었고, "미검증" 경고를
+   * 붙여도 사용자에게는 확인된 근거로 읽혔다(2026-10-11).
+   */
 }
 
 function exPathDetail(path) {
@@ -1164,47 +1470,49 @@ function explainEvidence(item) {
   return g;
 }
 
-function explainModelNotes(x) {
-  const g = exGroup("모델이 쓴 이유");
-  // 검증된 기록과 한 덩어리로 읽히지 않게, 서버가 함께 보낸 경고를 그대로 붙인다
-  g.append(makeEl("p", "exwarn", x.model_notes_caption));
-  for (const text of x.model_notes) g.append(makeEl("p", "exmodelnote", text));
-  return g;
-}
-
 /*
  * 요청 한 번의 실행 기록. 곡별 근거와 달리 질의 전체에 해당한다 — 리랭커가
  * 예외로 멈췄으면 열 곡의 이야기가 통째로 달라지므로, 곡을 펼쳐야 보이는
  * 자리에 두지 않는다.
+ *
+ * 서버의 안내(notice)도 여기 적는다. "말씀하신 뮤직비디오 장면은 확인할 자료가 없어
+ * 다른 단서로 찾은 후보를 보여드려요"처럼 결과의 성격을 바꾸는 말이라 기록(explain)이
+ * 없어도 보여야 한다. 문구는 서버가 보낸 것을 그대로 쓴다 — 화면이 짓지 않는다.
  */
 function renderRunNote() {
   const x = convo && convo.explain;
-  if (!x) {
+  const notice = convo && convo.notice;
+  if (!x && !notice) {
     runNote.hidden = true;
     return;
   }
-  const parts = [x.reorder_stage_label || x.reorder_stage];
-  if (x.reranker && x.reranker !== "none") parts.push(x.reranker);
-  // 호출 수 ≠ 성공 수다. 같을 때는 말할 것이 없다
-  if (x.rerank_calls !== x.rerank_calls_applied) {
-    parts.push(`${x.rerank_calls}번 불러 ${x.rerank_calls_applied}번 적용`);
+  const parts = [];
+  if (notice && notice.message) parts.push(notice.message);
+  if (x) {
+    parts.push(x.reorder_stage_label || x.reorder_stage);
+    if (x.reranker && x.reranker !== "none") parts.push(x.reranker);
+    // 호출 수 ≠ 성공 수다. 같을 때는 말할 것이 없다
+    if (x.rerank_calls !== x.rerank_calls_applied) {
+      parts.push(`${x.rerank_calls}번 불러 ${x.rerank_calls_applied}번 적용`);
+    }
+    if (x.rerank_error) parts.push(x.rerank_error);
+    /*
+     * 질의 분석이 규칙 폴백이면 결과의 성격이 통째로 달라진다(쿼터 초과·시간 초과).
+     * 검색은 그대로 돌아서 결과만 봐서는 구분되지 않으므로 여기서 말한다.
+     * 문구는 서버가 보낸 것을 그대로 쓴다 — 화면이 짓지 않는다.
+     */
+    if (x.analysis_fallback) parts.push(x.analysis_fallback_label);
+    /*
+     * 예외로 죽은 경로. 가중치는 남아 있으므로 이것이 없으면 "가중치 0.20인데
+     * 기여가 한 줄도 없다"가 되어, 경로가 돌았지만 이 곡을 못 올린 것으로 읽힌다.
+     */
+    for (const path of x.failed_paths || []) parts.push(path.label);
   }
-  if (x.rerank_error) parts.push(x.rerank_error);
-  /*
-   * 질의 분석이 규칙 폴백이면 결과의 성격이 통째로 달라진다(쿼터 초과·시간 초과).
-   * 검색은 그대로 돌아서 결과만 봐서는 구분되지 않으므로 여기서 말한다.
-   * 문구는 서버가 보낸 것을 그대로 쓴다 — 화면이 짓지 않는다.
-   */
-  if (x.analysis_fallback) parts.push(x.analysis_fallback_label);
-  /*
-   * 예외로 죽은 경로. 가중치는 남아 있으므로 이것이 없으면 "가중치 0.20인데
-   * 기여가 한 줄도 없다"가 되어, 경로가 돌았지만 이 곡을 못 올린 것으로 읽힌다.
-   */
-  for (const path of x.failed_paths || []) parts.push(path.label);
   runNote.textContent = parts.filter(Boolean).join(" · ");
+  // 정책 생략(안내)은 경고가 아니다 — 실패·폴백·죽은 경로만 경고색이다
   runNote.classList.toggle(
     "warn",
-    !!(x.rerank_error || x.analysis_fallback || (x.failed_paths || []).length)
+    !!(x && (x.rerank_error || x.analysis_fallback || (x.failed_paths || []).length))
   );
   runNote.hidden = false;
 }
@@ -1267,25 +1575,73 @@ try {
 }
 
 function onReject() {
-  if (!canRejectMore()) return;
-  if (convo.clarify) {
-    // 질문은 이미 응답에 실려 있다 — 모델을 다시 부르지 않고 바로 보여준다
+  if (!canRejectMore() || isBusy()) return;
+  if (convo.clarify && !isBirthYearQuestion()) {
+    // 이 결과로 이미 받아 둔 질문이다(닫았다가 다시 눌렀다) — 다시 조회하지 않는다
     panelMode = "asking";
     renderPanel();
     return;
   }
-  submitTurn(null); // 물을 게 없으면 거절만 한다
+  if (convo.clarifyDeferred) return requestClarification();
+  return submitTurn(null); // 물을 게 없으면 거절만 한다
 }
 
-async function submitTurn(answer) {
-  if (!convo || panelMode === "loading") return;
+const CLARIFY_FAILED_NOTE = "추가 질문을 준비하지 못해 질문 없이 다음 곡을 찾았습니다.";
+
+/* 지금 후보로 물을 것이 있는지 서버에 묻는다. 질문만 가져온다 — 턴·거절·결과는 그대로다.
+   질문이 없거나 조회가 실패(오류·제한 시간)하면 거절만 해서 다음 결과로 간다. 실패한 조회는 다시 시도하지
+   않는다(클릭 한 번에 조회 한 번·거절 검색 한 번). 그 거절 검색까지 실패하면 submitTurn이 앞의 결과를 그대로 둔다 */
+async function requestClarification() {
+  const current = convo;
+  const seq = searchSeq;
+  // 답을 실어 보낼 분석이 없으면 질문을 받아도 반영하지 못한다(서버는 prior_analysis 없는 answers를 거부한다)
+  if (!current.analysis) return submitTurn(null);
+  panelMode = "question_loading";
+  renderPanel();
+  let question = null;
+  let failed = false;
+  try {
+    const data = await requestSearch({
+      asked_slots: current.askedSlots,
+      known_slots: current.knownSlots,
+      previous_candidate_ids: current.candidateIds.slice(0, MAX_PREVIOUS_CANDIDATES),
+      shown_ids: shownIds(),
+      rejected_ids: current.rejectedIds,
+      turn: current.turn,
+    }, CLARIFY_PATH, CLARIFY_TIMEOUT_MS);
+    question = data.clarify || null;
+  } catch (err) {
+    failed = true;
+  }
+  if (seq !== searchSeq || convo !== current) return; // 그 사이 새 검색을 했다 — 늦은 응답은 버린다
+  panelMode = "idle";
+  if (question) {
+    current.clarify = question;
+    showStatus("");
+    panelMode = "asking";
+    renderPanel();
+    return;
+  }
+  return submitTurn(null, failed ? CLARIFY_FAILED_NOTE : "");
+}
+
+/* 보여준 곡을 거절하고(답이 있으면 함께 실어) 다음 결과를 찾는다. note는 성공했을 때 상태줄에 남길 안내 */
+async function submitTurn(answer, note = "") {
+  if (!convo || isBusy()) return;
+  const current = convo;
   const rejected = [...new Set([...convo.rejectedIds, ...shownIds()])];
   let answers = answer ? [...convo.answers, answer] : convo.answers;
   if (!convo.analysis) answers = []; // 서버는 prior_analysis 없는 answers를 거부한다
 
+  if (answer && answer.slot === "birth_year" && !answer.skipped) {
+    const year = parseBirthYear(answer.value);
+    if (year) saveBirthYear(year); // 다음 검색부터는 묻지 않고 요청에 실어 보낸다
+  }
+
   const body = {
     query: convo.query,
     top_k: TOP_K,
+    candidate_k: CANDIDATE_K,
     prior_analysis: convo.analysis,
     answers,
     asked_slots: convo.askedSlots,
@@ -1293,6 +1649,8 @@ async function submitTurn(answer) {
     rejected_ids: rejected,
     turn: convo.turn,
     explain: true,
+    defer_clarify: true,
+    birth_year: loadBirthYear(),
   };
 
   const seq = searchSeq;
@@ -1301,12 +1659,12 @@ async function submitTurn(answer) {
   renderPanel();
   try {
     const data = await requestSearch(body);
-    if (seq !== searchSeq || !convo) return; // 그 사이 새 검색을 했다
+    if (seq !== searchSeq || convo !== current) return; // 그 사이 새 검색을 했다
     convo.answers = answers;
-    showStatus("");
+    showStatus(note, note ? "warn" : undefined);
     applyResponse(data);
   } catch (err) {
-    if (seq !== searchSeq || !convo) return;
+    if (seq !== searchSeq || convo !== current) return;
     // 실패하면 상태를 건드리지 않고 직전 화면으로 되돌린다 — 다시 누르면 재시도된다
     panelMode = previousMode;
     renderPanel();
@@ -1326,20 +1684,26 @@ resultList.addEventListener("click", (e) => {
 });
 rail.addEventListener("click", (e) => e.stopPropagation());
 
-searchForm.addEventListener("submit", async (e) => {
+searchForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const q = searchInput.value.trim();
   if (!q) {
     clearSearch();
     return;
   }
+  runSearch(q);
+});
+
+/* 처음부터 검색한다(검색줄 제출). 출생 연도 답 뒤의 재검색은 answerBirthYear가 기존 분석으로 따로 한다 */
+async function runSearch(q) {
   const seq = ++searchSeq;
   convo = null;
+  panelMode = "idle"; // 앞 대화의 요청이 나가 있었더라도 그 응답은 버려진다 — 로딩 표시를 남기지 않는다
   renderPanel();
   clearBtn.hidden = false;
   showStatus("검색 중…");
   try {
-    const data = await requestSearch({ query: q, top_k: TOP_K, explain: true });
+    const data = await requestSearch({ query: q, top_k: TOP_K, candidate_k: CANDIDATE_K, explain: true, birth_year: loadBirthYear(), defer_clarify: true });
     if (seq !== searchSeq) return;
     showStatus("");
     startConvo(q, data);
@@ -1356,7 +1720,7 @@ searchForm.addEventListener("submit", async (e) => {
       "warn"
     );
   }
-});
+}
 
 clearBtn.addEventListener("click", clearSearch);
 document.addEventListener("keydown", (e) => {
@@ -1372,6 +1736,10 @@ document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
   if (panelMode === "asking") {
     // 질문 중 Esc는 검색 전체가 아니라 질문만 닫는다
+    if (isBirthYearQuestion()) {
+      dismissBirthYearQuestion();
+      return;
+    }
     panelMode = "idle";
     renderPanel();
     return;
@@ -1394,4 +1762,8 @@ window.addEventListener("resize", () => {
   }, 150);
 });
 
-init();
+// 데이터를 못 받아도 인트로가 검정에 갇히지 않게 한다 (intro.js 에 maxWaitMs 안전장치도 있다)
+init().catch((err) => {
+  console.error(err);
+  if (window.VagueIntro && window.VagueIntro.ready) window.VagueIntro.ready();
+});

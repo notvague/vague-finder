@@ -2,6 +2,7 @@
 Eval set / song catalog 로더.
 
 - load_eval_set(path): EvalSet 로드 + 스키마 검증
+- load_target_scopes(path): query_id → target_scope (범주형 집계용)
 - load_song_catalog(path): song_id → 메타 dict 로드
 - cross_validate(eval_set, catalog): positives/negatives의 모든 song_id가
   실제 카탈로그에 존재하는지 확인 (오타/존재하지 않는 ID 차단)
@@ -26,6 +27,11 @@ def load_eval_set(path: Path | str = DEFAULT_EVAL_PATH) -> EvalSet:
     with open(p, encoding="utf-8") as f:
         raw = json.load(f)
     return EvalSet(**raw)
+
+
+def load_target_scopes(path: Path | str = DEFAULT_EVAL_PATH) -> Dict[str, str]:
+    """query_id → target_scope(specific | categorical). 범주형 집계에 쓴다."""
+    return {q.query_id: q.target_scope for q in load_eval_set(path).queries}
 
 
 def load_song_catalog(path: Path | str = DEFAULT_CATALOG_PATH) -> Dict[str, dict]:

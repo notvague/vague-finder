@@ -13,6 +13,11 @@ CE 2.7초였다. 둘 중 CE 쪽은 **분석 결과를 건드리지 않으므로*
 같은 장치 · 모델은 한 번만 올리고 설정만 바꾼다 · 예열 후 반복 측정.
 후보 수와 `max_length`는 **건드리지 않는다**(이번 실험의 변수는 배치 크기 하나다).
 
+이 도구는 `reranker.rerank_run`을 **직접** 부른다 — 라우터·평가 스크립트의 리랭킹 생략 정책
+(`rerank_policy.py`: 표지 지배·자료 없는 MV 장면)과 가사 보호 배치를 거치지 않는다. 의도된 것이다:
+여기서 재는 것은 리랭커 호출 한 번의 시간·점수이고 서비스 결과가 아니다. 서비스 결과를 재려면
+`evaluate_search_accuracy`를 쓴다.
+
     venv/bin/python -m src.retrieval.measure_rerank_batch \
         --input experiments/reranking/eval_queries_v06.csv --split dev \
         --analysis-cache experiments/reranking/analysis_cache_v06_dev.json \
@@ -36,7 +41,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.backend.api.dependencies import get_reranker, get_search_router
+from src.backend.api.dependencies import get_search_router
+from src.retrieval.reranker import MusicReranker
 from src.retrieval.analysis_cache import load_cache
 from src.retrieval.evaluate_search_accuracy import read_queries
 
@@ -170,7 +176,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("오류: 후보가 있는 질의가 없습니다.", file=sys.stderr)
         return 2
 
-    reranker = get_reranker()
+    # CE 전용 도구다. 공용 선택기(dependencies)는 기본이 Gemini listwise라 batch_size가 없다 —
+    # 여기서 CE를 직접 만든다. 후보 검색(use_rerank=False)은 리랭커를 부르지 않는다.
+    reranker = MusicReranker()
     reranker.load()
     original = reranker.config
     # 예열 — 첫 추론에 붙는 커널 컴파일 비용을 측정 밖으로 뺀다.

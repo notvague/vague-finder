@@ -69,4 +69,3 @@ artifacts/context_fixed_followup_20261005_cover_dance_fix_feedback.zip
 이 ZIP에는 `fresh/validation_report.json`, 단계별 보고서·체크포인트·분석 캐시와 `console_run.log`가 들어간다. 이미지·오디오 경로 실행, 후보·Top-10 손실, 근거 라벨 비교, 분석 반복 변동을 함께 확인할 수 있다. 빌드나 테스트 단계에서 중단돼 보고서 ZIP이 생성되지 않은 경우에는 `artifacts/context_fixed_followup_20261005_cover_dance_fix/console_run.log`를 보낸다.
 
 평가 결과와 로그에는 비공개 질의·정답·코퍼스 정보가 들어갈 수 있으므로 공개 레포에는 올리지 않는다. 수정 ZIP에는 평가 CSV·음원·가사·곡 메타데이터·임베딩을 포함하지 않았다.
-

@@ -16,23 +16,24 @@
   의 단방향으로 정리한다 (BUG-002 해소).
 """
 
-import os
 import json
 import logging
 import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from google import genai
 from dotenv import load_dotenv
+
+from src.common.gemini_client import crawl_model_name, gemini_configured, make_genai_client
 
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    logger.warning("GEMINI_API_KEY가 설정되지 않았습니다.")
+# Vertex(GCP_PROJECT_ID) 또는 AI Studio 키(GEMINI_API_KEY) 중 하나라도 있으면 Gemini를 쓴다
+GEMINI_CONFIGURED = gemini_configured()
+if not GEMINI_CONFIGURED:
+    logger.warning("Gemini 설정(GCP_PROJECT_ID·GEMINI_API_KEY)이 없습니다.")
 
 
 def build_comment_selection_prompt(
@@ -193,7 +194,7 @@ def _evaluate_batch(client, batch: List[Dict[str, Any]], source_name: str) -> Li
     """배치 하나를 LLM에 보내 판정 레코드로 바꾼다. 실패는 예외로 올린다."""
     prompt = build_comment_selection_prompt(batch, source_name=source_name)
     response = client.models.generate_content(
-        model="gemini-3.1-flash-lite",
+        model=crawl_model_name(),
         contents=prompt,
         config={"response_mime_type": "application/json"},
     )
@@ -259,14 +260,14 @@ def select_emotional_comments_detailed(
     if not comments:
         return CommentSelection(texts=[])
 
-    if not GEMINI_API_KEY:
-        logger.warning("GEMINI_API_KEY가 없어 댓글 LLM 선별을 수행할 수 없습니다.")
+    if not GEMINI_CONFIGURED:
+        logger.warning("Gemini 설정이 없어 댓글 LLM 선별을 수행할 수 없습니다.")
         return CommentSelection(
             texts=[c.get("text", "") for c in comments[:target_count]],
             unevaluated=len(comments),
         )
 
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    client = make_genai_client()
 
     kept_items: List[Dict[str, Any]] = []
     reviewed_items: List[Dict[str, Any]] = []

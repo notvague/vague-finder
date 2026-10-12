@@ -7,7 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from src.backend.api.dependencies import close_vector_client, get_vector_client
+from src.common.gemini_client import RETRIEVAL, backend_setting
 from src.backend.api.routes import search
+from src.backend.api.routes import feedback
+from src.feedback.store import close_feedback_store, prepare_indexes
 from src.backend import warmup
 from src.retrieval import timing
 
@@ -32,6 +35,11 @@ async def lifespan(app: FastAPI):
     내리면 뒤쪽 vector_db 단계가 종료 처리 뒤에 실행되어 방금 닫은 저장소를 다시 연다.
     로컬 Qdrant는 폴더를 한 번에 하나만 열 수 있으므로 그 핸들이 다음 기동을 막는다.
     """
+    # 검색 Gemini 경로 설정(GEMINI_RETRIEVAL_BACKEND)의 오타는 **기동에서** 실패시킨다. 분석기는 첫 요청에서 만들어지고
+    # 예열은 리랭커 예외를 로그로만 남겨, 그대로 두면 서버가 정상으로 떠 있다가 첫 검색이 500으로 떨어진다(PR #31 리뷰).
+    # 벡터 DB 실패와 달리 다시 시도해도 낫지 않는 설정 오류라 서버를 띄우지 않는다.
+    backend_setting(RETRIEVAL)
+
     try:
         get_vector_client()
     except Exception as exc:
@@ -42,6 +50,11 @@ async def lifespan(app: FastAPI):
     # 진행 상태는 /health에 있다. SEARCH_WARMUP=0이면 건너뛴다.
     warmup.start_background()
 
+    # 피드백 보관 기간(TTL) 색인도 요청이 오기 전에 만든다. 요청 경로에서는 0.75초 예산 안에서만
+    # 시도하기 때문에 거기에만 맡기면 큰 컬렉션의 색인이 끝내 안 만들어질 수 있다. 수집이 꺼져 있으면
+    # 연결하지 않고, 실패해도 기동을 막지 않는다. 기다리지 않는다 — 종료할 때만 정리한다.
+    index_task = asyncio.create_task(asyncio.to_thread(prepare_indexes))
+
     try:
         yield
     finally:
@@ -50,6 +63,10 @@ async def lifespan(app: FastAPI):
         # 중일 수 있어서, 여기서 시간을 끊으면 닫은 뒤에 그 단계가 저장소를 다시 연다.
         await asyncio.to_thread(warmup.stop_and_wait)
         await asyncio.to_thread(close_vector_client)
+        # 색인 작업이 아직 돌고 있으면 끝난 뒤에 닫는다(최대 INDEX_BUDGET_SECONDS). 먼저 닫으면
+        # 그 작업이 닫힌 클라이언트를 다시 열어 둔 채로 남는다.
+        await asyncio.gather(index_task, return_exceptions=True)
+        await asyncio.to_thread(close_feedback_store)
 
 
 app = FastAPI(
@@ -73,7 +90,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-TIMED_PATHS = ("/api/v1/search",)
+# 검색 한 건의 시간만 잰다. **정확히 이 경로만** — 접두사로 고르면 질문 조회(/api/v1/search/clarify)가
+# 질의도 구간도 없는 행으로 섞여 검색 시간 집계를 흐린다.
+TIMED_PATHS = frozenset({"/api/v1/search"})
 
 
 @app.middleware("http")
@@ -84,12 +103,13 @@ async def record_request_timing(request: Request, call_next):
     요청 본문 검증, 응답 직렬화가 빠진다. 15.7초의 정체를 찾는 중이므로 빠지는
     구간이 있으면 안 된다. 미들웨어 시간에서 라우트 시간을 빼면 그 바깥이 남는다.
 
-    검색 경로만 잰다. 정적 파일까지 한 줄씩 남기면 정작 볼 줄이 묻힌다.
+    검색 경로만 잰다. 정적 파일까지 한 줄씩 남기면 정작 볼 줄이 묻힌다. 검색 아래의 질문 조회
+    (`/search/clarify`)도 재지 않는다 — 검색이 아니라서 한 줄로 남기면 검색 분포에 0초대 행이 낀다.
 
     `X-Request-Id`를 돌려주는 이유: 측정 스크립트가 클라이언트에서 잰 벽시계
     시간과 서버가 남긴 구간 기록을 같은 요청끼리 맞춰야 한다.
     """
-    if not request.url.path.startswith(TIMED_PATHS):
+    if request.url.path not in TIMED_PATHS:
         return await call_next(request)
 
     timer = timing.TimingRecorder()
@@ -102,6 +122,7 @@ async def record_request_timing(request: Request, call_next):
         raise
     timer.note(status=response.status_code)
     response.headers["X-Request-Id"] = timer.request_id
+    response.headers["Cache-Control"] = "no-store"  # 실행별 피드백 제출 권한을 캐시에 남기지 않는다
     # 본문을 내보내기 직전까지가 서버가 책임지는 시간이다. 네트워크 왕복과
     # 화면 렌더링은 여기에 안 잡히므로 클라이언트에서 따로 재야 한다.
     timing.emit(timer)
@@ -126,6 +147,7 @@ async def health_check():
     }
 
 app.include_router(search.router, prefix="/api/v1")
+app.include_router(feedback.router, prefix="/api/v1")
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 

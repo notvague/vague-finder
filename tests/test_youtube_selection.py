@@ -346,6 +346,59 @@ def test_download_format_depends_on_ffmpeg(monkeypatch) -> None:
     assert opts["postprocessors"] == [{"key": "FFmpegExtractAudio", "preferredcodec": "m4a"}]
 
 
+def test_download_uses_node_runtime() -> None:
+    """댓글 수집과 같은 JS 엔진을 쓴다. 없으면 yt-dlp가 지원 중단된 방식으로만 받는다."""
+    assert cr.audio_download_options("/tmp/audio")["js_runtimes"] == {"node": {}}
+
+
+class FlakyYDL(DownloadYDL):
+    """앞의 fail_times번은 403을 내고 그다음 정상으로 받는다."""
+
+    fail_times = 0
+    error = "ERROR: unable to download video data: HTTP Error 403: Forbidden"
+    calls = 0
+
+    def download(self, urls):
+        type(self).calls += 1
+        if type(self).calls <= type(self).fail_times:
+            stem = self.opts["outtmpl"].replace(".%(ext)s", "")
+            Path(stem + ".m4a.part").write_bytes(b"partial")
+            raise cr.yt_dlp.utils.DownloadError(type(self).error)
+        super().download(urls)
+
+
+@pytest.fixture
+def flaky(monkeypatch):
+    monkeypatch.setattr(cr.yt_dlp, "YoutubeDL", FlakyYDL)
+    monkeypatch.setattr(cr.time, "sleep", lambda s: None)
+    monkeypatch.setattr(FlakyYDL, "calls", 0)
+    return FlakyYDL
+
+
+def test_403_is_retried_then_succeeds(tmp_path, flaky, monkeypatch) -> None:
+    monkeypatch.setattr(flaky, "fail_times", 2)
+    target = tmp_path / "audio.m4a"
+    assert cr.download_youtube_audio("https://www.youtube.com/watch?v=x", str(target)) is True
+    assert flaky.calls == 3
+    assert [p.name for p in tmp_path.iterdir()] == ["audio.m4a"]   # 실패 조각은 남지 않는다
+
+
+def test_403_gives_up_after_attempts(tmp_path, flaky, monkeypatch) -> None:
+    monkeypatch.setattr(flaky, "fail_times", 99)
+    target = tmp_path / "audio.m4a"
+    assert cr.download_youtube_audio("https://www.youtube.com/watch?v=x", str(target)) is False
+    assert flaky.calls == cr.AUDIO_DOWNLOAD_ATTEMPTS
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_non_403_error_is_not_retried(tmp_path, flaky, monkeypatch) -> None:
+    monkeypatch.setattr(flaky, "fail_times", 99)
+    monkeypatch.setattr(flaky, "error", "ERROR: [youtube] x: Video unavailable")
+    target = tmp_path / "audio.m4a"
+    assert cr.download_youtube_audio("https://www.youtube.com/watch?v=x", str(target)) is False
+    assert flaky.calls == 1
+
+
 # --- 제목이 비슷한 다른 곡의 영상 --------------------------------------------------------
 # 멜론을 맞게 골라도 유튜브에서 다른 곡을 선택할 수 있었다. 곡 이름을 부분 문자열로 비교해서
 # '좋은날'이 '사랑하기 좋은날'에, '니 소식'이 '니 소식2'에, 'Love'가 'Love Wins'에 들어
@@ -649,3 +702,42 @@ def test_comments_are_fetched_once_for_the_accepted_video(fake_ydl) -> None:
                               "comments": [{"text": "비 오는 새벽에 듣기 좋은 노래", "like_count": 3}]}})
     cr.fetch_youtube_reaction("아이유", "밤편지", melon_title="밤편지", known_artists=["아이유"])
     assert FakeYDL.comment_calls == ["ok"]
+
+
+# --- 영상 지정 (CSV youtube_url) -------------------------------------------------------------
+
+@pytest.mark.parametrize("url, expected", [
+    ("https://www.youtube.com/watch?v=09ig852MsMg", "09ig852MsMg"),
+    ("https://youtu.be/hHpiArQP3X4?si=xHuOXFiwP9x1gHaX", "hHpiArQP3X4"),
+    ("https://www.youtube.com/watch?list=PL1&v=-sdZYAge8jc&t=3", "-sdZYAge8jc"),
+    ("https://www.youtube.com/shorts/_FwOMyE_jEQ", "_FwOMyE_jEQ"),
+    ("없음", ""),
+    ("", ""),
+])
+def test_youtube_video_id(url, expected) -> None:
+    assert cr.youtube_video_id(url) == expected
+
+
+def test_manual_video_skips_search_and_name_checks(fake_ydl, monkeypatch) -> None:
+    """지정 영상은 검색하지 않고, 가수·곡 이름이 안 맞아도 쓴다(영어 제목 공식 오디오)."""
+    fake_ydl(
+        [entry("mv", "아이유 - 밤편지 Official MV", views=100)],
+        {"MANUALVID01": {"title": "DAY6 - She Smiled (Official Audio)", "view_count": 7,
+                         "artists": ["DAY6"], "track": "She Smiled",
+                         "comments": [{"text": "이 노래 들으면 그때 생각이 나서 울컥해요", "like_count": 3}]}},
+    )
+    monkeypatch.setattr(cr, "fetch_best_video",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("지정했는데 검색했다")))
+
+    result = cr.fetch_youtube_reaction("아이유", "밤편지", melon_title="밤편지",
+                                       video_url="https://youtu.be/MANUALVID01?si=share")
+    assert result["video_url"] == "https://www.youtube.com/watch?v=MANUALVID01"
+    assert result["video_title"] == "DAY6 - She Smiled (Official Audio)"
+    assert result["artist_verified"] is True
+    assert result["comments"] == ["이 노래 들으면 그때 생각이 나서 울컥해요"]
+
+
+def test_manual_video_without_a_video_id_is_not_searched(fake_ydl) -> None:
+    fake_ydl([entry("mv", "아이유 - 밤편지 Official MV", views=100)],
+             {"mv": {"title": "아이유 - 밤편지 Official MV", "view_count": 100, "comments": None}})
+    assert cr.fetch_youtube_reaction("아이유", "밤편지", melon_title="밤편지", video_url="없음") == {}

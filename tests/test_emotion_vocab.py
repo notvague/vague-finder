@@ -267,11 +267,11 @@ def _fake_gemini(monkeypatch, payload: dict) -> None:
             return types.SimpleNamespace(text=json.dumps(payload, ensure_ascii=False))
 
     class _Client:
-        def __init__(self, api_key=None):
+        def __init__(self):
             self.models = _Models()
 
-    monkeypatch.setattr(refine_module, "GEMINI_API_KEY", "dummy")
-    monkeypatch.setattr(refine_module.genai, "Client", _Client)
+    monkeypatch.setattr(refine_module, "GEMINI_CONFIGURED", True)
+    monkeypatch.setattr(refine_module, "make_genai_client", lambda **kwargs: _Client())
     monkeypatch.setattr(refine_module.time, "sleep", lambda seconds: None)
 
 

@@ -11,20 +11,18 @@ from __future__ import annotations
 import re
 import unicodedata
 from math import ceil
-from typing import TYPE_CHECKING, Sequence
+from typing import Sequence
 from urllib.parse import urlsplit
 
 from src.backend.schemas.query import ContextClue
+from src.backend.schemas.search import ContextEvidence
 from src.retrieval.context_query import (
     context_media_description_requires_support, context_media_target_terms,
     is_media_usage_relation,
 )
 from src.retrieval.context_media_match import media_name_in_text
-
-if TYPE_CHECKING:
-    from src.backend.schemas.search import ContextEvidence
-    from src.retrieval.context_qdrant_search import ContextFactHit
-    from src.retrieval.context_route import ContextRouteHit
+from src.retrieval.context_ranking import ContextFactHit
+from src.retrieval.context_route import ContextRouteHit
 
 
 # Limited, explicit work-title equivalences. Similarity or a matching song
@@ -477,8 +475,6 @@ def context_evidence_for_result(
     fact = select_context_fact_for_result(hit, query_clues=query_clues)
     if fact is None:
         return None
-    from src.backend.schemas.search import ContextEvidence
-
     return ContextEvidence(
         record_id=fact.record_id, fact_text=fact.fact_text,
         source_url=fact.source_url, section=fact.section, category=fact.category,

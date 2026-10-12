@@ -62,10 +62,18 @@ Oracle과 Noisy를 반드시 나눠 본다. Oracle만 제시하면 과대평가�
       --analysis-cache experiments/reranking/analysis_cache_v06_dev.json \\
       --output-dir experiments/reranking/results_clarify_vNN
   python -m src.retrieval.evaluate_clarification --split dev --limit 3   # 스모크
+  python -m src.retrieval.evaluate_clarification --resummarize \\
+      --output-dir experiments/reranking/results_clarify_v08          # 요약만 다시 (모델·DB 없음)
+
+범주형 집계
+    docs/eval/queries.json에서 target_scope=categorical인 질의(질의가 일반 속성만 말해 원래 타깃을
+    특정할 수 없는 질의)를 나눠 본 요약을 clarify_summary_by_scope.csv로 함께 낸다. 전체 지표는
+    바꾸지 않는다 — 범주형 질의도 전체 집계(clarify_summary.csv)에 그대로 들어간다.
 """
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import asyncio
 import csv
 import json
@@ -73,7 +81,7 @@ import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple, get_args
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -87,25 +95,31 @@ from src.backend.api.dependencies import (
 )
 from src.backend.api.routes.search import _can_ask_another
 from src.retrieval.clarify import (
+    answers_for_reranker,
     analysis_with_answers,
     answer_matches,
     canonical_artist_types,
     pick_question,
+    BIRTH_YEAR_SLOT,
+    BIRTH_YEAR_BAND_STARTS,
+    birth_year_band,
 )
 from src.backend.schemas.query import QueryAnalysis
 from src.backend.schemas.search import (
+    MAX_REJECT_ROUNDS,
     MAX_REJECTED_IDS,
     ClarifyAnswer,
     ClarifyQuestion,
     MatchingTrack,
 )
-from src.eval.loader import DEFAULT_EVAL_PATH, load_eval_set
-from src.eval.schema import EvalQuery
+from src.eval.loader import DEFAULT_EVAL_PATH, load_eval_set, load_target_scopes
+from src.eval.schema import TARGET_SCOPES, EvalQuery, V05_QUERY_SETS, QuerySet
 from src.retrieval.analysis_cache import (
     AnalysisCacheError,
     analyzer_fingerprint,
     load_cache,
 )
+from src.retrieval.explain import RERANK_APPLIED, RERANK_FAILED
 from src.retrieval.evaluate_search_accuracy import (
     collect_run_info,
     first_relevant_rank,
@@ -153,8 +167,41 @@ def _first(value) -> Optional[str]:
     return text or None
 
 
-def oracle_value(song: dict, slot: str) -> Optional[str]:
+def _release_year(song: dict) -> Optional[int]:
+    year = str(song.get("metadata", {}).get("release_date") or "")[:4]
+    return int(year) if year.isdigit() else None
+
+
+def _band_for(year: int) -> Optional[str]:
+    for start in BIRTH_YEAR_BAND_STARTS:
+        if start <= year <= start + 4:
+            return birth_year_band(start)
+    return None
+
+
+def oracle_birth_year(song: dict, analysis: Optional[QueryAnalysis]) -> Optional[str]:
+    """정답 곡 발매 연도에서 역산한 출생 연도 밴드 — 질의의 생애 단계 나이 범위 중앙을 뺀다.
+    생애 단계가 없으면(질의가 그런 표현을 안 썼으면) 물을 일도 없다 → None."""
+    year = _release_year(song)
+    if year is None or analysis is None or not analysis.has_life_stage:
+        return None
+    ls = analysis.life_stage
+    return _band_for(year - round((ls.age_from + ls.age_to) / 2))
+
+
+def noisy_birth_year(song: dict, analysis: Optional[QueryAnalysis]) -> Optional[str]:
+    """10년 어긋난 밴드 — 사용자가 아니라 다른 세대의 기억으로 답한 셈."""
+    truth = oracle_birth_year(song, analysis)
+    if truth is None:
+        return None
+    start = int(truth[:4])
+    return _band_for(start + 10) or _band_for(start - 10)
+
+
+def oracle_value(song: dict, slot: str, analysis: Optional[QueryAnalysis] = None) -> Optional[str]:
     """정답 곡의 실제 값. 사용자가 정확히 기억한 경우의 답변."""
+    if slot == BIRTH_YEAR_SLOT:
+        return oracle_birth_year(song, analysis)
     md = song.get("metadata", {})
     if slot == "vocal_gender":
         value = _first(md.get("vocal_gender"))
@@ -173,11 +220,13 @@ def oracle_value(song: dict, slot: str) -> Optional[str]:
     raise ValueError(f"알 수 없는 슬롯: {slot}")
 
 
-def noisy_value(song: dict, slot: str) -> Optional[str]:
+def noisy_value(song: dict, slot: str, analysis: Optional[QueryAnalysis] = None) -> Optional[str]:
     """틀린 답변. 사용자가 잘못 기억한 경우.
 
     무작위가 아니라 결정적으로 고른다 — 재측정 때 같은 값이 나와야 비교가 된다.
     """
+    if slot == BIRTH_YEAR_SLOT:
+        return noisy_birth_year(song, analysis)
     truth = oracle_value(song, slot)
     if truth is None:
         return None
@@ -222,6 +271,10 @@ class TurnResult:
         return self.rank is not None
 
 
+# 실행 전체의 리랭커 상태 집계 — runinfo에 남긴다("실패 0건"을 로그 grep이 아니라 파일로 확인, 리뷰).
+RERANK_STATUS_COUNTS: Counter = Counter()
+
+
 async def run_search(
     router,
     reranker,
@@ -241,6 +294,7 @@ async def run_search(
     """
     pool: List[str] = []
     tracks: List = []
+    rerank_input: List = []
     candidates = await router.search(
         analysis,
         top_k=candidate_k,
@@ -249,6 +303,7 @@ async def run_search(
         exclude_ids=list(exclude_ids or []),
         candidate_ids_out=pool,
         candidate_tracks_out=tracks,
+        rerank_input_tracks_out=rerank_input,
         answers=list(answers or []),
         answer_multiplier=answer_multiplier,
     )
@@ -258,10 +313,25 @@ async def run_search(
 
     # 리랭크의 가사 exact 그룹 정렬은 질의의 성별·장르를 다시 본다. 원래 분석을
     # 넘기면 사용자가 정정한 답이 그 자리에서 무시된다(라우터와 같은 이유).
+    # 리랭커 입력은 라우터가 알려 준 목록(실험 스위치가 순서를 바꿨으면 그 순서). 후보 순위·Recall 지표는
+    # 보너스 순서의 candidates 기준 그대로다. 입력이 달랐는데 리랭킹이 실패/생략되면 서비스처럼 후보 순서로 돌아간다.
+    rerank_source = rerank_input if rerank_input else list(candidates)
+    input_differs = [str(t.id) for t in rerank_source] != [str(t.id) for t in candidates]
+    errors: List[str] = []
+    statuses: List[str] = []
+    skips: List[str] = []
     reranked_all = rerank_preserving_exact_lyrics(
-        reranker, analysis_with_answers(analysis, answers or []), candidates, candidate_k,
-        answers=list(answers or []),
+        reranker, analysis_with_answers(analysis, answers or []), rerank_source, candidate_k,
+        answers=answers_for_reranker(analysis, list(answers or [])),  # 라우터와 같은 선별
+        errors=errors, statuses=statuses, skips=skips,
+        fallback_candidates=list(candidates) if input_differs else None,  # 적용 안 된 호출의 그룹은 보너스 순서로(라우터와 같은 호출 단위 폴백)
     )
+    # 정책 생략(표지 지배·자료 없는 MV 장면)은 호출이 없어 상태도 없다. no_status에 섞으면 생략이 보이지 않는다
+    RERANK_STATUS_COUNTS.update(statuses or [f"policy_skipped:{s}" for s in skips] or ["no_status"])
+    if errors:
+        RERANK_STATUS_COUNTS["exception"] += 1
+    if input_differs and errors:
+        reranked_all = list(candidates)  # 예외 폴백도 보너스 순서(라우터와 동일)
     shown = [str(t.id) for t in reranked_all[:top_k]]
     candidate_ids = [str(t.id) for t in candidates]
 
@@ -351,7 +421,7 @@ async def evaluate_query(
         results["rule:skip"] = results["skip"]
         if song is not None:
             for mode, getter in (("oracle", oracle_value), ("noisy", noisy_value)):
-                value = getter(song, picked)
+                value = getter(song, picked, analysis)
                 if not value:
                     results[f"rule:{mode}"] = reject_only
                     continue
@@ -409,16 +479,24 @@ def choose_answer(
     mode: str,
     target: Optional[MatchingTrack],
     song: Optional[dict],
+    analysis: Optional[QueryAnalysis] = None,
 ) -> Tuple[ClarifyAnswer, str]:
     """화면에서 고를 수 있는 답만 고른다 — 선택지 하나 또는 "잘 모르겠어요".
 
     맞는지는 서비스의 판정기(`answer_matches`)로 본다. 정답 곡은 후보와 같은
     출처(벡터 DB 페이로드)에서 읽은 MatchingTrack이어야 한다.
+    birth_year 질문은 곡 혼자 판정할 수 없어(질의의 생애 단계가 필요) 정답 곡 발매 연도에서 역산한
+    밴드(`oracle_birth_year`)를 고른다.
     """
     skip = ClarifyAnswer(slot=question.slot, skipped=True)
     if mode == "skip" or target is None:
         return skip, "skip"
     values = [option.value for option in question.options]
+    if question.slot == BIRTH_YEAR_SLOT:
+        truth = oracle_birth_year(song, analysis) if song is not None else None
+        wrong = noisy_birth_year(song, analysis) if song is not None else None
+        pick = truth if mode == "oracle" else wrong
+        return (as_answer(question.slot, pick), mode) if pick in values else (skip, "skip")
     matching = [v for v in values if answer_matches(target, as_answer(question.slot, v))]
     if mode == "oracle":
         return (as_answer(question.slot, matching[0]), "oracle") if matching else (skip, "skip")
@@ -438,10 +516,24 @@ def next_question(
     rejected: Sequence[str],
     top_k: int,
 ) -> Optional[ClarifyQuestion]:
-    """이번 턴 응답에 실릴 질문. 라우트와 같은 조건(`_can_ask_another`)으로 정한다."""
+    """이번 턴 응답에 실릴 질문. 라우트와 같은 조건(`_can_ask_another`)으로 정한다.
+
+    최초 질의에서 이미 말한 성별·장르는 `pick_question`이 원문에서 찾아 뺀다(서비스와 같은 규칙, 2026-10-11).
+    질의에 성별이 틀리게 들어 있는 오기억 항목(c701·c705·q101)은 그 슬롯을 다시 묻지 않으므로 회수율이
+    이전 측정(v02~v09)보다 내려갈 수 있다 — 그 수치를 맞추려고 하네스만 옛 정책을 쓰지 않는다.
+    """
     if not _can_ask_another(turn, list(asked), list(rejected), top_k):
         return None
     return pick_question(analysis, result.remaining, list(asked))
+
+
+def flow_reject_limit(top_k: int) -> int:
+    """거절 목록 한도 — 한 번에 보여 주는 곡 수 × 거절 횟수, 서비스 상한 안에서.
+
+    서비스는 15곡씩 두 번(30)이고 기준선(재질문 v09 등)은 10곡씩 두 번(20)으로 쟀다. 서비스 상한을 그대로
+    쓰면 `--top-k 10` 측정에서 거절이 세 번 돌아 기준선과 다른 흐름이 된다.
+    """
+    return min(MAX_REJECTED_IDS, MAX_REJECT_ROUNDS * top_k)
 
 
 async def run_flow(
@@ -461,9 +553,10 @@ async def run_flow(
     """서비스의 재질문 대화를 한 번 밟는다. 정답이 보이면 사용자는 멈춘다.
 
     매 턴 화면이 보내는 것 — 이전 분석(다시 분석하지 않는다), 지금까지의 답변 전부,
-    지금까지 보여 준 곡 전부(거절 목록), 물은 슬롯. 거절 목록이 한도(20)를 넘으면
+    지금까지 보여 준 곡 전부(거절 목록), 물은 슬롯. 거절 목록이 한도(`flow_reject_limit`)를 넘으면
     더 거절할 수 없다(`map.js`의 canRejectMore).
     """
+    reject_limit = flow_reject_limit(top_k)
     steps = [FlowStep(turn=1, result=initial)]
     current, turn = initial, 1
     rejected: List[str] = []
@@ -474,11 +567,11 @@ async def run_flow(
     )
     while not current.found:
         nxt = list(dict.fromkeys([*rejected, *current.shown_ids]))
-        if not current.shown_ids or len(nxt) > MAX_REJECTED_IDS:
+        if not current.shown_ids or len(nxt) > reject_limit:
             break
         step = FlowStep(turn=turn + 1, result=current, answer_kind="none")
         if question is not None:
-            answer, kind = choose_answer(question, mode, target, song)
+            answer, kind = choose_answer(question, mode, target, song, analysis)
             answers = [*answers, answer]
             if answer.slot not in asked:
                 asked.append(answer.slot)
@@ -557,6 +650,9 @@ def summarize(
     int_final_relaxed   마지막 화면에 원래 타깃 또는 허용 정답이 있는 비율
     int_relaxed_seen    flow:* 대화 중 한 번이라도 원래 타깃 또는 허용 정답이 보인 비율. 대화는 목표 곡을
                         찾을 때까지 진행하므로, 앞에서 본 허용 정답을 거절하고 지나갔을 수 있다 — 참고값이다
+    n_conv_out_of_candidates
+                        flow:*에서 목표 곡을 찾지 못했고 마지막 검색에서도 후보 30 밖이었던 대화 수(질의 평균이
+                        아니라 대화 수). 답변은 후보 안에서만 순위를 바꾸므로 재질문이 닿지 않는 대화다
     """
 
     def by_query(group: List[dict], value) -> List[float]:
@@ -592,7 +688,7 @@ def summarize(
             "int_hit@10": avg(inter, lambda r: r["hit10"]) if inter else "",
             "int_candidate_recall@30": avg(inter, lambda r: r["candidate_recall"]) if inter else "",
             "int_found_by_turn2": (
-                avg(inter, lambda r: r.get("found_turn") == 2) if inter and is_flow else ""
+                avg(inter, lambda r: str(r.get("found_turn", "")) == "2") if inter and is_flow else ""
             ),
             "int_final_relaxed": (
                 avg(inter, lambda r: r["final_relaxed_hit10"]) if inter and has_relaxed else ""
@@ -601,8 +697,40 @@ def summarize(
                 avg(inter, lambda r: r.get("relaxed_seen_turn") not in ("", None))
                 if inter and is_flow and has_relaxed else ""
             ),
+            "n_conv_out_of_candidates": (
+                sum(1 for r in inter
+                    if r.get("found_turn") in ("", None) and r.get("candidate_rank@30") in ("", None))
+                if inter and is_flow else ""
+            ),
         })
     return out
+
+
+def summarize_by_scope(
+    rows: List[dict],
+    policies: Sequence[str],
+    intervention_ids: set,
+    scopes: Dict[str, str],
+) -> List[dict]:
+    """범주형 집계 — 전체 · 범주형 제외(specific) · 범주형으로 나눠 summarize를 다시 돈다.
+
+    all은 clarify_summary.csv와 같다. 질의가 없는 묶음은 행이 없다.
+    """
+    unknown = sorted({r["query_id"] for r in rows} - set(scopes))
+    if unknown:
+        raise KeyError(f"queries.json에 없는 질의 — 범주형 여부를 알 수 없다: {', '.join(unknown)}")
+    out: List[dict] = []
+    for scope in ("all",) + TARGET_SCOPES:
+        group = [r for r in rows if scope == "all" or scopes[r["query_id"]] == scope]
+        ids = {r["query_id"] for r in group}
+        for row in summarize(group, policies, intervention_ids & ids):
+            out.append({"scope": scope, **row})
+    return out
+
+
+def intervention_ids_from_detail(rows: List[dict]) -> set:
+    """저장된 detail에서 개입 대상을 되찾는다 — reject_only를 실제로 실행한 질의다."""
+    return {r["query_id"] for r in rows if r["policy"] == "reject_only" and str(r["ran"]) == "1"}
 
 
 def write_csv(path: Path, rows: List[dict]) -> None:
@@ -627,8 +755,18 @@ def select_queries(
     split: Optional[str],
     limit: Optional[int] = None,
     query_ids: Optional[Sequence[str]] = None,
+    query_sets: Optional[Sequence[str]] = None,
 ) -> List[EvalQuery]:
-    queries = [q for q in load_eval_set(path).queries if q.is_scorable]
+    """측정 대상 질의. query_sets를 주지 않으면 v0.5 세트(v06 기준선)만 고른다.
+
+    queries.json에는 v09(2차 세트)가 같은 split으로 들어 있다. split만으로 고르면 v09 dev가
+    섞여 기본 --labels(v06 CSV)와 맞지 않아 멈추고, --split test는 봉인 test 38건을 연다 (PR #20 리뷰).
+    """
+    chosen = tuple(query_sets) if query_sets else V05_QUERY_SETS
+    queries = [
+        q for q in load_eval_set(path).queries
+        if q.is_scorable and q.query_set in chosen
+    ]
     if split:
         queries = [q for q in queries if q.split == split]
     if query_ids:
@@ -739,26 +877,16 @@ def load_target_tracks(song_ids: Sequence[str]) -> Dict[str, MatchingTrack]:
     등이 후보와 달라 같은 곡인데도 선택지와 안 맞을 수 있다.
     """
     from src.retrieval.search_service import SearchService
-    from src.vector_db.qdrant_backend import collection_name, point_id
-    from src.vector_db.settings import NAMESPACE, TEXT_HYBRID_INDEX_NAME
+    from src.vector_db.settings import TEXT_HYBRID_INDEX_NAME
 
     ids = list(dict.fromkeys(str(s) for s in song_ids))
     if not ids:
         return {}
-    records = get_vector_client().client.retrieve(
-        collection_name=collection_name(TEXT_HYBRID_INDEX_NAME, NAMESPACE),
-        ids=[point_id(s) for s in ids],
-        with_payload=True,
-        with_vectors=False,
-    )
-    out: Dict[str, MatchingTrack] = {}
-    for record in records:
-        payload = dict(record.payload or {})
-        song_id = str(payload.pop("song_id", record.id))
-        out[song_id] = SearchService.track_from_match(
-            {"id": song_id, "score": 0.0, "metadata": payload}
-        )
-    return out
+    # 서비스의 질문 조회(/search/clarify)와 같은 통로로 읽는다. 여기서는 페이로드 전체를 받는다.
+    result = get_vector_client().Index(TEXT_HYBRID_INDEX_NAME).fetch(ids)
+    return {
+        match["id"]: SearchService.track_from_match(match) for match in result["matches"]
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -814,6 +942,7 @@ async def evaluate(args: argparse.Namespace) -> None:
     queries = select_queries(
         args.queries, args.split, args.limit,
         args.query_ids.split(",") if args.query_ids else None,
+        query_sets=args.query_set,
     )
     if not queries:
         raise ValueError("평가할 질의가 없습니다. --split과 label_status를 확인하세요.")
@@ -846,8 +975,14 @@ async def evaluate(args: argparse.Namespace) -> None:
     run_info["clarify"] = {
         "flow_modes": list(FLOW_MODES),
         "flow_target": "정답마다 따로 대화한다 — 답변·종료·성공 판정이 같은 목표 곡",
-        "max_rejected_ids": MAX_REJECTED_IDS,
+        "max_rejected_ids": flow_reject_limit(args.top_k),
         "targets_from_vector_db": len(targets),
+        # 질문 선택 정책 표시 — v02~v09까지는 질의에 이미 있는 성별·장르도 다시 물었다(stated_reask). 이 값이 다른
+        # 측정끼리는 rule:*·flow:* 숫자를 비교하지 않는다.
+        "question_policy": "skip_known_slots_2026-10-11",
+        # known_slots 판정 규칙은 v06·v09 dev 원문(과 v10 초안)으로 검토해 정했다. 이 측정의 dev 질의와 겹치므로
+        # rule:*·flow:* 수치는 그 질의에 맞춰진 값일 수 있다. 봉인 test(v09 38건)는 규칙 검토에 쓰지 않았다.
+        "known_slots_rules_reviewed_on": "eval_queries_v06+v09 dev 원문, queries_v10_draft (2026-10-11)",
     }
     (args.output_dir / "clarify_runinfo.json").write_text(
         json.dumps(run_info, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8"
@@ -924,14 +1059,40 @@ async def evaluate(args: argparse.Namespace) -> None:
         write_csv(args.output_dir / "clarify_detail.csv", detail)
         write_csv(args.output_dir / "clarify_turns.csv", turn_rows)
 
-    summary = summarize(detail, POLICY_ORDER, intervention_ids)
-    write_csv(args.output_dir / "clarify_summary.csv", summary)
+    summary, by_scope = write_summaries(
+        args.output_dir, detail, intervention_ids, {q.query_id: q.target_scope for q in queries},
+    )
 
     elapsed = time.perf_counter() - started
     from src.retrieval.clarify import ANSWER_MATCH_MULTIPLIER
     weight = args.answer_multiplier if args.answer_multiplier is not None else ANSWER_MATCH_MULTIPLIER
     print(f"\n질의 {len(queries)}개 · 개입 대상 {len(intervention_ids)}개 · "
           f"답변 보너스 ×{weight} · {elapsed:.0f}초")
+    print_summaries(args.output_dir, summary, by_scope, intervention_ids)
+    # 리랭커 실행 상태 집계를 runinfo에 남긴다 — (a)에서는 적용 실패가 곧 보너스 순서 폴백이라 수가 중요하다 (리뷰)
+    run_info["clarify"]["rerank_status_counts"] = dict(RERANK_STATUS_COUNTS)
+    run_info["clarify"]["elapsed_seconds"] = round(elapsed, 1)
+    (args.output_dir / "clarify_runinfo.json").write_text(
+        json.dumps(run_info, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8"
+    )
+    print(f"리랭커 상태: {dict(RERANK_STATUS_COUNTS)}")
+    print(f"상세: {args.output_dir / 'clarify_detail.csv'}")
+    print(f"턴별: {args.output_dir / 'clarify_turns.csv'}")
+
+
+def write_summaries(
+    output_dir: Path, detail: List[dict], intervention_ids: set, scopes: Dict[str, str],
+) -> Tuple[List[dict], List[dict]]:
+    summary = summarize(detail, POLICY_ORDER, intervention_ids)
+    write_csv(output_dir / "clarify_summary.csv", summary)
+    by_scope = summarize_by_scope(detail, POLICY_ORDER, intervention_ids, scopes)
+    write_csv(output_dir / "clarify_summary_by_scope.csv", by_scope)
+    return summary, by_scope
+
+
+def print_summaries(
+    output_dir: Path, summary: List[dict], by_scope: List[dict], intervention_ids: set,
+) -> None:
     print(f"개입 대상: {', '.join(sorted(intervention_ids)) or '없음'}\n")
 
     header = (f"{'정책':<18}{'실행':>5}{'전체 Hit@10':>12}{'개입 Hit@10':>12}"
@@ -943,9 +1104,31 @@ async def evaluate(args: argparse.Namespace) -> None:
               f"{str(row['int_hit@10']):>12}{str(row['int_candidate_recall@30']):>13}"
               f"{str(row['int_found_by_turn2']):>8}{str(row['int_final_relaxed']):>12}"
               f"{str(row['int_relaxed_seen']):>12}")
-    print(f"\n상세: {args.output_dir / 'clarify_detail.csv'}")
-    print(f"턴별: {args.output_dir / 'clarify_turns.csv'}")
-    print(f"요약: {args.output_dir / 'clarify_summary.csv'}")
+
+    print("\n범주형 집계 — 개입 대상에서 3턴 안에 목표 곡을 본 비율 · 끝까지 후보 밖인 대화 수")
+    for row in by_scope:
+        if row["policy"] in FLOW_POLICIES and row["n_intervention"]:
+            print(f"  {row['scope']:<12}{row['policy']:<14}개입 {row['n_intervention']:>2} · "
+                  f"3턴 안 {row['int_hit@10']:<6} · 대화 {row['n_conversations']:>2} 중 후보 밖 "
+                  f"{row['n_conv_out_of_candidates']}")
+    print(f"\n요약: {output_dir / 'clarify_summary.csv'}")
+    print(f"범주형 집계: {output_dir / 'clarify_summary_by_scope.csv'}")
+
+
+def resummarize(args: argparse.Namespace) -> None:
+    """이미 잰 clarify_detail.csv로 요약 두 개를 다시 쓴다. 모델·DB를 올리지 않는다."""
+    detail_path = args.output_dir / "clarify_detail.csv"
+    with detail_path.open(encoding="utf-8") as f:
+        detail = list(csv.DictReader(f))
+    if not detail:
+        raise ValueError(f"detail이 비어 있다: {detail_path}")
+    intervention_ids = intervention_ids_from_detail(detail)
+    summary, by_scope = write_summaries(
+        args.output_dir, detail, intervention_ids, load_target_scopes(args.queries),
+    )
+    print(f"{detail_path} — 질의 {len({r['query_id'] for r in detail})}개 · "
+          f"개입 대상 {len(intervention_ids)}개 (재집계만)")
+    print_summaries(args.output_dir, summary, by_scope, intervention_ids)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -954,6 +1137,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
     p.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     p.add_argument("--split", choices=["dev", "test"], default="dev")
+    p.add_argument(
+        "--query-set", action="append", choices=list(get_args(QuerySet)), default=None,
+        help="질의 출처 세트. 반복 지정 가능. 생략하면 v0.5 세트(v04·modality_v1·clarify_v1 = v06 기준선). "
+             "v09를 재려면 명시하고 --labels도 eval_queries_v09.csv로 바꾼다",
+    )
     p.add_argument("--top-k", type=int, default=10)
     p.add_argument("--candidate-k", type=int, default=30)
     p.add_argument("--limit", type=int, default=None, help="앞에서 N개만 (스모크용)")
@@ -974,8 +1162,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--labels", default=str(DEFAULT_LABELS),
         help="질의·정답이 같은지 대조할 기준 CSV. 빈 문자열이면 대조하지 않는다",
     )
+    p.add_argument(
+        "--resummarize", action="store_true",
+        help="측정하지 않고 --output-dir의 clarify_detail.csv로 요약(전체·범주형)만 다시 쓴다",
+    )
     return p
 
 
 if __name__ == "__main__":
-    asyncio.run(evaluate(build_parser().parse_args()))
+    _args = build_parser().parse_args()
+    if _args.resummarize:
+        resummarize(_args)
+    else:
+        asyncio.run(evaluate(_args))

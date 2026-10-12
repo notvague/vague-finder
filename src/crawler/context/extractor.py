@@ -38,15 +38,17 @@ def make_prompt(analysis: Analysis, chunk: dict) -> str:
 
 class GeminiExtractor:
     def __init__(self, *, model: str, max_input_tokens=12000, max_output_tokens=6000, client=None):
-        from google import genai
         from google.genai import types
+
+        from src.common.gemini_client import gemini_configured, make_genai_client
         self.model, self.max_input_tokens, self.max_output_tokens = model, max_input_tokens, max_output_tokens
         if min(max_input_tokens, max_output_tokens) < 1024:
             raise ValueError("token budgets must be >= 1024")
-        key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-        if not key and client is None:
-            raise ValueError("GEMINI_API_KEY (or GOOGLE_API_KEY) required for --gemini")
-        self.client = client or genai.Client(api_key=key, http_options=types.HttpOptions(
+        # Vertex(GCP_PROJECT_ID) → GEMINI_API_KEY 순. GOOGLE_API_KEY는 이 명령만 받던 예전 이름이라 둘 다 없을 때만 쓴다.
+        legacy_key = None if gemini_configured() else (os.getenv("GOOGLE_API_KEY", "").strip() or None)
+        if client is None and not gemini_configured(legacy_key):
+            raise ValueError("GCP_PROJECT_ID (Vertex) or GEMINI_API_KEY (or GOOGLE_API_KEY) required for --gemini")
+        self.client = client or make_genai_client(api_key=legacy_key, http_options=types.HttpOptions(
             timeout=60000, retry_options=types.HttpRetryOptions(attempts=1)))
 
     def close(self):

@@ -75,5 +75,3 @@ def test_invalid_named_media_filter_is_rejected_before_opening_qdrant(targets):
     searcher = ContextQdrantSearch.__new__(ContextQdrantSearch)
     with pytest.raises(ValueError, match="media_targets"):
         searcher.search("가상 작품 OST", media_targets=targets)
-
-

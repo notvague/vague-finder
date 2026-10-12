@@ -6,14 +6,14 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
 ![Gemini](https://img.shields.io/badge/Google%20Gemini-8E75B2?style=flat-square&logo=googlegemini&logoColor=white)
 ![Qdrant](https://img.shields.io/badge/Qdrant-DC244C?style=flat-square&logo=qdrant&logoColor=white)
-![Songs](https://img.shields.io/badge/corpus-952%20songs-555555?style=flat-square)
+![Songs](https://img.shields.io/badge/corpus-3%2C010%20songs-555555?style=flat-square)
 
 > "2000년대 후반에 싸이월드 배경음악으로 엄청 유행했던 곡인데, 여자애들 여러 명이 부르는 빠른 댄스곡이었어.
 > 제목이 알파벳 세 글자였던 것 같은데"
 
 키워드 검색은 제목이나 가수를 알아야 하고, 음악 인식은 소리를 들려줘야 한다. Vague-Finder는 그 사이를
 메운다. 분위기, 상황, 앨범 커버의 인상, 소리의 느낌, 어렴풋한 가사 한 구절처럼 **모호하고 불완전한 회상
-단서**를 자연어로 받아 후보 곡을 찾는다. 한국 대중음악 952곡을 대상으로 한 연구용 프로토타입이다.
+단서**를 자연어로 받아 후보 곡을 찾는다. 한국 대중음악 3,010곡을 대상으로 한 연구용 프로토타입이다.
 
 <p align="center">
   <img src="docs/images/map_demo.gif" width="880"
@@ -30,10 +30,10 @@
   단서로 나누고 모달리티별 가중치를 정한다
 - **멀티모달 병렬 검색** — 가사 표면 일치, 텍스트 하이브리드(BM25 + KoE5), 앨범 커버(SigLIP2), 오디오(CLAP)
   경로를 동시에 돌려 RRF로 합친다
-- **리랭킹** — 한국어 Cross-Encoder가 상위 후보를 다시 정렬한다
-- **재질문** — 결과가 애매하면 보컬 성별이나 장르를 되묻고, "이 곡 아님"으로 거절하면 그 곡을 빼고 다시 찾는다
+- **리랭킹** — Gemini가 후보 30곡을 한 번에 보고 순서를 다시 정한다(listwise). 한국어 Cross-Encoder는 선택 백엔드로 남아 있다
+- **재질문** — "이 중에는 없어요"를 누르면 현재 후보로 보컬 성별·장르 질문을 계산한다. 답하면 거절한 곡을 빼고 다시 찾는다. "중학교 때 듣던"처럼 시기가 나이에 걸린 질의는 출생 연도를 먼저 받아 결과만 갱신한다. 정답을 찾았다면 추가 질문은 계산하지 않는다
 - **선정 근거** — 어떤 검색 경로가 순위를 만들었는지 보여 주고, 가사가 근거일 때는 원문 구절을 인용한다
-- **노래 맵** — 952곡을 소리(CLAP)와 정서(KoE5) 두 기준의 2D 지도로 펼치고, 검색 결과를 지도 위에 표시한다.
+- **노래 맵** — 3,010곡을 소리(CLAP)와 정서(KoE5) 두 기준의 2D 지도로 펼치고, 검색 결과를 지도 위에 표시한다.
   재생은 YouTube 임베드로 한다
 
 ## 검색 구조
@@ -46,9 +46,9 @@ flowchart LR
     A --> I["앨범 커버<br/>SigLIP2"]
     A --> S["오디오<br/>CLAP"]
     L & T & I & S --> F["RRF 통합<br/>+ 단서 부스팅"]
-    F --> R["Cross-Encoder 리랭킹<br/>bge-reranker-v2-m3-ko"]
-    R --> O["Top-10 + 선정 근거"]
-    O -.->|애매하면 재질문| C["보컬 성별 · 장르<br/>또는 거절"]
+    F --> R["listwise 리랭킹<br/>Gemini (후보 30곡 비교)"]
+    R --> O["Top-15 + 선정 근거"]
+    O -.->|애매하면 재질문| C["보컬 성별 · 장르 · 출생 연도<br/>또는 거절"]
     C -.->|답변을 분석에 병합| A
 ```
 
@@ -58,22 +58,36 @@ flowchart LR
 | 텍스트 (dense / sparse) | [`nlpai-lab/KoE5`](https://huggingface.co/nlpai-lab/KoE5) / BM25 (Kiwi 형태소 분석) |
 | 이미지 | [`google/siglip2-base-patch16-224`](https://huggingface.co/google/siglip2-base-patch16-224) |
 | 오디오 | [`laion/clap-htsat-fused`](https://huggingface.co/laion/clap-htsat-fused) |
-| 리랭킹 | [`dragonkue/bge-reranker-v2-m3-ko`](https://huggingface.co/dragonkue/bge-reranker-v2-m3-ko) |
+| 리랭킹 | `gemini-3.1-flash-lite` listwise (1패스, Google Search 끔) · 선택: [`dragonkue/bge-reranker-v2-m3-ko`](https://huggingface.co/dragonkue/bge-reranker-v2-m3-ko) Cross-Encoder |
 | 벡터 DB | Qdrant (로컬 파일 모드 기본, 서버 모드 지원) |
 | 가사 정확 일치 | MongoDB (없으면 이 경로만 비고 나머지는 동작) |
 
 ## 성능
 
-평가 질의 세트 v06 (팀이 직접 쓴 회상형 질의, dev 57 · test 25)에서 현재 운영 설정으로 잰 결과다.
+평가 질의는 두 세트다. **v06**(팀이 직접 쓴 회상형 질의, dev 57 · test 25)과 **v09**(2026-10 추가, Claude 초안 + 팀장 검토, dev 59 · 봉인 test 38).
+3,010곡 코퍼스, 원래 타깃만 정답으로 세는 엄격 지표다. 리랭커 두 백엔드를 같은 질의·같은 후보로 잰 결과다.
+Gemini listwise는 두 줄이다. 전환 근거가 된 측정(v32~v34)은 드라마·OST 질의에 웹 검색 교차검증을 켠 설정이었고, 현재 기본값은 그 검증을 끈 설정(v35)이다.
 
-| split | Hit@1 | Hit@5 | Hit@10 | MRR@10 | nDCG@10 |
+| 세트 | 리랭커 | Hit@1 | Hit@5 | Hit@10 | MRR@10 |
 | --- | --- | --- | --- | --- | --- |
-| dev (57) | 0.404 | 0.684 | 0.789 | 0.536 | 0.594 |
-| test (25) | 0.560 | 0.560 | 0.680 | 0.577 | 0.581 |
+| v06 dev (57) | Cross-Encoder | 0.386 | 0.561 | 0.649 | 0.451 |
+| v06 dev (57) | Gemini listwise, 교차검증 켬 (v32) | 0.491 | 0.702 | 0.737 | 0.560 |
+| v06 dev (57) | **Gemini listwise, 현재 기본 (v35)** | **0.474** | **0.702** | **0.754** | **0.556** |
+| v09 dev (59) | Cross-Encoder | 0.288 | 0.525 | 0.610 | 0.385 |
+| v09 dev (59) | Gemini listwise, 교차검증 켬 (v33) | 0.525 | 0.678 | 0.712 | 0.588 |
+| v09 dev (59) | **Gemini listwise, 현재 기본 (v35)** | **0.525** | **0.678** | **0.695** | **0.589** |
+| v09 test (38, 봉인·1회) | Cross-Encoder | 0.368 | 0.553 | 0.632 | 0.460 |
+| v09 test (38, 봉인·1회) | **Gemini listwise, 교차검증 켬 (v34)** | **0.500** | **0.737** | **0.789** | **0.609** |
 
-- 요청 한 번의 처리 시간 중앙값은 **4.21초**다 (dev 57건, 모델 예열 후)
-- test는 여러 번 확인에 쓴 분할이라 새 홀드아웃 검증이 아니라 회귀 확인에 가깝다
-- 측정 방법과 근거: [`experiments/reranking/results_v21_ce_topn/RUN_INFO.md`](experiments/reranking/results_v21_ce_topn/RUN_INFO.md)
+- 교차검증 켠 설정 기준 세 세트 합산 154건에서 Top-10 진입 97 → 114, Top-10 이탈 0건. 튜닝에 쓰지 않은 봉인 test에서도 dev와 같은 크기다
+- 교차검증을 끈 현재 기본은 dev 116건에서 Hit@10 84 → 84(v06 +1, v09 −1)로 같고, 바뀐 질의는 실행 간 변동 범위다. 봉인 test는 한 번만 열기로 해 현재 기본으로 다시 재지 않았다.
+  검증은 구조 규칙(`gemini_rare_fact_rescue`)으로만 순서에 반영되는데 v34에서 발동 0회라, 끈 설정이어도 같은 결과가 나왔을 측정이다
+- 요청 전체 처리 시간(dev 57건, 예열 뒤): Cross-Encoder 중앙값 **4.2초** · p95 5.3초, Gemini listwise 중앙값 **7.0초** · p95 8.6초.
+  질의당 Gemini 호출은 2회(질의 분석 1 · 리랭킹 1)다. 교차검증을 켜면 외부 맥락 질의만 리랭킹이 약 11초 늘어 p95가 18.8초였다
+- 허용 정답(팀이 검토해 더한 유사 정답)까지 세는 확장 지표는 v06에만 있다: Cross-Encoder 기준 dev Hit@10 0.789 · test 0.680
+- 측정 방법과 근거: [`results_v35_rare_verify_off`](experiments/reranking/results_v35_rare_verify_off/RUN_INFO.md)(현재 기본) · [`results_v32_gemini_listwise`](experiments/reranking/results_v32_gemini_listwise/RUN_INFO.md) ·
+  [`results_v33_v09_dev`](experiments/reranking/results_v33_v09_dev/RUN_INFO.md) · [`results_v34_v09_test`](experiments/reranking/results_v34_v09_test/RUN_INFO.md) ·
+  Cross-Encoder 기준선 [`results_v22_corpus3010`](experiments/reranking/results_v22_corpus3010/RUN_INFO.md) · 처리 시간 [`run_v04_hybrid_payload`](experiments/latency/run_v04_hybrid_payload/RUN_INFO.md)(CE) · [`run_v06_rare_verify_off`](experiments/latency/run_v06_rare_verify_off/RUN_INFO.md)(listwise)
 
 ## 기술 스택
 
@@ -113,8 +127,10 @@ Node.js는 수집 파이프라인(yt-dlp)을 돌릴 때만 필요하다.
 python3 -m venv venv
 venv/bin/pip install -r requirements.txt
 
-# 2. 환경 변수 — GEMINI_API_KEY를 채운다
+# 2. 환경 변수 — Gemini는 Vertex AI(GCP_PROJECT_ID + 로컬 ADC) 또는 GEMINI_API_KEY 중 하나
+#    검색(질의 분석·리랭커)만 경로를 고정하려면 GEMINI_RETRIEVAL_BACKEND=api_key|vertex (.env.example 3-c)
 cp .env.example .env
+gcloud auth application-default login   # Vertex를 쓸 때 한 번
 
 # 3. 벡터 DB 적재 (data/all_songs.jsonl과 artifacts/embeddings/가 있어야 한다)
 venv/bin/python -m src.vector_db.cli.qdrant_load --recreate
@@ -140,7 +156,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/search \
 ## 개발
 
 ```bash
-# 테스트
+# 테스트 — 화면(map.js) 상태 전이 시험(tests/frontend/*.test.cjs)도 함께 돈다. Node.js가 없으면 실패한다
 venv/bin/python -m pytest tests/ -q
 
 # 검색 정확도 재측정 — 질의 분석을 캐시로 고정해야 같은 측정이 같은 숫자를 낸다

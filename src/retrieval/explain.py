@@ -179,11 +179,32 @@ class RerankRun:
 
 # 요청 전체의 재정렬 단계. 실행 결과들에서 파생한다.
 REORDER_NOT_ATTEMPTED = "not_attempted"      # 게이트를 통과하지 못해 시도 자체가 없음
+REORDER_POLICY_SKIPPED = "policy_skipped"    # 부를 수 있었지만 정책으로 **일부러** 부르지 않음(아래 RERANK_SKIP_*)
 REORDER_MODEL_APPLIED = "model_applied"      # 한 번이라도 모델이 돌았다
 REORDER_MODEL_FAILED = "model_failed"        # 실행은 했으나 성공이 0회
 REORDER_MODEL_SKIPPED = "model_skipped"      # 실행은 했으나 전부 건너뜀
 REORDER_MODEL_UNKNOWN = "model_unknown"      # 상태를 모르는 백엔드
 REORDER_ORDER_RULES_ONLY = "order_rules_only"  # 모델 실행 0회, 규칙만 순서를 바꿈
+
+# 정책 생략의 사유 코드. 판정은 `src/retrieval/rerank_policy.py`가 한다(서비스·평가 공용).
+#
+# 실패(`RERANK_FAILED`)와 다르다 — 모델을 부르지 **않기로 한** 것이고, 그 요청의
+# 최종 순서는 보정·거절 제외까지 끝난 후보 순서 그대로다. 생략한 요청에는 리랭커
+# 점수·합성식·모델 문장·순위 이동이 **없어야 한다**(없는 일을 기록하지 않는다).
+RERANK_SKIP_IMAGE_DOMINANT = "image_dominant"          # 표지 지배 질의 — 표지를 못 보는 텍스트 리랭커가 섞지 않게
+RERANK_SKIP_MV_SCENE_UNVERIFIABLE = "mv_scene_unverifiable"  # 구체적 MV 장면 질의인데 장면을 판단할 출처 자료가 없음
+
+# 사유 → 사용자에게 보여줄 고정 문구. LLM이 짓지 않는다. 자료 없음은 "장면이 없다"는 뜻이
+# 아니므로 그렇게 말하지 않는다 — 확인할 자료가 없어 다른 단서로 찾았다고만 말한다.
+#
+# 표지 지배 생략은 **문구가 없다.** 기존 동작이고 사용자에게 안내할 것이 정해지지 않았다(최종 순서는
+# "표지 검색 순서"가 아니라 경로를 융합하고 보정한 후보 순서라 그렇게 말하면 틀린다). 응답에는
+# 진단용 사유 코드(`rerank_skip_reason`)만 남는다. 문구를 낼지는 사용자가 정한다.
+RERANK_SKIP_LABELS: Dict[str, str] = {
+    RERANK_SKIP_MV_SCENE_UNVERIFIABLE: (
+        "말씀하신 뮤직비디오 장면은 확인할 자료가 없어, 다른 단서로 찾은 후보를 보여드려요."
+    ),
+}
 
 # 단계 → 사람이 읽는 말. 라벨은 이 모듈에서만 정의한다(PATH_LABELS와 같은 이유).
 #
@@ -194,6 +215,7 @@ REORDER_ORDER_RULES_ONLY = "order_rules_only"  # 모델 실행 0회, 규칙만 �
 # 최종 배치는 곡별 기록이 말한다.
 REORDER_STAGE_LABELS: Dict[str, str] = {
     REORDER_NOT_ATTEMPTED: "리랭킹을 시도하지 않음",
+    REORDER_POLICY_SKIPPED: "리랭킹 생략(정책)",
     REORDER_MODEL_APPLIED: "리랭킹 적용",
     REORDER_MODEL_FAILED: "리랭킹 실패",
     REORDER_MODEL_SKIPPED: "리랭킹 건너뜀(조건 미충족)",
@@ -223,11 +245,19 @@ class PathContribution:
 
 @dataclass
 class ScoreAdjustment:
-    """점수를 더하거나 뺀 규칙. delta가 음수면 감점이다."""
+    """점수를 더하거나 뺀 규칙. delta가 음수면 감점이다.
+
+    `slot`·`value`는 **이 규칙이 무엇과 비교했는가**를 구조로 남긴 것이다(선택). 사용자용 설명이
+    "이 가산이 지금 사용자가 말한 단서의 것인가"를 판단할 때 쓴다 — 재질문에서 남성→여성으로
+    정정하면 남성 기준 가산이 기록에 남는데, 그것을 여성 단서의 근거로 말하면 안 된다.
+    사람이 읽는 `detail`을 파싱하지 않기 위한 자리다. 비어 있으면 모른다는 뜻이고 점수 계산과는 무관하다.
+    """
 
     rule: str
     delta: float
     detail: str = ""
+    slot: str = ""      # 비교한 슬롯(vocal_gender · genre · release_era · lyric_clue …)
+    value: str = ""     # 비교에 쓴 질의 쪽 값(검색에 실제로 쓴 값)
 
 
 @dataclass
@@ -293,8 +323,9 @@ class SongExplain:
     # **검증된 기록이 아니다.** 여러 pass의 응답을 평균해 순서를 만들고 그 뒤에
     # rescue 규칙이 순위를 또 바꾸므로, 이 문장이 최종 순위의 이유라고 보장할 수
     # 없다. 그래서 확인된 근거와 같은 목록에 섞지 않고 따로 담는다 —
-    # render_ko()는 이것을 쓰지 않으며, 노출 단계에서 "모델이 말한 이유(미검증)"로
-    # 라벨을 붙여 따로 보여준다.
+    # render_ko()는 이것을 쓰지 않고, 일반 응답(`TrackExplain.model_notes`)에도 **내보내지
+    # 않는다**(2026-10-11 — 입력에 없는 장면을 사실처럼 쓴 사례). 내부 진단 기록
+    # (평가 `model_notes_internal`)에만 원문이 남는다.
     model_notes: List[str] = field(default_factory=list)
 
     # **이 곡의 최종 순위에 리랭커 결과가 반영됐는가.**
@@ -304,11 +335,6 @@ class SongExplain:
     #   - Gemini는 max_candidates까지만 평가하고 뒷부분은 그대로 붙인다
     #   - 한 그룹이 성공한 뒤 다음 그룹에서 예외가 나면 **전체가 폴백**한다
     reorder_applied: bool = False
-
-    # 리랭커가 스스로 만든 문장(Gemini listwise의 reason)은 **여기에 두지 않는다.**
-    # 보존 자체는 할 가치가 있지만, 검증된 실행 기록과 섞이면 안 된다 — Gemini는
-    # 여러 응답을 합치고 그 뒤에 규칙이 순위를 또 바꾸므로 한 응답의 문장이 최종
-    # 순위의 이유라고 보장할 수 없다. 별도 필드로 분리해 넣는 것은 노출 단계의 일이다.
 
     def path_total(self) -> float:
         """**최종 점수에 반영된** 경로 기여 합. 탈락한 기여는 빼야 fused_score와 맞는다."""
@@ -349,6 +375,9 @@ class SearchExplain:
 
     # 게이트를 통과해 재정렬을 시도했는가. 통과하지 못하면 실행 자체가 없다.
     reorder_attempted: bool = False
+    # 부를 수 있었는데 정책으로 부르지 않았으면 그 사유(RERANK_SKIP_*). 비어 있으면 정책 생략은 없었다.
+    # 시도하지 않은 것과 **일부러** 하지 않은 것을 구분한다 — 전자는 꺼짐·후보 부족이고 후자는 판단이다.
+    rerank_policy_skip: str = ""
     # 재정렬 경로가 끝까지 가서 **그 결과가 최종 순서가 됐는가.**
     # 중간에 예외가 나면 앞 그룹이 성공했더라도 전체가 검색 순서로 돌아간다.
     reorder_committed: bool = False
@@ -373,7 +402,8 @@ class SearchExplain:
         전체가 검색 순서로 돌아가므로, 성공 이력이 있어도 반영된 것은 없다.
         """
         if not self.reorder_attempted:
-            return REORDER_NOT_ATTEMPTED
+            # 정책 생략은 시도하지 않은 것과 다르다. 사유가 있으면 그것을 말한다.
+            return REORDER_POLICY_SKIPPED if self.rerank_policy_skip else REORDER_NOT_ATTEMPTED
         if not self.reorder_committed:
             return REORDER_MODEL_FAILED
         if self.rerank_applied:
@@ -432,6 +462,14 @@ class ExplainRecorder:
 
     def set_reorder_attempted(self, attempted: bool) -> None:
         self.record.reorder_attempted = attempted
+
+    def set_rerank_policy_skip(self, reason: str) -> None:
+        """모델을 부를 수 있었지만 정책으로 부르지 않았다. 사유는 RERANK_SKIP_* 중 하나.
+
+        실패도 적용도 아니다. 이 뒤에 실행 기록(상태·합성식·모델 문장)이 남으면 안 된다 —
+        부르지 않은 모델의 결과를 말하는 것이기 때문이다.
+        """
+        self.record.rerank_policy_skip = str(reason or "")
 
     def note_order_rules_applied(self) -> None:
         self.record.order_rules_applied = True
@@ -494,11 +532,23 @@ class ExplainRecorder:
             PathContribution(path=path, rank=rank, delta=float(delta), detail=detail)
         )
 
-    def adjust(self, song_id: str, rule: str, delta: float, detail: str = "") -> None:
+    def adjust(
+        self,
+        song_id: str,
+        rule: str,
+        delta: float,
+        detail: str = "",
+        *,
+        slot: str = "",
+        value: str = "",
+    ) -> None:
         if not delta:
             return
         self.record.get(song_id).adjustments.append(
-            ScoreAdjustment(rule=rule, delta=float(delta), detail=detail)
+            ScoreAdjustment(
+                rule=rule, delta=float(delta), detail=detail,
+                slot=str(slot or ""), value=str(value or ""),
+            )
         )
 
     def order(self, song_id: str, rule: str, detail: str = "") -> None:
@@ -597,6 +647,9 @@ class _NullRecorder(ExplainRecorder):
     def set_reorder_attempted(self, attempted: bool) -> None:
         return
 
+    def set_rerank_policy_skip(self, reason: str) -> None:
+        return
+
     def note_order_rules_applied(self) -> None:
         return
 
@@ -618,7 +671,7 @@ class _NullRecorder(ExplainRecorder):
     def path(self, song_id, path, rank, delta, detail="") -> None:
         return
 
-    def adjust(self, song_id, rule, delta, detail="") -> None:
+    def adjust(self, song_id, rule, delta, detail="", *, slot="", value="") -> None:
         return
 
     def order(self, song_id, rule, detail="") -> None:
@@ -729,6 +782,7 @@ def render_ko(
     *,
     max_items: int = 3,
     reorder_stage: str = REORDER_NOT_ATTEMPTED,
+    adjustment_notes: Optional[Dict[Tuple[str, str, str], str]] = None,
 ) -> str:
     """기록만으로 짧은 한국어 설명을 만든다.
 
@@ -740,8 +794,12 @@ def render_ko(
     받지 않으면 "리랭킹이 N위 유지"처럼 하지 않은 일을 말하게 된다.
 
     `explain.model_notes`는 **쓰지 않는다.** 모델이 스스로 쓴 문장은 검증된 기록이
-    아니고, 여기에 섞으면 확인된 근거와 구별할 수 없게 된다. 노출 단계에서 별도
-    라벨로 보여줄 몫이다.
+    아니고, 여기에 섞으면 확인된 근거와 구별할 수 없게 된다. 일반 응답에도 나가지 않는다 —
+    내부 진단 기록에만 남는다.
+
+    adjustment_notes는 (규칙, 슬롯, 비교값) → 덧붙일 말이다. 재질문에서 성별을 정정하면 정정 전 값으로
+    계산된 가산이 기록에 남는데, 그 줄이 "말한 성별과 일치"로만 읽히면 지금 단서와 반대로 보인다.
+    호출자가 "정정 전 값(남성) 기준" 같은 표시를 주면 그 줄에 붙인다. 점수·순서는 바뀌지 않는다.
     """
     parts: List[str] = []
 
@@ -760,6 +818,9 @@ def render_ko(
     for a in strongest_adj[:max_items]:
         label = RULE_LABELS.get(a.rule, a.rule)
         detail = f", {a.detail}" if a.detail else ""
+        note = (adjustment_notes or {}).get((a.rule, a.slot, a.value), "")
+        if note:
+            detail += f" · {note}"
         parts.append(f"{label}{detail} ({_fmt(a.delta)})")
 
     before, after = explain.rank_before_rerank, explain.rank_after_rerank
@@ -834,6 +895,10 @@ def render_ko(
             )
         elif reorder_stage == REORDER_MODEL_UNKNOWN:
             notes.append("리랭킹 결과를 확인할 수 없음")
+        elif explain.order_rules and reorder_stage == REORDER_POLICY_SKIPPED:
+            # 모델을 일부러 부르지 않은 요청에서 보호 배치만 적용됐다. "리랭커에 넘기지 않음"은
+            # 모델이 돌았다는 뜻이 되므로 쓰지 않는다.
+            notes.append("순서 규칙으로 배치(리랭킹 생략)")
         elif explain.order_rules:
             # 모델은 돌았지만 이 곡은 넘기지 않았다(단독 보호 그룹).
             notes.append("순서 규칙으로 배치(리랭커에 넘기지 않음)")

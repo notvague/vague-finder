@@ -37,16 +37,26 @@ from src.retrieval.explain import (
     PATH_LABELS,
     RERANK_APPLIED,
     RERANK_FAILED,
+    RERANK_SKIP_MV_SCENE_UNVERIFIABLE,
     RERANK_UNKNOWN,
     ExplainRecorder,
     RerankRun,
 )
 from src.retrieval.reranker import MusicReranker
+# 리랭킹 생략 정책(표지 지배·자료 없는 MV 장면)은 `rerank_policy.py`에 있다(서비스·평가 공용).
+# 기존 호출부가 `search_router.should_skip_rerank_for_image`로 가져가므로 그대로 내보낸다.
+from src.retrieval.rerank_policy import (  # noqa: F401 - re-export
+    rerank_skip_reason,
+    should_skip_rerank_for_image,
+)
 from src.retrieval.lyrics_exact_search import LyricsExactSearchService
 from src.retrieval.lyrics_query import normalize_lyric_surface
 from src.retrieval.clarify import (
     analysis_with_answers,
+    answers_for_reranker,
     apply_answer_bonus,
+    apply_birth_year_answers,
+    candidates_for_reranker,
     canonical_artist_types as _canonical_artist_types,
 )
 from src.retrieval.search_service import SearchService
@@ -502,8 +512,8 @@ def _reject_and_trim(
     """거절한 곡을 뺀 뒤 후보 풀을 candidates개로 자른다.
 
     **자르기 전에 걸러야 한다.** 자른 뒤에 거르면 거절한 수만큼 후보 풀이
-    얇아져서, Top-10을 전부 거절했을 때 다음 턴 후보가 30개가 아니라 20개가
-    된다.
+    얇아져서, 보여 준 15곡을 전부 거절했을 때 다음 턴 후보가 30개가 아니라
+    15개가 된다.
 
     단 이 순서만으로는 부족하다. `ranked`가 이미 candidates개면 걸러낸 자리를
     메울 곡이 애초에 없다. 호출부가 `pool_k`(= candidates + 거절 수)로 각
@@ -588,6 +598,20 @@ def call_reranker(
     return run.tracks
 
 
+def _env_scale(name: str, default: float) -> float:
+    """환경 변수로 받는 배율. 비었거나, 숫자가 아니거나, **유한하지 않으면** 기본값이고 음수는 0이다.
+
+    `float("nan")`·`float("inf")`는 예외 없이 통과한다. 그대로 두면 nan은 `max(0.0, nan)`이 0이 되어
+    스위치가 "기본값"이 아니라 "끔"으로 떨어지고, inf는 융합 가중을 inf/inf = NaN으로 만든다(PR #49 리뷰).
+    """
+    raw = os.getenv(name, "").strip()
+    try:
+        value = float(raw) if raw else default
+    except ValueError:
+        return default
+    return max(0.0, value) if math.isfinite(value) else default
+
+
 # 보호를 받을 최소 단서 확신도. **문자 유사도 기준이 아니다**
 # (`lyrics_exact_search.py`는 정규화 후 부분문자열로 발견되면 단서의 confidence를
 # 그대로 점수로 쓴다).
@@ -598,9 +622,12 @@ def call_reranker(
 def _lyric_protect_min_confidence() -> float:
     raw = os.getenv("LYRIC_PROTECT_MIN_CONFIDENCE", "").strip()
     try:
-        return float(raw) if raw else 0.80
+        value = float(raw) if raw else 0.80
     except ValueError:
         return 0.80
+    # nan은 `score >= nan`이 항상 거짓이라 보호가 조용히 전부 꺼진다 — 숫자가 아닌 값처럼 기본값으로 읽는다.
+    # inf는 "1.0보다 크게"와 같은 뜻(보호 끔)이라 그대로 둔다. 음수도 자르지 않는다(전부 보호).
+    return 0.80 if math.isnan(value) else value
 
 
 LYRIC_PROTECT_MIN_CONFIDENCE = 0.80  # 기본값. 실제 판정은 위 함수를 쓴다.
@@ -614,11 +641,73 @@ def _lyric_boost_scale() -> float:
     보호 규칙을 끄는 것(`LYRIC_PROTECT_MIN_CONFIDENCE`)과는 **다른 실험이다** —
     보호를 꺼도 부스트는 그대로 걸린다.
     """
-    raw = os.getenv("LYRIC_BOOST_SCALE", "").strip()
-    try:
-        return max(0.0, float(raw)) if raw else 1.0
-    except ValueError:
-        return 1.0
+    return _env_scale("LYRIC_BOOST_SCALE", 1.0)
+
+
+def _explicit_boost_scale() -> float:
+    """명시 가산(`_apply_explicit_boosts`의 모든 bump)에 곱하는 배율. 1.0이 현행.
+
+    **실험 E1용이다(experiments/reranking/results_v27_boost_scale/RUN_INFO.md).**
+    일치 가산 1단위(1/61 ≈ 0.0164)가 RRF에서 텍스트
+    1위와 30위의 차이(0.0053)보다 3배 커서, 메타데이터가 맞는 먼 곡이 후보를 차지한다.
+    배율을 줄이면 가산은 "검색 순위를 뒤집는 힘"에서 "같은 순위대 안의 순서"로 내려간다.
+    가사 표면 부스트(`LYRIC_BOOST_SCALE`)와 답변 보너스는 이 배율의 영향을 받지 않는다.
+    """
+    return _env_scale("BOOST_SCALE", 1.0)
+
+
+def _attr_boost_scale() -> float:
+    """일반 속성 가산(성별·발매 시기·솔로/그룹 형태·보컬 역할/편성·장르)에만 곱하는 배율. 1.0이 현행.
+
+    **실험 E1′용이다(experiments/reranking/results_v27_boost_scale/RUN_INFO.md).** 가산 전체에 배율을 건
+    E1(`BOOST_SCALE`)은 dev +2 · test −1이었다. 잃은 질의(q310·q111)는 모두 제목 구조·표기 가산에 기대어
+    후보에 들던 곡이고, 얻은 질의는 성별·장르 같은 일반 속성 가산이 경쟁곡 수백 곡을 올린 경우였다.
+    그래서 제목(`title_*`)·아티스트·가사 키워드 가산은 그대로 두고 일반 속성 가산만 줄인다.
+    `BOOST_SCALE`과 곱으로 함께 작용한다.
+    """
+    return _env_scale("ATTR_BOOST_SCALE", 1.0)
+
+
+def _audio_fusion_scale() -> float:
+    """소리 경로(CLAP)의 융합 가중에 곱하는 배율. 1.0이 현행, 0이면 소리 경로를 돌리지 않는다.
+
+    **실험용이다(experiments/reranking/results_v43_audio_path_weight/RUN_INFO.md).** 5,143곡에서 소리
+    경로가 켜진 dev 질의 111건 중 정답이 소리 경로 30위 안에 든 것은 1건(순위 중앙값 970)인데, 분석은
+    소리 가중을 0.2~0.7로 준다. 가중 RRF에서 소리 가중 0.7이면 텍스트 1위(0.3/61)가 소리 경로 상위
+    80곡 안팎보다 낮아져 후보 30에서 밀린다(v10 t058). 분석의 가중·프롬프트는 건드리지 않고 융합에서만
+    줄인다 — 표지 지배 판정(`rerank_policy`)처럼 분석 가중을 읽는 다른 규칙이 따라 바뀌지 않게.
+
+    `force_weights`(가중을 직접 주는 ablation 실행)에는 적용하지 않는다 — 그 실행은 준 가중 그대로 돈다.
+    지금 `force_weights`를 넘기는 것은 `src/eval/evaluate.py`뿐이고, runinfo에 이 배율을 적는
+    `evaluate_search_accuracy`는 넘기지 않는다.
+    """
+    return _env_scale("AUDIO_FUSION_SCALE", 1.0)
+
+
+def _text_sparse_source() -> str:
+    """텍스트 경로의 BM25 질의에 무엇을 넣는가. `tags`(현행) · `query` · `both`.
+
+    **실험용이다(experiments/reranking/results_v43_audio_path_weight/RUN_INFO.md).** 가사 단서가 없는
+    질의는 BM25에 모델이 뽑은 `korean_tags`만 넣는다. 규칙 폴백 분석은 태그가 없어 원문이 그대로
+    들어가는데, v06 q115에서 폴백의 텍스트 순위(40위)가 모델 분석(359위)보다 훨씬 좋았다
+    (results_v42). `query`는 태그 대신 원문을, `both`는 태그에 원문을 더해 넣는다. 가사 구절·음차가
+    있는 질의와 보조 경로는 건드리지 않는다.
+    """
+    raw = os.getenv("TEXT_SPARSE_SOURCE", "").strip().lower()
+    return raw if raw in {"query", "both"} else "tags"
+
+
+def _gender_mismatch_scale() -> float:
+    """보컬 성별 불일치 감점에 곱하는 배율. **기본 0 — 감점을 주지 않는다.** 1.0이면 예전 감점.
+
+    사용자 기억은 성별부터 틀리는 일이 잦다(평가 세트의 misinformation 질의). 감점은 그 정답을
+    후보 밖으로 밀어내고, 맞게 기억한 질의에서는 일치 가산(+1단위)이 이미 같은 성별 곡을 올려 주므로
+    감점이 더 보태는 것이 없다. 3,010곡 측정(experiments/reranking/results_v27_boost_scale/RUN_INFO.md,
+    E3): 감점을 없애면 dev 57건 중 q316 하나가 Top-10에 돌아오고 나머지 56건과 test 25건은 순위가
+    전혀 바뀌지 않았다. 0이면 감점을 **기록도 하지 않는다** — "말한 성별과 다름 (−0.0000)"은 설명이 아니다.
+    일치·부분 일치 가산은 그대로다. `BOOST_SCALE`과 곱으로 함께 작용한다.
+    """
+    return _env_scale("GENDER_MISMATCH_SCALE", 0.0)
 
 
 def _lyric_match_note(track: MatchingTrack) -> str:
@@ -690,23 +779,40 @@ def select_protected_lyric_ids(candidates: Sequence[MatchingTrack]) -> set:
     return protected
 
 
-def should_skip_rerank_for_image(reranker: Any, analysis: QueryAnalysis) -> bool:
-    """이미지 지배 질의는 텍스트 LLM 리랭킹을 건너뛴다.
+def place_protected_lyrics_first(
+    analysis: QueryAnalysis,
+    candidate_tracks: Sequence[MatchingTrack],
+    top_k: int,
+    recorder: ExplainRecorder = NULL_RECORDER,
+) -> List[MatchingTrack]:
+    """모델 없이 가사 exact 보호 배치만 적용한다 — 리랭킹을 **정책으로 생략**한 요청용.
 
-    SigLIP2가 실제 앨범 커버를 보고 만든 순위를, 이미지를 직접 보지 않는
-    listwise reranker가 다시 섞어 회귀시키는 것을 막는다.
-    mixed 질의(image < 0.70)는 기존 리랭킹을 그대로 사용한다.
+    리랭킹 경로에서는 보호 곡이 일반 후보 아래로 내려가지 않는다. 생략 경로가 후보 순서를
+    그대로 내면 그 보호가 사라져, 같은 가사 단서에서 생략 여부에 따라 보호 곡의 자리가 달라진다.
+    그래서 같은 규칙(`select_protected_lyric_ids` · 성별/장르 tier · tier 안은 후보 순서)으로
+    보호 곡을 앞에 두고 나머지는 후보 순서다. 모델 호출은 없고 그 사실을 순서 규칙으로 기록한다.
 
-    리랭커가 `skips_image_dominant`를 켠 경우에만 적용한다. 기존 Cross-Encoder는
-    v0.5 기준선부터 이미지 질의도 리랭킹해 왔으므로, 여기서 함께 끄면 백엔드를
-    바꾸지 않은 사람의 검색 결과까지 달라진다.
+    `candidate_tracks`는 **보정·거절 제외까지 끝난 후보 순서**다. 라우터와 평가 사본이 함께 쓴다.
+    보호 곡이 없으면 후보 순서 그대로이고 기록도 남기지 않는다.
     """
-    if not getattr(reranker, "skips_image_dominant", False):
-        return False
-    return bool(
-        analysis.has_visual_clue
-        and float(analysis.modality_weights.image or 0.0) >= 0.70
+    protected_ids = select_protected_lyric_ids(candidate_tracks)
+    if not protected_ids:
+        return list(candidate_tracks)[:top_k]
+
+    protected = [t for t in candidate_tracks if t.id in protected_ids]
+    others = [t for t in candidate_tracks if t.id not in protected_ids]
+    # 같은 구절이 여러 곡에 있으면 명시된 성별·장르가 맞는 tier를 먼저. tier 안은 후보 순서(안정 정렬).
+    protected.sort(key=lambda t: exact_lyric_constraint_score(analysis, t), reverse=True)
+    final = [*protected, *others][:top_k]
+    final_ids = {t.id for t in final}
+    for track in protected:
+        if track.id in final_ids:
+            recorder.order(track.id, lyric_priority_rule(track), "일반 후보 아래로 내려가지 않음(모델 없이 배치)")
+    recorder.note_behind_protected(
+        [t.id for t in others if t.id in final_ids], len(protected)
     )
+    recorder.note_order_rules_applied()
+    return final
 
 
 # ---------------------------------------------------------------------------
@@ -822,6 +928,7 @@ class SearchRouter:
         exclude_ids: Optional[Iterable[str]] = None,
         candidate_ids_out: Optional[List[str]] = None,
         candidate_tracks_out: Optional[List[MatchingTrack]] = None,
+        rerank_input_tracks_out: Optional[List[MatchingTrack]] = None,
         lyrics_snapshot_out: Optional[List[Any]] = None,
         answers: Optional[Sequence[ClarifyAnswer]] = None,
         answer_multiplier: Optional[float] = None,
@@ -830,6 +937,7 @@ class SearchRouter:
         use_context: bool = True,
         context_hits_out: Optional[List[ContextRouteHit]] = None,
         path_k: Optional[int] = None,
+        rerank_skip_out: Optional[List[str]] = None,
     ) -> List[MatchingTrack]:
         """
         QueryAnalysis를 받아 3개 경로를 병렬 실행하고
@@ -856,8 +964,13 @@ class SearchRouter:
         candidate_ids_out: 리스트를 넘기면 최종 후보 풀의 id가 순위 순으로 채워진다.
             반환 타입을 바꾸지 않고 후보 풀을 밖으로 내보내기 위한 통로다
             (호출부가 eval 스크립트 포함 3곳이라 반환 시그니처를 못 바꾼다).
+        rerank_input_tracks_out: 답을 쓰는 리랭커가 받은 후보 목록(실험 스위치 CLARIFY_RERANK_INPUT_ORDER가
+            바꾼 순서). 꺼져 있으면 후보 목록과 같다. 평가 하네스가 같은 입력으로 리랭킹하려고 쓴다.
         candidate_tracks_out: 같은 통로의 MatchingTrack 버전. 재질문 슬롯을 고르려면
             후보의 성별·장르 메타데이터가 필요한데 id만으로는 알 수 없다.
+        rerank_skip_out: 리스트를 넘기면 리랭킹을 **정책으로 생략**했을 때 그 사유(RERANK_SKIP_*)가
+            담긴다. 설명 기록과 별개의 통로다 — 기록을 끈 요청에도 응답이 "확인할 자료가 없어
+            다른 단서로 찾았다"는 안내를 실어야 하기 때문이다. 비어 있으면 정책 생략은 없었다.
         answers: 재질문 답변. **질의를 바꾸지 않고** 후보 풀 안에서 재정렬만 한다.
             답변을 분석에 병합해 재검색하면 맞는 답변도 순위를 해친다
             (q200: 후보 4위 → 15위). 자세한 근거는 clarify.apply_answer_bonus 참조.
@@ -875,6 +988,10 @@ class SearchRouter:
         5) top_k 반환
         """
         loop = asyncio.get_running_loop()
+        # 출생 연도 답(birth_year 슬롯)은 후보 재정렬 보너스가 아니라 분석의 발매 시기 창이다 — 생애 단계
+        # ("중학교 때")가 있고 시기를 모를 때만 바뀌고, 그 외에는 같은 객체라 기존 동작과 같다.
+        # 시기는 sparse 질의에 안 들어가므로 q200(장르 병합이 보조 경로를 흔든 문제)과 다르다.
+        analysis = apply_birth_year_answers(analysis, answers)
         candidates = candidate_k or max(top_k * 3, getattr(self, "_default_candidate_k", 30))
         candidates = min(100, max(top_k, candidates))
         excluded = set(exclude_ids) if exclude_ids else None
@@ -953,6 +1070,7 @@ class SearchRouter:
                 not analysis.has_exact_lyric_clue
                 and has_audio_query
                 and analysis.modality_weights.audio > 0
+                and _audio_fusion_scale() > 0
             )
 
         text_fut = loop.run_in_executor(
@@ -1312,7 +1430,7 @@ class SearchRouter:
         else:
             w_text = mw.text
             w_image = mw.image if use_image else 0.0
-            w_audio = mw.audio if use_audio else 0.0
+            w_audio = mw.audio * _audio_fusion_scale() if use_audio else 0.0
 
             if (
                 analysis.intent_type == "mixed"
@@ -1630,12 +1748,23 @@ class SearchRouter:
             )
 
         # 답변은 여기서만 반영한다 — 후보 풀은 그대로 두고 순위만 바꾼다.
+        pre_bonus = list(boosted)
         if answers:
             boosted = apply_answer_bonus(
                 boosted, meta_cache, answers, 1.0 / (_RRF_K + 1),
                 multiplier=answer_multiplier,
                 recorder=recorder,
             )
+
+        # LLM 리랭커 프롬프트에 넘길 답변. 보너스·가사 exact 묶음은 위처럼 전부 쓴다.
+        # 답이 없어도 부른다 — 프로필 출생 연도로 분석에 들어온 시기 창은 answers가 아니라 분석에 있다(리뷰)
+        reranker_answers = answers_for_reranker(analysis, list(answers or [])) or None
+        # 실험 (a)·위약: **답을 쓰는 리랭커의 입력에만** 보너스 전(또는 섞은) 순서를 넘긴다. 후보 목록·기록·폴백·
+        # 리랭킹 생략·CE 경로는 보너스 순서(boosted) 그대로다 — 그러지 않으면 재질문 답이 통째로 사라진다(리뷰).
+        rerank_order: List[Tuple[str, float]] = list(boosted)
+        if answers and getattr(self._reranker, "uses_clarify_answers", False):
+            rerank_order = candidates_for_reranker(pre_bonus, boosted, answers)
+        rerank_input_differs = [sid for sid, _ in rerank_order] != [sid for sid, _ in boosted]
 
         for song_id, retrieval_score in boosted:
             recorder.set_retrieval(song_id, retrieval_score)
@@ -1644,30 +1773,39 @@ class SearchRouter:
         if candidate_ids_out is not None:
             candidate_ids_out.extend(song_id for song_id, _ in boosted)
 
-        candidate_tracks: List[MatchingTrack] = []
-        for song_id, retrieval_score in boosted:
-            base_track = meta_cache.get(song_id)
-            if base_track is None:
-                base_track = MatchingTrack(
-                    id=song_id,
-                    score=retrieval_score,
-                    title="Unknown",
-                    artist="Unknown",
+        def _tracks_from(order: Sequence[Tuple[str, float]]) -> List[MatchingTrack]:
+            tracks: List[MatchingTrack] = []
+            for song_id, retrieval_score in order:
+                base_track = meta_cache.get(song_id)
+                if base_track is None:
+                    base_track = MatchingTrack(
+                        id=song_id,
+                        score=retrieval_score,
+                        title="Unknown",
+                        artist="Unknown",
+                    )
+                    logger.debug("[SearchRouter] metadata 없는 id=%s", song_id)
+                tracks.append(
+                    base_track.model_copy(
+                        update={
+                            "score": float(retrieval_score),
+                            "retrieval_score": float(retrieval_score),
+                            "rerank_score": None,
+                        }
+                    )
                 )
-                logger.debug("[SearchRouter] metadata 없는 id=%s", song_id)
+            return tracks
 
-            candidate_tracks.append(
-                base_track.model_copy(
-                    update={
-                        "score": float(retrieval_score),
-                        "retrieval_score": float(retrieval_score),
-                        "rerank_score": None,
-                    }
-                )
-            )
+        candidate_tracks: List[MatchingTrack] = _tracks_from(boosted)
+        # 답을 쓰는 리랭커가 받을 목록. 스위치가 꺼져 있으면 후보 목록과 같다.
+        rerank_tracks: List[MatchingTrack] = (
+            _tracks_from(rerank_order) if rerank_input_differs else candidate_tracks
+        )
 
         if candidate_tracks_out is not None:
             candidate_tracks_out.extend(candidate_tracks)
+        if rerank_input_tracks_out is not None:
+            rerank_input_tracks_out.extend(rerank_tracks)
 
         # 보호 판정은 평가 스크립트와 **같은 함수**로 한다(사본이 갈리지 않게).
         protected_lyric_ids = select_protected_lyric_ids(candidate_tracks)
@@ -1677,16 +1815,31 @@ class SearchRouter:
         )
         timer.mark("search.fuse", fuse_started, candidates=len(candidate_tracks))
 
-        # 리랭킹은 빠져나가는 자리가 셋(보호 그룹·일반·폴백)이라 블록으로 묶지 않고
-        # 각 출구에서 닫는다. None이면 리랭킹을 아예 시도하지 않은 것이다.
-        rerank_started: Optional[float] = None
-        if (
+        # 정책 생략은 모델을 부르기 **전에**, 부를 수 있는 요청에서만 판정한다 — 꺼져 있거나
+        # 후보가 하나뿐인 요청에 "생략했다"고 적으면 하지 않을 일을 생략한 것이 된다.
+        # 평가 스크립트(`rerank_preserving_exact_lyrics`)와 같은 함수다. 생략한 요청은
+        # 아래 폴백 출구로 가서 **지금 후보 순서(보정·거절 제외 반영)** 그대로 나간다.
+        rerank_eligible = bool(
             use_rerank
             and self._reranker is not None
             and self._reranker.enabled
             and len(candidate_tracks) > 1
-            and not should_skip_rerank_for_image(self._reranker, analysis)
-        ):
+        )
+        skip_reason = (
+            rerank_skip_reason(self._reranker, analysis, candidate_tracks)
+            if rerank_eligible
+            else ""
+        )
+        if skip_reason:
+            recorder.set_rerank_policy_skip(skip_reason)
+            if rerank_skip_out is not None:
+                rerank_skip_out.append(skip_reason)
+            logger.info("[SearchRouter] 리랭킹 정책 생략 reason=%s", skip_reason)
+
+        # 리랭킹은 빠져나가는 자리가 셋(보호 그룹·일반·폴백)이라 블록으로 묶지 않고
+        # 각 출구에서 닫는다. None이면 리랭킹을 아예 시도하지 않은 것이다.
+        rerank_started: Optional[float] = None
+        if rerank_eligible and not skip_reason:
             recorder.set_reorder_attempted(True)
             rerank_started = time.perf_counter()
             try:
@@ -1694,14 +1847,17 @@ class SearchRouter:
                 # exact 그룹은 그룹 내부에서만 리랭킹하고 일반 후보 아래로는 내리지 않는다.
                 protected_tracks = [
                     track
-                    for track in candidate_tracks
+                    for track in rerank_tracks
                     if track.id in protected_lyric_ids
                 ]
                 other_tracks = [
                     track
-                    for track in candidate_tracks
+                    for track in rerank_tracks
                     if track.id not in protected_lyric_ids
                 ]
+                # 백엔드가 예외 없이 실패를 보고하면(Gemini) 입력 순서가 그대로 돌아온다. 입력이 보너스 전
+                # 순서였다면 그 폴백은 답을 버린 결과이므로 후보 목록(보너스 순서)으로 돌아간다.
+                run_statuses: List[str] = []
 
                 if protected_tracks:
                     # 같은 가사 구절이 여러 곡에 실제로 존재하면 명시된 성별/가수/
@@ -1730,9 +1886,12 @@ class SearchRouter:
                                 analysis.original_query,
                                 group,
                                 min(remaining_group_slots, len(group)),
-                                answers,
+                                reranker_answers,
                                 recorder,
+                                run_statuses,
                             )
+                            n_before = len(run_statuses)
+                            group_in = group
                             group = await loop.run_in_executor(
                                 self._pool,
                                 timer.job(
@@ -1741,6 +1900,9 @@ class SearchRouter:
                                     size=len(group),
                                 ),
                             )
+                            if rerank_input_differs and not self._call_applied(run_statuses, n_before):
+                                # 이 그룹만 적용 실패 — 입력(보너스 전) 순서 대신 그 그룹의 보너스 순서로
+                                group = self._bonus_order(candidate_tracks, group_in)
                         ordered_protected.extend(group[:remaining_group_slots])
                     protected_tracks = ordered_protected
 
@@ -1752,9 +1914,12 @@ class SearchRouter:
                             analysis.original_query,
                             other_tracks,
                             remaining,
-                            answers,
+                            reranker_answers,
                             recorder,
+                            run_statuses,
                         )
+                        n_before = len(run_statuses)
+                        others_in = other_tracks
                         other_tracks = await loop.run_in_executor(
                             self._pool,
                             timer.job(
@@ -1763,6 +1928,8 @@ class SearchRouter:
                                 size=len(other_tracks),
                             ),
                         )
+                        if rerank_input_differs and not self._call_applied(run_statuses, n_before):
+                            other_tracks = self._bonus_order(candidate_tracks, others_in)[:remaining]
                     else:
                         other_tracks = []
                     final = [*protected_tracks, *other_tracks][:top_k]
@@ -1784,6 +1951,9 @@ class SearchRouter:
                     )
                     recorder.note_order_rules_applied()
                     recorder.commit_reorder()
+                    if rerank_input_differs and self._rerank_reported_failure(run_statuses):
+                        # 모든 호출이 실패 — 그룹별 폴백으로 이미 보너스 순서지만, 반영 표시는 취소한다(설명 단계 = 실패)
+                        recorder.revoke_reorder()
                     recorder.set_rank_after([t.id for t in final])
                     for t in final:
                         recorder.set_rerank_score(t.id, t.rerank_score)
@@ -1794,18 +1964,24 @@ class SearchRouter:
                     call_reranker,
                     self._reranker,
                     analysis.original_query,
-                    candidate_tracks,
+                    rerank_tracks,
                     top_k,
-                    answers,
+                    reranker_answers,
                     recorder,
+                    run_statuses,
                 )
                 reranked = await loop.run_in_executor(
                     self._pool,
                     timer.job(
-                        "rerank.main", rerank_job, size=len(candidate_tracks)
+                        "rerank.main", rerank_job, size=len(rerank_tracks)
                     ),
                 )
                 recorder.commit_reorder()
+                if rerank_input_differs and self._rerank_reported_failure(run_statuses):
+                    # 보호 경로와 같은 순서 — commit 다음에 revoke. 반대로 두면 폴백했는데도 reorder_committed가
+                    # 다시 True가 돼 설명 단계가 MODEL_FAILED 대신 다른 값을 보고한다(PR #30 리뷰).
+                    recorder.revoke_reorder()
+                    reranked = candidate_tracks[:top_k]
                 recorder.set_rank_after([t.id for t in reranked])
                 for t in reranked:
                     recorder.set_rerank_score(t.id, t.rerank_score)
@@ -1828,9 +2004,32 @@ class SearchRouter:
             # 여기까지 왔다는 건 리랭킹이 예외로 멈췄다는 뜻이다. 실패한 시도의
             # 시간도 응답 지연에는 그대로 들어간다.
             timer.mark("search.rerank", rerank_started, shape="failed")
-        final = candidate_tracks[:top_k]
+        if skip_reason == RERANK_SKIP_MV_SCENE_UNVERIFIABLE:
+            # MV 장면 생략: 모델만 빼고 가사 exact 보호 배치는 그대로 적용한다(평가 사본과 같은 함수).
+            # 표지 지배 생략은 기존 동작(후보 순서 그대로)을 유지한다 — 바꾸면 기준선에 닿는다.
+            final = place_protected_lyrics_first(
+                analysis_with_answers(analysis, answers or []), candidate_tracks, top_k, recorder
+            )
+        else:
+            final = candidate_tracks[:top_k]
         recorder.set_rank_after([t.id for t in final])
         return final
+
+    @staticmethod
+    def _call_applied(statuses: Sequence[str], n_before: int) -> bool:
+        """n_before 뒤에 더해진 상태(= 방금 한 호출) 중 적용된 것이 있으면 True."""
+        return RERANK_APPLIED in statuses[n_before:]
+
+    @staticmethod
+    def _bonus_order(candidate_tracks: Sequence[MatchingTrack], subset: Sequence[MatchingTrack]) -> List[MatchingTrack]:
+        """subset의 곡들을 후보 목록(보너스 순서)의 순서로. 그룹 하나만 적용 실패했을 때 그 그룹의 폴백 순서."""
+        ids = {t.id for t in subset}
+        return [t for t in candidate_tracks if t.id in ids]
+
+    @staticmethod
+    def _rerank_reported_failure(statuses: Sequence[str]) -> bool:
+        """백엔드가 보고한 상태 중 적용된 것이 하나도 없으면 True(실패·생략·상태 없음 모두). 리뷰 — 조건 하나로."""
+        return RERANK_APPLIED not in statuses
 
     @staticmethod
     def _apply_explicit_boosts(
@@ -1859,7 +2058,10 @@ class SearchRouter:
             for clue in analysis.lyric_clues
             if clue.kind in {"verbatim", "partial", "phonetic"}
         ]
-        boost_unit = 1.0 / (_RRF_K + 1)
+        boost_unit = (1.0 / (_RRF_K + 1)) * _explicit_boost_scale()
+        # 일반 속성 가산 전용 단위. 제목·아티스트·가사 가산은 boost_unit을 그대로 쓴다.
+        attr_unit = boost_unit * _attr_boost_scale()
+        gender_mismatch_scale = _gender_mismatch_scale()
         want_title = _norm(analysis.song_title)
         want_artist = _norm(analysis.artist_name)
         want_gender = analysis.vocal_gender
@@ -1872,11 +2074,15 @@ class SearchRouter:
             score = rrf_score
             track = meta_cache.get(song_id)
 
-            def bump(rule: str, delta: float, detail: str = "", _id=song_id) -> None:
-                """점수를 더하고 같은 값을 기록한다. 감점은 delta가 음수다."""
+            def bump(rule: str, delta: float, detail: str = "", _id=song_id, *, slot: str = "", value: str = "") -> None:
+                """점수를 더하고 같은 값을 기록한다. 감점은 delta가 음수다.
+
+                slot·value는 기록에만 간다 — 이 규칙이 질의의 어느 값과 비교했는지(사용자용 설명이
+                정정된 답과 과거 가산을 구분하는 데 쓴다). 점수 계산은 `score += delta` 한 줄 그대로다.
+                """
                 nonlocal score
                 score += delta
-                recorder.adjust(_id, rule, delta, detail)
+                recorder.adjust(_id, rule, delta, detail, slot=slot, value=value)
 
             if track is not None and not disable_boost:
                 # 가사 키워드 매칭 (highlight/summary 토큰과 교집합)
@@ -1907,6 +2113,8 @@ class SearchRouter:
                                 f"lyric_{kind}_in_{field}",
                                 boost_unit * multiplier * clue.confidence,
                                 f"{clue.kind} ×{multiplier:.1f}",
+                                slot="lyric_clue",
+                                value=clue.text,
                             )
                             break
 
@@ -1983,25 +2191,42 @@ class SearchRouter:
                     actual_gender = str(track.vocal_gender).strip()
 
                     if actual_gender == want_gender:
-                        bump("vocal_gender_match", boost_unit * 1.0, f"{actual_gender}")
+                        bump("vocal_gender_match", attr_unit * 1.0, f"{actual_gender}",
+                             slot="vocal_gender", value=want_gender)
 
                     elif (
                         actual_gender == "혼성"
                         and want_gender in ("남성", "여성")
                     ):
-                        bump("vocal_gender_partial", boost_unit * 0.25, f"{actual_gender}")
+                        bump("vocal_gender_partial", attr_unit * 0.25, f"{actual_gender}",
+                             slot="vocal_gender", value=want_gender)
+
+                    elif gender_mismatch_scale <= 0.0:
+                        # 불일치 감점 없음(기본). 기록도 남기지 않는다 — 0점 감점을
+                        # "말한 성별과 다름"으로 설명하면 순위에 없는 이유를 지어내는 셈이다.
+                        pass
 
                     elif (
                         want_gender == "혼성"
                         and actual_gender in ("남성", "여성")
                     ):
-                        bump("vocal_gender_mismatch", -(boost_unit * 0.5), f"{actual_gender}")
+                        bump(
+                            "vocal_gender_mismatch",
+                            -(attr_unit * 0.5 * gender_mismatch_scale),
+                            f"{actual_gender}",
+                            slot="vocal_gender", value=want_gender,
+                        )
 
                     elif {
                         want_gender,
                         actual_gender,
                     } == {"남성", "여성"}:
-                        bump("vocal_gender_mismatch", -(boost_unit * 1.0), f"{actual_gender}")
+                        bump(
+                            "vocal_gender_mismatch",
+                            -(attr_unit * 1.0 * gender_mismatch_scale),
+                            f"{actual_gender}",
+                            slot="vocal_gender", value=want_gender,
+                        )
 
                 # 발매 시기 soft boost
                 era_similarity = _release_era_similarity(
@@ -2012,8 +2237,10 @@ class SearchRouter:
                 if era_similarity > 0:
                     bump(
                         "release_era",
-                        boost_unit * 1.25 * analysis.release_era.confidence * era_similarity,
+                        attr_unit * 1.25 * analysis.release_era.confidence * era_similarity,
                         f"시기 유사 {era_similarity:.2f}",
+                        slot="release_era",
+                        value=f"{analysis.release_era.start_year}~{analysis.release_era.end_year}",
                     )
 
                 # 솔로/그룹/듀오/밴드 soft boost
@@ -2025,7 +2252,7 @@ class SearchRouter:
                 if artist_type_similarity > 0:
                     bump(
                         "artist_type",
-                        boost_unit * 1.0 * analysis.artist_type.confidence * artist_type_similarity,
+                        attr_unit * 1.0 * analysis.artist_type.confidence * artist_type_similarity,
                         f"형태 유사 {artist_type_similarity:.2f}",
                     )
 
@@ -2038,7 +2265,7 @@ class SearchRouter:
                 if performance_similarity > 0:
                     bump(
                         "performance_clues",
-                        boost_unit * 1.50 * analysis.performance_clues.confidence * performance_similarity,
+                        attr_unit * 1.50 * analysis.performance_clues.confidence * performance_similarity,
                         f"단서 유사 {performance_similarity:.2f}",
                     )
 
@@ -2049,7 +2276,7 @@ class SearchRouter:
                     and track.genre
                     and want_genre in _norm(track.genre)
                 ):
-                    bump("genre_match", boost_unit * 1)
+                    bump("genre_match", attr_unit * 1, slot="genre", value=analysis.genre)
 
             boosted.append((song_id, score))
 
@@ -2142,6 +2369,11 @@ class SearchRouter:
             alpha = min(0.60, max(alpha, 0.50))
         else:
             sparse_terms = list(analysis.korean_tags)
+            source = _text_sparse_source()
+            if source == "query":
+                sparse_terms = [analysis.search_text]
+            elif source == "both":
+                sparse_terms.append(analysis.search_text)
         if analysis.song_title:
             sparse_terms.append(analysis.song_title)
         if analysis.artist_name:
@@ -2149,10 +2381,10 @@ class SearchRouter:
         # 메타데이터 표기 형태 모두 결합 — 인덱스 토큰과 매칭 가능성 ↑
         sparse_terms.extend(a for a in analysis.artist_name_alt if a)
         sparse_query = " ".join(sparse_terms) if sparse_terms else None
-        dense_query = analysis.original_query
+        dense_query = analysis.search_text
         if analysis.lyric_semantic_query and not exact_lyric_terms:
             dense_query = (
-                f"{analysis.original_query}\n"
+                f"{analysis.search_text}\n"
                 f"가사 의미: {analysis.lyric_semantic_query}"
             )
         if phonetic_lyric_terms and not exact_lyric_terms:
@@ -2201,7 +2433,7 @@ class SearchRouter:
         ]
         clue_terms = [term for term in clue_terms if term]
         dense_parts = [
-            analysis.original_query,
+            analysis.search_text,
             f"곡에서 들리는 단서: {' / '.join(clue_terms)}",
         ]
         if analysis.lyric_semantic_query:
@@ -2245,7 +2477,7 @@ class SearchRouter:
             *clue.sound_ensemble,
         ]
         dense_parts = [
-            analysis.original_query,
+            analysis.search_text,
             "구조적 공연 단서: "
             + " / ".join(term for term in clue_terms if term),
         ]
@@ -2281,7 +2513,7 @@ class SearchRouter:
             [*analysis.korean_tags, analysis.genre]
         )
         dense_query = (
-            f"{analysis.original_query}\n"
+            f"{analysis.search_text}\n"
             f"제목 의미 단서: {analysis.title_meaning_clue.text}"
         )
         logger.debug(
@@ -2372,11 +2604,11 @@ class SearchRouter:
             top_k,
         )
 
-        dense_query = analysis.original_query
+        dense_query = analysis.search_text
         alpha = analysis.text_alpha
         if phonetic_lyric_terms and not exact_lyric_terms:
             dense_query = (
-                f"{analysis.original_query}\n"
+                f"{analysis.search_text}\n"
                 f"들리는 가사의 가능한 표기: {' / '.join(phonetic_lyric_terms)}"
             )
             alpha = min(0.60, max(alpha, 0.50))
@@ -2414,11 +2646,11 @@ class SearchRouter:
             sparse_terms.append(analysis.artist_name)
         sparse_terms.extend(a for a in analysis.artist_name_alt if a)
 
-        dense_query = analysis.original_query
+        dense_query = analysis.search_text
         alpha = analysis.text_alpha
         if phonetic_lyric_terms and not exact_lyric_terms:
             dense_query = (
-                f"{analysis.original_query}\n"
+                f"{analysis.search_text}\n"
                 f"들리는 가사의 가능한 표기: {' / '.join(phonetic_lyric_terms)}"
             )
             alpha = min(0.60, max(alpha, 0.50))

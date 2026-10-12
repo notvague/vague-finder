@@ -14,6 +14,7 @@ EvalQuery
     - split: dev | test (튜닝은 dev, 최종 보고는 test)
     - label_status: 정답 라벨이 확정됐는지. tier와 직교한다.
     - query_set: 질의 출처. 통합 후에도 세트별 분리 집계를 가능하게 한다.
+    - target_scope: 질의만으로 원래 타깃을 특정할 수 있는지. 범주형 질의는 따로 본 집계를 함께 낸다.
 
 EvalSet
     EvalQuery 목록 컨테이너. version/created_at 메타데이터 포함.
@@ -58,12 +59,26 @@ QuerySplit = Literal["dev", "test"]
 #                   ⚠️ 코퍼스가 커지면 다시 판정해야 한다 — 순위는 코퍼스 상대적이다.
 LabelStatus = Literal["labeled", "pending_cover", "no_target", "unreachable"]
 
+# 질의만으로 원래 타깃을 특정할 수 있는가. label_status·tier와 직교한다.
+#   specific    : 질의가 곡 하나를 가리킨다 (기본)
+#   categorical : 질의가 일반 속성만 말한다("빨간 표지", "얼굴 클로즈업"). 코퍼스에 조건에 맞는
+#                 곡이 많아 원래 타깃을 질의만으로 고를 수 없다. 전체 지표에는 그대로 넣고,
+#                 범주형만 따로 본 집계를 함께 낸다(relaxed_metrics · evaluate_clarification).
+#                 표지 질의 진단(results_v25_cover_diag)에서 일반 속성 표지 질의 8건을 정했다.
+#                 ⚠️ unreachable처럼 코퍼스 상대적이다 — 코퍼스가 바뀌면 다시 판정한다.
+TargetScope = Literal["specific", "categorical"]
+TARGET_SCOPES: tuple = ("specific", "categorical")
+
 # 질의 출처 세트. 통합 파일에서도 세트별로 분리 집계하기 위한 것으로,
 # v0.5 기준선 비교는 query_set="v04" 부분집합으로만 수행한다.
 #   v04         : 2026-08 3인 작성 60개 (v0.5 공식 기준선의 대상)
 #   modality_v1 : 2026-08-24 모달리티 분리 효과 + 나무위키 사전 기준선 14개
 #   clarify_v1  : 2026-09 재질문 측정용 신규 질의 (단계 2)
-QuerySet = Literal["v04", "modality_v1", "clarify_v1"]
+#   v09         : 2026-10 2차 세트 100개 — Claude 초안(메타데이터·표지만 참조) + 황찬혁 검토. dev 62 · test 38(봉인)
+QuerySet = Literal["v04", "modality_v1", "clarify_v1", "v09"]
+# v06 기준선(dev 57 · test 25)을 이루는 세트. CSV 내보내기와 재질문 평가기의 **기본 선택**이다 —
+# v09를 넣으려면 명시해야 한다. 그래야 얼려 둔 v06 CSV가 덮어써지지 않고 봉인 test가 섞여 열리지 않는다.
+V05_QUERY_SETS: tuple = ("v04", "modality_v1", "clarify_v1")
 
 # 질의가 어떤 단서에 의존하는지. modality_v1의 type을 옮긴 것으로,
 # 나무위키 크롤링 전후 비교처럼 단서 유형별 효과를 볼 때 사용한다.
@@ -107,6 +122,10 @@ class EvalQuery(BaseModel):
     clue_type: Optional[ClueType] = Field(
         default=None,
         description="질의가 의존하는 단서 유형 (선택). 단서 유형별 효과 분석에 사용",
+    )
+    target_scope: TargetScope = Field(
+        default="specific",
+        description="categorical이면 질의가 일반 속성만 말해 원래 타깃을 특정할 수 없다. 범주형 집계에 사용",
     )
     positives: List[str] = Field(
         default_factory=list,

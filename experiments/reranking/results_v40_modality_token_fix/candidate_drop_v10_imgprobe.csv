@@ -1,0 +1,3 @@
+split,query_id,song_id,pool_rank,stage,paths_now,active_main_paths,text_hybrid_rank,image_rank,audio_rank,best_main_rank,aux_paths_deep,fused_rank_deep,boosted_rank_deep,pool_rank_deep,adjustments
+dev,t086,35553933,1,후보 안,text_hybrid:2|image:5,text_hybrid|image,2,5,,2,,1,1,1,
+dev,t099,36331121,2,후보 안,image:1,text_hybrid|image,93,1,,1,,2,2,2,

@@ -701,6 +701,19 @@ body.listmode .sitefooter { min-width: 0; }
 .resultcontextsource { flex: none; color: #286746; text-decoration: underline; }
 .resultcontextsource:focus-visible { outline: 2px solid currentColor; }
 
+.feedbackpick { align-self: flex-start; border: 0; background: none; color: #76600a; padding: 5px 0; font: inherit; font-size: 12px; cursor: pointer; }
+.feedbackbox[hidden] { display: none; }
+.feedbackbox { flex: 0 1 auto; overflow-y: auto; padding: 12px 16px; border-top: 1px solid #eee; background: #fffdf5; }
+.feedbacktitle, .feedbackstatus { font-size: 13px; margin: 0 0 8px; overflow-wrap: anywhere; }
+.feedbacklabel { display: block; font-size: 12px; margin: 8px 0; }
+.feedbackreason { box-sizing: border-box; width: 100%; resize: vertical; min-height: 64px; max-height: 160px; border: 1px solid #ccc; border-radius: 4px; padding: 8px; font: inherit; font-size: 13px; }
+.feedbacknote { font-size: 11px; color: #666; line-height: 1.5; }
+.feedbackactions { display: flex; gap: 8px; flex-wrap: wrap; }
+.feedbackaction { font: inherit; font-size: 12px; padding: 7px 10px; border: 1px solid #c8b66e; border-radius: 4px; background: #fff; cursor: pointer; }
+.feedbackpick:disabled, .feedbackaction:disabled { opacity: .5; cursor: default; }
+.feedbackerror { color: #a12f20; font-size: 12px; }
+.feedbackpick:focus-visible, .feedbackaction:focus-visible, .feedbackreason:focus-visible { outline: 2px solid #76600a; outline-offset: 2px; }
+
 .clarify[hidden] { display: none; }
 .clarify {
   /* 화면이 낮으면(선택지가 여러 줄인 질문) 줄어들며 스스로 스크롤한다.
@@ -786,6 +799,76 @@ body.listmode .sitefooter { min-width: 0; }
   cursor: pointer;
 }
 .rejectbtn:disabled, .option:disabled, .linkbtn:disabled { opacity: 0.5; cursor: default; }
+.option.primary { color: #fff; background: #2258a5; border-color: #2258a5; font-weight: 600; }
+.option.primary:hover { background: #1b478a; color: #fff; }
+
+/* 출생 연도 휠 — 가운데 줄이 값이다. 줄 높이 36px은 map.js의 WHEEL_ROW와 같아야 한다 */
+.wheel {
+  position: relative;
+  height: 180px;             /* 5줄 */
+  margin: 0 0 9px;
+  background: #fff;
+  border: 1px solid #d6dce6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.wheellist {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  outline: none;
+}
+.wheellist::-webkit-scrollbar { display: none; }
+.wheellist:focus-visible { box-shadow: inset 0 0 0 2px #2258a5; }
+.wheel li {
+  height: 36px;
+  line-height: 36px;
+  text-align: center;
+  font-size: 15px;
+  color: #b5bcc8;
+  scroll-snap-align: center;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.12s, transform 0.12s;
+}
+.wheel li.wheelpad { pointer-events: none; }
+.wheel li.active { color: #222; font-weight: 700; font-size: 18px; }
+/* 가운데 선택 줄과 위아래 흐림 — 스크롤을 막지 않게 pointer-events 없음 */
+.wheel::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 72px;                 /* (180 - 36) / 2 */
+  height: 36px;
+  border-top: 1px solid #2258a5;
+  border-bottom: 1px solid #2258a5;
+  background: rgba(34, 88, 165, 0.06);
+  border-radius: 4px;
+  pointer-events: none;
+}
+.wheel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(#fff 0, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0) 60%, #fff 100%);
+  pointer-events: none;
+}
+.wheelvalue {
+  position: absolute;
+  right: 12px;
+  top: 72px;
+  height: 36px;
+  line-height: 36px;
+  font-size: 11px;
+  color: #2258a5;
+  pointer-events: none;
+  z-index: 1;
+}
 
 /*
  * 좁은 화면 — 레일을 위로 눕힌다. 지도는 가로 스크롤이 전제라 폭을 다 준다.
@@ -867,6 +950,102 @@ body.listmode .sitefooter { min-width: 0; }
   color: #444;
   font-size: 11.5px;
   line-height: 1.7;
+  overflow-wrap: anywhere;   /* 긴 질의·구절이 좁은 화면에서 넘치지 않게 */
+}
+/* 사용자용 설명 — 패널에서 가장 먼저, 가장 크게 읽힌다 */
+.exsummary.exuser {
+  color: #1e1e1e;
+  font-size: 12.5px;
+  line-height: 1.75;
+}
+/* 접힌 상세 안의 기록 요약 — 숫자 장부의 머리말 */
+.exsummary.exrecord { margin-top: 6px; color: #666; }
+
+/* 기억한 단서 / 이 곡에서 확인한 내용 / 상태 */
+.exclues {
+  width: 100%;
+  margin: 2px 0 8px;
+  border-collapse: collapse;
+  font-size: 11px;
+  line-height: 1.55;
+  table-layout: fixed;
+}
+.exclues th {
+  padding: 3px 6px 4px 0;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  color: #888;
+  border-bottom: 1px solid #e8e8e8;
+}
+.exclues th:nth-child(1) { width: 32%; }
+.exclues th:nth-child(3) { width: 58px; }
+.exclues td {
+  padding: 5px 6px 5px 0;
+  vertical-align: top;
+  border-bottom: 1px solid #f0f0f0;
+  overflow-wrap: anywhere;
+}
+.exclues tr:last-child td { border-bottom: 0; }
+.excluetext { color: #333; font-weight: 600; }
+.exclueobs { color: #444; }
+/* 순위 기여는 곡 정보 일치와 별개다 — 서버 문구를 그대로, 작은 글자로 */
+.excluebasis {
+  display: block;
+  margin-top: 2px;
+  color: #939ba6;
+  font-size: 10px;
+}
+.excluestatus { text-align: right; white-space: nowrap; }
+/* 상태는 글자로 읽힌다. 색은 보조다 */
+.exstatus {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #666;
+  background: #eee;
+}
+.exstatus-match { color: #1d6b3a; background: #e3f3e8; }
+.exstatus-partial { color: #7a5a0e; background: #fbf0d2; }
+.exstatus-mismatch { color: #a3301c; background: #fbe4df; }
+.exstatus-unverified { color: #555; background: #ececec; }
+
+/* 점수 상세 — 기본은 접힘. 네이티브 <details>라 Enter·Space로 펼친다 */
+.exdetails { margin-top: 6px; }
+.exdetailsum {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  color: #666;
+  font-size: 10.5px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.exdetailsum::-webkit-details-marker { display: none; }
+.exdetailsum::before { content: "▸ "; color: #999; }
+.exdetails[open] > .exdetailsum::before { content: "▾ "; }
+.exdetailsum:hover { color: #2258a5; border-color: #2258a5; }
+.exdetailsum:focus-visible { outline: 2px solid #2258a5; outline-offset: 1px; }
+.exdetailbody { padding-top: 2px; }
+
+/* 좁은 화면 — 표를 세로로 쌓고 칸 이름을 앞에 붙인다. 긴 문장은 줄바꿈된다 */
+@media (max-width: 700px) {
+  .exclues thead { display: none; }
+  .exclues, .exclues tbody, .exclues tr, .exclues td { display: block; width: auto; }
+  .exclues tr { padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
+  .exclues tr:last-child { border-bottom: 0; }
+  .exclues td { padding: 1px 0; border-bottom: 0; }
+  .exclues td::before {
+    content: attr(data-label) " · ";
+    color: #999;
+    font-size: 10px;
+    font-weight: 400;
+  }
+  .excluestatus { text-align: left; white-space: normal; }
 }
 
 .exgroup { margin-top: 10px; }
@@ -956,7 +1135,6 @@ body.listmode .sitefooter { min-width: 0; }
   color: inherit;
   border-radius: 2px;
 }
-.exmodelnote { margin: 5px 0 0; color: #555; line-height: 1.6; }
 
 /* 요청 한 번의 실행 기록 — 곡을 펼치지 않아도 보이는 자리 */
 .runnote[hidden] { display: none; }

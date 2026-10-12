@@ -20,7 +20,14 @@ from src.backend.api.dependencies import get_query_analyzer, get_search_router
 from src.backend.api.routes.search import router as search_route
 from src.retrieval.clarify import merge_answer
 from src.backend.schemas.query import QueryAnalysis
-from src.backend.schemas.search import ClarifyAnswer, MatchingTrack, SearchRequest
+from src.backend.schemas.search import (
+    MAX_PREVIOUS_CANDIDATES,
+    MAX_REJECT_ROUNDS,
+    MAX_REJECTED_IDS,
+    ClarifyAnswer,
+    MatchingTrack,
+    SearchRequest,
+)
 from src.retrieval.search_router import SearchRouter, _reject_and_trim
 
 
@@ -251,6 +258,18 @@ def test_pool_survives_chained_rejections(stub_router) -> None:
     assert pool[0] == "s020"
 
 
+def test_pool_survives_the_full_rejection_budget(stub_router) -> None:
+    """화면 한 쪽(15곡)을 두 번 거절한 서비스 최대(누적 30곡)에서도 풀은 30개다."""
+    analysis = _mood_query()
+    rejected = [f"s{i:03d}" for i in range(MAX_REJECTED_IDS)]
+
+    _, pool = _search(stub_router, analysis, exclude=rejected)
+
+    assert len(pool) == 30
+    assert pool[0] == f"s{MAX_REJECTED_IDS:03d}"
+    assert not set(rejected) & set(pool)
+
+
 def test_widening_does_not_touch_the_no_rejection_path(stub_router) -> None:
     """제외가 없으면 폭도 그대로다 — 기존 검색 결과가 변하면 안 된다."""
     analysis = _mood_query()
@@ -264,7 +283,8 @@ def test_widening_does_not_touch_the_no_rejection_path(stub_router) -> None:
 # 요청 스키마 검증
 # ---------------------------------------------------------------------------
 
-def _analysis(query: str = "비 오는 날 여자 가수 발라드") -> QueryAnalysis:
+def _analysis(query: str = "비 오는 날 노래") -> QueryAnalysis:
+    """요청의 query와 같은 원문. 성별·장르를 말하지 않는다 — 말했으면 그 슬롯은 묻지 않으므로(known_slots) 질문 시험이 달라진다."""
     return QueryAnalysis(
         original_query=query,
         intent_type="mood",
@@ -296,7 +316,7 @@ def test_rejection_without_prior_analysis_is_allowed() -> None:
 
 
 def test_duplicate_rejections_are_rejected() -> None:
-    """중복이 쌓이면 상한 20에 먼저 걸려 실제 거절 곡이 잘린다."""
+    """중복이 쌓이면 상한에 먼저 걸려 실제 거절 곡이 잘린다."""
     with pytest.raises(ValidationError, match="중복"):
         SearchRequest(query="아무 노래", rejected_ids=["s001", "s001"])
 
@@ -304,9 +324,9 @@ def test_duplicate_rejections_are_rejected() -> None:
 @pytest.mark.parametrize(
     "field, value",
     [
-        ("rejected_ids", [f"s{i}" for i in range(21)]),
+        ("rejected_ids", [f"s{i}" for i in range(MAX_REJECTED_IDS + 1)]),
         ("previous_candidate_ids", [f"s{i}" for i in range(31)]),
-        ("asked_slots", ["genre", "type", "vocal_gender"]),
+        ("asked_slots", ["genre", "type", "vocal_gender", "birth_year"]),  # MAX_ASKED_SLOTS=3 (데이터 2 + 출생 연도 1)
     ],
 )
 def test_state_field_limits(field: str, value: List[str]) -> None:
@@ -314,17 +334,39 @@ def test_state_field_limits(field: str, value: List[str]) -> None:
         SearchRequest(**{"query": "아무 노래", field: value})
 
 
-def test_answers_capped_at_two_turns() -> None:
+def test_screen_limits_match_the_schema() -> None:
+    """화면(map.js)의 한도가 서버와 같아야 한다 — 갈리면 거절 요청이 422로 막힌다.
+
+    보여 주는 곡 수 × 거절 두 번이 거절 한도다. 곡 수만 바꾸면 두 번째 거절이 한도를 넘는다.
+    """
+    import re
+    from pathlib import Path
+
+    source = (Path(__file__).resolve().parents[1] / "src/frontend/static/map.js").read_text(encoding="utf-8")
+    screen = {name: int(value) for name, value in
+              re.findall(r"^const (TOP_K|CANDIDATE_K|MAX_REJECTED|MAX_PREVIOUS_CANDIDATES) = (\d+);", source, re.M)}
+
+    assert screen["MAX_REJECTED"] == MAX_REJECTED_IDS
+    assert screen["MAX_PREVIOUS_CANDIDATES"] == MAX_PREVIOUS_CANDIDATES
+    assert screen["TOP_K"] * MAX_REJECT_ROUNDS == MAX_REJECTED_IDS
+    # 후보는 보여 주는 곡보다 많아야 질문을 고를 나머지가 남는다. 서버 상한은 100
+    assert screen["TOP_K"] < screen["CANDIDATE_K"] <= 100
+    SearchRequest(query="아무 노래", top_k=screen["TOP_K"], candidate_k=screen["CANDIDATE_K"])
+
+
+def test_answers_capped_at_max_asked_slots() -> None:
+    """데이터 슬롯 2 + 출생 연도 1 = MAX_ASKED_SLOTS(3). 넘으면 거부."""
+    from src.backend.schemas.search import MAX_ASKED_SLOTS
+    answers = [
+        ClarifyAnswer(slot="birth_year", value="1996~2000년생"),
+        ClarifyAnswer(slot="genre", value="발라드"),
+        ClarifyAnswer(slot="type", value="솔로"),
+        ClarifyAnswer(slot="vocal_gender", value="여성"),
+    ]
+    assert len(answers) == MAX_ASKED_SLOTS + 1
+    SearchRequest(query="아무 노래", prior_analysis=_analysis(), answers=answers[:MAX_ASKED_SLOTS])
     with pytest.raises(ValidationError):
-        SearchRequest(
-            query="아무 노래",
-            prior_analysis=_analysis(),
-            answers=[
-                ClarifyAnswer(slot="genre", value="발라드"),
-                ClarifyAnswer(slot="type", value="솔로"),
-                ClarifyAnswer(slot="vocal_gender", value="여성"),
-            ],
-        )
+        SearchRequest(query="아무 노래", prior_analysis=_analysis(), answers=answers)
 
 
 # ---------------------------------------------------------------------------
@@ -588,7 +630,7 @@ def test_no_question_once_the_rejection_budget_is_spent(wired) -> None:
     답할 수 없는 질문을 보여주는 셈이다.
     """
     client, _, _ = wired
-    rejected = [f"s{i:03d}" for i in range(20)]
+    rejected = [f"s{i:03d}" for i in range(MAX_REJECTED_IDS)]
 
     body = client.post("/search", json={
         "query": "비 오는 날 노래",
@@ -622,7 +664,7 @@ def test_termination_check_covers_all_three_limits() -> None:
     assert _can_ask_another(turn=1, asked_slots=[], rejected_ids=[], top_k=10)
     # 슬롯을 다 물었다
     assert not _can_ask_another(
-        turn=1, asked_slots=["vocal_gender", "genre"][:MAX_ASKED_SLOTS],
+        turn=1, asked_slots=["birth_year", "vocal_gender", "genre"][:MAX_ASKED_SLOTS],
         rejected_ids=[], top_k=10)
     # 2턴 응답까지는 질문을 싣는다 (그 질문은 3턴에 답한다)
     assert _can_ask_another(turn=2, asked_slots=[], rejected_ids=[], top_k=10)

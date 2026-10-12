@@ -59,6 +59,10 @@ artifacts/*
 # 팀 드라이브에서 받거나 src/pipelines/build_map.py로 다시 만든다.
 src/frontend/static/map_data.json
 *.csv
+# 질의 작성 양식은 예시 2행뿐이라 곡 목록 노출이 없다
+docs/plans
+docs/reviews
+!docs/eval/query_writing_template.csv
 cookies.txt
 logs/
 
@@ -73,6 +77,9 @@ reports/
 !experiments/reranking/results_*/search_eval_*_summary.csv
 # 질의별 순위·지표 경량본도 커밋 — detail 없이도 split 재집계가 재현된다
 !experiments/reranking/results_*/search_eval_*_ranks.csv
+# 질의별 top-10 곡 ID 경량본 — detail 없이 relaxed_metrics(확장 지표·범주형 집계)를 다시 돌린다 (곡 ID만)
+!experiments/reranking/results_*/search_eval_*_top10.csv
+!experiments/reranking/results_*/*/search_eval_*_top10.csv
 # 후보 밖 정답의 단계별 위치·경로 깊이별 후보 포함 기록 (곡 ID와 순위만)
 !experiments/reranking/results_*/candidate_drop_*.csv
 !experiments/reranking/results_*/candidate_depth_sweep_*.csv
@@ -101,3 +108,30 @@ experiments/reranking/results_*/*/*_explain.jsonl
 !experiments/reranking/results_*/*/latency_summary.csv
 # Context evaluation labels are shared privately.
 /experiments/namuwiki/queries_context_v01.json
+
+# 모달리티 규칙 토큰 경계 수정(results_v40) — 규칙 판정 전후표·가정 실험 입력·두 단계 아래 요약
+!experiments/reranking/results_v40_modality_token_fix/*.csv
+!experiments/reranking/results_v40_modality_token_fix/*/search_eval_*_summary.csv
+!experiments/reranking/results_v40_modality_token_fix/*/search_eval_*_top10.csv
+!experiments/reranking/results_v40_modality_token_fix/*/*/search_eval_*_summary.csv
+!experiments/reranking/results_v40_modality_token_fix/*/*/search_eval_*_top10.csv
+# v10 첫 측정(results_v38) — 분할표·질의별 표는 초안(data/eval_drafts, git 제외) 없이는 다시 못 만든다
+!experiments/reranking/results_v38_v10_dev_first/*.csv
+# 5,143곡 기준선(results_v39) — 질의별 대조표·3,010곡 후보 순위 참조·두 단계 아래 요약
+!experiments/reranking/results_v39_corpus5143_baseline/*.csv
+!experiments/reranking/results_v39_corpus5143_baseline/*/*/search_eval_*_summary.csv
+!experiments/reranking/results_v39_corpus5143_baseline/*/*/search_eval_*_top10.csv
+!experiments/reranking/results_v39_corpus5143_baseline/*/*/search_eval_*_ranks.csv
+experiments/reranking/results_*/*/*/*_explain.jsonl
+
+# "…이미지" 표지 묘사 규칙(results_v41) — 규칙 판정 전후표
+!experiments/reranking/results_v41_cover_description_image_noun/*.csv
+
+# 모달리티만 내려놓기(results_v42) — 후보 추적표 · 한 줄짜리 질의 CSV
+!experiments/reranking/results_v42_modality_degrade/*.csv
+
+# 소리 경로 융합 가중 실험(results_v43) — 후보 추적표. 대조용 캐시는 make_weight_variants.py로 다시 만든다
+!experiments/reranking/results_v43_audio_path_weight/*.csv
+experiments/reranking/results_v43_audio_path_weight/analysis_cache_*.json
+!experiments/reranking/results_v43_audio_path_weight/*/*/search_eval_*_summary.csv
+!experiments/reranking/results_v43_audio_path_weight/*/*/search_eval_*_top10.csv

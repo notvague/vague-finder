@@ -95,7 +95,13 @@ class SearchService:
         if not song_ids:
             return {}
         response = self.text_idx.fetch(ids=list(song_ids), namespace=NAMESPACE)
-        vectors = _get(response, "vectors", {}) or {}
+        # Pinecone returns a vectors mapping; Qdrant's fetch also serves
+        # deferred clarification and returns a matches list. Both must use
+        # canonical Text metadata, never titles from a Context profile.
+        vectors = _get(response, "vectors")
+        if vectors is None:
+            matches = _get(response, "matches", []) or []
+            vectors = {str(_get(match, "id", "")): match for match in matches}
         tracks: Dict[str, MatchingTrack] = {}
         for song_id in song_ids:
             item = _get(vectors, str(song_id))

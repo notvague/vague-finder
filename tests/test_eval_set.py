@@ -16,7 +16,7 @@ import pytest
 
 from src.eval.export_csv import COLUMNS, select, to_rows
 from src.eval.loader import cross_validate, load_eval_set
-from src.eval.schema import EvalQuery, EvalSet
+from src.eval.schema import V05_QUERY_SETS, EvalQuery, EvalSet
 
 CORPUS = Path("data/all_songs.jsonl")
 RANKS = Path("experiments/reranking/results_v05/search_eval_dev_ranks.csv")
@@ -33,7 +33,7 @@ def eval_set() -> EvalSet:
 
 def test_eval_set_loads(eval_set) -> None:
     """이게 깨지면 src/eval/evaluate.py가 통째로 못 돈다."""
-    assert len(eval_set.queries) == 89
+    assert len(eval_set.queries) == 189  # v0.5 89 + v09 100
 
 
 def test_labeled_queries_have_positives(eval_set) -> None:
@@ -116,6 +116,7 @@ def test_query_set_provenance_is_preserved(eval_set) -> None:
     assert dist["v04"] == 60
     assert dist["modality_v1"] == 14
     assert dist["clarify_v1"] == 15
+    assert dist["v09"] == 100
 
 
 # ---------------------------------------------------------------------------
@@ -223,6 +224,26 @@ def test_export_can_reproduce_a_single_query_set(eval_set) -> None:
     assert len(v04) == 55
 
 
+def test_export_defaults_to_v05_sets_and_needs_v09_explicitly(eval_set) -> None:
+    """--query-set 생략이 '전부'면 v06 CSV가 v09로 덮어써지고 봉인 test가 함께 나간다 (PR #20 리뷰)."""
+    default = select(eval_set.queries)
+    assert {q.query_set for q in default} == {"v04", "modality_v1", "clarify_v1"}
+    assert len(default) == 82  # v06 dev 57 + test 25
+    v09 = select(eval_set.queries, query_sets=["v09"])
+    assert len(v09) == 97 and all(q.query_set == "v09" for q in v09)
+
+
+def test_clarification_evaluator_defaults_to_v05_sets() -> None:
+    """재질문 평가기도 같은 기본값 — 기본 --labels(v06 CSV)와 맞아야 시작한다."""
+    from src.eval.loader import DEFAULT_EVAL_PATH
+    from src.retrieval.evaluate_clarification import select_queries
+    dev = select_queries(DEFAULT_EVAL_PATH, "dev")
+    assert dev and not any(q.query_id.startswith("n") for q in dev)
+    assert len(dev) == 57
+    v09_dev = select_queries(DEFAULT_EVAL_PATH, "dev", query_sets=["v09"])
+    assert len(v09_dev) == 59 and all(q.query_set == "v09" for q in v09_dev)
+
+
 def test_export_rows_match_runner_columns(eval_set) -> None:
     rows = to_rows(select(eval_set.queries)[:3])
     for row in rows:
@@ -266,3 +287,71 @@ def test_sparse_passage_keeps_album_context_but_not_namuwiki():
     assert "시청자반응문장" in passage
     assert "나무위키여담문장" not in passage
     assert "나무위키태그" not in passage
+
+
+# ---------------------------------------------------------------------------
+# 범주형 표시 — 표지 질의 진단(results_v25_cover_diag)에서 정한 8건
+# ---------------------------------------------------------------------------
+
+def test_categorical_queries_are_the_general_cover_queries(eval_set) -> None:
+    """질의만으로 원래 타깃을 특정할 수 없는 일반 속성 표지 질의. 바꾸면 범주형 집계 숫자가 바뀐다."""
+    categorical = {q.query_id for q in eval_set.queries if q.target_scope == "categorical"}
+    # v0.5 세트의 8건은 범주형 집계(relaxed_metrics scope_summary)의 기준이라 바꾸지 않는다.
+    v05 = {q for q in categorical if not q.startswith("n")}
+    assert v05 == {"q116", "q117", "m301", "m302", "m303", "m401", "m402", "m403"}
+    # v09(2026-10)에서 작성 단계에 범주형으로 표시한 표지 질의 3건.
+    assert categorical - v05 == {"n072", "n076", "n080"}
+    assert all(q.is_scorable for q in eval_set.queries if q.query_id in categorical)
+
+
+def test_target_scope_defaults_to_specific() -> None:
+    q = EvalQuery(query_id="x", query="질의", category="mixed", split="dev", query_set="v04", positives=["1"])
+    assert q.target_scope == "specific"
+    with pytest.raises(ValueError):
+        EvalQuery(query_id="x", query="질의", category="mixed", split="dev", query_set="v04",
+                  positives=["1"], target_scope="vague")
+
+
+def test_runinfo_records_actual_reranker_backend_not_env():
+    """키가 없어 CE로 내려가거나 기본값이 바뀌어도 기록은 실제 객체를 따라야 한다 (PR 리뷰 P2)."""
+    from src.retrieval.evaluate_search_accuracy import _actual_backend
+    from src.retrieval.reranker import MusicReranker
+    from src.retrieval.gemini_listwise_reranker import GeminiListwiseReranker
+    assert _actual_backend(MusicReranker()) == "cross_encoder"
+    assert _actual_backend(GeminiListwiseReranker(client=object())) == "gemini_listwise"
+
+
+
+def test_runinfo_records_the_boost_scales_actually_applied(monkeypatch):
+    """BOOST_SCALE·ATTR_BOOST_SCALE·GENDER_MISMATCH_SCALE이 runinfo에 실제 값으로 남아야 실험 조건을 구분한다 (PR #16~#22 리뷰)."""
+    from src.retrieval.evaluate_search_accuracy import _ranking_switches
+    for k in ("BOOST_SCALE", "ATTR_BOOST_SCALE", "GENDER_MISMATCH_SCALE"):
+        monkeypatch.delenv(k, raising=False)
+    default = _ranking_switches(None)
+    assert (default["boost_scale"], default["attr_boost_scale"], default["gender_mismatch_scale"]) == (1.0, 1.0, 0.0)
+    monkeypatch.setenv("BOOST_SCALE", "0.2")
+    monkeypatch.setenv("ATTR_BOOST_SCALE", "0.5")
+    monkeypatch.setenv("GENDER_MISMATCH_SCALE", "1")
+    changed = _ranking_switches(None)
+    assert (changed["boost_scale"], changed["attr_boost_scale"], changed["gender_mismatch_scale"]) == (0.2, 0.5, 1.0)
+    assert changed != default
+
+
+def test_benchmark_runner_defaults_to_v05_sets_and_keeps_sealed_test_out(eval_set) -> None:
+    """`python -m src.eval.evaluate`만 돌려도 v09 봉인 test가 열리면 안 된다 (PR #16~#22 리뷰)."""
+    from src.eval.evaluate import select_queries
+    default = select_queries(eval_set.queries)
+    assert default and all(q.query_set in V05_QUERY_SETS for q in default)
+    assert not any(q.query_set == "v09" for q in default)
+    # 정답 없는 질의도 남긴다 — 이 러너는 따로 집계한다
+    assert len(default) == sum(1 for q in eval_set.queries if q.query_set in V05_QUERY_SETS)
+    v09_dev = select_queries(eval_set.queries, ["v09"], ["dev"])
+    assert v09_dev and all(q.query_set == "v09" and q.split == "dev" for q in v09_dev)
+    # v09를 고르고 split을 안 주면 dev만 — 경고만 남기고 test를 돌리면 봉인이 아니다 (리뷰)
+    v09_only = select_queries(eval_set.queries, ["v09"])
+    assert [q.query_id for q in v09_only] == [q.query_id for q in v09_dev]
+    assert not any(q.split == "test" for q in select_queries(eval_set.queries, ["v09", "v04"]) if q.query_set == "v09")
+    # --split test를 명시했을 때만 든다
+    v09_test = select_queries(eval_set.queries, ["v09"], ["test"])
+    assert v09_test and all(q.split == "test" for q in v09_test)
+    assert len(v09_test) == 38

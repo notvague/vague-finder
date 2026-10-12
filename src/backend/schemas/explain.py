@@ -24,6 +24,7 @@ from src.retrieval.explain import (
     PATH_LABELS,
     REORDER_NOT_ATTEMPTED,
     REORDER_STAGE_LABELS,
+    RERANK_SKIP_LABELS,
     RULE_LABELS,
     PathContribution,
     ScoreAdjustment,
@@ -33,8 +34,8 @@ from src.retrieval.explain import (
     render_ko,
 )
 
-# 모델의 문장에 붙는 경고. 화면이 이 문구를 직접 쓰게 해서, "검증된 근거"와 섞여
-# 표시되는 경로를 만들지 않는다.
+# 호환용. 모델의 문장(`model_notes`)은 2026-10-11부터 응답에 싣지 않으므로 화면이 쓸 일이 없다.
+# 필드를 지우지 않는 것은 구형 클라이언트가 읽기 때문이다.
 MODEL_NOTES_CAPTION = (
     "모델이 스스로 말한 이유입니다. 실행 기록으로 검증되지 않았고, "
     "최종 순위의 근거와 다를 수 있습니다"
@@ -94,6 +95,15 @@ class ScoreAdjustmentOut(BaseModel):
     label: str = Field(..., description="규칙 이름 (화면용)")
     delta: float
     detail: str = ""
+    slot: str = Field(default="", description="이 규칙이 비교한 슬롯(기록에 있을 때만). 점수와 무관한 추적 정보")
+    value: str = Field(default="", description="비교에 쓴 질의 쪽 값 — 검색이 실제로 비교한 값. 정정 전 값일 수 있다")
+    note: str = Field(
+        default="",
+        description=(
+            "서버 문구. 이 가산이 **지금 사용자 단서가 아닌 값**으로 계산됐을 때만 채운다"
+            "(예: '정정 전 값(남성) 기준' · '검색이 해석한 값(여성) 기준'). 점수·기록은 그대로다 — 화면이 현재 단서의 근거로 읽지 않게 하는 표시"
+        ),
+    )
 
     @classmethod
     def of(cls, item: ScoreAdjustment) -> "ScoreAdjustmentOut":
@@ -102,6 +112,8 @@ class ScoreAdjustmentOut(BaseModel):
             label=RULE_LABELS.get(item.rule, item.rule),
             delta=item.delta,
             detail=item.detail,
+            slot=getattr(item, "slot", "") or "",
+            value=getattr(item, "value", "") or "",
         )
 
 
@@ -190,6 +202,56 @@ class LyricEvidenceOut(BaseModel):
     kind_label: str = Field(..., description="kind의 화면용 이름")
 
 
+class RankingBasisOut(BaseModel):
+    """단서 한 줄과 **연결되는** 실제 기록 — 가산·경로 기여·순서 규칙·정책 생략. 없으면 목록이 비어 있다."""
+
+    kind: str = Field(..., description="adjustment · path · order_rule · rerank_skip")
+    code: str = Field(..., description="규칙·경로·사유 코드")
+    label: str = Field(..., description="화면용 이름")
+    delta: Optional[float] = Field(default=None, description="점수에 더해진 양(가산·경로일 때)")
+
+
+class ClueCheckOut(BaseModel):
+    """기억한 단서 / 이 곡에서 확인한 내용 / 상태 — 사용자용 대조표의 한 줄."""
+
+    slot: str = Field(..., description="vocal_gender · genre · lyrics · release_era · mv_scene")
+    clue: str = Field(..., description="기억한 단서(사용자 표현 또는 실제 답변)")
+    clue_origin: str = Field(..., description="query · answer · analysis · birth_year")
+    observed: str = Field(..., description="이 곡에서 확인한 내용. 자료 없음은 없음이 아니라 미확인이다")
+    status: str = Field(..., description="match · partial · mismatch · unverified")
+    status_label: str = Field(..., description="일치 · 부분 일치 · 다름 · 미확인")
+    source: str = Field(..., description="추적 가능한 근거 참조(곡 필드·가사 인용 판·기록)")
+    ranking_basis: List[RankingBasisOut] = Field(
+        default_factory=list,
+        description="이 단서와 연결된 실제 순위 기록. **곡 정보가 맞다는 것과 별개다** — 비어 있으면 기록이 없다는 뜻",
+    )
+    basis_label: str = Field(..., description="순위 기여 요약(검색 점수에 반영 · 먼저 배치 · 순위 반영 기록 없음 …)")
+    detail_kind: str = Field(
+        default="",
+        description="행의 세부 종류(lyric_exact · lyric_summary · slot_conflict · era_earlier_than_estimate …). 진단용",
+    )
+
+
+class AdjustmentNoteOut(BaseModel):
+    """상세 기록의 가산 줄에 붙는 문구의 근거 — 어느 규칙·슬롯·값에 어떤 표시를 붙였는가."""
+
+    rule: str
+    slot: str
+    value: str
+    note: str
+
+
+class UserExplanationOut(BaseModel):
+    """사용자용 설명. 템플릿과 기록·곡 자료만으로 만들며 LLM을 쓰지 않는다(`src/retrieval/user_explanation.py`)."""
+
+    summary: str = Field(..., description="확인된 정보와 실제 기록으로 만든 최대 2문장")
+    clue_checks: List[ClueCheckOut] = Field(default_factory=list)
+    adjustment_notes: List[AdjustmentNoteOut] = Field(
+        default_factory=list,
+        description="현재 단서가 아닌 값으로 계산된 가산에 붙인 표시. 같은 내용이 adjustments[].note에도 실린다",
+    )
+
+
 class TrackExplain(BaseModel):
     """곡 한 개가 이 자리에 온 근거."""
 
@@ -197,6 +259,13 @@ class TrackExplain(BaseModel):
     summary: str = Field(
         ...,
         description="기록만으로 만든 한 문장. LLM을 쓰지 않으므로 기록에 없는 말은 없다",
+    )
+    user_explanation: Optional[UserExplanationOut] = Field(
+        default=None,
+        description=(
+            "사용자용 설명(짧은 문장 + 단서 대조표). 없으면(None) 구형 응답·평가 도구처럼 요청 문맥을 "
+            "모르는 호출자다 — 화면은 기존 기록만 보인다"
+        ),
     )
 
     paths: List[PathContributionOut] = Field(
@@ -274,13 +343,15 @@ class TrackExplain(BaseModel):
     model_notes: List[str] = Field(
         default_factory=list,
         description=(
-            "모델이 스스로 쓴 이유 문장. **검증된 기록이 아니다** — "
-            "summary에는 들어가지 않는다"
+            "**항상 빈 배열이다(호환용 필드).** 모델이 스스로 쓴 이유 문장은 일반 응답에 싣지 않는다 — "
+            "입력에 없는 장면을 사실처럼 쓴 사례가 있었고(2026-10-11), 경고 문구를 붙여도 "
+            "사용자에게는 확인된 근거로 읽힌다. 원문은 내부 RerankRun·평가 진단 기록"
+            "(`model_notes_internal`)에만 보존한다"
         ),
     )
     model_notes_caption: str = Field(
         default=MODEL_NOTES_CAPTION,
-        description="model_notes를 보여줄 때 함께 표시할 경고 문구",
+        description="호환용. model_notes가 비어 있으므로 화면에 쓸 일이 없다",
     )
 
     evidence: List[LyricEvidenceOut] = Field(
@@ -334,6 +405,17 @@ class SearchExplainOut(BaseModel):
     reranker: str = "none"
     reorder_stage: str = REORDER_NOT_ATTEMPTED
     reorder_stage_label: str = ""
+    rerank_skip_reason: str = Field(
+        default="",
+        description=(
+            "리랭킹을 **정책으로** 생략했으면 그 사유 코드(image_dominant · mv_scene_unverifiable). "
+            "실패가 아니다 — 모델을 부르지 않았고 후보 순서(보정·거절 제외 반영)가 그대로 최종이다"
+        ),
+    )
+    rerank_skip_label: str = Field(
+        default="",
+        description="rerank_skip_reason의 사용자 안내 문구. 서버가 고정 문구로 준다 — 화면이 짓지 않는다",
+    )
     rerank_error: str = Field(
         default="",
         description="라우터가 예외를 잡았으면 그 사유. 비어 있으면 예외는 없었다",
@@ -362,6 +444,8 @@ class SearchExplainOut(BaseModel):
             reranker=record.reranker,
             reorder_stage=stage,
             reorder_stage_label=REORDER_STAGE_LABELS.get(stage, stage),
+            rerank_skip_reason=record.rerank_policy_skip,
+            rerank_skip_label=RERANK_SKIP_LABELS.get(record.rerank_policy_skip, ""),
             rerank_error=record.rerank_error,
             rerank_calls=len(record.rerank_runs),
             rerank_calls_applied=record.rerank_runs_applied,
@@ -392,29 +476,60 @@ def evidence_kind(explain: SongExplain) -> str:
     return EVIDENCE_RANKING if (scored or protected) else EVIDENCE_SUPPLEMENTARY
 
 
+def to_user_explanation_out(user_explanation: Any) -> UserExplanationOut:
+    """사용자용 설명을 응답 모델로 검증한다. 모양이 어긋나면 예외를 낸다.
+
+    `src/retrieval/user_explanation.UserExplanation`(또는 같은 모양의 dict)을 받는다. 이미 검증된
+    `UserExplanationOut`은 그대로 돌려준다. 설명은 부가 정보이므로 검색 라우트는 이 검증까지 끝낸 뒤에
+    `to_track_explain`에 넘긴다 — 어긋난 설명이 응답 전체를 실패시키면 안 된다.
+    """
+    payload = user_explanation.to_dict() if hasattr(user_explanation, "to_dict") else user_explanation
+    return UserExplanationOut.model_validate(payload)
+
+
 def to_track_explain(
     explain: SongExplain,
     *,
     reorder_stage: str = REORDER_NOT_ATTEMPTED,
     max_items: int = 3,
     evidence: Optional[List[Any]] = None,
+    user_explanation: Optional[Any] = None,
 ) -> TrackExplain:
     """곡 하나의 기록을 응답 모델로 옮긴다.
 
     reorder_stage는 요청 전체에서 파생한 값이라 밖에서 받는다. 이것 없이는
     "리랭킹이 N위 유지"처럼 하지 않은 일을 말하게 된다 — 리랭킹을 끈 경우와
     실패한 경우에도 전후 순위는 기록되기 때문이다.
+
+    user_explanation은 `to_user_explanation_out`이 받는 것이다(검증된 모델 · `UserExplanation` · 같은 모양의 dict).
+    요청 문맥(원문·답변·시기 창)을 아는 호출자(검색 라우트)만 넘기고, 평가 도구는 비운다.
     """
+    user_out: Optional[UserExplanationOut] = (
+        None if user_explanation is None else to_user_explanation_out(user_explanation)
+    )
+    # 정정 전 값·검색 해석값으로 계산된 가산 줄에 서버 문구를 붙인다. 점수·순서는 그대로다.
+    stale_notes = {
+        (n.rule, n.slot, n.value): n.note for n in (user_out.adjustment_notes if user_out else [])
+    }
+
+    def _adjustment_out(item: ScoreAdjustment) -> ScoreAdjustmentOut:
+        out = ScoreAdjustmentOut.of(item)
+        note = stale_notes.get((out.rule, out.slot, out.value), "")
+        return out.model_copy(update={"note": note}) if note else out
+
     return TrackExplain(
         song_id=explain.song_id,
-        summary=render_ko(explain, max_items=max_items, reorder_stage=reorder_stage),
+        summary=render_ko(
+            explain, max_items=max_items, reorder_stage=reorder_stage, adjustment_notes=stale_notes,
+        ),
+        user_explanation=user_out,
         paths=[
             PathContributionOut.of(item)
             for item in sorted(explain.live_paths(), key=lambda p: p.delta, reverse=True)
         ],
         dropped_paths=[PathContributionOut.of(item) for item in explain.dropped_paths()],
         adjustments=[
-            ScoreAdjustmentOut.of(item)
+            _adjustment_out(item)
             for item in sorted(
                 explain.adjustments, key=lambda a: abs(a.delta), reverse=True
             )
@@ -449,7 +564,9 @@ def to_track_explain(
         score_mix=(
             ScoreMixOut.of(explain.score_mix) if explain.score_mix is not None else None
         ),
-        model_notes=list(explain.model_notes),
+        # 모델의 자유 서술은 내보내지 않는다. 내부 기록(`explain.model_notes`)은 그대로 둔다 —
+        # 지우는 것은 원인 추적을 막고, 내보내는 것은 미검증 주장을 근거로 보이게 한다.
+        model_notes=[],
         evidence=[
             LyricEvidenceOut(
                 song_id=item.song_id,

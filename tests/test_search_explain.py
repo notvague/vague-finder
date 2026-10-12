@@ -117,8 +117,9 @@ def test_explicit_boosts_unchanged_when_recording():
     assert off == on, "기록을 켜도 (id, score) 목록이 동일해야 한다"
 
 
-def test_penalty_is_recorded_as_negative():
-    """감점도 기록해야 한다 — 왜 밀렸는지가 설명의 절반이다."""
+def test_penalty_is_recorded_as_negative(monkeypatch):
+    """감점을 켜면 기록해야 한다 — 왜 밀렸는지가 설명의 절반이다."""
+    monkeypatch.setenv("GENDER_MISMATCH_SCALE", "1")
     analysis = _analysis(original_query="여자가 부른 노래", vocal_gender="여성")
     meta = {
         "s1": MatchingTrack(id="s1", score=0.0, title="곡", artist="A",
@@ -133,6 +134,48 @@ def test_penalty_is_recorded_as_negative():
     assert adjustments, "성별 불일치 감점이 기록되어야 한다"
     mismatch = [a for a in adjustments if a.rule == "vocal_gender_mismatch"]
     assert mismatch and mismatch[0].delta < 0
+
+
+def test_no_penalty_and_no_record_by_default(monkeypatch):
+    """기본값(감점 0)에서는 점수도 기록도 없다 — 0점 감점을 설명하면 이유를 지어내는 것이다."""
+    monkeypatch.delenv("GENDER_MISMATCH_SCALE", raising=False)
+    analysis = _analysis(original_query="여자가 부른 노래", vocal_gender="여성")
+    meta = {
+        "s1": MatchingTrack(id="s1", score=0.0, title="곡", artist="A",
+                            vocal_gender="남성"),
+        "s2": MatchingTrack(id="s2", score=0.0, title="곡", artist="B",
+                            vocal_gender="여성"),
+    }
+    rec = ExplainRecorder("q")
+    scored = dict(sr.SearchRouter._apply_explicit_boosts(
+        analysis, _hits(("s1", 0.01), ("s2", 0.01)), meta, recorder=rec
+    ))
+    assert scored["s1"] == 0.01, "불일치 곡의 점수는 그대로여야 한다"
+    assert scored["s2"] > 0.01, "일치 가산은 그대로 준다"
+    rules = [a.rule for a in rec.record.get("s1").adjustments]
+    assert "vocal_gender_mismatch" not in rules
+
+
+def test_attr_boost_scale_leaves_title_boosts_alone(monkeypatch):
+    """ATTR_BOOST_SCALE은 일반 속성 가산만 줄이고 제목 가산은 그대로 둔다 (E1′)."""
+    monkeypatch.setenv("ATTR_BOOST_SCALE", "0.2")
+    analysis = _analysis(
+        original_query="여자가 부른 발라드 제목은 봄날", vocal_gender="여성",
+        genre="발라드", song_title="봄날",
+    )
+    meta = {
+        "s1": MatchingTrack(id="s1", score=0.0, title="봄날", artist="A",
+                            vocal_gender="여성", genre="발라드"),
+    }
+    rec = ExplainRecorder("q")
+    sr.SearchRouter._apply_explicit_boosts(
+        analysis, _hits(("s1", 0.01)), meta, recorder=rec
+    )
+    delta = {a.rule: a.delta for a in rec.record.get("s1").adjustments}
+    unit = 1.0 / 61
+    assert abs(delta["title_exact"] - unit * 5) < 1e-9, "제목 가산은 배율의 영향이 없어야 한다"
+    assert abs(delta["vocal_gender_match"] - unit * 0.2) < 1e-9
+    assert abs(delta["genre_match"] - unit * 0.2) < 1e-9
 
 
 def test_answer_bonus_unchanged_when_recording():
@@ -1239,16 +1282,16 @@ def test_track_explain_leaves_the_lyric_label_empty_without_a_match():
     assert out.lyric_match_label == ""
 
 
-def test_track_explain_labels_the_model_note_as_unverified():
-    """모델의 문장은 나가되, 검증되지 않았다는 표시와 **함께만** 나간다."""
+def test_track_explain_keeps_the_model_note_out_of_the_response():
+    """모델의 문장은 응답에 **나가지 않는다.** 내부 기록에는 남는다(2026-10-11 — 경고를 붙여도 근거로 읽혔다)."""
     rec = ExplainRecorder("q")
     rec.path("s1", "text_hybrid", 1, 0.016)
     rec.note_model_reason("s1", ["분위기가 비슷하다"])
 
     out = to_track_explain(rec.record.get("s1"))
 
-    assert out.model_notes == ["분위기가 비슷하다"]
-    assert "검증" in out.model_notes_caption
+    assert out.model_notes == [], "호환용 필드는 남기되 비어 있어야 한다"
+    assert rec.record.get("s1").model_notes == ["분위기가 비슷하다"], "내부 진단 원문은 보존한다"
     assert "분위기가 비슷하다" not in out.summary, "확인된 근거와 섞였다"
 
 

@@ -6,6 +6,11 @@
    틀리게 답하면 정답이 후보 풀에서 사라진다(release_era).
 2. 남은 후보를 가르지 못하는 슬롯은 묻지 않는다. 물어도 아무것도 안 좁혀진다.
 3. 물을 게 없으면 None — 그러면 호출부가 Reject-only로 진행한다.
+4. 최초 질의에서 이미 말한 성별·장르는 묻지 않는다(2026-10-11). 후보가 반대쪽으로 갈려도 뒤집지 않는다.
+   판정은 원문이 근거다 — 분석 필드만으로 확정하지 않고, 분석이 비어 있어도 원문 표현은 처리한다.
+   세부 판정 규칙은 tests/test_known_slots.py.
+
+fixture의 원문은 분석값과 맞춘다 — 기본 원문에 '발라드'가 있으면 장르 미지정 시험이 새 규칙에 걸린다.
 """
 from __future__ import annotations
 
@@ -22,17 +27,20 @@ from src.retrieval.clarify import (
     build_question,
     discrimination,
     can_ask,
+    excluded_slots,
     merge_answer,
+    pick_data_question,
     pick_question,
+    remaining_data_slots,
     slot_value,
-    stated_in_query,
     value_counts,
 )
+from src.retrieval.known_slots import known_slots_from_query
 
 
 def _analysis(**kwargs) -> QueryAnalysis:
     base = dict(
-        original_query="비 오는 날 발라드",
+        original_query="비 오는 날 듣기 좋은 노래",   # 성별·장르를 말하지 않은 원문
         intent_type="mood",
         image_english_query="",
         audio_english_query="",
@@ -111,20 +119,59 @@ def test_never_asks_the_unsafe_slots() -> None:
     assert set(ALLOWED_SLOTS) == {"vocal_gender", "genre"}
 
 
-def test_asks_again_even_when_the_user_already_said_it() -> None:
-    """이미 말한 슬롯도 다시 묻는다 — 그 기억이 틀렸을 수 있다.
+def _mixed_pool() -> list:
+    """성별로도 장르로도 갈리는 후보 — 어느 쪽이든 물을 수 있는 상태."""
+    genres = ["발라드", "댄스", "록/메탈", "랩/힙합", "R&B/Soul"] * 2
+    return [_track(f"s{i}", "남성" if i < 5 else "여성", genres[i]) for i in range(10)]
 
-    계획서는 "이미 명시한 슬롯"을 질문하지 않을 조건 맨 앞에 뒀는데, v02 측정에서
-    그 조건이 9건 중 3건을 날렸다(c701·c705·q101). 셋 다 질의에 성별이 들어
-    있었고 셋 다 그 성별이 틀렸다. 재확인은 맞게 답하면 무해하고 틀렸을 때만
-    이득이라 비대칭이 유리하다.
+
+def test_does_not_ask_what_the_user_already_said_in_the_query() -> None:
+    """이미 말한 슬롯은 묻지 않는다 — 후보가 반대쪽으로 갈려 있어도.
+
+    v02까지는 오기억(c701·c705·q101)을 잡으려고 이미 말한 슬롯도 다시 물었다. 실제 화면에서는
+    "남자 아이돌 노래"라고 한 사용자에게 성별을 또 묻는 것이 되돌아왔고, 2026-10-11에 정책을 바꿨다.
+    후보가 다양하다는 것은 사용자가 틀렸다는 증거가 아니다. 오기억 재확인은 별도 설계다.
     """
-    pool = _pool(["남성"] * 5 + ["여성"] * 5)
-    question = pick_question(_analysis(vocal_gender="여성"), pool)
-    assert question is not None
-    assert question.slot == "vocal_gender"
-    # 판정 자체는 살아 있다 — 질문 문구를 확인형으로 바꾸는 데 쓸 수 있다.
-    assert stated_in_query(_analysis(vocal_gender="여성"), "vocal_gender")
+    pool = _mixed_pool()
+    # 사용자 예시 1 — 성별은 말했고 장르는 모른다 → 성별을 건너뛰고 장르를 묻는다
+    question = pick_question(_analysis(original_query="중학생 때 나온 엄청 유명한 남자 아이돌 노래"), pool)
+    assert question is not None and question.slot == "genre"
+    # 사용자 예시 2 — 둘 다 말했다 → 물을 것이 없다(거절만 진행)
+    assert pick_question(_analysis(original_query="남자 인디 노래인데 뮤비에 의자가 하늘에 떠있는 장면이 있어"), pool) is None
+    assert pick_question(_analysis(original_query="여자 보컬의 발라드"), pool) is None
+    # 장르만 말했으면 성별은 묻는다
+    assert pick_question(_analysis(original_query="비 오는 날 혼자 듣기 좋은 잔잔한 발라드"), pool).slot == "vocal_gender"
+
+
+def test_known_slots_come_from_the_original_text_not_the_analysis_fields() -> None:
+    """분석의 vocal_gender·genre는 근거가 아니다 — 모델 추측일 수 있고(채워져 있어도 묻는다), 규칙 폴백이면 비어
+    있다(비어 있어도 원문이 말했으면 묻지 않는다). 사용자 예시 둘은 폴백 분석에서 두 칸이 비어 있었다."""
+    pool = _mixed_pool()
+    # 분석만 채워지고 원문에는 없다 → 모델 추측 — 그대로 묻는다
+    guessed = _analysis(vocal_gender="여성", genre="발라드")
+    assert known_slots_from_query(guessed) == []
+    assert pick_question(guessed, pool).slot == "vocal_gender"
+    # 원문은 말했는데 분석은 비었다(폴백) → 묻지 않는다
+    blank = _analysis(original_query="남자 인디 노래인데 뮤비에 의자가 하늘에 떠있는 장면이 있어", vocal_gender=None, genre="")
+    assert known_slots_from_query(blank) == ["vocal_gender", "genre"]
+    assert pick_question(blank, pool) is None
+    # 정상 분석(둘 다 채워짐)도 같은 결과
+    filled = _analysis(original_query="남자 인디 노래인데 뮤비에 의자가 하늘에 떠있는 장면이 있어", vocal_gender="남성", genre="인디음악")
+    assert pick_question(filled, pool) is None
+
+
+def test_known_slots_do_not_touch_history_or_answers() -> None:
+    """known_slots는 질문 선택에서만 빠진다 — asked_slots·answers에 끼워 넣지 않고, 한도에도 세지 않는다."""
+    assert excluded_slots(["birth_year"], ["genre"]) == {"birth_year", "genre"}
+    assert remaining_data_slots([], []) == list(ALLOWED_SLOTS)
+    assert remaining_data_slots(["vocal_gender"], []) == ["genre"]
+    assert remaining_data_slots([], ["vocal_gender"]) == ["genre"]
+    assert remaining_data_slots(["birth_year"], ["vocal_gender", "genre"]) == []
+    # 분석값을 바꾸지 않는다
+    analysis = _analysis(original_query="남자 아이돌 노래")
+    before = analysis.model_dump()
+    pick_question(analysis, _mixed_pool())
+    assert analysis.model_dump() == before
 
 
 def test_does_not_ask_the_same_slot_twice() -> None:
@@ -145,6 +192,25 @@ def test_does_not_ask_when_the_split_is_too_lopsided() -> None:
 
 def test_returns_none_for_an_empty_pool() -> None:
     assert pick_question(_analysis(), []) is None
+    assert pick_data_question([]) is None
+
+
+def test_data_question_needs_only_the_candidates() -> None:
+    """질문만 조회하는 경로는 분석 없이 후보만 넘긴다. 같은 후보면 `pick_question`과 같은 질문이어야 한다
+    — 두 경로가 갈리면 화면(지연 조회)과 재질문 측정(즉시 계산)이 다른 질문을 낸다."""
+    pool = _pool(["남성"] * 6 + ["여성"] * 4)
+    assert pick_data_question(pool) == pick_question(_analysis(), pool)
+    assert pick_data_question(pool).slot == "vocal_gender"
+    for asked in (["vocal_gender"], ["birth_year"], ["birth_year", "vocal_gender"], list(ALLOWED_SLOTS)):
+        assert pick_data_question(pool, asked) == pick_question(_analysis(), pool, asked_slots=asked)
+    # 이미 말한 슬롯 — 지연 조회는 응답의 known_slots를 받고, 즉시 질문은 원문에서 같은 것을 찾는다. 결과가 같아야 한다
+    mixed = _mixed_pool()
+    for query, known in (("남자 아이돌 노래", ["vocal_gender"]), ("잔잔한 발라드", ["genre"]),
+                         ("여자 보컬의 발라드", ["vocal_gender", "genre"]), ("비 오는 날 노래", [])):
+        analysis = _analysis(original_query=query)
+        assert known_slots_from_query(analysis) == known
+        for asked in ([], ["birth_year"], ["vocal_gender"], ["genre"]):
+            assert pick_data_question(mixed, asked, known) == pick_question(analysis, mixed, asked_slots=asked), (query, asked)
 
 
 # ---------------------------------------------------------------------------

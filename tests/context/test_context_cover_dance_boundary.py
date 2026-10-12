@@ -197,7 +197,7 @@ def test_model_analysis_accepts_the_valid_mixed_response_on_first_attempt(async_
     assert not analysis.has_visual_clue
 
 
-def test_real_missing_artwork_prompt_still_falls_back_after_validation_retries(monkeypatch):
+def test_real_missing_artwork_prompt_degrades_image_after_validation_retries(monkeypatch):
     from src.retrieval import query_analyzer as qa
 
     calls = []
@@ -210,7 +210,9 @@ def test_real_missing_artwork_prompt_still_falls_back_after_validation_retries(m
     monkeypatch.setattr(qa.time, "sleep", lambda _: None)
     analysis = analyzer.analyze("커버댄스한 곡인데 앨범 표지에 빨간 꽃이 그려졌어")
     assert len(calls) == 3
-    assert analysis.confidence == 0.0
+    assert analysis.confidence == 0.8
+    assert analysis.image_english_query == ""
+    assert "image" in analysis.degraded_modalities
 
 
 def test_modality_guard_change_is_part_of_analyzer_cache_provenance(monkeypatch):

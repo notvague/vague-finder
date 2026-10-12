@@ -100,10 +100,21 @@ def test_429_on_search_propagates_to_the_caller(melon_server) -> None:
         cmd.fetch_melon_song_candidates("아이유", "밤편지")
 
 
+def test_dash_in_an_empty_field_is_not_stored_as_a_value() -> None:
+    """멜론은 장르·발매일이 없는 칸에 '-'를 찍는다. 그대로 받으면 장르가 ["-"]로 저장된다
+    (raw8 3곡: 2726472·1570569·1116752)."""
+    html = (DETAIL_HTML
+            .replace("<dd>발라드</dd>", "<dd> - </dd>")
+            .replace("<dd>2017.03.24</dd>", "<dd>-</dd>"))
+    details = cmd.parse_melon_details(html)
+    assert (details["genre"], details["release_date"]) == ("", "")
+    assert details["title"] == "밤편지"          # 곡 자체는 버리지 않는다
+
+
 @pytest.mark.parametrize(
     "html",
     [
-        FORBIDDEN_HTML,                                              # 오류 안내 본문(200으로 왔을 때)
+        FORBIDDEN_HTML,                                             # 오류 안내 본문(200으로 왔을 때)
         "<html><body><div class='song_name'>곡명 X</div></body></html>",  # 제목만 있고 가수 없음
         "",
     ],

@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import json
 import logging
+import asyncio
+import contextlib
 import os
 import re
 import time
@@ -28,6 +30,7 @@ from src.retrieval.explain import (
     RerankRun,
     ScoreMix,
 )
+from src.common.gemini_client import RETRIEVAL, gemini_configured, make_genai_client
 from src.common.title_features import analyze_title_structure, base_title
 
 logger = logging.getLogger(__name__)
@@ -164,6 +167,15 @@ _ANSWER_SLOT_LABELS = {
 }
 
 
+def type_slot_label() -> str:
+    """재질문 type 슬롯 문구의 실제 적용값. 실험 스위치 `GEMINI_RERANK_TYPE_SLOT_LABEL`(비우면 기본).
+
+    '솔로' 답 2건이 모두 정답을 Top-10 밖으로 보냈다(results_clarify_v09) — 괄호 "(solo/group/duo/band)"가
+    원인인지 본다(results_clarify_v10_corrections: c603은 고쳐짐). 측정 runinfo에도 이 함수로 적는다.
+    """
+    return os.getenv("GEMINI_RERANK_TYPE_SLOT_LABEL", "").strip() or _ANSWER_SLOT_LABELS["type"]
+
+
 def _corrections_block(answers: Optional[Sequence[ClarifyAnswer]]) -> str:
     """재질문 답변을 프롬프트 블록으로 만든다. 반영할 답이 없으면 빈 문자열.
 
@@ -172,8 +184,14 @@ def _corrections_block(answers: Optional[Sequence[ClarifyAnswer]]) -> str:
     "남자가 부르는"을 "여성"으로 정정해 후보 2위까지 올라왔지만 Top-10 밖으로 밀렸다.
     '잘 모르겠어요'(skipped)는 정보가 없으므로 넣지 않는다.
     """
+    labels = dict(_ANSWER_SLOT_LABELS)
+    # 스위치를 켰을 때만 문구를 바꾼다(type과, 옛 클라이언트가 보내는 artist_type 둘 다). 끄면 전과 같다 —
+    # artist_type은 표에 없어 슬롯 이름 그대로("- artist_type: 솔로")다 (PR #27 리뷰: 기본값 동일 유지).
+    custom_type_label = os.getenv("GEMINI_RERANK_TYPE_SLOT_LABEL", "").strip()
+    if custom_type_label:
+        labels["type"] = labels["artist_type"] = custom_type_label
     lines = [
-        f"- {_ANSWER_SLOT_LABELS.get(a.slot, a.slot)}: {a.value}"
+        f"- {labels.get(a.slot, a.slot)}: {a.value}"
         for a in answers or []
         if not a.skipped and a.value
     ]
@@ -189,24 +207,59 @@ def _corrections_block(answers: Optional[Sequence[ClarifyAnswer]]) -> str:
     )
 
 
+def _run_coroutine_blocking(coro):
+    """동기 문맥에서 코루틴을 끝까지 돌린다. 이 스레드에 루프가 돌고 있으면 별도 스레드의 루프에서 돌린다.
+
+    rerank_run은 라우터가 실행기 스레드에서 부르므로 보통 루프가 없다. 혹시 루프 안에서 직접 불리면
+    asyncio.run이 거부하므로 그때만 스레드 하나를 띄운다 — 그 루프 안에서도 wait_for 취소는 그대로 동작한다.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(asyncio.run, coro).result()
+
+
 @dataclass(frozen=True)
 class GeminiListwiseRerankerConfig:
+    """기본값은 **1패스 · Google Search 끔**이다 (2026-10-09, results_v32~v34).
+
+    2패스는 Hit@10 +1에 리랭킹 10초, Search grounding은 Hit@1·MRR을 더 올리지만 13~15초가 든다.
+    1패스·끔은 리랭킹 중앙값 4.5~5.4초에 이득의 대부분(세 세트 합산 Hit@10 +17, 손실 0)을 남긴다.
+    희소 사실 교차검증(rare_fact_verification)도 **끈다** (results_v35). 3,010곡 listwise 기록 전부에서 구조 규칙이
+    3번 발동했고 셋 다 오답을 9위로 올렸다. 끄면 dev 116건 Hit@10 84 → 84, 외부 맥락 질의 리랭킹 15초 → 4~5초.
+    GEMINI_RERANK_PASSES=2 · GEMINI_RERANK_USE_SEARCH=1 · GEMINI_RERANK_RARE_FACT_VERIFY=1로 되돌릴 수 있다.
+    """
     model_name: str = "gemini-3.1-flash-lite"
     enabled: bool = True
     rerank_weight: float = 0.85
     spread_ref: float = 0.0
     max_candidates: int = 30
     max_retries: int = 3
-    passes: int = 2
+    passes: int = 1
     low_confidence_threshold: float = 0.55
-    use_search_grounding: bool = True
+    use_search_grounding: bool = False
     search_evidence_chars: int = 7000
-    rare_fact_verification: bool = True
+    rare_fact_verification: bool = False
     rare_fact_batch_size: int = 15
     rare_fact_min_support: float = 0.86
     rare_fact_min_confidence: float = 0.78
     rare_fact_min_margin: float = 0.06
     rare_fact_insert_rank: int = 9
+    # 원격 호출 제한. 기본 경로가 된 뒤로는 멈춘 응답이 서버 워커를 붙잡지 않아야 한다 (PR 리뷰 P1).
+    #   request_timeout_seconds: HTTP 연결·읽기 제한. SDK HttpOptions.timeout(ms)으로 넘긴다
+    #   time_budget_seconds: 리랭킹 한 번의 전체 예산. 넘으면 남은 호출(검증 배치·패스)을 하지 않고
+    #                        검색 순서를 돌려준다. 호출 하나의 벽시계 제한 = min(요청 제한, 남은 예산)이고
+    #                        넘기면 진행 중인 HTTP 연결까지 취소하므로 최악 대기 ≈ 예산
+    #   pass_reserve_seconds: 예산 중 본 패스 몫. 앞 단계(Search evidence·희소 사실 검증)는
+    #                        `deadline - 몫`을 마감으로 받아, 검증 배치가 예산을 다 써서 본 패스가
+    #                        0회 도는 일(PR 리뷰 3차)을 막는다. 실제 몫 = min(이 값, 요청 제한, 예산/2)
+    request_timeout_seconds: float = 20.0
+    time_budget_seconds: float = 30.0
+    pass_reserve_seconds: float = 10.0
 
     @classmethod
     def from_env(cls) -> "GeminiListwiseRerankerConfig":
@@ -224,22 +277,25 @@ class GeminiListwiseRerankerConfig:
             spread_ref=0.0,
             max_candidates=max(10, min(50, int(os.getenv("GEMINI_RERANK_MAX_CANDIDATES", "30")))),
             max_retries=max(1, min(5, int(os.getenv("GEMINI_RERANK_MAX_RETRIES", "3")))),
-            passes=max(1, min(3, int(os.getenv("GEMINI_RERANK_PASSES", "2")))),
+            passes=max(1, min(3, int(os.getenv("GEMINI_RERANK_PASSES", "1")))),
             low_confidence_threshold=min(
                 0.95,
                 max(0.0, float(os.getenv("GEMINI_RERANK_LOW_CONFIDENCE", "0.55"))),
             ),
-            use_search_grounding=_env_bool("GEMINI_RERANK_USE_SEARCH", True),
+            use_search_grounding=_env_bool("GEMINI_RERANK_USE_SEARCH", False),
             search_evidence_chars=max(
                 2000,
                 min(12000, int(os.getenv("GEMINI_RERANK_SEARCH_EVIDENCE_CHARS", "7000"))),
             ),
-            rare_fact_verification=_env_bool("GEMINI_RERANK_RARE_FACT_VERIFY", True),
+            rare_fact_verification=_env_bool("GEMINI_RERANK_RARE_FACT_VERIFY", False),
             rare_fact_batch_size=max(5, min(20, int(os.getenv("GEMINI_RERANK_RARE_FACT_BATCH", "15")))),
             rare_fact_min_support=min(0.99, max(0.50, float(os.getenv("GEMINI_RERANK_RARE_FACT_MIN_SUPPORT", "0.86")))),
             rare_fact_min_confidence=min(0.99, max(0.50, float(os.getenv("GEMINI_RERANK_RARE_FACT_MIN_CONFIDENCE", "0.78")))),
             rare_fact_min_margin=min(0.50, max(0.0, float(os.getenv("GEMINI_RERANK_RARE_FACT_MIN_MARGIN", "0.06")))),
             rare_fact_insert_rank=max(5, min(10, int(os.getenv("GEMINI_RERANK_RARE_FACT_INSERT_RANK", "9")))),
+            request_timeout_seconds=max(1.0, float(os.getenv("GEMINI_RERANK_TIMEOUT_SECONDS", "20"))),
+            time_budget_seconds=max(1.0, float(os.getenv("GEMINI_RERANK_BUDGET_SECONDS", "30"))),
+            pass_reserve_seconds=max(0.0, float(os.getenv("GEMINI_RERANK_PASS_RESERVE_SECONDS", "10"))),
         )
 
 
@@ -247,8 +303,13 @@ class GeminiListwiseReranker:
     """후보 목록 전체를 비교하는 LLM 기반 listwise reranker."""
 
     # 앨범 커버를 보지 못하는 텍스트 리랭커라 이미지 지배 질의는 건드리지 않는다.
-    # search_router.should_skip_rerank_for_image가 이 값을 본다.
+    # rerank_policy.should_skip_rerank_for_image가 이 값을 본다.
     skips_image_dominant = True
+    # 구체적인 뮤직비디오 장면 질의인데 후보 입력에 장면을 판단할 출처 자료가 없으면 부르지 않는다
+    # (rerank_policy.rerank_skip_reason). 이 리랭커의 입력(`_candidate_payload`)에는 가사 요약·태그만
+    # 있고 MV 장면 자료가 없어, 프롬프트의 "일반 지식 사용"이 질의의 소품과 가사의 장소를 합친
+    # 장면("옥상에서 의자를 던지는 장면")을 이유로 만들어 낸 사례가 있다(2026-10-11).
+    skips_unverifiable_mv_scene = True
     # 재질문 답변을 프롬프트에 반영한다. search_router.call_reranker가 이 값을 보고
     # answers를 넘긴다 (Cross-Encoder는 질의-곡 쌍만 보므로 받지 않는다).
     uses_clarify_answers = True
@@ -260,16 +321,19 @@ class GeminiListwiseReranker:
         client: Any = None,
     ):
         self.config = config or GeminiListwiseRerankerConfig.from_env()
-        self._api_key = api_key or os.getenv("GEMINI_API_KEY", "")
+        # 직접 넘긴 키만 담는다. 없으면 환경(GCP_PROJECT_ID → Vertex, GEMINI_API_KEY → AI Studio)을 따르고,
+        # GEMINI_RETRIEVAL_BACKEND가 있으면 그 경로로 고정한다(검색 용도 — 질의 분석과 같은 경로).
+        self._api_key = api_key or ""
+        self._configured = gemini_configured(self._api_key, purpose=RETRIEVAL)
         self._client = client
-        if not self._api_key and client is None:
+        if not self._configured and client is None:
             logger.warning(
-                "[GeminiListwiseReranker] GEMINI_API_KEY 미설정 — retrieval 순서를 유지합니다."
+                "[GeminiListwiseReranker] Gemini 설정 없음(GCP_PROJECT_ID·GEMINI_API_KEY, GEMINI_RETRIEVAL_BACKEND) — retrieval 순서를 유지합니다."
             )
 
     @property
     def enabled(self) -> bool:
-        return bool(self.config.enabled and (self._api_key or self._client is not None))
+        return bool(self.config.enabled and (self._configured or self._client is not None))
 
     def load(self) -> "GeminiListwiseReranker":
         return self
@@ -277,10 +341,89 @@ class GeminiListwiseReranker:
     @property
     def _gemini(self):
         if self._client is None:
-            from google import genai
+            from google.genai import types
 
-            self._client = genai.Client(api_key=self._api_key)
+            # 연결·읽기 제한. 없으면 멈춘 응답을 무기한 기다리고, 스레드에 wait_for를 씌워도
+            # 진행 중인 HTTP 요청은 끝나지 않는다.
+            self._client = make_genai_client(
+                api_key=self._api_key or None,
+                purpose=RETRIEVAL,
+                http_options=types.HttpOptions(
+                    timeout=int(self.config.request_timeout_seconds * 1000)
+                ),
+            )
         return self._client
+
+    @staticmethod
+    def _over_budget(deadline: Optional[float]) -> bool:
+        return deadline is not None and time.monotonic() >= deadline
+
+    def _pass_reserve_seconds(self) -> float:
+        """본 패스에 남겨 둘 예산. 앞 단계는 이만큼 이른 마감을 받는다.
+
+        검증 배치 하나의 제한이 min(요청 제한 20초, 남은 예산)이라, 30곡(배치 2회)이면 두 배치가
+        30초 예산을 다 쓰고 본 패스가 한 번도 못 돌 수 있다(PR 리뷰 3차). 기본 10초를 남기고,
+        예산이 작으면 절반까지만 남긴다 — 앞 단계가 0초가 되지는 않는다.
+        """
+        return max(
+            0.0,
+            min(
+                self.config.pass_reserve_seconds,
+                self.config.request_timeout_seconds,
+                self.config.time_budget_seconds / 2.0,
+            ),
+        )
+
+    def _new_client(self):
+        """호출마다 새 비동기 클라이언트. 주입된 클라이언트(테스트)가 있으면 그것을 쓴다.
+
+        rerank_run은 동기 함수라 호출마다 이벤트 루프를 새로 연다. SDK의 비동기 클라이언트는
+        연결 풀이 루프에 묶이므로 루프마다 새로 만들고 끝나면 닫는다 — 취소된 호출의 연결도 함께 닫힌다.
+        """
+        if self._client is not None:
+            return self._client
+        from google.genai import types
+
+        return make_genai_client(
+            api_key=self._api_key or None,
+            purpose=RETRIEVAL,
+            http_options=types.HttpOptions(timeout=int(self.config.request_timeout_seconds * 1000)),
+        )
+
+    def _generate(self, *, contents: str, config: Any, deadline: Optional[float]):
+        """Gemini 호출 한 번. **벽시계 제한**을 건다 — min(요청 제한, 남은 예산).
+
+        `HttpOptions.timeout`은 연결·읽기 단계마다 따로 세고 읽기는 *조각 하나*를 기다리는 값이라,
+        조금씩 오는 응답은 그 제한을 넘겨 계속된다(0.2초 제한 + 0.3초 예산에 0.89초 확인, PR 리뷰).
+        그래서 비동기 호출을 `asyncio.wait_for`로 감싼다 — 시간이 다 되면 진행 중인 HTTP 요청이
+        취소되고 연결이 닫힌다. 스레드 대기만 끊는 방식은 버려진 요청이 계속 돌아 부족하다.
+        """
+        remaining = (deadline - time.monotonic()) if deadline is not None else self.config.request_timeout_seconds
+        if remaining <= 0:
+            raise TimeoutError(f"리랭킹 시간 예산 {self.config.time_budget_seconds:.0f}초 초과")
+        timeout = min(self.config.request_timeout_seconds, remaining)
+        client = self._new_client()
+        aio = getattr(client, "aio", None)
+        if aio is None:
+            # 비동기 면이 없는 클라이언트(테스트용 가짜). 동기 호출 — 취소는 못 하지만 예산 검사는 밖에서 한다.
+            return client.models.generate_content(
+                model=self.config.model_name, contents=contents, config=config
+            )
+
+        async def _call():
+            try:
+                return await asyncio.wait_for(
+                    aio.models.generate_content(
+                        model=self.config.model_name, contents=contents, config=config
+                    ),
+                    timeout=timeout,
+                )
+            finally:
+                if client is not self._client:
+                    with contextlib.suppress(Exception):
+                        await aio.aclose()
+
+        return _run_coroutine_blocking(_call())
 
     @staticmethod
     def _candidate_payload(track: MatchingTrack, retrieval_rank: int) -> dict[str, Any]:
@@ -395,8 +538,13 @@ Fixed candidates:
 Return concise Korean evidence notes. Whenever you find support for a candidate, include its candidate id and artist-title explicitly. Also mention contradictions when useful.
 """
 
-    def _collect_search_evidence(self, query: str, tracks: Sequence[MatchingTrack]) -> str:
+    def _collect_search_evidence(
+        self, query: str, tracks: Sequence[MatchingTrack], deadline: Optional[float] = None,
+    ) -> str:
         if not self.config.use_search_grounding or not tracks:
+            return ""
+        if self._over_budget(deadline):
+            logger.warning("[GeminiListwiseReranker] 시간 예산 초과 — Search evidence 생략")
             return ""
         try:
             from google.genai import types
@@ -405,11 +553,14 @@ Return concise Korean evidence notes. Whenever you find support for a candidate,
                 tools=[types.Tool(google_search=types.GoogleSearch())],
                 temperature=0.0,
             )
-            response = self._gemini.models.generate_content(
-                model=self.config.model_name,
+            response = self._generate(
                 contents=self._build_search_evidence_prompt(query, tracks),
                 config=config,
+                deadline=deadline,
             )
+            if self._over_budget(deadline):
+                logger.warning("[GeminiListwiseReranker] Search evidence가 예산 뒤에 도착 — 버린다")
+                return ""
             return _clip_text(getattr(response, "text", "") or "", self.config.search_evidence_chars)
         except Exception as exc:
             # SDK/모델이 Google Search grounding을 지원하지 않아도 일반 listwise는 계속한다.
@@ -530,6 +681,7 @@ Return:
         query: str,
         tracks: Sequence[MatchingTrack],
         answers: Optional[Sequence[ClarifyAnswer]] = None,
+        deadline: Optional[float] = None,
     ) -> tuple[dict[str, dict[str, Any]], float, str]:
         if not self.config.rare_fact_verification or not tracks:
             return {}, 0.0, ""
@@ -555,20 +707,28 @@ Return:
         confidences: list[float] = []
         batch_size = self.config.rare_fact_batch_size
         for start in range(0, len(tracks), batch_size):
+            if self._over_budget(deadline):
+                logger.warning(
+                    "[GeminiListwiseReranker] 시간 예산 초과 — rare-fact 검증 %d곡부터 생략", start + 1
+                )
+                break
             batch = list(tracks[start : start + batch_size])
             valid_ids = [str(t.id) for t in batch]
             prompt = self._build_rare_fact_verification_prompt(
                 query, batch, global_rank, reason, answers
             )
             try:
-                response = self._gemini.models.generate_content(
-                    model=self.config.model_name,
+                response = self._generate(
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         tools=[types.Tool(google_search=types.GoogleSearch())],
                         temperature=0.0,
                     ),
+                    deadline=deadline,
                 )
+                if self._over_budget(deadline):
+                    logger.warning("[GeminiListwiseReranker] rare-fact 검증 응답이 예산 뒤에 도착 — 버린다")
+                    break
                 verdicts, confidence = self._parse_rare_fact_response(
                     getattr(response, "text", "") or "", valid_ids
                 )
@@ -979,15 +1139,25 @@ Return:
             tuple[list[str], dict[str, float], float, dict[str, str]]
         ] = []
         last_error: Optional[Exception] = None
+        # 리랭킹 한 번의 전체 예산. 검증 배치·패스 사이마다 확인하고, 넘으면 더 부르지 않는다.
+        deadline = time.monotonic() + self.config.time_budget_seconds
+        # 앞 단계(Search evidence·희소 사실 검증)는 본 패스 몫을 남긴 이른 마감을 받는다.
+        # 같은 마감을 주면 검증 배치 2회가 예산을 다 써 본 패스가 0회 돌고 결과가 failed로 끝난다.
+        pre_pass_deadline = deadline - self._pass_reserve_seconds()
 
         # 일반 Search evidence는 한 번만 수행하고 두 listwise pass가 공유한다.
-        external_evidence = self._collect_search_evidence(query, judged)
+        external_evidence = self._collect_search_evidence(query, judged, deadline=pre_pass_deadline)
         # 희소 사실이 있는 질의만 15곡 단위로 더 엄격하게 교차검증한다.
         rare_verdicts, rare_confidence, rare_reason = self._verify_rare_facts(
-            query, judged, answers
+            query, judged, answers, deadline=pre_pass_deadline
         )
 
         for pass_index in range(self.config.passes):
+            if self._over_budget(deadline):
+                last_error = last_error or TimeoutError(
+                    f"리랭킹 시간 예산 {self.config.time_budget_seconds:.0f}초 초과 (pass {pass_index + 1} 전)"
+                )
+                break
             prompt_tracks = judged if pass_index % 2 == 0 else list(reversed(judged))
             prompt = self._build_prompt(
                 query,
@@ -999,16 +1169,27 @@ Return:
             correction = ""
 
             for attempt in range(self.config.max_retries):
+                if self._over_budget(deadline):
+                    last_error = last_error or TimeoutError(
+                        f"리랭킹 시간 예산 {self.config.time_budget_seconds:.0f}초 초과 (pass {pass_index + 1}, 시도 {attempt + 1} 전)"
+                    )
+                    break
                 try:
-                    response = self._gemini.models.generate_content(
-                        model=self.config.model_name,
+                    response = self._generate(
                         contents=prompt + correction,
                         config={
                             "response_mime_type": "application/json",
                             "temperature": 0.0,
                             "top_p": 1.0,
                         },
+                        deadline=deadline,
                     )
+                    if self._over_budget(deadline):
+                        # 응답이 예산 뒤에 왔다. 반영하면 "30초 안에 끝낸다"는 약속이 거짓이 된다.
+                        last_error = TimeoutError(
+                            f"리랭킹 시간 예산 {self.config.time_budget_seconds:.0f}초 초과 (pass {pass_index + 1} 응답이 늦게 도착)"
+                        )
+                        break
                     pass_results.append(self._parse_response(response.text, valid_ids))
                     break
                 except Exception as exc:
@@ -1026,6 +1207,13 @@ Return:
                     )
                     if attempt + 1 < self.config.max_retries:
                         time.sleep(1)
+
+        if pass_results and self._over_budget(deadline):
+            # 최종 반영 직전 검사. 받은 결과가 있어도 예산을 넘겼으면 쓰지 않는다 — 검색 순서 + failed.
+            last_error = last_error or TimeoutError(
+                f"리랭킹 시간 예산 {self.config.time_budget_seconds:.0f}초 초과 (반영 전)"
+            )
+            pass_results = []
 
         if pass_results:
             order, relevance, confidence, model_reasons = self._aggregate_passes(

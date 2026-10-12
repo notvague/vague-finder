@@ -28,7 +28,10 @@ from src.embedding.models.text_koe5 import DEFAULT_KOE5_MODEL, KoE5Embedder
 from src.retrieval.context_ranking import (
     CONTEXT_RRF_K,
     ContextDenseSongHit,
+    ContextFactHit,
     ContextFusedSongHit,
+    ContextProfileHit,
+    ContextSongCandidates,
     aggregate_dense_facts_by_song,
     fuse_context_song_candidates,
 )
@@ -51,52 +54,9 @@ from src.vector_db.settings import (
 
 
 @dataclass(frozen=True)
-class ContextFactHit:
-    song_id: str
-    record_id: str
-    score: float
-    fact_text: str
-    source_url: str
-    title: str
-    artists: tuple[str, ...]
-    category: str
-    section: str
-    quality: str
-    source_fact_indices: tuple[int, ...]
-
-
-@dataclass(frozen=True)
-class ContextProfileHit:
-    song_id: str
-    profile_id: str
-    score: float
-    title: str
-    artists: tuple[str, ...]
-    # Existing v1 payload terms provide a literal work anchor for retrieval,
-    # never a sentence that can be presented as fact evidence.
-    sparse_terms: tuple[str, ...] = ()
-
-
-@dataclass(frozen=True)
 class ContextSearchHits:
     dense_facts: tuple[ContextFactHit, ...]
     sparse_profiles: tuple[ContextProfileHit, ...]
-
-
-@dataclass(frozen=True)
-class ContextSongCandidates:
-    """Separate song rankings to use in Context-only rank fusion.
-
-    ``dense_facts`` retains the same query's retrieved sentences for the
-    final evidence check. Even ``dense_songs[].best_fact`` is only a candidate
-    until that check. A sparse profile hit cannot substantiate a sentence.
-    """
-
-    dense_songs: tuple[ContextDenseSongHit, ...]
-    sparse_songs: tuple[ContextProfileHit, ...]
-    # Keep the same snapshot's fact hits for later evidence checking. Ranking
-    # still uses only one maximum-score fact per song.
-    dense_facts: tuple[ContextFactHit, ...] = ()
 
 
 @dataclass(frozen=True)

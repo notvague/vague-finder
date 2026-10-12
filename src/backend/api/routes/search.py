@@ -2,7 +2,7 @@ import asyncio
 import logging
 import time
 
-from typing import Any, Optional
+from typing import Any, Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
@@ -10,29 +10,59 @@ from src.backend.api.dependencies import (
     get_lyrics_exact_search_service,
     get_query_analyzer,
     get_search_router,
+    get_vector_client,
 )
-from src.backend.schemas.explain import SearchExplainOut, to_track_explain
+from src.backend.schemas.explain import (
+    SearchExplainOut,
+    UserExplanationOut,
+    to_track_explain,
+    to_user_explanation_out,
+)
 from src.backend.schemas.query import QueryAnalysis
 from src.backend.schemas.search import (
     MAX_ASKED_SLOTS,
+    MAX_PREVIOUS_CANDIDATES,
     MAX_REJECTED_IDS,
     MAX_TURNS,
+    ClarifyRequest,
+    ClarifyResponse,
     MatchingTrack,
+    SearchNotice,
     SearchRequest,
     SearchResponse,
 )
 from src.retrieval import timing
 from src.retrieval.analysis_cache import looks_like_fallback
-from src.retrieval.clarify import pick_question
+from src.retrieval.clarify import (
+    BIRTH_YEAR_SLOT,
+    QUESTION_FIELDS,
+    apply_birth_year_answers,
+    build_birth_year_question,
+    pick_data_question,
+    pick_question,
+    remaining_data_slots,
+    with_birth_year,
+)
 from src.retrieval.context_evidence import context_evidence_for_result
 from src.retrieval.context_route import ContextRouteHit
-from src.retrieval.explain import NULL_RECORDER, ExplainRecorder, SongExplain
+from src.retrieval.known_slots import known_slots_from_query
+from src.retrieval.explain import (
+    NULL_RECORDER,
+    RERANK_SKIP_LABELS,
+    RERANK_SKIP_MV_SCENE_UNVERIFIABLE,
+    ExplainRecorder,
+    SongExplain,
+)
 from src.retrieval.lyrics_exact_search import (
     LyricsExactSearchService,
     LyricsSnapshot,
 )
 from src.retrieval.query_analyzer import QueryAnalyzer, rule_fallback
 from src.retrieval.search_router import SearchRouter
+from src.retrieval.search_service import SearchService
+from src.retrieval.user_explanation import build_user_explanation
+from src.feedback.capture import capture_search
+from src.vector_db.settings import TEXT_HYBRID_INDEX_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +82,40 @@ def _attach_context_evidence(
         logger.exception("[context] fact verification failed for song %s", track.id)
         return track
     return track.model_copy(update={"context_evidence": evidence}) if evidence else track
+
+
+@router.post("/clarify", response_model=ClarifyResponse)
+async def clarify_search(
+    request: ClarifyRequest,
+    vector_client: Any = Depends(get_vector_client),
+) -> ClarifyResponse:
+    """현재 후보로 데이터 질문(성별·장르)만 고른다. 검색·분석·리랭킹·턴 갱신은 하지 않는다.
+
+    **연령대를 여기서 다시 계산하지 않는다.** 출생 연도는 /search가 시기 창으로 바꿔 후보를 다시 찾을 때
+    반영되고, 화면은 그 응답의 candidate_ids를 그대로 보낸다 — 질문은 그 최신 후보가 어떻게 갈리는지에서
+    나온다. 출생 연도 질문 자체는 결과와 함께 /search가 이미 냈으므로 여기서는 내지 않는다.
+
+    물을 수 없는 상태(한도 소진·남은 후보 없음·최초 질의에서 성별과 장르를 이미 말함)면 DB를 읽지 않고
+    None을 돌려준다. 이미 말한 슬롯은 /search 응답의 `known_slots`를 화면이 그대로 보낸 것이다 — 원문을
+    다시 분석하지 않는다.
+    """
+    rejected = set(request.rejected_ids)
+    shown = [s for s in dict.fromkeys(request.shown_ids) if s not in rejected]
+    # 화면이 다음에 거절할 곡은 지금 보이는 곡이다. /search가 clarify_deferred를 정할 때와 같은 판정.
+    if not _can_ask_data_question(request.turn, request.asked_slots, list(rejected), len(shown), request.known_slots):
+        return ClarifyResponse()
+    excluded = rejected | set(shown)
+    ids = [s for s in dict.fromkeys(request.previous_candidate_ids) if s not in excluded]
+    if not ids:
+        return ClarifyResponse()
+    try:
+        index = vector_client.Index(TEXT_HYBRID_INDEX_NAME)
+        result = await asyncio.to_thread(index.fetch, ids, fields=QUESTION_FIELDS)
+        candidates = [SearchService.track_from_match(m) for m in result["matches"]]
+        return ClarifyResponse(clarify=pick_data_question(candidates, request.asked_slots, request.known_slots))
+    except Exception as exc:
+        logger.exception("[clarify] 질문 조회 실패")
+        raise HTTPException(status_code=500, detail="추가 질문을 준비하지 못했습니다.") from exc
 
 
 def _can_ask_another(
@@ -77,6 +141,28 @@ def _can_ask_another(
     if turn > MAX_TURNS:
         return False
     return len(rejected_ids) + top_k <= MAX_REJECTED_IDS
+
+
+def _can_ask_data_question(
+    turn: int,
+    asked_slots: list,
+    rejected_ids: list,
+    next_rejections: int,
+    known_slots: Sequence[str] = (),
+) -> bool:
+    """데이터 질문(성별·장르)을 낼 수 있는 상태인가 — 지연 조회의 **양쪽이 함께 쓰는** 판정.
+
+    /search는 이것으로 `clarify_deferred`(조회하러 올 가치가 있는가)를 정하고, /search/clarify는
+    같은 값(직전 응답의 turn·asked_slots·known_slots·rejected_ids, 지금 보이는 곡 수)으로 다시 본다.
+    판정이 갈리면 화면이 조회하러 왔다가 빈손으로 돌아가거나, 물을 수 있는데 묻지 않게 된다.
+
+    `_can_ask_another`에 더해 아직 물을 수 있는 데이터 슬롯이 남았는지를 본다 — 실제로 물은 것(asked_slots)과
+    최초 질의에서 이미 말한 것(known_slots)을 뺀 나머지. 건너뛴 출생 연도는 asked_slots에 들어 있어 슬롯 수에는
+    세지만(양쪽 같다) 데이터 슬롯은 아니다. known_slots는 슬롯·턴·거절 한도에 세지 않는다.
+    """
+    if not remaining_data_slots(asked_slots, known_slots):
+        return False
+    return _can_ask_another(turn, asked_slots, rejected_ids, next_rejections)
 
 
 def _lyric_evidence(
@@ -115,6 +201,41 @@ def _lyric_evidence(
         logger.warning("[evidence] %s 인용 실패: %s", explain.song_id, exc)
         return []
     return [found] if found is not None else []
+
+
+def _user_explanation(
+    *,
+    query: str,
+    analysis: QueryAnalysis,
+    search_analysis: QueryAnalysis,
+    answers: Sequence[Any],
+    track: MatchingTrack,
+    explain: SongExplain,
+    evidence: list,
+    rerank_skip_reason: str,
+) -> Optional[UserExplanationOut]:
+    """사용자용 설명. **같은 실행의 것만 쓴다** — 원문·검색에 쓴 분석·답변·결과 곡·기록·가사 인용.
+
+    모델·DB를 부르지 않고 입력을 바꾸지 않는다(`build_user_explanation`). 설명을 못 만들어도,
+    만든 설명이 응답 스키마와 어긋나도 검색 응답은 실패하지 않는다 — 그 곡은 기존 기록만 보인다.
+    그래서 응답 모델 검증까지 여기서 끝내고 검증된 모델을 넘긴다.
+    """
+    try:
+        return to_user_explanation_out(
+            build_user_explanation(
+                query=query,
+                analysis=analysis,
+                search_analysis=search_analysis,
+                answers=answers,
+                track=track,
+                explain=explain,
+                evidence=evidence,
+                rerank_skip_reason=rerank_skip_reason,
+            )
+        )
+    except Exception:  # 설명은 부가 정보다 — 결과를 막지 않는다
+        logger.exception("[explain] %s 사용자용 설명 생성 실패", explain.song_id)
+        return None
 
 
 # 분석기가 스스로 내려오지 못했을 때를 위한 여유. 분석기 안의 예산이 먼저
@@ -229,7 +350,21 @@ async def search(
             with timer.step("analysis", mode="gemini"):
                 analysis = await _analyze(query_analyzer, request.query)
 
-        turn = request.turn + 1 if carries_state else 1
+        # 턴은 거절이나 답이 있을 때만 는다. prior_analysis만 보내는 재검색(출생 연도 답 뒤 화면이 같은 질의를
+        # 기존 분석 + 프로필로 다시 찾는 것)은 재분석만 아끼는 것이지 대화가 진행된 게 아니다
+        turn = request.turn + 1 if (request.rejected_ids or request.answers) else (request.turn if carries_state else 1)
+
+        # 브라우저에 저장된 출생 연도(프로필). 생애 단계 질의("중학교 때")에 시기가 없을 때만 창을 만든다.
+        # 검색과 질문 선택에는 창을 넣은 사본을 쓰고, **응답의 analysis는 원본**이다 — 클라이언트가 다음 턴에
+        # 되돌려주는 분석에 프로필이 굳어 들어가지 않게(프로필을 지우면 바로 빠져야 한다).
+        analysis_for_search = with_birth_year(analysis, request.birth_year)
+        if analysis_for_search is not analysis:
+            timer.note(birth_year_window=f"{analysis_for_search.release_era.start_year}-{analysis_for_search.release_era.end_year}")
+
+        # 최초 질의에서 이미 말한 성별·장르 — 재질문이 다시 묻지 않는다. 원문에서 매번 같게 계산하므로 요청이
+        # 되돌려줄 필요가 없고, 출생 연도·답변을 합친 검색용 분석과는 무관하다(원문은 같다). 응답에 실어 화면이
+        # 질문 조회에 그대로 보낸다. asked_slots·answers와 섞지 않는다 — 한도에 세면 안 된다.
+        known_slots = known_slots_from_query(analysis)
 
         # 물어본 슬롯 누적 — 다음 턴에서 같은 것을 다시 묻지 않기 위해.
         asked_slots = list(request.asked_slots)
@@ -248,6 +383,9 @@ async def search(
         # 가사 경로가 **무슨 판을 봤는지**. 인용이 그 판에서만 뜨게 하려고 받는다.
         lyrics_snapshot: list[LyricsSnapshot] = []
         context_hits: list[ContextRouteHit] = []
+        # 리랭킹을 정책으로 생략했으면 그 사유. 기록(explain)과 별개로 받는다 — 기록을 끈 요청에도
+        # "확인할 자료가 없어 다른 단서로 찾았다"는 안내는 실려야 한다.
+        rerank_skips: list[str] = []
 
         # 끄면 아무것도 기록하지 않는 null object가 들어간다. 라우터에 `if` 분기가
         # 없으므로 "기록을 켰을 때만 지나가는 코드"가 생기지 않는다.
@@ -264,7 +402,7 @@ async def search(
         # 이 구간 안에서 시작된 검색 경로들이 이 구간의 자식으로 붙는다.
         with timer.step("search"):
             results = await search_router.search(
-                analysis,
+                analysis_for_search,
                 top_k=request.top_k,
                 use_rerank=request.use_rerank,
                 candidate_k=request.candidate_k,
@@ -276,6 +414,7 @@ async def search(
                 answers=request.answers,
                 recorder=recorder,
                 timer=timer,
+                rerank_skip_out=rerank_skips,
             )
 
         # Decide citations only for the final, possibly reranked results.
@@ -283,52 +422,106 @@ async def search(
         context_by_id = {hit.song_id: hit for hit in context_hits}
         results = [_attach_context_evidence(track, context_by_id, analysis) for track in results]
 
+        # 안내 문구는 서버의 고정 문구다. 사유 코드와 함께 보내 화면이 문장을 짓지 않게 한다.
+        # 자료 없는 MV 장면 생략에만 싣는다 — 표지 지배 생략은 기존 동작이고 문구가 없다(RERANK_SKIP_LABELS).
+        notice = (
+            SearchNotice(code=RERANK_SKIP_MV_SCENE_UNVERIFIABLE,
+                         message=RERANK_SKIP_LABELS[RERANK_SKIP_MV_SCENE_UNVERIFIABLE])
+            if RERANK_SKIP_MV_SCENE_UNVERIFIABLE in rerank_skips
+            else None
+        )
+
         explain_summary = None
         if request.explain:
             with timer.step("explain"):
                 # 단계는 요청 전체에서 파생한다. 곡별로 따로 판단하면 "리랭킹이 N위
                 # 유지"처럼 하지 않은 일을 말하게 된다.
                 stage = recorder.record.reorder_stage
-                results = [
-                    track.model_copy(
-                        update={
-                            "explain": to_track_explain(
-                                song_explain,
-                                reorder_stage=stage,
-                                evidence=_lyric_evidence(
-                                    lyrics_service,
+                # 검색이 **실제로 쓴** 분석. 라우터는 answers의 출생 연도 답으로도 시기 창을 넣으므로
+                # (search_router.search 입구의 apply_birth_year_answers) 같은 순수 함수로 맞춘다.
+                # 설명을 위해 답변을 분석에 새로 합치지는 않는다 — 시기 창만 같게 만든다.
+                explain_analysis = apply_birth_year_answers(analysis_for_search, request.answers)
+                skip_reason = (
+                    RERANK_SKIP_MV_SCENE_UNVERIFIABLE
+                    if RERANK_SKIP_MV_SCENE_UNVERIFIABLE in rerank_skips
+                    else (rerank_skips[0] if rerank_skips else "")
+                )
+                snapshot = lyrics_snapshot[0] if lyrics_snapshot else None
+                explained = []
+                for track in results:
+                    song_explain = recorder.record.get(track.id)
+                    evidence = _lyric_evidence(lyrics_service, song_explain, snapshot)
+                    explained.append(
+                        track.model_copy(
+                            update={
+                                "explain": to_track_explain(
                                     song_explain,
-                                    lyrics_snapshot[0] if lyrics_snapshot else None,
-                                ),
-                            )
-                        }
+                                    reorder_stage=stage,
+                                    evidence=evidence,
+                                    user_explanation=_user_explanation(
+                                        query=analysis.original_query or request.query,
+                                        analysis=analysis,
+                                        search_analysis=explain_analysis,
+                                        answers=request.answers,
+                                        track=track,
+                                        explain=song_explain,
+                                        evidence=evidence,
+                                        rerank_skip_reason=skip_reason,
+                                    ),
+                                )
+                            }
+                        )
                     )
-                    for track in results
-                    for song_explain in [recorder.record.get(track.id)]
-                ]
+                results = explained
                 explain_summary = SearchExplainOut.of(recorder.record)
 
-        # 재질문은 지금 미리 계산해 응답에 실어 둔다. 사용자가 "이 중에는
-        # 없어요"를 눌렀을 때 모델을 다시 부르지 않고 바로 보여주기 위해서다.
-        # 질문은 보여준 곡을 뺀 나머지 후보로 만든다 — 이미 보여준 곡을
-        # 기준으로 물으면 사용자가 아니라고 한 것들을 근거로 삼게 된다.
+        # 재질문은 두 방식이다.
+        #
+        # defer_clarify(화면): 데이터 질문은 여기서 계산하지 않는다 — 사용자가 "이 중에는 없어요"를 누를
+        # 때 화면이 /search/clarify로 조회한다. 정답을 찾아 멈추면 그 계산은 아예 일어나지 않는다. 여기서는
+        # 출생 연도만 결과와 함께 묻고(곡이 아니라 사용자에 대한 질문이라 거절을 기다리지 않는다),
+        # 조회하러 올 가치가 있는지만 clarify_deferred로 알린다.
+        #
+        # 그 외(재질문 측정 `evaluate_clarification`과 같은 방식 · 직접 부르는 호출자): 질문을 지금 계산해
+        # 응답에 싣는다. 질문은 보여준 곡을 뺀 나머지 후보로 만든다 — 이미 보여준 곡을 기준으로 물으면
+        # 사용자가 아니라고 한 것들을 근거로 삼게 된다.
         with timer.step("clarify"):
             shown = {track.id for track in results}
-            remaining = [t for t in candidate_tracks if t.id not in shown]
-            clarify = (
-                pick_question(analysis, remaining, asked_slots)
-                if _can_ask_another(
-                    turn, asked_slots, request.rejected_ids, request.top_k
+            clarify = None
+            clarify_deferred = False
+            if request.defer_clarify:
+                if (results and analysis_for_search.has_life_stage
+                        and not analysis_for_search.has_release_era
+                        and BIRTH_YEAR_SLOT not in asked_slots):
+                    clarify = build_birth_year_question(analysis_for_search)
+                # 화면은 candidate_ids의 앞 MAX_PREVIOUS_CANDIDATES개만 되돌려준다. 그 안에 보여준 곡 말고
+                # 남은 것이 없으면 질문이 나올 수 없으니 조회하러 오지 않게 한다.
+                has_remaining = any(
+                    song_id not in shown for song_id in candidate_ids[:MAX_PREVIOUS_CANDIDATES]
                 )
-                else None
-            )
+                # 성별과 장르를 둘 다 이미 말했으면 조회할 데이터 질문이 없다 — 거절 버튼은 바로 다음 후보로 간다.
+                clarify_deferred = (
+                    bool(results)
+                    and has_remaining
+                    and _can_ask_data_question(turn, asked_slots, request.rejected_ids, len(results), known_slots)
+                )
+            elif _can_ask_another(turn, asked_slots, request.rejected_ids, request.top_k):
+                remaining = [t for t in candidate_tracks if t.id not in shown]
+                # pick_question이 같은 원문에서 known_slots를 다시 계산해 뺀다 — 지연 조회와 같은 규칙.
+                clarify = pick_question(analysis_for_search, remaining, asked_slots)
 
         return SearchResponse(
+            feedback=await capture_search(
+                request, analysis_for_search, results, candidate_ids, turn, search_router,
+            ),
             results=results,
+            notice=notice,
             total_found=len(results),
             analysis=analysis,
             clarify=clarify,
+            clarify_deferred=clarify_deferred,
             asked_slots=asked_slots,
+            known_slots=known_slots,
             candidate_ids=candidate_ids,
             rejected_ids=list(request.rejected_ids),
             turn=turn,

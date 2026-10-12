@@ -170,7 +170,7 @@ def test_real_analyzer_accepts_spatial_audio_and_context_on_first_attempt(async_
     assert result.modality_weights.audio > 0
 
 
-def test_actual_visual_leakage_still_retries_and_returns_fallback(monkeypatch):
+def test_actual_visual_leakage_retries_and_preserves_context_when_audio_degrades(monkeypatch):
     from src.retrieval import query_analyzer as qa
 
     calls = []
@@ -184,7 +184,10 @@ def test_actual_visual_leakage_still_retries_and_returns_fallback(monkeypatch):
     monkeypatch.setattr(qa.time, "sleep", lambda _: None)
     result = analyzer.analyze(MIXED_QUERY)
     assert len(calls) == 3
-    assert result.confidence == 0.0
+    assert result.confidence == 0.87
+    assert result.context_clues
+    assert result.image_english_query == ""
+    assert "audio" in result.degraded_modalities
 
 
 def test_real_context_clue_and_input_are_not_modified_by_audio_spatial_validation():

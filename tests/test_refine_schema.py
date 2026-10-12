@@ -161,7 +161,7 @@ def test_optional_fields_tolerate_null() -> None:
 
 @pytest.fixture
 def fake_gemini(monkeypatch):
-    monkeypatch.setattr(refine, "GEMINI_API_KEY", "dummy")
+    monkeypatch.setattr(refine, "GEMINI_CONFIGURED", True)
     monkeypatch.setattr(refine.time, "sleep", lambda s: None)
     calls = []
 
@@ -177,10 +177,10 @@ def fake_gemini(monkeypatch):
                 return types.SimpleNamespace(text=json.dumps(item, ensure_ascii=False))
 
         class _Client:
-            def __init__(self, api_key=None):
+            def __init__(self):
                 self.models = _Models()
 
-        monkeypatch.setattr(refine.genai, "Client", _Client)
+        monkeypatch.setattr(refine, "make_genai_client", lambda **kwargs: _Client())
         return calls
     return install
 
@@ -207,7 +207,7 @@ def test_schema_violation_recovers_on_retry(fake_gemini) -> None:
 
 
 def test_missing_api_key_is_also_a_failure(monkeypatch) -> None:
-    monkeypatch.setattr(refine, "GEMINI_API_KEY", "")
+    monkeypatch.setattr(refine, "GEMINI_CONFIGURED", False)
     assert refine.refine_data({"title": "곡"}, "가사", None) == {}
 
 

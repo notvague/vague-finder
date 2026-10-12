@@ -17,7 +17,17 @@ from typing import Any, Mapping
 
 
 class ModalityQueryValidationError(ValueError):
-    """Raised when a generated embedding prompt violates modality boundaries."""
+    """Raised when a generated embedding prompt violates modality boundaries.
+
+    ``modality``("image"·"audio")와 ``kind``("missing"·"leak")는 어느 쪽이 어떻게
+    어긋났는지다. 분석기는 재시도를 다 쓴 뒤 이 응답을 버리지 않고 그 모달리티만
+    내려놓는다(`apply_modality_query_safeguards(..., degrade=True)`).
+    """
+
+    def __init__(self, message: str, *, modality: str = "", kind: str = "") -> None:
+        super().__init__(message)
+        self.modality = modality
+        self.kind = kind
 
 
 # Literal lyric words remain Text evidence even if they name a mood,
@@ -240,13 +250,74 @@ def has_explicit_artwork_reference(query: str) -> bool:
     """Share literal artwork gating with Context without interpreting scenes."""
     return explicit_artwork_reference_start(query) is not None
 
+# 한 글자 낱말은 다른 낱말의 조각으로도 나온다. "초록·수록·알록달록"의 록, "손가락"의 락은
+# 장르가 아니고, "이별·준비·기억해·달리는"의 별·비·해·달은 그림 속 사물이 아니다.
+# 조각을 단서로 읽으면 모델이 내지 않은(낼 이유가 없는) 프롬프트를 요구하게 되고,
+# 그 불일치는 분석 전체를 규칙 폴백으로 떨어뜨린다(results_v38: t009·t071·t086·t099, v09 n002).
+# 그래서 앞에 한글이 붙어 있으면 받지 않는다. 붙여 쓰는 장르 이름만 따로 연다.
+# "-록"으로 끝나는 일반 낱말(기록·목록·수록·초록…)은 끝이 없고 장르 이름은 정해져 있으므로,
+# 막을 낱말이 아니라 **열 낱말**을 적는다. 접두는 겹칠 수 있다("팝펑크록", "얼터너티브 펑크 록").
+_ROCK = (
+    r"(?<![가-힣])(?:(?:하드|소프트|모던|펑크|포크|팝|인디|얼터너티브|얼터|브릿|"
+    r"개러지|포스트|글램|프로그레시브|사이키델릭|블루스|아트|서던|일렉트로닉|일렉|"
+    r"컨트리|재즈|심포닉|고딕|스페이스|서프|노이즈|매스|하드코어)\s*)*(?:록|락)"
+)
+
+# 조사. "도"와 "로"는 넣지 않는다 — "별도·해도·별로"가 흔한 다른 낱말이다.
+_NOUN_PARTICLES = (
+    r"(?:이|가|을|를|은|는|과|와|의|만|에|에서|에는|까지|랑|이랑|하고|처럼|같은|같이)"
+)
+
+
+def _one_syllable_noun(
+    syllable: str,
+    *,
+    predicates: tuple[str, ...] = (),
+    compounds: tuple[str, ...] = (),
+) -> str:
+    """한 글자 명사를 낱말로 쓰였을 때만 맞춘다.
+
+    - 낱말 첫 글자이고 뒤가 조사·낱말 끝: "별이", "별들이", "별무늬", "달에서"
+    - 그 명사의 서술어를 붙여 쓴 꼴(predicates): "비오는", "해뜨는" — "비 오는"과 다르게 읽지 않는다
+    - 그 명사가 뒤에 붙는 합성 명사(compounds): "보름달", "별똥별"
+    """
+    word = (
+        r"(?<![가-힣])" + syllable + r"(?:(?:들)?(?:무늬|그림|모양|빛)?"
+        + _NOUN_PARTICLES + r"?(?![가-힣])"
+        + (r"|(?=" + "|".join(predicates) + r")" if predicates else "")
+        + r")"
+    )
+    return "(?:" + "|".join((*compounds, word)) + ")"
+
+
+_STAR = _one_syllable_noun(
+    "별",
+    predicates=("뜨는", "뜬", "빛나는", "반짝이는", "쏟아지는"),
+    compounds=("별똥별", "별자리", "샛별"),
+)
+_MOON = _one_syllable_noun(
+    "달",
+    predicates=("뜨는", "뜬"),
+    compounds=("보름달", "초승달", "반달", "그믐달", "달밤"),
+)
+_SUN = _one_syllable_noun(
+    "해",
+    predicates=("뜨는", "뜬", "지는"),
+    compounds=("해질녘", "해돋이", "해넘이"),
+)
+_RAIN = _one_syllable_noun(
+    "비",
+    predicates=("오는", "온", "오던", "내리는", "내린", "내리던", "맞는"),
+    compounds=("봄비", "소낙비", "장대비", "이슬비", "보슬비", "가랑비"),
+)
 
 _VISUAL_DETAIL_RE = re.compile(
     r"(?:색|빛|컬러|흑백|단색|사진|그림|일러스트|삽화|스케치|드로잉|"
     r"수채화|유화|도트|픽셀|초상|얼굴|인물|실루엣|배경(?!\s*음악)|바탕|전경|"
     r"중앙|가운데|왼쪽|오른쪽|위쪽|아래쪽|한쪽|사선|구도|배치|글자|"
     r"글씨|손글씨|필기체|문자|숫자|폰트|타이포|질감|종이|캔버스|"
-    r"하트|별|달|해|밤하늘|꽃|꽃잎|구름|비|우산|바다|해변|도시|"
+    r"하트|" + _STAR + "|" + _MOON + "|" + _SUN + r"|밤하늘|꽃|꽃잎|구름|"
+    + _RAIN + r"|우산|바다|해변|도시|"
     r"건물|자동차|동물|고양이|강아지|콜라주|추상|기하학)",
     re.IGNORECASE,
 )
@@ -258,7 +329,9 @@ _IMPLICIT_ARTWORK_EVIDENCE = {
     "medium": re.compile(
         r"(?:손(?:으로)?\s*그린|(?:연필|펜|붓|크레용|목탄)(?:으)?로\s*"
         r"(?:그린|그려)|그려\s*(?:진|져|놓)|그림|일러스트|삽화|스케치|"
-        r"드로잉|수채화|유화|사진|도트|픽셀|콜라주|실루엣|초상)",
+        r"드로잉|수채화|유화|사진|도트|픽셀|콜라주|실루엣|초상|"
+        # 칠한 재료·붓자국도 그림이라는 형태 근거다("물감을 붓으로 덧칠한 숲").
+        r"물감|덧칠|붓질|붓\s*터치)",
         re.IGNORECASE,
     ),
     "surface": re.compile(
@@ -293,13 +366,86 @@ _IMPLICIT_ARTWORK_EVIDENCE = {
         re.IGNORECASE,
     ),
     "subject": re.compile(
-        r"(?:하트|(?<!이)별(?:이|을|과|들|무늬|그림)?|밤하늘|꽃|꽃잎|"
+        r"(?:하트|" + _STAR + r"|밤하늘|꽃|꽃잎|"
         r"구름|우산|바다|해변|도시|건물|자동차|동물|고양이|강아지|"
         r"얼굴|인물|사람|남자|여자|도형|원형|삼각형|사각형|기하학|"
         r"(?:동그란|빨간|파란|검은|하얀|큰|작은)\s*원)",
         re.IGNORECASE,
     ),
 }
+
+# "…한 이미지"로 끝나는 묘사 — '표지'라는 말 없이 그림 자체를 설명한 질의다
+# (results_v38 t086·t099: 이 꼴을 못 읽어 모델이 낸 표지 프롬프트를 지웠다).
+# '이미지'는 "청순한 이미지의 가수"처럼 **인상**도 뜻한다. 규칙이 참인데 모델이 표지 프롬프트를
+# 내지 않으면 분석 전체가 폴백으로 떨어지므로, 애매하면 받지 않는다:
+# - **절이 '이미지'(와 그 서술어)에서 끝나야 한다.** 받는 꼴을 늘어놓고 새는 꼴을 하나씩 막는 대신
+#   "그 뒤로 절이 이어지지 않는다"를 조건으로 건다. 그래서 뒤 명사를 꾸미는 꼴은 종류와 상관없이
+#   빠진다 — "이미지의 가수", "이미지였던 가수", "이미지가 있는 가수", "이미지 같아 보이는 가수",
+#   "이미지가 있어 보이는 가수", "이미지였다고 하는 가수".
+#   · 서술어 없이 '이미지'로 끝나면 그 뒤는 절의 끝이거나 말을 잇는 부사(근데·그래서 …)여야 한다
+#     ("이미지 변신", "이미지 좋은"을 막는다).
+#   · 문장을 맺는 서술어(`_IMAGE_FINAL`)는 **정말 맺었을 때만** 받는다 — 글자가 붙어 이어지거나
+#     ("였다고", "야말로", "임에도") 그 어미의 보조 서술어가 따라오면("같아 보이는", "같지 않은",
+#     "이미지다 보니", "였다 하는") 맺은 것이 아니다.
+#     맺은 뒤에 새 문장이 오는 것은 마침표가 있든 없든 같다("이미지였어 제목이 기억 안 나").
+#   · 다음 절로 넘어가는 서술어(`_IMAGE_CONNECTIVE`: -는데·-지만)는 그 자체가 절의 경계다.
+#     `_CLAUSE_BREAK_RE`가 "이미지인데/이미지였고"는 이미 끊어 주고, 여기서 나머지를 받는다.
+# - 같은 절에서 '이미지' 앞에 노래·듣기 낱말이 오면 노래가 주는 심상이다 — "노래가 … 같은 이미지야".
+# - 시각 축은 그 절의 '이미지' **앞**에서만 센다(`_has_implicit_artwork_description`).
+#
+# 맺음꼴은 어간과 어미를 따로 적어 곱한다. 꼴을 하나씩 적으면 "같았지·있었지"처럼 빠지는 것이 생긴다.
+_IMAGE_COPULA = r"(?:였|이었)"
+_IMAGE_EXISTS = r"가\s*(?:있|그려져\s*있|찍혀\s*있)"
+_IMAGE_RECALLED = _IMAGE_COPULA + r"던\s*(?:거|것|걸|듯)"   # "이미지였던 거 (같아)"
+# 어간: 같-·같았-, 였-, 가 있-·가 있었- ("였던 거 같-" 포함)
+_IMAGE_STEM = (
+    r"(?:(?:" + _IMAGE_RECALLED + r"\s*)?같(?:았)?|" + _IMAGE_COPULA + r"|"
+    + _IMAGE_EXISTS + r"(?:었)?)"
+)
+# 맺음 뒤에 붙는 높임·감탄 글자.
+_ENDING_FILLER = r"[요ㅠㅜㅋㅎ~]*"
+
+
+def _closed(auxiliary: str = "") -> str:
+    """어미가 정말 문장을 맺었는가: 한글이 붙어 이어지지 않고, 그 어미의 보조 서술어가 따라오지 않는다.
+
+    맺은 뒤에 새 문장이 오는 것은 막지 않는다 — 마침표가 있든 없든 같아야 한다.
+    """
+    follows = r"(?!\s*(?:" + auxiliary + r"))" if auxiliary else ""
+    return _ENDING_FILLER + r"(?![가-힣])" + follows
+
+
+# 어미마다 뒤에 올 수 있는 보조 서술어가 정해져 있다(닫힌 목록). 그것이 따라오면 맺은 것이 아니다.
+#   -어/-아 + 보이다           "같아 보이는", "있어 보이는"
+#   -지     + 않다·못하다      "같지 않은", "있지 못한"
+#   -다     + 보니·보면·하다   "이미지다 보니", "였다 하는"
+# -음·-야·-임·합쇼체에는 보조 서술어가 붙지 않는다.
+_AFTER_EO = _closed(r"보[이여였]")
+_AFTER_JI = _closed(r"않|못")
+_AFTER_DA = _closed(r"보[니면]|하[는던니며고]")
+_AFTER_NEUTRAL = _closed()
+_IMAGE_FINAL = (
+    r"(?:" + _IMAGE_STEM
+    + r"(?:[어아]" + _AFTER_EO + r"|지" + _AFTER_JI + r"|다" + _AFTER_DA + r"|음" + _AFTER_NEUTRAL + r")|"
+    r"(?:이)?다" + _AFTER_DA + r"|"
+    r"(?:(?:이)?야|임|입니다|이에요|예요)" + _AFTER_NEUTRAL + r")"
+)
+_IMAGE_CONNECTIVE = (
+    r"(?:(?:" + _IMAGE_RECALLED + r"\s*)?같(?:은데|지만|았는데|았지만)|"
+    + _IMAGE_COPULA + r"(?:는데|지만)|"
+    + _IMAGE_EXISTS + r"(?:는데|지만|었는데|었지만))"
+)
+# 서술어 없이 '이미지'(또는 "이미지였던 거")로 끝난 절: 절의 끝이거나, 말을 잇는 부사가 새 절을 연다.
+_BARE_CLAUSE_END = r"\s*" + _ENDING_FILLER + r"\s*(?:$|근데|그래서|그치만|암튼|아무튼)"
+_IMAGE_HEAD_NOUN_RE = re.compile(
+    r"이미지\s*(?:" + _IMAGE_CONNECTIVE + r"|" + _IMAGE_FINAL
+    + r"|(?:" + _IMAGE_RECALLED + r")?" + _BARE_CLAUSE_END + r")"
+)
+
+_LISTENING_BEFORE_IMAGE_RE = re.compile(
+    r"(?:노래|음악|멜로디|사운드|(?<![가-힣])곡(?:이|은|는|을|도)?(?=\s)|"
+    r"들으면|들을\s*때|듣다\s*보면|듣고\s*있으면|들었을\s*때)"
+)
 
 _STATIC_VISUAL_PREDICATE_RE = re.compile(
     r"(?:그려|적혀|쓰여|써\s*있|찍혀|찍은|보였|보이|들어가|배치|붙어|"
@@ -370,14 +516,6 @@ _NEGATED_COVER_CONTEXT_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Do not find the rock genre inside unrelated Korean words such as "탈락",
-# "연락", or "기록". Keep stand-alone and familiar compound genre spellings.
-_ROCK_GENRE_PATTERN = (
-    r"(?:(?<![가-힣])(?:록|락)(?=$|[\s,.!?…]|[은는이가을를의로]|"
-    r"밴드|음악|곡|장르|사운드|스타일)|"
-    r"(?:하드|모던|인디|펑크|팝|얼터너티브|포스트)(?:록|락))"
-)
-
 # Genre words can describe a TV show or a person instead of the recording.
 # Keep the song genre itself, e.g. "힙합 그룹의 곡" or "클래식 음악".
 _NON_AUDITORY_GENRE_CONTEXT_RE = re.compile(
@@ -404,9 +542,8 @@ _UNREALIZED_PERFORMANCE_PLAN_RE = re.compile(
 )
 
 _STRONG_AUDIO_RE = re.compile(
-    r"(?:발라드|댄스곡?|재즈|알앤비|r\s*&\s*b|힙합|랩(?:핑|파트)?|"
-    + _ROCK_GENRE_PATTERN
-    + r"|메탈|트로트|포크|클래식|edm|케이팝|k-?pop|보컬|목소리|음색|가창|무반주|"
+    r"(?:발라드|댄스곡?|재즈|알앤비|r\s*&\s*b|힙합|랩(?:핑|파트)?|" + _ROCK + r"|"
+    r"메탈|트로트|포크|클래식|edm|케이팝|k-?pop|보컬|목소리|음색|가창|무반주|"
     r"멜로디|리듬|비트|템포|bpm|"
     r"사운드(?!\s*트랙)|소리|반주|편곡|화음|코러스|고음|저음|미성|허스키|"
     r"바이브레이션|기교|피아노|건반|기타|드럼|퍼커션|타악기|신스|"
@@ -447,6 +584,15 @@ _AUDIO_BASIC_VOCAL_RE = re.compile(
     re.IGNORECASE,
 )
 
+# A performance described as an event in a work, or a later rendition of an
+# older song, is Context history. Model-inferred vocal roles from that scene
+# must not turn it into a CLAP query by themselves.
+_NON_AUDITORY_PERFORMANCE_HISTORY_RE = re.compile(
+    r"(?:작품|드라마|영화|방송).{0,48}(?:노래하는|부르는|부르던).{0,22}장면|"
+    r"(?:부르던|불렀던).{0,42}(?:다시|나중에).{0,26}(?:부른|불렀|커버)",
+    re.IGNORECASE,
+)
+
 _AUDIO_VOCAL_DETAIL_RE = re.compile(
     r"(?:호소(?:하듯|하는|력)|애원하듯|절규하듯|울부짖|감정(?:을)?\s*쏟|"
     r"속삭이듯|속삭이는|숨소리\s*섞|말하듯|담담하게|힘있게|파워풀|"
@@ -464,9 +610,7 @@ _AUDIO_RHYTHM_DYNAMICS_RE = re.compile(
 )
 
 _AUDIO_GENRE_RE = re.compile(
-    r"(?:발라드|댄스곡?|재즈|알앤비|r\s*&\s*b|힙합|"
-    + _ROCK_GENRE_PATTERN
-    + r"|메탈|"
+    r"(?:발라드|댄스곡?|재즈|알앤비|r\s*&\s*b|힙합|" + _ROCK + r"|메탈|"
     r"트로트|포크|클래식|edm|케이팝|k-?pop|아카펠라)",
     re.IGNORECASE,
 )
@@ -730,16 +874,32 @@ def _has_implicit_artwork_description(text: str) -> bool:
     """Detect a detailed static artwork description without a cover noun.
 
     A strong artwork/form anchor plus another independent visual axis is enough.
+    A description that ends on the head noun "이미지" plus two axes is enough.
     Without such an anchor, three axes and a static-layout predicate are required.
     This keeps vague listening imagery out while covering descriptions such as
     hand-drawn flowers, rough paper texture, and handwritten titles.
     """
     evidence_text_parts: list[str] = []
+    image_head_axes = 0
     for raw_part in _CLAUSE_BREAK_RE.split(text):
         part = raw_part.strip()
         if not part or _NON_COVER_VISUAL_CONTEXT_RE.search(part):
             continue
         evidence_text_parts.append(part)
+        head = _IMAGE_HEAD_NOUN_RE.search(part)
+        if head is None:
+            continue
+        # 묘사는 '이미지' 앞에 온다. 다른 절의 가수 설명("…이미지였어, 노란 옷 입은 여자 가수")이
+        # 축을 채우지 않도록 그 절의 앞부분만 본다.
+        described = part[: head.start()]
+        if _LISTENING_BEFORE_IMAGE_RE.search(described):
+            continue
+        axes = sum(
+            1
+            for pattern in _IMPLICIT_ARTWORK_EVIDENCE.values()
+            if pattern.search(described)
+        )
+        image_head_axes = max(image_head_axes, axes)
     evidence_text = " ".join(evidence_text_parts)
     if not evidence_text:
         return False
@@ -751,6 +911,9 @@ def _has_implicit_artwork_description(text: str) -> bool:
     }
     form_anchor = bool(matched & {"medium", "surface", "typography"})
     if form_anchor and len(matched) >= 2:
+        return True
+    # '이미지'로 맺은 묘사는 그 자체가 형태 근거다. 그 묘사 안에 다른 축이 둘 있어야 한다.
+    if image_head_axes >= 2:
         return True
     return bool(
         len(matched) >= 3
@@ -788,6 +951,13 @@ def has_explicit_visual_clue(query: str) -> bool:
                         for name in ("medium", "surface", "typography", "palette")
                     )
                 ):
+                    return True
+                # A Korean artwork description often comes before the album
+                # noun: "노란 달이 떠 있는 앨범". Keep the evidence in this same
+                # clause so a release mentioned beside an MV does not acquire
+                # the MV's visual details.
+                before = part[max(0, album.start() - 60) : album.start()]
+                if _VISUAL_DETAIL_RE.search(before):
                     return True
     return _has_implicit_artwork_description(positive_text)
 
@@ -963,10 +1133,11 @@ def has_explicit_audio_clue(
     """Return whether the user supplied evidence that can be heard."""
     clue = _clean_mapping(performance_clues)
     text = extract_audio_evidence_text(query)
-    if _STRONG_AUDIO_RE.search(text) or _AUDIO_RHYTHM_DYNAMICS_RE.search(text):
+    if (_STRONG_AUDIO_RE.search(text) or _AUDIO_RHYTHM_DYNAMICS_RE.search(text)
+            or _AUDIO_BASIC_VOCAL_RE.search(text)):
         return True
 
-    if text.strip() and (
+    if text.strip() and not _NON_AUDITORY_PERFORMANCE_HISTORY_RE.search(text) and (
         clue.get("vocal_count")
         or clue.get("vocal_roles")
         or clue.get("sound_ensemble")
@@ -1073,11 +1244,44 @@ def _apply_detailed_audio_weight_floor(
     return {"text": 0.5, "image": 0.0, "audio": 0.5}
 
 
-def apply_modality_query_safeguards(query: str, raw: dict) -> dict:
+def _visual_leak_in_audio(prompt: str) -> str:
+    """소리 프롬프트에 섞인 시각 전용 낱말. 없으면 빈 문자열."""
+    leak = _find_visual_leak_in_audio(prompt)
+    return leak.group(0) if leak else ""
+
+
+def _audio_leak_in_image(prompt: str) -> str:
+    """표지 프롬프트에 섞인 소리 전용 낱말. 표지에 적힌 글자를 옮긴 것이면 누출이 아니다."""
+    leak = _AUDIO_LEAK_IN_IMAGE_RE.search(prompt)
+    if leak is None:
+        return ""
+    window = prompt[max(0, leak.start() - 45) : min(len(prompt), leak.end() + 45)]
+    return "" if _VISIBLE_TEXT_CONTEXT_RE.search(window) else leak.group(0)
+
+
+def apply_modality_query_safeguards(
+    query: str,
+    raw: dict,
+    *,
+    degrade: bool = False,
+) -> dict:
     """Validate and normalize Gemini's modality-specific embedding prompts.
 
     The legacy ``english_translation`` key is intentionally ignored.  Reusing it
     would silently restore the original cross-modal contamination bug.
+
+    ``degrade=False``(기본)는 경계를 어긴 응답에 예외를 낸다 — 분석기가 정정을 붙여
+    다시 묻는다. ``degrade=True``는 재시도를 다 쓴 뒤의 길이다. 예외 대신 **어긴
+    모달리티만** 내려놓고 나머지 분석(가사·제목·가수·태그·다른 모달리티)은 살린다.
+    예전에는 여기서 분석 전체를 규칙 폴백으로 바꿨다.
+
+    - 누락(규칙은 단서가 있다고 보는데 모델이 프롬프트를 안 냄): 그 경로를 끈다.
+      정정을 받고도 안 낸 것이라 모델 판단을 따른다. 규칙 프롬프트로 채우면 규칙이
+      틀렸을 때("초록"의 록 → "a rock style") 그 오염이 그대로 검색에 들어간다.
+    - 누출(프롬프트에 다른 모달리티 낱말이 섞임): 단서가 있다는 데는 규칙과 모델이
+      같으므로 규칙이 만든 프롬프트로 바꾼다. 규칙이 만들 것이 없으면 끈다.
+
+    내려놓은 모달리티는 ``degraded_modalities``에 남는다.
     """
     enriched = dict(raw)
     performance_clues = enriched.get("performance_clues")
@@ -1086,44 +1290,52 @@ def apply_modality_query_safeguards(query: str, raw: dict) -> dict:
 
     image_query = _clean_prompt(enriched.get("image_english_query"))
     audio_query = _clean_prompt(enriched.get("audio_english_query"))
+    degraded: list[str] = []
+
+    def violated(modality: str, kind: str, message: str) -> None:
+        if not degrade:
+            raise ModalityQueryValidationError(message, modality=modality, kind=kind)
+        degraded.append(modality)
 
     if not visual_allowed:
         image_query = ""
     elif not image_query:
-        raise ModalityQueryValidationError(
-            "album-art visual clue requires image_english_query"
-        )
+        violated("image", "missing", "album-art visual clue requires image_english_query")
 
     if not audio_allowed:
         audio_query = ""
     elif not audio_query:
-        raise ModalityQueryValidationError(
-            "explicit auditory clue requires audio_english_query"
-        )
+        violated("audio", "missing", "explicit auditory clue requires audio_english_query")
 
     if audio_query:
         audio_query = _supplement_audio_prompt(query, audio_query)
 
     if audio_query:
-        leak = _find_visual_leak_in_audio(audio_query)
+        leak = _visual_leak_in_audio(audio_query)
         if leak:
-            raise ModalityQueryValidationError(
-                "audio_english_query contains visual-only wording: "
-                f"{leak.group(0)!r}"
+            violated(
+                "audio",
+                "leak",
+                f"audio_english_query contains visual-only wording: {leak!r}",
             )
+            audio_query = build_fallback_modality_queries(query, performance_clues)[1]
+            if _visual_leak_in_audio(audio_query):
+                audio_query = ""
 
     if image_query:
-        leak = _AUDIO_LEAK_IN_IMAGE_RE.search(image_query)
+        leak = _audio_leak_in_image(image_query)
         if leak:
-            window = image_query[
-                max(0, leak.start() - 45) : min(len(image_query), leak.end() + 45)
-            ]
-        if leak and not _VISIBLE_TEXT_CONTEXT_RE.search(window):
-            raise ModalityQueryValidationError(
-                "image_english_query contains audio-only wording: "
-                f"{leak.group(0)!r}"
+            violated(
+                "image",
+                "leak",
+                f"image_english_query contains audio-only wording: {leak!r}",
             )
+            image_query = build_fallback_modality_queries(query, performance_clues)[0]
+            if _audio_leak_in_image(image_query):
+                image_query = ""
 
+    # 모델 응답이 이 키를 실어 보내도 여기서 덮는다.
+    enriched["degraded_modalities"] = [m for m in ("image", "audio") if m in degraded]
     enriched["has_visual_clue"] = bool(visual_allowed and image_query)
     enriched["image_english_query"] = image_query
     enriched["audio_english_query"] = audio_query
@@ -1212,7 +1424,7 @@ _AUDIO_FEATURES = (
     (r"재즈", "a jazz style"),
     (r"(?:알앤비|r\s*&\s*b)", "an R&B style"),
     (r"힙합", "a hip-hop style"),
-    (r"(?:록|락)(?:\s*음악|\s*느낌|\s*곡|\s*노래)?", "a rock style"),
+    (_ROCK + r"(?:\s*음악|\s*느낌|\s*곡|\s*노래)?", "a rock style"),
     (r"트로트", "a trot style"),
     (r"edm|일렉트로닉", "an electronic dance style"),
     (r"(?:빠른\s*템포|템포가\s*빠|빠른\s*비트)", "a fast tempo"),
