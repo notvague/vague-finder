@@ -1,0 +1,149 @@
+{
+  "created_at": "2026-10-12T12:54:31+0900",
+  "args": {
+    "input": "experiments/reranking/eval_queries_v10.csv",
+    "output_dir": "experiments/reranking/results_v43_audio_path_weight/scale0_rep2/v10_dev",
+    "split": "dev",
+    "top_k": 10,
+    "candidate_k": 30,
+    "path_k": null,
+    "query_ids": "",
+    "exclude_query_ids": "",
+    "analysis_cache": "experiments/reranking/results_v41_cover_description_image_noun/analysis_cache_v10_dev_imagenoun.json",
+    "allow_fallback_analysis": false,
+    "explain": true
+  },
+  "analysis": {
+    "mode": "cache",
+    "path": "experiments/reranking/results_v41_cover_description_image_noun/analysis_cache_v10_dev_imagenoun.json",
+    "meta": {
+      "created_at": "2026-10-11T19:42:37+0900",
+      "query_source": "experiments/reranking/eval_queries_v10.csv",
+      "split": "dev",
+      "analyzer": {
+        "model_name": "gemini-3.1-flash-lite",
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "reference_year": 2026,
+        "reference_year_env": "2026",
+        "prompt_sha": "08f0b3bc4c37",
+        "postprocess_sha": "8ef688eceb3d"
+      },
+      "drift_notes": [
+        {
+          "at": "2026-10-11T21:31:28+0900",
+          "drifted": [
+            "postprocess_sha"
+          ],
+          "kept_entries": 55,
+          "analyzer_now": {
+            "model_name": "gemini-3.1-flash-lite",
+            "temperature": 0.0,
+            "top_p": 1.0,
+            "reference_year": 2026,
+            "reference_year_env": "2026",
+            "prompt_sha": "08f0b3bc4c37",
+            "postprocess_sha": "9033be1a70fa"
+          },
+          "analyzer_sha_now": "a967d579ea9d",
+          "reason": "한 글자 낱말 경계 수정(results_v40) — 규칙 판정·근거글이 바뀌는 질의만 다시 분석, 나머지는 판정이 같아 유지"
+        },
+        {
+          "at": "2026-10-11",
+          "note": "['t110'] 는 규칙 판정이 그대로라 원래 캐시 항목으로 되돌림(다시 분석하면 모델 출력 문구가 달라져 수정 효과와 섞인다)"
+        },
+        {
+          "at": "2026-10-11T22:25:02+0900",
+          "drifted": [
+            "postprocess_sha"
+          ],
+          "kept_entries": 58,
+          "analyzer_now": {
+            "model_name": "gemini-3.1-flash-lite",
+            "temperature": 0.0,
+            "top_p": 1.0,
+            "reference_year": 2026,
+            "reference_year_env": "2026",
+            "prompt_sha": "08f0b3bc4c37",
+            "postprocess_sha": "bf175c9f88c2"
+          },
+          "analyzer_sha_now": "9cfdf6bd3aa2",
+          "reason": "'…이미지'로 맺은 표지 묘사 규칙(results_v41) — 규칙 판정이 바뀌는 t086·t099만 다시 분석, 나머지는 results_v40 토큰 수정 캐시 그대로"
+        }
+      ]
+    },
+    "fallback_query_ids": [],
+    "fingerprint_drift": [
+      "postprocess_sha"
+    ]
+  },
+  "corpus": {
+    "vector_backend": "qdrant",
+    "namespace": "dev",
+    "text_index": "vaguefinder-text-1024-koe5",
+    "image_index": "vaguefinder-image-768",
+    "audio_index": "vaguefinder-audio-512",
+    "qdrant_path": "artifacts/qdrant",
+    "point_count": 5143
+  },
+  "bm25": {
+    "path": "artifacts/bm25_params.json",
+    "exists": true,
+    "sha256_12": "bf606b19ab02",
+    "bytes": 754642
+  },
+  "lyrics_source": {
+    "db": "vaguefinder",
+    "collection": "songs",
+    "document_count": 5143,
+    "full_lyrics_songs": 5143,
+    "full_lyrics_total_chars": 4076174,
+    "content_sha256_16": "e0d58f28f1f4a563"
+  },
+  "reranker": {
+    "backend": "gemini_listwise",
+    "requested_backend": "gemini_listwise",
+    "class": "GeminiListwiseReranker",
+    "enabled": true,
+    "config": {
+      "model_name": "gemini-3.1-flash-lite",
+      "enabled": true,
+      "rerank_weight": 0.85,
+      "spread_ref": 0.0,
+      "max_candidates": 30,
+      "max_retries": 3,
+      "passes": 1,
+      "low_confidence_threshold": 0.55,
+      "use_search_grounding": false,
+      "search_evidence_chars": 7000,
+      "rare_fact_verification": false,
+      "rare_fact_batch_size": 15,
+      "rare_fact_min_support": 0.86,
+      "rare_fact_min_confidence": 0.78,
+      "rare_fact_min_margin": 0.06,
+      "rare_fact_insert_rank": 9,
+      "request_timeout_seconds": 20.0,
+      "time_budget_seconds": 30.0,
+      "pass_reserve_seconds": 10.0
+    }
+  },
+  "gemini": {
+    "backend": "api_key",
+    "setting": "api_key"
+  },
+  "ranking_switches": {
+    "boost_scale": 1.0,
+    "attr_boost_scale": 1.0,
+    "gender_mismatch_scale": 0.0,
+    "audio_fusion_scale": 0.0,
+    "text_sparse_source": "tags",
+    "lyric_protect_phonetic_top1": false,
+    "lyric_protect_min_confidence": 0.8,
+    "lyric_boost_scale": 1.0,
+    "reranker_min_spread": 0.0,
+    "gemini_rerank_corrections": "all",
+    "gemini_rerank_type_slot_label": "artist type (solo/group/duo/band)",
+    "clarify_rerank_input_order": "bonus"
+  },
+  "search_reference_year_env": "2026"
+}

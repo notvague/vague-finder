@@ -125,3 +125,9 @@ experiments/reranking/results_*/*/*/*_explain.jsonl
 
 # 모달리티만 내려놓기(results_v42) — 후보 추적표 · 한 줄짜리 질의 CSV
 !experiments/reranking/results_v42_modality_degrade/*.csv
+
+# 소리 경로 융합 가중 실험(results_v43) — 후보 추적표. 대조용 캐시는 make_weight_variants.py로 다시 만든다
+!experiments/reranking/results_v43_audio_path_weight/*.csv
+experiments/reranking/results_v43_audio_path_weight/analysis_cache_*.json
+!experiments/reranking/results_v43_audio_path_weight/*/*/search_eval_*_summary.csv
+!experiments/reranking/results_v43_audio_path_weight/*/*/search_eval_*_top10.csv
