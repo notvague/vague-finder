@@ -474,6 +474,8 @@ def _ranking_switches(config: Any) -> dict:
         "boost_scale": _search_router._explicit_boost_scale(),
         "attr_boost_scale": _search_router._attr_boost_scale(),
         "gender_mismatch_scale": _search_router._gender_mismatch_scale(),
+        "audio_fusion_scale": _search_router._audio_fusion_scale(),
+        "text_sparse_source": _search_router._text_sparse_source(),
         "lyric_protect_phonetic_top1": _search_router._protect_phonetic_top1(),
         "lyric_protect_min_confidence": _search_router._lyric_protect_min_confidence(),
         "lyric_boost_scale": _search_router._lyric_boost_scale(),

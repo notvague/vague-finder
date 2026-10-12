@@ -649,6 +649,35 @@ def _attr_boost_scale() -> float:
         return 1.0
 
 
+def _audio_fusion_scale() -> float:
+    """소리 경로(CLAP)의 융합 가중에 곱하는 배율. 1.0이 현행, 0이면 소리 경로를 돌리지 않는다.
+
+    **실험용이다(experiments/reranking/results_v43_audio_path_weight/RUN_INFO.md).** 5,143곡에서 소리
+    경로가 켜진 dev 질의 111건 중 정답이 소리 경로 30위 안에 든 것은 1건(순위 중앙값 970)인데, 분석은
+    소리 가중을 0.2~0.7로 준다. 가중 RRF에서 소리 가중 0.7이면 텍스트 1위(0.3/61)가 소리 경로 상위
+    80곡 안팎보다 낮아져 후보 30에서 밀린다(v10 t058). 분석의 가중·프롬프트는 건드리지 않고 융합에서만
+    줄인다 — 표지 지배 판정(`rerank_policy`)처럼 분석 가중을 읽는 다른 규칙이 따라 바뀌지 않게.
+    """
+    raw = os.getenv("AUDIO_FUSION_SCALE", "").strip()
+    try:
+        return max(0.0, float(raw)) if raw else 1.0
+    except ValueError:
+        return 1.0
+
+
+def _text_sparse_source() -> str:
+    """텍스트 경로의 BM25 질의에 무엇을 넣는가. `tags`(현행) · `query` · `both`.
+
+    **실험용이다(experiments/reranking/results_v43_audio_path_weight/RUN_INFO.md).** 가사 단서가 없는
+    질의는 BM25에 모델이 뽑은 `korean_tags`만 넣는다. 규칙 폴백 분석은 태그가 없어 원문이 그대로
+    들어가는데, v06 q115에서 폴백의 텍스트 순위(40위)가 모델 분석(359위)보다 훨씬 좋았다
+    (results_v42). `query`는 태그 대신 원문을, `both`는 태그에 원문을 더해 넣는다. 가사 구절·음차가
+    있는 질의와 보조 경로는 건드리지 않는다.
+    """
+    raw = os.getenv("TEXT_SPARSE_SOURCE", "").strip().lower()
+    return raw if raw in {"query", "both"} else "tags"
+
+
 def _gender_mismatch_scale() -> float:
     """보컬 성별 불일치 감점에 곱하는 배율. **기본 0 — 감점을 주지 않는다.** 1.0이면 예전 감점.
 
@@ -999,6 +1028,7 @@ class SearchRouter:
                 not analysis.has_exact_lyric_clue
                 and has_audio_query
                 and analysis.modality_weights.audio > 0
+                and _audio_fusion_scale() > 0
             )
 
         text_fut = loop.run_in_executor(
@@ -1331,7 +1361,7 @@ class SearchRouter:
         else:
             w_text = mw.text
             w_image = mw.image if use_image else 0.0
-            w_audio = mw.audio if use_audio else 0.0
+            w_audio = mw.audio * _audio_fusion_scale() if use_audio else 0.0
 
             if (
                 analysis.intent_type == "mixed"
@@ -2184,6 +2214,11 @@ class SearchRouter:
             alpha = min(0.60, max(alpha, 0.50))
         else:
             sparse_terms = list(analysis.korean_tags)
+            source = _text_sparse_source()
+            if source == "query":
+                sparse_terms = [analysis.search_text]
+            elif source == "both":
+                sparse_terms.append(analysis.search_text)
         if analysis.song_title:
             sparse_terms.append(analysis.song_title)
         if analysis.artist_name:
