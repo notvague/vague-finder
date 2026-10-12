@@ -9,6 +9,8 @@ from fastapi.staticfiles import StaticFiles
 from src.backend.api.dependencies import close_vector_client, get_vector_client
 from src.common.gemini_client import RETRIEVAL, backend_setting
 from src.backend.api.routes import search
+from src.backend.api.routes import feedback
+from src.feedback.store import close_feedback_store
 from src.backend import warmup
 from src.retrieval import timing
 
@@ -56,6 +58,7 @@ async def lifespan(app: FastAPI):
         # 중일 수 있어서, 여기서 시간을 끊으면 닫은 뒤에 그 단계가 저장소를 다시 연다.
         await asyncio.to_thread(warmup.stop_and_wait)
         await asyncio.to_thread(close_vector_client)
+        await asyncio.to_thread(close_feedback_store)
 
 
 app = FastAPI(
@@ -111,6 +114,7 @@ async def record_request_timing(request: Request, call_next):
         raise
     timer.note(status=response.status_code)
     response.headers["X-Request-Id"] = timer.request_id
+    response.headers["Cache-Control"] = "no-store"  # 실행별 피드백 제출 권한을 캐시에 남기지 않는다
     # 본문을 내보내기 직전까지가 서버가 책임지는 시간이다. 네트워크 왕복과
     # 화면 렌더링은 여기에 안 잡히므로 클라이언트에서 따로 재야 한다.
     timing.emit(timer)
@@ -135,6 +139,7 @@ async def health_check():
     }
 
 app.include_router(search.router, prefix="/api/v1")
+app.include_router(feedback.router, prefix="/api/v1")
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 

@@ -695,6 +695,9 @@ const CLARIFY_PATH = "/api/v1/search/clarify";
 const CLARIFY_TIMEOUT_MS = 8000;
 
 async function requestSearch(body, path = SEARCH_PATH, timeoutMs = SEARCH_TIMEOUT_MS) {
+  if (path === SEARCH_PATH && typeof VagueFeedback !== "undefined" && VagueFeedback.receipt) {
+    body = { ...body, feedback_parent: VagueFeedback.receipt };
+  }
   const res = await fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -780,6 +783,7 @@ function startConvo(query, data) {
 }
 
 function applyResponse(data) {
+  if (typeof VagueFeedback !== "undefined") VagueFeedback.reset(data);
   convo.analysis = data.analysis || null;
   convo.askedSlots = data.asked_slots || [];
   // 최초 질의에서 이미 말한 성별·장르 — 질문 조회가 다시 묻지 않게 그대로 보낸다. 응답 값으로 **교체**한다(이전 검색 값과
@@ -942,6 +946,10 @@ function button(className, text, onClick) {
 }
 
 function renderPanel() {
+  if (typeof VagueFeedback !== "undefined") {
+    if (!convo) VagueFeedback.reset(null);
+    VagueFeedback.setBusy(isBusy());
+  }
   updateLegendVisibility();
   if (!convo) {
     resultBlock.hidden = true;
@@ -992,6 +1000,7 @@ function renderPanel() {
       meta.append(tag);
     }
     text.append(meta);
+    if (typeof VagueFeedback !== "undefined") VagueFeedback.attach(text, r);
     li.append(text);
 
     /*
