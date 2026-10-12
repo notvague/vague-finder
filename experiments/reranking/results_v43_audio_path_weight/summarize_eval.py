@@ -12,21 +12,46 @@ HERE = Path(__file__).parent
 SETS = ("v06", "v09", "v10")
 
 
+# 측정 폴더의 detail CSV는 커밋하지 않는다(.gitignore). 없으면 같은 설정의 후보 추적표에서 후보 순위를 읽는다 —
+# 배율 0과 `off` 캐시는 후보 순위가 176건 모두 같다(RUN_INFO §3).
+TRACE_FOR = {"scale1": "ctrl", "scale0": "off"}
+
+
+def candidates(folder: Path, tag: str, name: str) -> tuple[dict, dict]:
+    """질의 → 후보 순위, 질의 → 리랭킹 결과 코드. detail이 없으면 추적표로 대신하고 결과 코드는 비운다."""
+    detail = folder / "search_eval_dev_detail.csv"
+    if detail.exists():
+        rows = {r["query_id"]: r for r in csv.DictReader(open(detail, encoding="utf-8-sig"))}
+        return (
+            {q: int(r["candidate_rank@30"]) if r["candidate_rank@30"] else None for q, r in rows.items()},
+            {q: r.get("rerank_outcome", "") for q, r in rows.items()},
+        )
+    trace = HERE / f"candidate_drop_{name}_dev_{TRACE_FOR.get(tag.split('_rep')[0], '')}.csv"
+    if not trace.exists():
+        return {}, {}
+    best: dict = {}
+    for row in csv.DictReader(open(trace, encoding="utf-8-sig")):
+        rank = int(row["pool_rank"]) if row["pool_rank"] else None
+        q = row["query_id"]  # 정답이 여럿인 질의는 가장 좋은 행
+        if q not in best or (rank is not None and (best[q] is None or rank < best[q])):
+            best[q] = rank
+    return best, {}
+
+
 def load(tag: str) -> dict:
     """(세트, 질의) → {"cand": 후보 순위|None, "rank": 최종 순위|None(10위 밖)}"""
     out: dict = {}
     for name in SETS:
         folder = HERE / tag / f"{name}_dev"
-        detail = {r["query_id"]: r for r in csv.DictReader(open(folder / "search_eval_dev_detail.csv", encoding="utf-8-sig"))}
+        cand, outcome = candidates(folder, tag, name)
         for row in csv.DictReader(open(folder / "search_eval_dev_top10.csv", encoding="utf-8-sig")):
             relevant = set(filter(None, row["relevant_ids"].split("|")))
             if not relevant:
                 continue  # no_target
             top = row["rerank_top_ids"].split("|")
             rank = next((i for i, sid in enumerate(top, 1) if sid in relevant), None)
-            d = detail[row["query_id"]]
-            cand = int(d["candidate_rank@30"]) if d["candidate_rank@30"] else None
-            out[(name, row["query_id"])] = {"cand": cand, "rank": rank, "outcome": d.get("rerank_outcome", "")}
+            q = row["query_id"]
+            out[(name, q)] = {"cand": cand.get(q), "rank": rank, "outcome": outcome.get(q, "")}
     return out
 
 

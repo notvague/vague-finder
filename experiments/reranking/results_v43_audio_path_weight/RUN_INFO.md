@@ -116,9 +116,9 @@ results_v42에서 q115는 규칙 폴백의 텍스트 순위(40위)가 모델 분
 | `candidate_drop_{v06,v09,v10}_dev_{ctrl,off,scale0.5,scale0.25,sparse_both,sparse_query}.csv` | 후보 추적표 |
 | `summarize_trace.py` | §1·§2·§5의 표 |
 | `run_eval.sh` · `scale1_rep1/` · `scale0_rep{1,2}/` | 검색·리랭킹 측정(세트별 `summary` · `top10` · `runinfo`) |
-| `summarize_eval.py` | §3의 표와 질의별 변화 |
+| `summarize_eval.py` | §3의 표와 질의별 변화. 측정 폴더의 detail CSV는 커밋하지 않는다 — 없으면 후보 순위를 추적표(`ctrl`·`off`)에서 읽어 같은 표를 낸다(리랭킹 결과 코드만 비어 실패 경고가 안 나온다) |
 
-다시 돌리기(약 5분/세트, Gemini 호출은 `run_eval.sh`만):
+다시 돌리기(약 5분/세트, Gemini 호출은 `run_eval.sh`만). 스크립트는 `venv/bin/python`을 쓴다 — venv가 없는 워크트리에서는 `PY=../vague-finder/venv/bin/python`처럼 앞에 붙인다:
 
 ```
 PYTHONPATH=. venv/bin/python experiments/reranking/results_v43_audio_path_weight/make_weight_variants.py

@@ -2,7 +2,7 @@
 # 실험 스위치를 켠 채 후보 단계 추적 — 분석 캐시는 그대로, 리랭킹·Gemini 없음. dev 176건 전부.
 # 스위치는 환경 변수로 넘긴다.
 #   TAG=sparse_query TEXT_SPARSE_SOURCE=query zsh run_trace_switch.sh
-#   TAG=sparse_both_scale0 TEXT_SPARSE_SOURCE=both AUDIO_FUSION_SCALE=0 zsh run_trace_switch.sh
+#   TAG=sparse_both_scale0 TEXT_SPARSE_SOURCE=both AUDIO_FUSION_SCALE=0 zsh run_trace_switch.sh   (스위치를 겹친 예 — 이 조합은 돌리지 않았다)
 set -u
 cd "$(git rev-parse --show-toplevel)"
 OUT=experiments/reranking/results_v43_audio_path_weight
