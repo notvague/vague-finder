@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="vi-lock">
 <head>
 <meta charset="utf-8">
 <title>Vague Finder — every song at once</title>
@@ -19,8 +19,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400..700&family=Jost:wght@300..900&display=swap">
 <link rel="stylesheet" href="/static/style.css?v=feedback-1">
+<link rel="stylesheet" href="/static/intro.css?v=1">
+<!-- JS가 꺼진 환경에서는 인트로가 화면을 가리지 않게 한다 -->
+<noscript><style>#vagueIntro{display:none}html.vi-lock,html.vi-lock body{overflow:auto}</style></noscript>
 </head>
 <body>
+
+<!--
+  로딩 인트로 — 첫 페인트부터 화면을 덮도록 HTML에 처음부터 둔다(검정이 번쩍 비는 일이 없게).
+  점·V는 intro.js 가 .vi-icon 안에 채우고, 끝나면 이 요소째 제거한다.
+  옵션: data-glow · data-dot-step(ms) · data-fly-ms · data-once-per-session="true"
+-->
+<div id="vagueIntro" class="vi-root vi-off" role="status" aria-label="Loading">
+  <div class="vi-curtain"></div>
+  <div class="vi-center"><div class="vi-icon"></div></div>
+</div>
 
 <!--
   헤더 — 브랜드와 보기 전환. 보기 전환은 화면 전체를 바꾸는 동작이라
@@ -151,6 +164,7 @@
   </p>
 </footer>
 
+<script src="/static/intro.js?v=1"></script>
 <script src="/static/feedback.js?v=2"></script>
 <script src="/static/map.js?v=feedback-1"></script>
 </body>
