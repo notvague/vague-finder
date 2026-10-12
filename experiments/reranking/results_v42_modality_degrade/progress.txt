@@ -1,0 +1,7 @@
+done before 01:14:10
+done degrade 01:15:06
+done audio_off 01:16:01
+done q115 stored 01:17:49
+done q115 fallback 01:18:37
+done q115 degrade 01:19:24
+done q115 audio_off 01:20:11

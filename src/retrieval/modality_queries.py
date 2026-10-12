@@ -17,7 +17,17 @@ from typing import Any, Mapping
 
 
 class ModalityQueryValidationError(ValueError):
-    """Raised when a generated embedding prompt violates modality boundaries."""
+    """Raised when a generated embedding prompt violates modality boundaries.
+
+    ``modality``("image"·"audio")와 ``kind``("missing"·"leak")는 어느 쪽이 어떻게
+    어긋났는지다. 분석기는 재시도를 다 쓴 뒤 이 응답을 버리지 않고 그 모달리티만
+    내려놓는다(`apply_modality_query_safeguards(..., degrade=True)`).
+    """
+
+    def __init__(self, message: str, *, modality: str = "", kind: str = "") -> None:
+        super().__init__(message)
+        self.modality = modality
+        self.kind = kind
 
 
 # 리메이크를 뜻하는 "커버곡 / 커버 노래 / 커버 버전"을 표지 단서에서 제외한다.
@@ -904,11 +914,44 @@ def _apply_detailed_audio_weight_floor(
     return {"text": 0.5, "image": 0.0, "audio": 0.5}
 
 
-def apply_modality_query_safeguards(query: str, raw: dict) -> dict:
+def _visual_leak_in_audio(prompt: str) -> str:
+    """소리 프롬프트에 섞인 시각 전용 낱말. 없으면 빈 문자열."""
+    leak = _VISUAL_LEAK_IN_AUDIO_RE.search(prompt)
+    return leak.group(0) if leak else ""
+
+
+def _audio_leak_in_image(prompt: str) -> str:
+    """표지 프롬프트에 섞인 소리 전용 낱말. 표지에 적힌 글자를 옮긴 것이면 누출이 아니다."""
+    leak = _AUDIO_LEAK_IN_IMAGE_RE.search(prompt)
+    if leak is None:
+        return ""
+    window = prompt[max(0, leak.start() - 45) : min(len(prompt), leak.end() + 45)]
+    return "" if _VISIBLE_TEXT_CONTEXT_RE.search(window) else leak.group(0)
+
+
+def apply_modality_query_safeguards(
+    query: str,
+    raw: dict,
+    *,
+    degrade: bool = False,
+) -> dict:
     """Validate and normalize Gemini's modality-specific embedding prompts.
 
     The legacy ``english_translation`` key is intentionally ignored.  Reusing it
     would silently restore the original cross-modal contamination bug.
+
+    ``degrade=False``(기본)는 경계를 어긴 응답에 예외를 낸다 — 분석기가 정정을 붙여
+    다시 묻는다. ``degrade=True``는 재시도를 다 쓴 뒤의 길이다. 예외 대신 **어긴
+    모달리티만** 내려놓고 나머지 분석(가사·제목·가수·태그·다른 모달리티)은 살린다.
+    예전에는 여기서 분석 전체를 규칙 폴백으로 바꿨다.
+
+    - 누락(규칙은 단서가 있다고 보는데 모델이 프롬프트를 안 냄): 그 경로를 끈다.
+      정정을 받고도 안 낸 것이라 모델 판단을 따른다. 규칙 프롬프트로 채우면 규칙이
+      틀렸을 때("초록"의 록 → "a rock style") 그 오염이 그대로 검색에 들어간다.
+    - 누출(프롬프트에 다른 모달리티 낱말이 섞임): 단서가 있다는 데는 규칙과 모델이
+      같으므로 규칙이 만든 프롬프트로 바꾼다. 규칙이 만들 것이 없으면 끈다.
+
+    내려놓은 모달리티는 ``degraded_modalities``에 남는다.
     """
     enriched = dict(raw)
     performance_clues = enriched.get("performance_clues")
@@ -917,44 +960,52 @@ def apply_modality_query_safeguards(query: str, raw: dict) -> dict:
 
     image_query = _clean_prompt(enriched.get("image_english_query"))
     audio_query = _clean_prompt(enriched.get("audio_english_query"))
+    degraded: list[str] = []
+
+    def violated(modality: str, kind: str, message: str) -> None:
+        if not degrade:
+            raise ModalityQueryValidationError(message, modality=modality, kind=kind)
+        degraded.append(modality)
 
     if not visual_allowed:
         image_query = ""
     elif not image_query:
-        raise ModalityQueryValidationError(
-            "album-art visual clue requires image_english_query"
-        )
+        violated("image", "missing", "album-art visual clue requires image_english_query")
 
     if not audio_allowed:
         audio_query = ""
     elif not audio_query:
-        raise ModalityQueryValidationError(
-            "explicit auditory clue requires audio_english_query"
-        )
+        violated("audio", "missing", "explicit auditory clue requires audio_english_query")
 
     if audio_query:
         audio_query = _supplement_audio_prompt(query, audio_query)
 
     if audio_query:
-        leak = _VISUAL_LEAK_IN_AUDIO_RE.search(audio_query)
+        leak = _visual_leak_in_audio(audio_query)
         if leak:
-            raise ModalityQueryValidationError(
-                "audio_english_query contains visual-only wording: "
-                f"{leak.group(0)!r}"
+            violated(
+                "audio",
+                "leak",
+                f"audio_english_query contains visual-only wording: {leak!r}",
             )
+            audio_query = build_fallback_modality_queries(query, performance_clues)[1]
+            if _visual_leak_in_audio(audio_query):
+                audio_query = ""
 
     if image_query:
-        leak = _AUDIO_LEAK_IN_IMAGE_RE.search(image_query)
+        leak = _audio_leak_in_image(image_query)
         if leak:
-            window = image_query[
-                max(0, leak.start() - 45) : min(len(image_query), leak.end() + 45)
-            ]
-        if leak and not _VISIBLE_TEXT_CONTEXT_RE.search(window):
-            raise ModalityQueryValidationError(
-                "image_english_query contains audio-only wording: "
-                f"{leak.group(0)!r}"
+            violated(
+                "image",
+                "leak",
+                f"image_english_query contains audio-only wording: {leak!r}",
             )
+            image_query = build_fallback_modality_queries(query, performance_clues)[0]
+            if _audio_leak_in_image(image_query):
+                image_query = ""
 
+    # 모델 응답이 이 키를 실어 보내도 여기서 덮는다.
+    enriched["degraded_modalities"] = [m for m in ("image", "audio") if m in degraded]
     enriched["has_visual_clue"] = bool(visual_allowed and image_query)
     enriched["image_english_query"] = image_query
     enriched["audio_english_query"] = audio_query

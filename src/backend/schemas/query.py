@@ -305,6 +305,14 @@ class QueryAnalysis(BaseModel):
             "0%로 차단하고 text/audio로 재정규화한다"
         ),
     )
+    degraded_modalities: List[Literal["image", "audio"]] = Field(
+        default_factory=list,
+        description=(
+            "모델이 낸 전용 질의가 검증을 끝내 통과하지 못해 내려놓은 모달리티. "
+            "그 경로만 끄거나 규칙이 만든 질의로 바꾸고 나머지 분석은 그대로 쓴다. "
+            "모델이 채우는 값이 아니다 — 후처리가 넣는다."
+        ),
+    )
     modality_weights: ModalityWeights = Field(default_factory=ModalityWeights)
     text_alpha: float = Field(
         default=0.5,

@@ -122,3 +122,6 @@ experiments/reranking/results_*/*/*/*_explain.jsonl
 
 # "…이미지" 표지 묘사 규칙(results_v41) — 규칙 판정 전후표
 !experiments/reranking/results_v41_cover_description_image_noun/*.csv
+
+# 모달리티만 내려놓기(results_v42) — 후보 추적표 · 한 줄짜리 질의 CSV
+!experiments/reranking/results_v42_modality_degrade/*.csv
