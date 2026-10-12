@@ -302,6 +302,8 @@ async function init() {
   applyAxisLabels();
   fillGenreOptions();
   buildLegend();
+  // 첫 화면이 그릴 준비가 됐다 — 로딩 인트로가 나가도 된다 (intro.js)
+  if (window.VagueIntro && window.VagueIntro.ready) window.VagueIntro.ready();
 }
 
 /*
@@ -1658,4 +1660,8 @@ window.addEventListener("resize", () => {
   }, 150);
 });
 
-init();
+// 데이터를 못 받아도 인트로가 검정에 갇히지 않게 한다 (intro.js 에 maxWaitMs 안전장치도 있다)
+init().catch((err) => {
+  console.error(err);
+  if (window.VagueIntro && window.VagueIntro.ready) window.VagueIntro.ready();
+});

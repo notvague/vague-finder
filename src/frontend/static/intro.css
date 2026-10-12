@@ -1,0 +1,243 @@
+/*
+ * 로딩 인트로 — 검정 위에서 아이콘의 점이 위→아래로 켜지고, V가 가장 크게 켜진 뒤
+ * 아이콘이 아래로 날아가며 검정 커튼이 쓸려 내려간다. (핸드오프: design/Main.dc.html)
+ *
+ * 타이밍 값은 intro.js가 #vagueIntro 에 CSS 변수로 넣는다. 아래 var()의 두 번째 값은
+ * 기본값(dotStep 110 · flyMs 640)과 같다. 움직이는 속성은 transform·opacity뿐이다.
+ *
+ * 단계 클래스: vi-off(검정만) → vi-run(점등·대기) → vi-exit(비행+커튼). 끝나면 DOM째 제거.
+ * 애니메이션은 vi-run/vi-exit 아래에만 걸어, off 동안 시계가 흐르지 않게 한다.
+ */
+
+/* 인트로 동안 스크롤 잠금. 종료 때 intro.js가 html 의 이 클래스를 뗀다 */
+html.vi-lock,
+html.vi-lock body {
+  overflow: hidden;
+}
+
+/*
+ * 최후 안전장치(CSS만으로 동작): intro.js 가 아예 안 불려오거나 도중에 멈춰도
+ * 12초 뒤에는 오버레이를 숨기고 스크롤을 푼다. intro.js 의 maxWaitMs(상한 10s)
+ * + 퇴장(~1s)보다 길어야 정상 흐름을 끊지 않는다.
+ */
+html.vi-lock,
+html.vi-lock body {
+  animation: vi-unlock 0s linear 12s forwards;
+}
+@keyframes vi-unlock { to { overflow: auto; } }
+
+.vi-root {
+  --vi-fly: 640ms;
+  --vi-sweep-delay: 200ms;
+  --vi-sweep-ms: 700ms;
+  --vi-v-delay: 900ms;
+  --vi-halo-hold: 1460ms;
+  --vi-flash-delay: 1040ms;
+  --vi-gain-opacity: 1;
+  --vi-gain-scale: 1;
+  --vi-edge: 16vh;       /* 커튼 선단 그라데이션 높이 */
+  --vi-fall: 120vh;      /* 비행 이동 거리 */
+
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  overflow: hidden;
+  background: transparent;
+  animation: vi-failsafe 0s linear 12s forwards;
+}
+.vi-root.vi-exit { pointer-events: none; }
+@keyframes vi-failsafe { to { visibility: hidden; pointer-events: none; } }
+
+.vi-curtain {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  will-change: transform;
+}
+.vi-curtain::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: var(--vi-edge);
+  background: linear-gradient(to top, #000 0%, rgba(0, 0, 0, .55) 40%, rgba(0, 0, 0, 0) 100%);
+}
+.vi-exit .vi-curtain {
+  animation: vi-sweep var(--vi-sweep-ms) cubic-bezier(.65, 0, .35, 1) var(--vi-sweep-delay) both;
+}
+@keyframes vi-sweep {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(0, calc(100% + var(--vi-edge)), 0); }
+}
+
+.vi-center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+/* 데모 300px → 화면에 맞춰 줄어드는 폭 (가로·세로 중 좁은 쪽 기준) */
+.vi-icon {
+  position: relative;
+  width: clamp(150px, min(40vw, 36vh), 300px);
+  aspect-ratio: 684 / 760;
+  will-change: transform;
+}
+.vi-off .vi-icon { visibility: hidden; }
+.vi-exit .vi-icon { animation: vi-fly var(--vi-fly) linear forwards; }
+@keyframes vi-fly {
+  0%   { transform: translate3d(0, 0, 0) scale(1, 1); animation-timing-function: cubic-bezier(.2, .6, .3, 1); }
+  16%  { transform: translate3d(0, -20px, 0) scale(1.03, .96); animation-timing-function: cubic-bezier(.7, 0, .95, .5); }
+  100% { transform: translate3d(0, var(--vi-fall), 0) scale(.86, 2.2); }
+}
+
+.vi-dot { position: absolute; aspect-ratio: 1; }
+.vi-core { position: absolute; inset: 0; border-radius: 50%; background: #2a2a2a; }
+.vi-lit {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.vi-run .vi-lit,
+.vi-exit .vi-lit {
+  animation: vi-ignite 520ms cubic-bezier(.2, .8, .2, 1) var(--d, 0ms) both;
+}
+@keyframes vi-ignite {
+  0%   { opacity: 0; transform: scale(.7); }
+  50%  { opacity: 1; transform: scale(1.22); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.vi-halo-wrap { position: absolute; inset: -150%; pointer-events: none; }
+.vi-run .vi-halo-wrap,
+.vi-exit .vi-halo-wrap,
+.vi-run .vi-vhalo-wrap,
+.vi-exit .vi-vhalo-wrap {
+  animation: vi-breathe 1800ms ease-in-out var(--vi-halo-hold) infinite;
+}
+.vi-gain {
+  position: absolute;
+  inset: 0;
+  opacity: var(--vi-gain-opacity);
+  transform: scale(var(--vi-gain-scale));
+}
+.vi-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  opacity: 0;
+  background: radial-gradient(circle, rgba(190, 215, 255, .8) 0%, rgba(190, 215, 255, .3) 30%, rgba(190, 215, 255, .07) 55%, rgba(190, 215, 255, 0) 70%);
+  will-change: transform, opacity;
+}
+.vi-run .vi-halo,
+.vi-exit .vi-halo {
+  animation: vi-bloom 700ms cubic-bezier(.2, .7, .3, 1) var(--d, 0ms) both;
+}
+@keyframes vi-bloom {
+  0%   { opacity: 0; transform: scale(.3); }
+  40%  { opacity: 1; transform: scale(1.15); }
+  100% { opacity: .6; transform: scale(1); }
+}
+@keyframes vi-breathe { 0%, 100% { opacity: 1; } 50% { opacity: .68; } }
+
+.vi-v { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; transform-origin: 50% 74%; }
+.vi-vlit { opacity: 0; will-change: transform, opacity; }
+.vi-run .vi-vlit,
+.vi-exit .vi-vlit {
+  animation: vi-vignite 560ms cubic-bezier(.2, .8, .2, 1) var(--vi-v-delay) both;
+}
+@keyframes vi-vignite {
+  0%   { opacity: 0; transform: scale(.92); }
+  55%  { opacity: 1; transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.vi-vhalo-wrap { position: absolute; left: -10%; top: 29%; width: 120%; height: 90%; pointer-events: none; }
+.vi-vhalo {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(ellipse closest-side, rgba(190, 215, 255, .95) 0%, rgba(190, 215, 255, .45) 30%, rgba(190, 215, 255, .12) 58%, rgba(190, 215, 255, 0) 100%);
+  will-change: transform, opacity;
+}
+.vi-run .vi-vhalo,
+.vi-exit .vi-vhalo {
+  animation: vi-vbloom 900ms cubic-bezier(.2, .7, .3, 1) var(--vi-v-delay) both;
+}
+@keyframes vi-vbloom {
+  0%   { opacity: 0; transform: scale(.5); }
+  45%  { opacity: 1; transform: scale(1.15); }
+  100% { opacity: .85; transform: scale(1); }
+}
+
+.vi-vflash {
+  position: absolute;
+  left: 22%;
+  top: 48.8%;
+  width: 56%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle, rgba(220, 235, 255, 0) 36%, rgba(220, 235, 255, .55) 46%, rgba(220, 235, 255, 0) 60%);
+}
+.vi-run .vi-vflash,
+.vi-exit .vi-vflash {
+  animation: vi-flash 700ms ease-out var(--vi-flash-delay) both;
+}
+@keyframes vi-flash {
+  0%   { opacity: 0; transform: scale(.35); }
+  25%  { opacity: .9; }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+
+.vi-trail {
+  position: absolute;
+  left: 28%;
+  width: 44%;
+  aspect-ratio: 1 / 32;
+  bottom: 50%;
+  border-radius: 999px;
+  transform-origin: 50% 100%;
+  transform: scaleY(0);
+  background: linear-gradient(to top, rgba(255, 255, 255, .75), rgba(190, 215, 255, .28) 38%, rgba(190, 215, 255, 0) 100%);
+}
+.vi-vtrail {
+  position: absolute;
+  bottom: 42.63%;
+  width: 15.8%;
+  margin-left: -7.9%;
+  height: 120%;
+  border-radius: 999px;
+  transform-origin: 50% 100%;
+  transform: scaleY(0);
+  background: linear-gradient(to top, rgba(255, 255, 255, .6), rgba(190, 215, 255, .2) 40%, rgba(190, 215, 255, 0) 100%);
+}
+.vi-exit .vi-trail,
+.vi-exit .vi-vtrail {
+  animation: vi-trail var(--vi-fly) cubic-bezier(.6, 0, .9, .5) forwards;
+}
+@keyframes vi-trail {
+  0%, 12% { transform: scaleY(0); }
+  100%    { transform: scaleY(1); }
+}
+
+/* 모션 줄이기: 점·V는 400ms 페이드인만, 나머지는 빼고 루트 400ms 페이드아웃 */
+@media (prefers-reduced-motion: reduce) {
+  .vi-run .vi-lit, .vi-exit .vi-lit,
+  .vi-run .vi-vlit, .vi-exit .vi-vlit { animation: vi-fade 400ms ease-out 0ms both; }
+  .vi-run .vi-halo, .vi-exit .vi-halo,
+  .vi-run .vi-vhalo, .vi-exit .vi-vhalo { animation: vi-fade-halo 400ms ease-out 0ms both; }
+  .vi-run .vi-halo-wrap, .vi-exit .vi-halo-wrap,
+  .vi-run .vi-vhalo-wrap, .vi-exit .vi-vhalo-wrap { animation: none; }
+  .vi-vflash, .vi-trail, .vi-vtrail { display: none; }
+  .vi-exit .vi-icon, .vi-exit .vi-curtain { animation: none; }
+  .vi-root.vi-exit { animation: vi-rootfade 400ms ease-out both; }
+  @keyframes vi-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes vi-fade-halo { from { opacity: 0; } to { opacity: .6; } }
+  @keyframes vi-rootfade { to { opacity: 0; } }
+}
