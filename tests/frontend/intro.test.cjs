@@ -52,8 +52,45 @@ test('기본 타이밍은 SPEC 값과 같다', () => {
   assert.equal(t.flashDelay, 1040);
 });
 
-test('로딩이 즉시 끝나면 약 2.7s 에 끝난다', () => {
+test('유예 안에 준비가 끝나면 연출 없이 걷어낸다 — 새로고침·재방문', () => {
   const h = harness();
+  h.intro.start();
+  assert.ok(h.classes.has('vi-off'));
+  h.advance(120);
+  h.intro.ready();
+  assert.ok(h.classes.has('vi-skip'));
+  assert.ok(!h.classes.has('vi-off'));
+  h.advance(159);
+  assert.equal(h.calls.complete, 0);
+  h.advance(1);
+  assert.equal(h.calls.complete, 1);
+  assert.equal(h.el.removed, true);
+  assert.equal(h.pending.size, 0, '유예 타이머와 안전장치까지 지운다');
+  assert.ok(!h.classes.has('vi-run'), '점등 연출은 한 번도 시작하지 않았다');
+});
+
+test('유예 직전에 준비가 끝나도 건너뛴다, 유예가 끝난 뒤면 끝까지 보여 준다', () => {
+  const early = harness();
+  early.intro.start();
+  early.advance(399);
+  early.intro.ready();
+  assert.ok(early.classes.has('vi-skip'));
+
+  const late = harness();
+  late.intro.start();
+  late.advance(400);
+  assert.ok(late.classes.has('vi-run'));
+  late.intro.ready();                 // 연출이 시작된 뒤에는 끊지 않는다
+  late.advance(1859);
+  assert.ok(!late.classes.has('vi-exit'));
+  late.advance(1);
+  assert.ok(late.classes.has('vi-exit'));
+  late.advance(200 + 698 + 60);
+  assert.equal(late.calls.complete, 1);
+});
+
+test('graceMs 0 이면 즉시 준비돼도 보여 준다 — 약 2.7s (예전 동작)', () => {
+  const h = harness({ graceMs: 0 });
   h.intro.start();
   assert.ok(h.classes.has('vi-off'));
   h.intro.ready();
@@ -109,8 +146,9 @@ test('destroy 는 대기 중인 타이머를 모두 지운다', () => {
 test('모션 줄이기는 400ms 페이드 뒤에 끝난다', () => {
   const h = harness({}, { reducedMotion: true });
   h.intro.start();
+  h.advance(400);
   h.intro.ready();
-  h.advance(80 + 1860);
+  h.advance(1860);
   assert.ok(h.classes.has('vi-exit'));
   h.advance(459);
   assert.equal(h.calls.complete, 0);
@@ -130,10 +168,21 @@ test('세션당 1회 옵션: 처음이면 보여 주고 끝에 기록한다', ()
   const store = { v: null, getItem() { return this.v; }, setItem(_, v) { this.v = v; } };
   const h = harness({ oncePerSession: true }, { storage: store });
   h.intro.start();
+  h.advance(400);
   h.intro.ready();
   h.advance(5000);
   assert.equal(h.calls.complete, 1);
   assert.equal(store.v, '1');
+});
+
+test('세션당 1회 옵션: 건너뛴 것은 봤다고 적지 않는다', () => {
+  const store = { v: null, getItem() { return this.v; }, setItem(_, v) { this.v = v; } };
+  const h = harness({ oncePerSession: true }, { storage: store });
+  h.intro.start();
+  h.intro.ready();
+  h.advance(5000);
+  assert.equal(h.calls.complete, 1);
+  assert.equal(store.v, null);
 });
 
 test('글로우 세기는 gain 변수에 반영된다 (opacity 는 1 에서 멈춘다)', () => {

@@ -202,3 +202,26 @@ test('HTTP 오류의 revision_limit 코드와 서버 문구를 보존한다', as
     return true;
   });
 });
+
+test('사유를 적는 중에 결과 목록이 다시 그려져도 입력칸을 새로 만들지 않는다', () => {
+  // map.js의 renderPanel은 그릴 때마다 setBusy(isBusy())를 부른다. 값이 그대로인데 다시 그리면
+  // textarea가 새 요소로 바뀌어 포커스와 커서 위치를 잃는다.
+  const { ui, root, doc } = screen();
+  ui.choose('a');
+  const input = root.querySelector('textarea');
+  input.value = '도입부 휘파'; input.listeners.input();
+
+  ui.setBusy(false);
+  assert.equal(root.querySelector('textarea'), input, '같은 값이면 입력칸이 그대로다');
+  // 결과 행은 새로 만들어지므로 버튼은 다시 붙고, 붙을 때 상태를 받는다.
+  const row = element('span', doc); ui.attach(row, reply().results[1]);
+  assert.equal(row.children[0].disabled, false);
+
+  ui.setBusy(true);
+  const disabled = root.querySelector('textarea');
+  assert.notEqual(disabled, input, '값이 바뀌면 다시 그린다');
+  assert.equal(disabled.disabled, true);
+  assert.equal(disabled.value, '도입부 휘파', '적던 내용은 남는다');
+  const busyRow = element('span', doc); ui.attach(busyRow, reply().results[1]);
+  assert.equal(busyRow.children[0].disabled, true);
+});

@@ -6,6 +6,10 @@
  *
  * 앱 쪽 연결: 지도가 실제로 그려질 준비가 되면 VagueIntro.ready() 를 부른다(map.js init()).
  * exit 진입 시점 = max(최소 표시 시간, ready 시점). ready 가 영영 안 와도 maxWaitMs 뒤에는 나간다.
+ *
+ * **실제로 기다릴 때만 보여 준다.** 시작하고 graceMs 안에 ready 가 오면 연출을 시작하지 않고
+ * 검정만 짧게 걷어낸다(off → skip → done). 지도 데이터가 캐시에 있는 새로고침·재방문이 여기에 든다.
+ * 예전에는 즉시 준비돼도 매번 약 2.7초를 보여 줬다. 연출이 한 번 시작되면 끝까지 간다.
  */
 (function (root, factory) {
   const api = factory();
@@ -20,11 +24,13 @@
     dotStep: 110,           // 점 사이 점등 간격(ms)
     flyMs: 640,             // 비행 시간(ms)
     maxWaitMs: 10000,       // ready 가 안 올 때 강제로 나가는 시점
+    graceMs: 400,           // 이 안에 ready 가 오면 연출 없이 걷어낸다 (0 이면 항상 보여 준다)
     oncePerSession: false,  // true 면 세션당 한 번만 보인다 (sessionStorage)
     storageKey: 'vagueIntroSeen',
   };
 
   const OFF_MS = 80;
+  const SKIP_FADE_MS = 160;   // intro.css 의 vi-skipfade 와 짝
   const DONE_MARGIN_MS = 60;
   const REDUCED_FADE_MS = 400;
   const MAX_WAIT_CAP_MS = 10000; // intro.css 의 vi-failsafe(12s)와 짝
@@ -139,6 +145,7 @@
       this._ready = false;
       this._startedAt = 0;
       this._exitScheduled = false;
+      this._shown = false;
       this._now = deps.now || (() => Date.now());
     }
 
@@ -148,8 +155,8 @@
 
     _setPhase(phase) {
       const cl = this.el.classList;
-      for (const p of ['off', 'run', 'exit']) cl.remove('vi-' + p);
-      if (phase === 'off' || phase === 'run' || phase === 'exit') cl.add('vi-' + phase);
+      for (const p of ['off', 'run', 'exit', 'skip']) cl.remove('vi-' + p);
+      if (phase === 'off' || phase === 'run' || phase === 'exit' || phase === 'skip') cl.add('vi-' + phase);
       this.phase = phase;
     }
 
@@ -188,7 +195,10 @@
 
       this._setPhase('off');
       this._startedAt = this._now();
-      this._later(OFF_MS, () => {
+      // 유예가 끝날 때까지 ready 가 안 왔을 때만 연출을 시작한다.
+      this._later(Math.max(OFF_MS, this.opts.graceMs), () => {
+        if (this.phase !== 'off') return; // 유예 안에 준비가 끝나 이미 걷어내는 중이다
+        this._shown = true;
         this._setPhase('run');
         this._runAt = this._now();
         this._scheduleExit();
@@ -205,7 +215,15 @@
     ready() {
       if (this._ready) return;
       this._ready = true;
+      // 아직 연출 전이면 기다릴 것이 없었다는 뜻이다. 보여 주지 않고 걷어낸다.
+      if (this.phase === 'off' && this.opts.graceMs > 0) { this._skip(); return; }
       this._scheduleExit();
+    }
+
+    /** 연출 없이 검정만 짧게 걷어낸다. */
+    _skip() {
+      this._setPhase('skip');
+      this._later(SKIP_FADE_MS, () => this._finish());
     }
 
     _scheduleExit() {
@@ -217,7 +235,7 @@
     }
 
     _exit() {
-      if (this.phase === 'exit' || this.phase === 'done' || this.phase === 'idle') return;
+      if (this.phase === 'exit' || this.phase === 'skip' || this.phase === 'done' || this.phase === 'idle') return;
       this._setPhase('exit');
       this._exitScheduled = true;
       const t = this.timing;
@@ -231,7 +249,8 @@
       if (this.phase === 'done') return;
       this.destroy();
       this.phase = 'done';
-      if (this.opts.oncePerSession && this.storage) {
+      // 실제로 보여 준 경우에만 "봤다"고 적는다. 건너뛴 것까지 적으면 다음 느린 로드에서도 안 나온다.
+      if (this.opts.oncePerSession && this.storage && this._shown) {
         try { this.storage.setItem(this.opts.storageKey, '1'); } catch (_) { /* 무시 */ }
       }
       if (this.onComplete) this.onComplete();
@@ -289,7 +308,7 @@ if (typeof window !== 'undefined' && window.document && !(typeof module !== 'und
     const ds = (el && el.dataset) || {};
     const num = (v) => (v === undefined || v === '' || isNaN(Number(v)) ? undefined : Number(v));
     const options = {};
-    for (const k of ['glow', 'dotStep', 'flyMs', 'maxWaitMs']) {
+    for (const k of ['glow', 'dotStep', 'flyMs', 'maxWaitMs', 'graceMs']) {
       const v = num(ds[k]);
       if (v !== undefined) options[k] = v;
     }

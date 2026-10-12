@@ -50,9 +50,12 @@ class FeedbackController {
   }
 
   setBusy(busy) {
-    this.busy = busy;
     // 결과 행은 renderPanel이 새로 만들므로 옛 버튼 참조를 버린다.
     this.buttons = [];
+    // 값이 그대로면 다시 그리지 않는다. render()는 textarea를 새로 만들어서, 사유를 적는 중에
+    // 결과 목록이 다시 그려지면 포커스와 커서 위치를 잃는다.
+    if (this.busy === busy) return;
+    this.busy = busy;
     this.render();
   }
 

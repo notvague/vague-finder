@@ -62,6 +62,9 @@ class Collection:
 @pytest.fixture
 def setup(monkeypatch):
     monkeypatch.setenv("FEEDBACK_COLLECTION_ENABLED", "1")
+    # 모듈에 남는 상태 — 앞 시험의 실패 대기·분석기 지문이 다음 시험으로 새지 않게 한다.
+    monkeypatch.setattr(capture, "_unavailable_until", 0.0)
+    capture._analyzer_fingerprint.cache_clear()
     database = {"search_runs": Collection(), "search_feedback": Collection()}
     store = FeedbackStore(database)
     receipt = store.record_search({"query": "휘파람 노래", "shown_ids": ["a", "b"], "candidate_ids": ["a", "b", "hidden"]})
@@ -344,3 +347,162 @@ def test_retry_after_database_write_succeeded_but_acknowledgement_was_lost(setup
     result = store.submit(submission(receipt))
     assert result.revision == 1
     assert len(db["search_feedback"].documents[receipt.search_id]["history"]) == 1
+
+
+# --- 리뷰 반영: 저장소가 느리거나 연결 값이 틀려도 검색은 그대로 나간다 -------------------------
+
+def _search_args(query="휘파람"):
+    request = SearchRequest(query=query)
+    return request, rule_fallback(query), [MatchingTrack(id="a", title="A", score=1)]
+
+
+def test_searches_racing_the_first_index_build_still_get_receipts(setup):
+    """기동 직후 동시에 들어온 검색. 한 요청이 색인을 만드는 동안 나머지는 기다리지 않고 기록한다.
+
+    예전에는 0.05초만 기다리다 TimeoutError를 내서 그 검색들이 제출 권한 없이 나갔다.
+    """
+    database = {"search_runs": Collection(), "search_feedback": Collection()}
+    store = FeedbackStore(database)
+    building, release = threading.Event(), threading.Event()
+    original = database["search_runs"].create_index
+
+    def slow_create_index(name, **options):
+        building.set()
+        assert release.wait(5)
+        original(name, **options)
+
+    database["search_runs"].create_index = slow_create_index
+    snapshot = {"query": "휘파람 노래", "shown_ids": ["a"], "candidate_ids": ["a"]}
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        first = pool.submit(store.record_search, dict(snapshot))
+        assert building.wait(5)
+        racing = store.record_search(dict(snapshot))      # 색인이 아직 만들어지는 중이다
+        assert racing.search_id in database["search_runs"].documents
+        assert not store._indexed
+        release.set()
+        assert first.result(5).search_id in database["search_runs"].documents
+    assert store._indexed
+    assert len(database["search_runs"].indexes) == 1 and len(database["search_feedback"].indexes) == 1
+
+
+def test_a_failed_index_build_does_not_block_recording_and_is_retried(setup, caplog):
+    """색인은 지난 문서를 지우는 용도다. 못 만들어도 기록은 되고, 다음 기록에서 다시 만든다."""
+    database = {"search_runs": Collection(), "search_feedback": Collection()}
+    store = FeedbackStore(database)
+    original = database["search_runs"].create_index
+    attempts = []
+
+    def flaky(name, **options):
+        attempts.append(name)
+        if len(attempts) == 1:
+            raise RuntimeError("mongodb://secret-uri timed out")
+        original(name, **options)
+
+    database["search_runs"].create_index = flaky
+    snapshot = {"query": "휘파람 노래", "shown_ids": ["a"], "candidate_ids": ["a"]}
+    assert store.record_search(dict(snapshot)).search_id in database["search_runs"].documents
+    assert not store._indexed
+    assert "secret-uri" not in caplog.text, "예외 본문에는 URI가 들어갈 수 있다 — 종류만 남긴다"
+    store.record_search(dict(snapshot))
+    assert store._indexed and len(attempts) == 2
+
+
+def test_startup_prepares_the_ttl_index_without_connecting_when_collection_is_off(setup, monkeypatch):
+    from src.feedback import store as store_module
+
+    database = {"search_runs": Collection(), "search_feedback": Collection()}
+    store = FeedbackStore(database)
+    opened = []
+    monkeypatch.setattr(store_module, "get_feedback_store", lambda: opened.append(True) or store)
+
+    monkeypatch.setenv("FEEDBACK_COLLECTION_ENABLED", "0")
+    assert store_module.prepare_indexes() is False and opened == []
+
+    monkeypatch.setenv("FEEDBACK_COLLECTION_ENABLED", "1")
+    assert store_module.prepare_indexes() is True
+    assert database["search_runs"].indexes == [("expires_at", {"expireAfterSeconds": 0})]
+
+    # 실패해도 기동을 막지 않는다.
+    monkeypatch.setattr(store_module, "get_feedback_store", lambda: (_ for _ in ()).throw(RuntimeError("down")))
+    assert store_module.prepare_indexes() is False
+
+
+def test_an_unavailable_store_is_not_retried_on_every_search(setup, monkeypatch):
+    """저장소가 내려가 있으면 결과가 있는 검색마다 연결 제한을 기다리게 된다. 한 번 실패하면 잠시 쉰다."""
+    store, _, _ = setup
+    calls = []
+
+    def unavailable():
+        calls.append(True)
+        raise TimeoutError("unavailable")
+
+    clock = [1000.0]
+    monkeypatch.setattr(capture.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(capture, "get_feedback_store", unavailable)
+    args = _search_args()
+
+    assert asyncio.run(capture.capture_search(*args, ["a"], 1, None)) is None
+    assert asyncio.run(capture.capture_search(*args, ["a"], 1, None)) is None
+    assert calls == [True], "두 번째 검색은 저장소를 기다리지 않는다"
+
+    clock[0] += capture.RETRY_AFTER_SECONDS + 1
+    monkeypatch.setattr(capture, "get_feedback_store", lambda: store)
+    assert asyncio.run(capture.capture_search(*args, ["a"], 1, None)) is not None, "대기가 끝나면 다시 기록한다"
+
+
+def test_the_analyzer_fingerprint_is_read_once_per_process(setup, monkeypatch):
+    store, _, _ = setup
+    from src.retrieval import analysis_cache
+
+    reads = []
+    monkeypatch.setattr(analysis_cache, "analyzer_fingerprint", lambda: reads.append(True) or {"version": "test"})
+    monkeypatch.setattr(capture, "get_feedback_store", lambda: store)
+    args = _search_args()
+    for _ in range(3):
+        assert asyncio.run(capture.capture_search(*args, ["a"], 1, None)) is not None
+    assert reads == [True]
+
+
+def test_reranker_config_is_stored_as_plain_values(setup, monkeypatch):
+    """설정에 Mongo가 못 받는 값이 생기면 insert가 실패해 수집 전체가 조용히 꺼진다."""
+    from dataclasses import dataclass, field
+    from enum import Enum
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    class Mode(Enum):
+        FAST = "fast"
+
+    @dataclass(frozen=True)
+    class Config:
+        model_name: str = "m"
+        cache_dir: Path = Path("/tmp/cache")
+        mode: Mode = Mode.FAST
+        tags: frozenset = field(default_factory=lambda: frozenset({"a"}))
+
+    store, _, db = setup
+    monkeypatch.setattr(capture, "get_feedback_store", lambda: store)
+    router = SimpleNamespace(_reranker=SimpleNamespace(config=Config()))
+    receipt = asyncio.run(capture.capture_search(*_search_args(), ["a"], 1, router))
+    stored = db["search_runs"].documents[receipt.search_id]["versions"]["reranker_config"]
+    assert stored["model_name"] == "m" and stored["cache_dir"] == "/tmp/cache"
+    assert all(isinstance(v, (str, int, float, bool, list, dict, type(None))) for v in stored.values())
+
+
+@pytest.mark.parametrize("parent", [
+    {"search_id": "0" * 32, "token": "잘린토큰"},
+    {"search_id": "not-hex", "token": "A" * 43},
+    {"search_id": "0" * 32},
+    "문자열",
+    [],
+])
+def test_an_unusable_feedback_parent_does_not_reject_the_search(parent):
+    """연결용 값이다. 형식이 틀리면 버리고 검색은 받는다 — 예전에는 요청 전체가 422였다."""
+    request = SearchRequest(query="휘파람", feedback_parent=parent)
+    assert request.feedback_parent is None and request.query == "휘파람"
+
+
+def test_a_valid_feedback_parent_is_kept():
+    parent = {"search_id": "0" * 32, "token": "A" * 43}
+    request = SearchRequest(query="휘파람", feedback_parent=parent)
+    assert (request.feedback_parent.search_id, request.feedback_parent.token) == ("0" * 32, "A" * 43)
