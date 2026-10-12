@@ -12,7 +12,12 @@ from src.backend.api.dependencies import (
     get_search_router,
     get_vector_client,
 )
-from src.backend.schemas.explain import SearchExplainOut, to_track_explain
+from src.backend.schemas.explain import (
+    SearchExplainOut,
+    UserExplanationOut,
+    to_track_explain,
+    to_user_explanation_out,
+)
 from src.backend.schemas.query import QueryAnalysis
 from src.backend.schemas.search import (
     MAX_ASKED_SLOTS,
@@ -31,6 +36,7 @@ from src.retrieval.analysis_cache import looks_like_fallback
 from src.retrieval.clarify import (
     BIRTH_YEAR_SLOT,
     QUESTION_FIELDS,
+    apply_birth_year_answers,
     build_birth_year_question,
     pick_data_question,
     pick_question,
@@ -52,6 +58,7 @@ from src.retrieval.lyrics_exact_search import (
 from src.retrieval.query_analyzer import QueryAnalyzer, rule_fallback
 from src.retrieval.search_router import SearchRouter
 from src.retrieval.search_service import SearchService
+from src.retrieval.user_explanation import build_user_explanation
 from src.feedback.capture import capture_search
 from src.vector_db.settings import TEXT_HYBRID_INDEX_NAME
 
@@ -177,6 +184,41 @@ def _lyric_evidence(
         logger.warning("[evidence] %s 인용 실패: %s", explain.song_id, exc)
         return []
     return [found] if found is not None else []
+
+
+def _user_explanation(
+    *,
+    query: str,
+    analysis: QueryAnalysis,
+    search_analysis: QueryAnalysis,
+    answers: Sequence[Any],
+    track: MatchingTrack,
+    explain: SongExplain,
+    evidence: list,
+    rerank_skip_reason: str,
+) -> Optional[UserExplanationOut]:
+    """사용자용 설명. **같은 실행의 것만 쓴다** — 원문·검색에 쓴 분석·답변·결과 곡·기록·가사 인용.
+
+    모델·DB를 부르지 않고 입력을 바꾸지 않는다(`build_user_explanation`). 설명을 못 만들어도,
+    만든 설명이 응답 스키마와 어긋나도 검색 응답은 실패하지 않는다 — 그 곡은 기존 기록만 보인다.
+    그래서 응답 모델 검증까지 여기서 끝내고 검증된 모델을 넘긴다.
+    """
+    try:
+        return to_user_explanation_out(
+            build_user_explanation(
+                query=query,
+                analysis=analysis,
+                search_analysis=search_analysis,
+                answers=answers,
+                track=track,
+                explain=explain,
+                evidence=evidence,
+                rerank_skip_reason=rerank_skip_reason,
+            )
+        )
+    except Exception:  # 설명은 부가 정보다 — 결과를 막지 않는다
+        logger.exception("[explain] %s 사용자용 설명 생성 실패", explain.song_id)
+        return None
 
 
 # 분석기가 스스로 내려오지 못했을 때를 위한 여유. 분석기 안의 예산이 먼저
@@ -371,23 +413,42 @@ async def search(
                 # 단계는 요청 전체에서 파생한다. 곡별로 따로 판단하면 "리랭킹이 N위
                 # 유지"처럼 하지 않은 일을 말하게 된다.
                 stage = recorder.record.reorder_stage
-                results = [
-                    track.model_copy(
-                        update={
-                            "explain": to_track_explain(
-                                song_explain,
-                                reorder_stage=stage,
-                                evidence=_lyric_evidence(
-                                    lyrics_service,
+                # 검색이 **실제로 쓴** 분석. 라우터는 answers의 출생 연도 답으로도 시기 창을 넣으므로
+                # (search_router.search 입구의 apply_birth_year_answers) 같은 순수 함수로 맞춘다.
+                # 설명을 위해 답변을 분석에 새로 합치지는 않는다 — 시기 창만 같게 만든다.
+                explain_analysis = apply_birth_year_answers(analysis_for_search, request.answers)
+                skip_reason = (
+                    RERANK_SKIP_MV_SCENE_UNVERIFIABLE
+                    if RERANK_SKIP_MV_SCENE_UNVERIFIABLE in rerank_skips
+                    else (rerank_skips[0] if rerank_skips else "")
+                )
+                snapshot = lyrics_snapshot[0] if lyrics_snapshot else None
+                explained = []
+                for track in results:
+                    song_explain = recorder.record.get(track.id)
+                    evidence = _lyric_evidence(lyrics_service, song_explain, snapshot)
+                    explained.append(
+                        track.model_copy(
+                            update={
+                                "explain": to_track_explain(
                                     song_explain,
-                                    lyrics_snapshot[0] if lyrics_snapshot else None,
-                                ),
-                            )
-                        }
+                                    reorder_stage=stage,
+                                    evidence=evidence,
+                                    user_explanation=_user_explanation(
+                                        query=analysis.original_query or request.query,
+                                        analysis=analysis,
+                                        search_analysis=explain_analysis,
+                                        answers=request.answers,
+                                        track=track,
+                                        explain=song_explain,
+                                        evidence=evidence,
+                                        rerank_skip_reason=skip_reason,
+                                    ),
+                                )
+                            }
+                        )
                     )
-                    for track in results
-                    for song_explain in [recorder.record.get(track.id)]
-                ]
+                results = explained
                 explain_summary = SearchExplainOut.of(recorder.record)
 
         # 재질문은 두 방식이다.

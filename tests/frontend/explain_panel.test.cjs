@@ -29,25 +29,36 @@ function functionSource(name) {
 const DECLARATIONS = ['convo', 'runNote', 'panelMode'];
 const FUNCTIONS = [
   'makeEl', 'exDelta', 'exGroup', 'exItem', 'exFact', 'exSum', 'exPathDetail',
-  'explainMix', 'explainLyric', 'explainEvidence', 'explainPanel', 'renderRunNote',
-  'applyResponse', 'isBirthYearQuestion',
+  'explainMix', 'explainLyric', 'explainEvidence', 'explainPanel', 'explainClues', 'explainRecord',
+  'toggleExplain', 'renderRunNote', 'applyResponse', 'isBirthYearQuestion',
 ];
 const PROGRAM = [...DECLARATIONS.map(declaration), ...FUNCTIONS.map(functionSource)].join('\n');
 
 /* 아주 작은 DOM. 텍스트를 모아 "무엇이 보이는가"만 묻는다 */
 function node(tag) {
   const classes = new Set();
-  return {
+  const self = {
     tag, className: '', textContent: '', children: [], hidden: false, attrs: {},
     classList: {
       add(c) { classes.add(c); },
       toggle(c, on) { if (on) classes.add(c); else classes.delete(c); },
-      contains(c) { return classes.has(c); },
+      // 실제 DOM처럼 className으로 붙인 클래스도 본다(makeEl은 className에 쓴다)
+      contains(c) { return classes.has(c) || self.className.split(/\s+/).includes(c); },
     },
     append(...items) { this.children.push(...items); },
     setAttribute(k, v) { this.attrs[k] = v; },
+    addEventListener(type, fn) { (this.listeners ||= {})[type] = fn; },
   };
+  return self;
 }
+/* 태그·클래스로 후손을 찾는다 — "접힌 상세 안에 있는가"를 물을 때 */
+function find(n, pred, out = []) {
+  if (!n || typeof n === 'string' || n.isText) return out;
+  if (pred(n)) out.push(n);
+  for (const c of n.children) find(c, pred, out);
+  return out;
+}
+function hasClass(n, c) { return n.className && n.className.split(/\s+/).includes(c); }
 function allText(n) {
   if (typeof n === 'string') return n;
   if (n.isText) return n.textContent;
@@ -65,7 +76,9 @@ function realm() {
       getElementById: () => runNoteEl,
     },
     // applyResponse가 부르는 화면 갱신 — 여기서는 상태만 본다
-    explainOpen: new Set(), markHits() { return 0; }, renderPanel() {}, resultList: { scrollTop: 0 },
+    explainOpen: new Set(), explainDetailsOpen: new Set(),
+    markHits() { return 0; }, renderPanel() {}, resultList: { scrollTop: 0 },
+    railSyncs: 0, syncRailMetrics() { ctx.railSyncs += 1; },
   };
   vm.createContext(ctx);
   vm.runInContext(PROGRAM, ctx);
@@ -167,4 +180,237 @@ test('응답을 받으면 안내는 응답 값으로 교체된다 — 안내 없
 test('map.js에 모델 이유를 그리던 함수가 남아 있지 않다', () => {
   assert.ok(!/function explainModelNotes\(/.test(source));
   assert.ok(!/exmodelnote/.test(functionSource('explainPanel')));
+  assert.ok(!/exmodelnote|x\.model_notes/.test(functionSource('explainRecord')));
+});
+
+/* ---------- 사용자용 설명 (2026-10-12) ---------- */
+
+const USER_SUMMARY = '남성 보컬 단서는 곡 정보와 일치해요. 인디 여부, 말씀하신 뮤직비디오 장면은 확인할 자료가 없어요.';
+const SCRIPTY = '<script>alert("x")</script> & "따옴표" <b>굵게</b>';
+function userExplanation(extra = {}) {
+  return {
+    summary: USER_SUMMARY,
+    clue_checks: [
+      { slot: 'vocal_gender', clue: '남성 보컬', clue_origin: 'query', observed: '등록된 보컬 정보: 남성',
+        status: 'match', status_label: '일치', source: 'track.vocal_gender', ranking_basis: [], basis_label: '순위 반영 기록 없음' },
+      { slot: 'genre', clue: '인디', clue_origin: 'query', observed: '등록 장르는 댄스이며 인디 여부를 확인할 자료는 없음',
+        status: 'unverified', status_label: '미확인', source: 'track.genre', ranking_basis: [], basis_label: '순위 반영 기록 없음' },
+      { slot: 'mv_scene', clue: '뮤비에 의자가 하늘에 떠있는 장면이 있어', clue_origin: 'query',
+        observed: '해당 MV 장면을 확인할 자료 없음(자료 없음은 장면이 없다는 뜻이 아님)',
+        status: 'unverified', status_label: '미확인', source: 'rerank_policy.MV_SCENE_EVIDENCE_FIELDS (없음)',
+        ranking_basis: [{ kind: 'rerank_skip', code: 'mv_scene_unverifiable', label: '장면을 판단할 자료가 없어 리랭킹 모델을 부르지 않음', delta: null }],
+        basis_label: '자료가 없어 리랭킹 생략' },
+    ],
+    ...extra,
+  };
+}
+
+test('사용자용 설명이 있으면 짧은 설명 → 단서 대조 → 접힌 점수 상세 순서로 그린다', () => {
+  const r = realm();
+  r.ctx.x = legacyExplain({ user_explanation: userExplanation(), model_notes: [FABRICATED] });
+  const panel = r.ev('explainPanel(x)');
+  const box = panel.children[0];
+  const kinds = box.children.map((c) => `${c.tag}.${c.className}`);
+  assert.deepEqual(kinds, ['p.exsummary exuser', 'table.exclues', 'details.exdetails'], kinds.join(' | '));
+  assert.equal(box.children[0].textContent, USER_SUMMARY);
+
+  // 단서 표: 세 행, 상태는 글자로 보인다
+  const rows = find(panel, (n) => n.tag === 'tr' && hasClass(n, 'exclue'));
+  assert.equal(rows.length, 3);
+  const statuses = rows.map((tr) => allText(tr.children[2]));
+  assert.deepEqual(statuses, ['일치', '미확인', '미확인']);
+  assert.ok(hasClass(rows[0], 'exclue-match') && hasClass(rows[1], 'exclue-unverified'));
+  assert.ok(allText(rows[1]).includes('인디 여부를 확인할 자료는 없음'));
+  assert.ok(allText(rows[2]).includes('자료가 없어 리랭킹 생략'), '순위 기여 문구는 서버 것을 그대로 쓴다');
+  assert.ok(allText(rows[0]).includes('순위 반영 기록 없음'), '곡 정보 일치와 점수 반영은 따로 적힌다');
+
+  // 접힌 상세: 기본 닫힘(open 속성 없음), 토글 문구, 기존 숫자 장부가 그 안에 있다
+  const details = box.children[2];
+  assert.equal(details.attrs.open, undefined);
+  assert.equal(details.children[0].tag, 'summary');
+  assert.equal(details.children[0].textContent, '점수 상세 보기');
+  const inside = allText(details);
+  assert.ok(inside.includes('텍스트(의미+키워드) 경로 1위'), '기록 요약은 상세 안에 남는다');
+  assert.ok(inside.includes('경로 기여') && inside.includes('+0.0164'), '숫자는 상세 안에 보존된다');
+  assert.ok(details.listeners && details.listeners.toggle, '펼치면 레일 높이를 다시 잰다');
+  // 모델 문장은 어디에도 없다
+  assert.ok(!allText(panel).includes(FABRICATED));
+});
+
+test('user_explanation이 없는 구형 응답은 예전 배치 그대로 — 기록 요약과 표가 바로 보이고 접힘이 없다', () => {
+  const r = realm();
+  const x = legacyExplain();
+  delete x.user_explanation;
+  r.ctx.x = x;
+  const panel = r.ev('explainPanel(x)');
+  const box = panel.children[0];
+  assert.equal(box.children[0].className, 'exsummary');
+  assert.ok(!box.children.some((c) => c.tag === 'details'));
+  assert.ok(allText(panel).includes('텍스트(의미+키워드) 경로 1위'));
+});
+
+test('user_explanation이 null이거나 빈 표여도 오류 없이 그린다', () => {
+  const r = realm();
+  r.ctx.x = legacyExplain({ user_explanation: null });
+  assert.ok(allText(r.ev('explainPanel(x)')).includes('텍스트(의미+키워드) 경로 1위'));
+  r.ctx.x = legacyExplain({ user_explanation: { summary: '일부 단서가 비슷한 후보예요.', clue_checks: [] } });
+  const panel = r.ev('explainPanel(x)');
+  const kinds = panel.children[0].children.map((c) => c.tag);
+  assert.deepEqual(kinds, ['p', 'details'], '빈 표는 그리지 않는다');
+});
+
+test('기록 배열이 빠진 구형 응답도 오류 없이 그린다', () => {
+  const r = realm();
+  const x = legacyExplain({ user_explanation: userExplanation() });
+  delete x.order_rules; delete x.paths; delete x.dropped_paths; delete x.adjustments; delete x.evidence;
+  r.ctx.x = x;
+  assert.ok(allText(r.ev('explainPanel(x)')).includes(USER_SUMMARY));
+});
+
+test('질의·곡 설명의 특수문자는 텍스트로만 그려진다 · 긴 문장도 잘리지 않는다', () => {
+  const r = realm();
+  const long = '아주 '.repeat(80) + '긴 단서';
+  r.ctx.x = legacyExplain({
+    user_explanation: userExplanation({
+      summary: SCRIPTY,
+      clue_checks: [{ slot: 'lyrics', clue: SCRIPTY, clue_origin: 'analysis', observed: long,
+                      status: 'partial', status_label: '부분 일치', source: 'x', ranking_basis: [], basis_label: '검색 점수에 반영' }],
+    }),
+  });
+  const panel = r.ev('explainPanel(x)');
+  const summary = panel.children[0].children[0];
+  assert.equal(summary.textContent, SCRIPTY, '문장은 textContent 그대로다(innerHTML 아님)');
+  const row = find(panel, (n) => n.tag === 'tr' && hasClass(n, 'exclue'))[0];
+  assert.equal(row.children[0].textContent, SCRIPTY);
+  assert.ok(allText(row.children[1]).includes(long));
+  assert.equal(allText(row.children[2]), '부분 일치');
+  assert.ok(!/innerHTML/.test(functionSource('explainClues')) && !/innerHTML/.test(functionSource('explainPanel')));
+});
+
+test('근거 패널을 그릴 때 네트워크 요청이 나가지 않는다', () => {
+  const r = realm();
+  let fetches = 0;
+  r.ctx.fetch = () => { fetches += 1; return Promise.resolve(); };
+  r.ctx.x = legacyExplain({ user_explanation: userExplanation() });
+  r.ev('explainPanel(x)');
+  assert.equal(fetches, 0);
+  assert.ok(!/fetch\(|requestSearch\(/.test(functionSource('explainPanel') + functionSource('explainClues') + functionSource('explainRecord')));
+});
+
+test('UFE-10: 목록을 다시 그려도 펼쳐 둔 점수 상세는 펼친 채이고, 새 응답이 오면 비워진다', () => {
+  const r = realm();
+  r.ctx.x = legacyExplain({ user_explanation: userExplanation() });
+  const first = r.ev('explainPanel(x)');
+  const details = first.children[0].children[2];
+  assert.equal(details.open, false, '처음엔 접혀 있다');
+  // 사용자가 펼쳤다(네이티브 toggle 이벤트)
+  details.open = true;
+  details.listeners.toggle();
+  assert.ok(r.ctx.explainDetailsOpen.has('602193305'));
+  // 질문이 뜨거나 닫혀 목록을 다시 그렸다 — 같은 곡의 상세는 펼친 채로 돌아온다
+  const again = r.ev('explainPanel(x)');
+  assert.equal(again.children[0].children[2].open, true);
+  // 다시 접으면 집합에서 빠진다
+  const d2 = again.children[0].children[2];
+  d2.open = false; d2.listeners.toggle();
+  assert.ok(!r.ctx.explainDetailsOpen.has('602193305'));
+
+  // 새 검색 응답 — 앞 목록의 펼침 상태(근거·상세 둘 다)는 남지 않는다 (UFE-T3)
+  r.ctx.explainOpen.add('602193305'); r.ctx.explainDetailsOpen.add('602193305');
+  r.ev('convo = { query: "q", answers: [] }');
+  r.ev('applyResponse({ results: [] })');
+  assert.equal(r.ctx.explainOpen.size, 0);
+  assert.equal(r.ctx.explainDetailsOpen.size, 0);
+});
+
+test('점수 상세를 펼치거나 접을 때마다 레일 높이를 다시 잰다 — 좁은 화면에서 지도가 따라 내려가야 한다', () => {
+  const r = realm();
+  r.ctx.x = legacyExplain({ user_explanation: userExplanation() });
+  const details = r.ev('explainPanel(x)').children[0].children[2];
+  assert.equal(r.ctx.railSyncs, 0, '그리기만 해서는 재지 않는다');
+  details.open = true; details.listeners.toggle();
+  assert.equal(r.ctx.railSyncs, 1, '펼칠 때');
+  details.open = false; details.listeners.toggle();
+  assert.equal(r.ctx.railSyncs, 2, '접을 때');
+});
+
+test('근거를 닫았다가 다시 열면 점수 상세는 기본(접힘)으로 돌아간다 · 닫을 때 패널 줄만 지운다', () => {
+  const r = realm();
+  r.ctx.x = legacyExplain({ user_explanation: userExplanation() });
+  const id = '602193305';
+  // 결과 줄(li)과 그 뒤에 끼어드는 패널 줄을 흉내 낸다
+  const row = { nextElementSibling: null, after(panel) { this.nextElementSibling = panel; panel.remove = () => { this.nextElementSibling = null; }; } };
+  const btn = { attrs: {}, closest: () => row, setAttribute(k, v) { this.attrs[k] = v; } };
+  r.ctx.row = row; r.ctx.btn = btn;
+
+  r.ev(`toggleExplain('${id}', btn, x)`);
+  assert.equal(btn.attrs['aria-expanded'], 'true');
+  const details = row.nextElementSibling.children[0].children[2];
+  details.open = true; details.listeners.toggle();           // 사용자가 상세를 펼쳤다
+  assert.ok(r.ctx.explainDetailsOpen.has(id));
+
+  r.ev(`toggleExplain('${id}', btn, x)`);                      // 근거를 닫는다
+  assert.equal(btn.attrs['aria-expanded'], 'false');
+  assert.equal(row.nextElementSibling, null);
+  assert.ok(!r.ctx.explainOpen.has(id) && !r.ctx.explainDetailsOpen.has(id));
+
+  r.ev(`toggleExplain('${id}', btn, x)`);                      // 다시 연다 — 상세는 접혀 있다
+  assert.equal(row.nextElementSibling.children[0].children[2].open, false);
+});
+
+test('UFE-09: 가감점 줄의 서버 표시(note)가 부연으로 보인다 · 없으면 아무것도 붙지 않는다', () => {
+  const r = realm();
+  r.ctx.x = legacyExplain({
+    user_explanation: userExplanation(),
+    adjustments: [
+      { rule: 'vocal_gender_match', label: '말한 성별과 일치', delta: 0.0164, detail: '남성', slot: 'vocal_gender', value: '남성', note: '정정 전 답(남성) 기준' },
+      { rule: 'title_exact', label: '제목 완전일치', delta: 0.08, detail: '', slot: '', value: '', note: '' },
+    ],
+    adjustment_total: 0.0964,
+  });
+  const panel = r.ev('explainPanel(x)');
+  const rows = find(panel, (n) => n.tag === 'div' && hasClass(n, 'exrow'));
+  const gender = rows.find((row) => allText(row).includes('말한 성별과 일치'));
+  assert.ok(allText(gender).includes('남성 · 정정 전 답(남성) 기준'));
+  const title = rows.find((row) => allText(row).includes('제목 완전일치'));
+  assert.ok(!allText(title).includes('기준'));
+});
+
+test('정적 파일 버전이 올라갔다', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../../src/frontend/static/index.html'), 'utf8');
+  // 피드백(#47)이 문자열 버전(?v=feedback-1)으로 바꾼 뒤라 숫자가 아니라 새 문자열로 올린다 — 두 파일 모두 다시 바뀌었다
+  assert.ok(/map\.js\?v=evidence-1/.test(html), 'map.js 버전');
+  assert.ok(/style\.css\?v=evidence-1/.test(html), 'style.css 버전');
+});
+
+test('UFE-05: 리허설 스크립트(check_demo_faults.py)가 읽는 곡별 설명은 기록 요약이다 — 사용자용 문장이 아니다', () => {
+  // 스크립트의 선택자를 그대로 떠 와 실제 패널에 적용한다. 스크립트는 Selenium으로 돌아 여기서 실행하지 않는다
+  const py = fs.readFileSync(path.join(__dirname, '../../src/backend/check_demo_faults.py'), 'utf8');
+  const line = /summary: panel \? \(\((.+?) \|\| \{\}\)\.textContent/.exec(py);
+  assert.ok(line, 'check_demo_faults.py에서 곡별 설명을 읽는 줄을 찾지 못했다');
+  const selectors = [...line[1].matchAll(/panel\.querySelector\("([^"]+)"\)/g)].map((m) => m[1]);
+  assert.ok(selectors.length >= 1, line[1]);
+  const query = (root, selector) => {
+    const classes = selector.split('.').filter(Boolean);
+    return find(root, (n) => classes.every((c) => hasClass(n, c)))[0];   // 문서 순서의 첫 일치 = querySelector
+  };
+  const read = (panel) => {
+    for (const selector of selectors) {
+      const hit = query(panel, selector);
+      if (hit) return hit.textContent;
+    }
+    return '';
+  };
+
+  const r = realm();
+  const record = '텍스트(의미+키워드) 경로 1위 (+0.0164) → 리랭킹이 실패해 검색 순서 유지';
+  r.ctx.x = legacyExplain({ summary: record, user_explanation: userExplanation() });
+  const modern = read(r.ev('explainPanel(x)'));
+  assert.equal(modern, record, '새 배치에서 사용자용 문장을 읽으면 "리랭킹이 실패"를 찾지 못한다');
+  assert.notEqual(modern, USER_SUMMARY);
+
+  const old = legacyExplain({ summary: record });
+  delete old.user_explanation;
+  r.ctx.x = old;
+  assert.equal(read(r.ev('explainPanel(x)')), record, '사용자용 설명이 없는 배치에서도 같은 문장을 읽는다');
 });

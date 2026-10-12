@@ -453,6 +453,8 @@ def apply_answer_bonus(
                             "answer_match",
                             boost_unit * weight,
                             f"{answer.slot}={answer.value}",
+                            slot=answer.slot,
+                            value=answer.value,
                         )
         adjusted.append((song_id, score))
 

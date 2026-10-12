@@ -25,7 +25,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, List, Sequence
 
 from src.backend.schemas.query import QueryAnalysis
 from src.retrieval.explain import (
@@ -288,9 +288,20 @@ def is_specific_mv_scene_query(query: str) -> bool:
     분석 프롬프트의 산출물(has_visual_clue 등)을 쓰지 않는다. 그래야 규칙 폴백 분석과
     prior_analysis 재검색에서도 같은 판정이 나온다.
     """
+    return bool(mv_scene_spans(query))
+
+
+def mv_scene_spans(query: str) -> List[str]:
+    """`is_specific_mv_scene_query`가 장면으로 판정한 **구간의 원문**(공백 정리). 판정 규칙은 같다 — 이 함수가
+    비어 있지 않은 것과 그 함수가 True인 것은 동치다.
+
+    사용자용 설명이 "말씀하신 뮤직비디오 장면"을 사용자의 말 그대로 보여 주기 위한 것이다. 판정에는 쓰지
+    않는다(판정은 bool 하나로 끝난다). 생략 정책 자체는 바꾸지 않는다.
+    """
     text = _strip_quoted(query or "")
+    spans: List[str] = []
     if not _MV_MARKER_RE.search(text):
-        return False
+        return spans
     for sentence in _SENTENCE_SPLIT_RE.split(text):
         for marker in _MV_MARKER_RE.finditer(sentence):
             after_raw = sentence[marker.end():]
@@ -302,8 +313,346 @@ def is_specific_mv_scene_query(query: str) -> bool:
             if _SCENE_UNCERTAIN_RE.search(span) or _SCENE_NEGATION_RE.search(span):
                 continue
             if _describes_scene(before) or _describes_scene(after):
-                return True
-    return False
+                spans.append(" ".join(span.split()))
+    return spans
+
+
+# ---------------------------------------------------------------------------
+# 설명 표시용 장면 구간 — 판정에는 쓰지 않는다
+# ---------------------------------------------------------------------------
+#
+# 판정 구간(`mv_scene_spans`)은 여는 말 뒤 문장 끝까지라 장면이 아닌 말이 딸려 온다 — 찾는 곡을 가리키는 말
+# ("… 떠 있는 그 노래 뭐지", "… 걷는 여자 가수 노래야")과 다른 단서의 절("…, 누가 불렀는지는 모르겠어").
+# 사용자에게 "말씀하신 장면"으로 보일 칸에는 장면을 말한 부분만 남긴다. 자른 결과가 장면이 아니면 자르지 않는다 —
+# 길 뿐 틀리지는 않은 쪽을 택한다.
+
+# 찾는 곡을 가리키는 말의 낱말들(어절 전체가 맞아야 한다 — "남자가"·"곡선"은 아니다).
+_REF_DEMONSTRATIVE_RE = re.compile(r"그런|이런|저런|그|이|저")
+_REF_GENDER_RE = re.compile(r"남자|여자|남성|여성|혼성")
+# 곡을 꾸미는 말 — 가창자 형태와 장르. "여자 가수 노래", "남자 아이돌 곡", "발라드 노래".
+_REF_ROLE = (r"(?:보이그룹|걸그룹|아이돌|가수|그룹|밴드|솔로|래퍼|듀오|듀엣|보컬|"
+             r"발라드|댄스|힙합|랩|록|락|메탈|알앤비|R&B|인디|포크|트로트|재즈|일렉|일렉트로닉|어쿠스틱|팝|케이팝|K-?POP|OST)")
+_REF_ROLE_RE = re.compile(_REF_ROLE, re.IGNORECASE)
+_REF_COPULA = r"(?:이?야|였[가-힣]{0,3}|이었[가-힣]{0,3}|인데|이?에요|예요|입니다|임)"
+_REF_SONG_RE = re.compile(r"(?:노래|곡)(?:들)?(?:" + _REF_COPULA + r"|요|를|을|가|이|는|은|도|만|좀)?|노랜데?")
+# 지시어 없는 "노래/곡" 바로 뒤가 이러면 장면 속에서 부르고 듣는 노래다 — "노래 부르면서 걷는", "노래를 틀어 놓고".
+_SONG_AS_OBJECT_RE = re.compile(r"\s*(?:부르|불러|불렀|부른|하(?:는|고|면서|며|다가)|틀|듣|들으|나오|나와|흘러|따라)")
+
+
+# 화면 속에서 노래하는 행위("비 맞으면서 노래 부르고 있어").
+_SINGING_RE = re.compile(r"노래(?:를)?\s*(?:부르|불러|불렀|부른)")
+_WORD_RE = re.compile(r"\S+")
+# "배경이 사막" — 배경 뒤의 **가장 가까운** 명사까지. 판정용 `_BACKGROUND_THEN_NOUN_RE`는 두 어절 안의 먼 명사도
+# 잡으므로("배경이 사막인 여자 (목소리)") 표시 구간에서는 이 판을 쓴다. 판정에는 쓰지 않는다.
+_BACKGROUND_THEN_NEAREST_NOUN_RE = re.compile(
+    r"배경(?:이|은|는|으로|을)?\s*(?:\S+\s+){0,2}?(?:" + _CONCRETE_NOUN_RE.pattern + r")"
+)
+# 보조 용언 · 구조어 — **어간에 어미가 붙은 낱말**일 때만(어절 전체가 맞아야 한다). 판정용 `_SCENE_STRUCTURE_RE`는
+# 낱말의 앞부분만 봐도 맞으므로 "보이그룹"·"배경음악"·"찍먹"·"있잖아"까지 읽는다 — 표시 구간에서는 쓰지 않는다.
+_AUX_WORD_RE = re.compile(
+    r"(?:있|계시)(?:어|어요|어서|었[가-힣]{0,3}|는|는데|는지|다|다가|고|던|음|습니다|더라|네|지|지만)|계셔[가-힣]{0,2}"
+)
+_STRUCTURE_WORD_RE = re.compile(
+    r"(?:나오|나타나|등장하|보이|비추|찍히|가득하)(?:는|는데|고|던|네|더라|며|면서|지|지만)"
+    r"|나와(?:요|서)?|나왔[가-힣]{0,3}|나온(?:다)?|나타났[가-힣]{0,3}|나타난(?:다)?"
+    r"|등장(?:해|해요|했[가-힣]{0,3}|한|한다)?|보여(?:요|서)?|보였[가-힣]{0,3}|보인(?:다)?"
+    r"|비춰(?:요|서)?|비췄[가-힣]{0,3}|비춘(?:다)?|찍(?:어|어요|었[가-힣]{0,3}|은|는|고)|찍혀(?:요|서)?|찍혔[가-힣]{0,3}|찍힌"
+    r"|촬영(?:해|했[가-힣]{0,3}|한|된|됐[가-힣]{0,3}|하는)?|가득(?:해|해요|했[가-힣]{0,3}|한|하고)?|덩그러니"
+    r"|배경(?:이|은|는|으로|을|인|이야|이에요|이었[가-힣]{0,3}|임|이고)?"
+)
+
+# 장면 서술이 어떻게 끝났는가 — 그 뒤를 이어 붙일지 정한다.
+_FINAL = "final"              # 종결어미·명사 서술로 닫혔다("떠 있어", "사막이야", "여자") — 뒤는 잇지 않는다
+_ATTRIBUTIVE = "attributive"  # 관형형으로 닫혔다("떠 있는") — 뒤의 말이 혼자 장면일 때만 잇는다
+_CONNECTIVE = "connective"    # 그 밖의 연결어미("있는데", "앉아서") — 관형형과 같다
+_LISTING = "listing"          # 나열 연결어미로 열려 있다("입고", "맞으면서") — 같은 절의 다음 서술을 잇는다
+_ARGUMENT = "argument"        # 조사가 붙은 명사("차가", "장면이") — 서술이 아직 오지 않았다. 나열과 같다
+_LISTING_END_RE = re.compile(r"(?:고|며|면서)$")
+_CONNECTIVE_END_RE = re.compile(r"(?:는데|은데|인데|지만|아서|어서|해서|여서|다가|더니|니까|으면|자마자)$")
+_NOMINAL_FINAL_RE = re.compile(r"(?:들)?(?:이?야|였[가-힣]{0,3}|이었[가-힣]{0,3}|이?에요|예요|입니다|임)?")   # 맨명사 포함
+_TRAILING_PUNCTUATION = ",.!?~"
+# 나열·명사 뒤에서 다음 서술까지 사이에 낄 수 있는 말 — 가리키는 말과 부사. 모르는 낱말이 끼면 잇지 않는다
+# (그것이 앞 장면을 닫은 서술어일 수 있다 — "기차 타고 | 떠나 | 춤추기 좋은").
+_BETWEEN_WORD_RE = re.compile(
+    r"그|이|저|그걸|그게|그건|이걸|이게|그것을|그것이|계속|계속해서|막|마구|다|다같이|같이|함께|혼자|갑자기|진짜|엄청|되게|완전|"
+    r"또|다시|서로|둥둥|빙글빙글|마지막에|처음에|중간에|끝에|[가-힣]+(?:게|히)"
+)
+_SONG_OBJECT_RE = re.compile(r"(?:노래|곡)(?:를|을)?")
+# "-아/어 있다"로 상태를 말하는 용언 — 이 뒤의 "있어"는 그 서술의 일부다("앉아 있어", "매달려 있어").
+# 동작을 끝맺은 말 뒤의 "있어"는 아니다("춤춰 | 있어 보이는 노래야").
+_RESULTATIVE_WORD_RE = re.compile(
+    r"앉아|누워|엎드려|매달려|걸려|쌓여|젖어|숨어|놓여|붙어|서|떠|잠겨|묻혀|갇혀|쓰러져|넘어져|떨어져|깨져|부서져|꽂혀|덮여|가라앉아"
+)
+# 서술어 목록에 있지만 용언이 아닌 낱말 — 부사("거꾸로 매달린")와 '하다'가 붙지 않은 명사("키스 장면"). 서술이 닫히지 않았다.
+_OPEN_PREDICATE_WORD_RE = re.compile(
+    r"거꾸로|빙글(?:빙글)?|덩그러니|가득|(?:공중|부양|얼음|키스|포옹|점프|폭발|탈출|도망)(?:을|를|이|가|은|는|도|만|에|에서|으로)?"
+)
+# 화면 속 사람을 가리키는 성별 낱말(뒤에 가수 형태·장르·목소리가 오지 않는다). 판정의 `_CONCRETE_NOUN_RE`와 같은 조건이다.
+_GENDER_PERSON_RE = re.compile(r"(?:남자|여자)" + _ROLE_WORDS)
+_GENDER_WORD_RE = re.compile(r"남자|여자")
+
+
+def _mask_singer_genders(text: str, sentence: str) -> str:
+    """**문장 전체에서** 가수를 가리키는 성별 낱말("남자 가수", "여자 목소리")을 글자 수를 지켜 가린다.
+
+    앞부분만 잘라 보면 "걷는 남자 | 가수 곡"의 남자가, 판정이 화제 전환어 앞에서 자른 구간에서는 "떠 있는 여자 |
+    목소리"의 여자가 화면 속 사람으로 읽힌다(뒤 낱말이 보이지 않아서). 표시 구간을 정할 때만 쓴다.
+    """
+    chars = list(text)
+    for match in _GENDER_WORD_RE.finditer(text):
+        if not _GENDER_PERSON_RE.match(sentence, match.start()):
+            chars[match.start(): match.end()] = "□" * (match.end() - match.start())
+    return "".join(chars)
+
+
+class _SceneWords:
+    """표시 구간을 정하려고 한 번 읽어 둔 것 — 어절, 명사 어절, 서술 어절, 장면을 서술한 어절(anchor).
+
+    명사는 앞뒤 낱말을 보고 정해지므로("남자 가수"의 남자는 아니다) 어절을 떼어 보지 않고 전체에서 찾는다.
+    """
+
+    def __init__(self, text: str) -> None:
+        self.text = text
+        self.words = [(m.start(), m.end(), m.group()) for m in _WORD_RE.finditer(text)]
+        cleaned = _IDIOM_RE.sub(lambda m: " " * len(m.group()), text)      # 자리를 보존한 채 관용구만 지운다
+        # 명사·'장면' 어절 → 그 낱말이 끝나는 자리(어미·조사가 시작하는 곳)
+        self.nouns = {}
+        for rx in (_CONCRETE_NOUN_RE, _SCENE_WORD_RE):
+            for m in rx.finditer(text):
+                self.nouns.setdefault(self._word_at(m.start()), m.end())
+        self.nouns.pop(-1, None)
+        self.predicates = set()
+        self.inside_predicate = set()     # 문형 하나가 걸친 어절 전부 — "떠 / 있어"의 떠, "노래 / 불러"의 노래
+        for rx, hay in ((_SCREEN_QUALITY_RE, text), (_SINGING_RE, text), (_VISUAL_PREDICATE_RE, cleaned)):
+            for m in rx.finditer(hay):
+                last = self._last_word_of(m)
+                self.predicates.add(last)
+                self.inside_predicate.update(range(self._word_at(m.start()), last + 1))
+        self.predicates.discard(-1)
+        self.anchors = set(self.predicates)
+        self.anchors.update(i for i in self.nouns if _SCENE_WORD_RE.search(self.words[i][2]))
+        for m in _BACKGROUND_THEN_NEAREST_NOUN_RE.finditer(cleaned):
+            last = self._last_word_of(m)
+            self.anchors.add(last)
+            self.inside_predicate.update(range(self._word_at(m.start()), last + 1))     # "배경이 / 사막이야"의 배경이
+        self.anchors.discard(-1)
+        self._license_structure_words()
+        self._add_nominal_predicates()
+
+    def _word_at(self, position: int) -> int:
+        for index, (start, end, _) in enumerate(self.words):
+            if start <= position < end:
+                return index
+        return -1
+
+    def _last_word_of(self, match: "re.Match[str]") -> int:
+        end = match.end()
+        while end > match.start() and self.text[end - 1].isspace():       # 일부 문형은 뒤 공백까지 문다("오는 ")
+            end -= 1
+        return self._word_at(end - 1)
+
+    def bare(self, index: int) -> str:
+        return self.words[index][2].rstrip(_TRAILING_PUNCTUATION)
+
+    def is_support(self, index: int) -> bool:
+        word = self.bare(index)
+        return bool(_STRUCTURE_WORD_RE.fullmatch(word) or _AUX_WORD_RE.fullmatch(word))
+
+    def _license_structure_words(self) -> None:
+        """구체 명사에 붙은 구조어 — "교실이 나와", "의자만 덩그러니", "눈이 내리고 있어". 사이에 낀 말은 둘까지.
+        서술어·구조어를 넘어가지 않는다(이미 서술된 명사다)."""
+        for index in range(len(self.words)):
+            if not self.is_support(index):
+                continue
+            back, skipped = index - 1, 0
+            while back >= 0:
+                if back in self.nouns:
+                    self.anchors.add(index)
+                    break
+                if back in self.predicates or self.is_support(back) or skipped >= 2:
+                    break
+                skipped += 1
+                back -= 1
+
+    def _add_nominal_predicates(self) -> None:
+        """주어가 있는 명사 서술 — "사람은 여자", "주인공은 여자였어", "마지막 장면은 바다였어".
+        조사가 붙은 명사("남자가")와 서술 없이 놓인 명사("떠 있는 | 남자")는 해당하지 않는다."""
+        for index, noun_end in self.nouns.items():
+            if index <= 0 or index - 1 not in self.nouns:
+                continue
+            if not _NOMINAL_FINAL_RE.fullmatch(self.text[noun_end: self.words[index][0] + len(self.bare(index))]):
+                continue
+            if self.bare(index - 1)[-1] in "은는이가":
+                self.anchors.add(index)
+
+    def closure(self, index: int) -> str:
+        """이 어절에서 서술이 어떻게 끝났는가."""
+        word = self.bare(index)
+        if index in self.nouns and index not in self.predicates:
+            ending = self.text[self.nouns[index]: self.words[index][0] + len(word)]
+            if _NOMINAL_FINAL_RE.fullmatch(ending):
+                return _FINAL                     # "사막이야", "여자였어", "장면"
+            if ending in ("인", "이던", "이었던"):
+                return _ATTRIBUTIVE               # "사막인"
+            if ending in ("이고", "이며"):
+                return _LISTING
+            if ending.endswith("인데"):
+                return _CONNECTIVE
+            return _ARGUMENT                      # "차가", "장면이", "의자를"
+        if _LISTING_END_RE.search(word) or _OPEN_PREDICATE_WORD_RE.fullmatch(word):
+            return _LISTING                       # "입고", "맞으면서" · "거꾸로 (매달린)"
+        if _CONNECTIVE_END_RE.search(word):
+            return _CONNECTIVE
+        if _ends_attributively(word):
+            return _ATTRIBUTIVE
+        return _FINAL
+
+    def with_support(self, index: int) -> int:
+        """바로 뒤에 붙어 이 서술을 끝맺는 보조 용언까지 — 열린 서술 뒤("부르고 / 있어", "장면이 / 있는데")와
+        상태를 말하는 용언 뒤("앉아 / 있어"). 닫힌 서술 뒤에는 붙이지 않는다("떠 있는 | 있는", "춤춰 | 있어 보이는")."""
+        while index + 1 < len(self.words):
+            kind = self.closure(index)
+            following = self.bare(index + 1)
+            open_ended = kind in (_LISTING, _ARGUMENT)                    # "부르고 / 있어", "장면이 / 있는데"
+            takes_aux = open_ended or (kind == _FINAL and _RESULTATIVE_WORD_RE.fullmatch(self.bare(index)))
+            if takes_aux and _AUX_WORD_RE.fullmatch(following):
+                index += 1
+                continue
+            break
+        return index
+
+    def next_scene_word(self, after_index: int) -> int:
+        """이어지는 다음 서술. 없거나, 멀거나, 모르는 낱말이 끼면 -1 — 사이에는 명사·가리키는 말·부사만 올 수 있다."""
+        following = min((i for i in self.anchors if i > after_index), default=-1)
+        if following < 0 or following - after_index > 4:
+            return -1
+        for index in range(after_index + 1, following):
+            word = self.bare(index)
+            modifies_argument = _ends_attributively(word) and (
+                index + 1 in self.nouns or _SONG_OBJECT_RE.fullmatch(self.bare(index + 1))
+            )
+            if not (index in self.nouns or index in self.inside_predicate or _BETWEEN_WORD_RE.fullmatch(word)
+                    or _SONG_OBJECT_RE.fullmatch(word) or modifies_argument):
+                return -1
+        return following
+
+
+def _starts_with_song_reference(text: str) -> bool:
+    """닫힌 장면 뒤의 이 말이 **찾는 곡을 가리키는 말**로 시작하는가 — [지시어] [성별] [가수 형태·장르…] 노래/곡.
+
+    "떠 있는 | 그 노래", "걷는 | 여자 가수 노래", "빠지는데 | 그 노래". 지시어 없이 "노래 부르는"처럼 장면 속
+    행위의 대상이면 장면 안의 노래다. 지시어가 붙은 노래는 뒤에 무엇이 와도 찾는 곡으로 본다 — 짧게 자르는 쪽이다.
+    """
+    words = [(m.start(), m.end(), m.group()) for m in _WORD_RE.finditer(text)]
+    index = 0
+    has_demonstrative = bool(words) and bool(_REF_DEMONSTRATIVE_RE.fullmatch(words[0][2]))
+    if has_demonstrative:
+        index += 1
+    if index < len(words) and _REF_GENDER_RE.fullmatch(words[index][2]):
+        index += 1
+    while index < len(words) and _REF_ROLE_RE.fullmatch(words[index][2]):
+        index += 1
+    if index >= len(words) or not _REF_SONG_RE.fullmatch(words[index][2]):
+        return False
+    # 지시어 없이 부르고 듣는 노래는 장면 속 행위의 대상이다("걷는 | 노래 부르는 여자가 나와")
+    return has_demonstrative or not _SONG_AS_OBJECT_RE.match(text[words[index][1]:])
+
+
+def _scene_part(text: str, sentence: str) -> str:
+    """`text`(표지 뒤 판정 구간)에서 **장면을 말한 앞부분**. 장면이 성립하지 않으면 빈 문자열.
+
+    `sentence`는 같은 자리에서 시작하는 문장의 나머지다(판정이 화제 전환어 앞에서 자르기 전). 잘린 조각만 보면
+    "춤추는 여자 | 목소리"의 여자가 화면 속 사람으로 읽히므로, 문장 전체에서 가수를 가리키는 성별 낱말은 가리고 본다.
+
+    1. 장면이 성립하는 **가장 짧은** 앞부분에서 시작한다(판정과 같은 `_describes_scene`).
+    2. 그 서술이 어떻게 끝났는지에 따라 잇는다.
+       - 종결어미·명사 서술로 닫혔다 → 끝. 뒤는 다른 말이다("… 떠 있어 | 울고 싶을 때 들었어", "| 부른 사람은 여자야").
+       - 나열 연결어미(-고·-며·-면서)·조사 붙은 명사로 열려 있다 → 같은 절의 다음 서술까지("교복 입고 / 춤추는",
+         "흑백이고 / 비가 계속 내려", "차가 / 폭발해"). 모르는 낱말이 끼면 잇지 않는다.
+       - 관형형·그 밖의 연결어미로 닫혔다 → 뒤의 말이 **혼자 장면일 때만**, 그 장면 부분을 잇는다
+         ("서 있는 / 여자가 나오는", "떠있는 / 장면이 있어"). 곡을 가리키는 말로 시작하면 잇지 않는다.
+    판단이 서지 않으면 짧게 자른다 — 덜 끝난 칸은 틀리지 않지만, 말하지 않은 것이 든 칸은 틀린다.
+    """
+    seen = _mask_singer_genders(text, sentence)        # 가수를 가리키는 성별 낱말을 가린 판 — 자리는 text와 같다
+    info = _SceneWords(seen)
+    words = info.words
+    first = next((i for i in range(len(words)) if _describes_scene(seen[: words[i][1]] + " ")), -1)
+    if first < 0:
+        return ""
+    last = info.with_support(first)
+    while True:
+        end = words[last][1]
+        kind = info.closure(last)
+        if kind == _FINAL or not text[end:].strip():
+            break
+        if kind in (_LISTING, _ARGUMENT):
+            following = info.next_scene_word(last)
+            if following < 0:
+                break
+            last = info.with_support(following)
+            continue
+        if _starts_with_song_reference(text[end:]):
+            break               # 찾는 곡을 가리키는 말이다 — 그 뒤는 곡 이야기다
+        return text[:end] + _scene_part(text[end:], sentence[end:])   # 뒤의 말이 혼자 장면이 아니면 빈 문자열이다
+    return text[: words[last][1]]
+
+
+def _tidy(phrase: str) -> str:
+    return " ".join(phrase.split()).rstrip(" ,·")
+
+
+def mv_scene_phrases(query: str) -> List[str]:
+    """**설명 표시용** 장면 구간. 비어 있지 않은 것은 `is_specific_mv_scene_query`가 True인 것과 동치다.
+
+    `mv_scene_spans`와 같은 판정에서 출발해 표지마다 구간을 줄인다.
+      1. 다음 뮤비 표지 앞에서 자른다 — 표지가 둘이면 앞 구간이 뒤 구간을 품지 않게.
+      2. 장면을 말한 앞부분만 남긴다(`_scene_part`) — 장면이 성립하는 가장 짧은 앞부분에서 시작해, 그 서술이
+         열려 있을 때만 잇는다. 종결어미로 닫힌 뒤의 말("… 떠 있어 남자가 불렀어")은 싣지 않는다.
+    줄인 결과가 장면이 아니면(`_describes_scene`) 줄이기 전 구간을 쓴다. 판정에는 쓰지 않는다 — 정책은 그대로다.
+    """
+    text = _strip_quoted(query or "")
+    if not _MV_MARKER_RE.search(text):
+        return []
+    phrases: List[str] = []
+    judged = False
+    for sentence in _SENTENCE_SPLIT_RE.split(text):
+        markers = list(_MV_MARKER_RE.finditer(sentence))
+        for index, marker in enumerate(markers):
+            after_raw = sentence[marker.end():]
+            if _MV_NEGATION_RE.search(after_raw):
+                continue
+            before = _before_span(sentence[: marker.start()])
+            after = _after_span(after_raw)
+            span = before + marker.group(0) + after
+            if _SCENE_UNCERTAIN_RE.search(span) or _SCENE_NEGATION_RE.search(span):
+                continue
+            before_scene = _describes_scene(before)
+            if not (before_scene or _describes_scene(after)):
+                continue
+            judged = True
+            # 1. 다음 표지 앞까지만 — 그 뒤는 다음 표지의 구간이다
+            own = after
+            if index + 1 < len(markers):
+                own = after[: max(0, markers[index + 1].start() - marker.end())]
+            # 2·3. 장면을 말한 부분만. 표지 뒤가 장면이 아니면(장면은 표지 앞 관형절에 있다) 뒤는 싣지 않는다.
+            # 줄여서 장면이 아니게 되면 줄이지 않는다
+            own_scene = _describes_scene(own)
+            if not (before_scene or own_scene):
+                continue    # 이 표지의 장면은 다음 표지 뒤에 있다 — 그 표지가 보인다
+            kept = _scene_part(own, after_raw)
+            if own_scene and not kept:
+                kept = own      # 판정은 장면으로 봤는데 줄일 수 없다("춤추는 여자 | 목소리 노래") — 판정 구간 그대로
+            phrase = _tidy(before + marker.group(0) + kept)
+            if phrase:
+                phrases.append(phrase)
+    if judged and not phrases:
+        phrases = [_tidy(span) for span in mv_scene_spans(query)]   # 줄일 수 없었다 — 판정 구간 그대로
+    # 겹치는 구간은 한 번만 — 다른 구간에 통째로 들어 있는 것은 뺀다
+    unique: List[str] = []
+    for phrase in phrases:
+        if phrase and not any(phrase != other and phrase in other for other in phrases) and phrase not in unique:
+            unique.append(phrase)
+    return unique
 
 
 # ---------------------------------------------------------------------------

@@ -802,6 +802,7 @@ function applyResponse(data) {
   // 서버의 요청 단위 안내(리랭킹 정책 생략 사유·고정 문구). 응답 값으로 교체한다 — 앞 결과의 안내가 남으면 안 된다
   convo.notice = data.notice || null;
   explainOpen.clear(); // 새 결과다 — 앞 목록에서 펼쳐 둔 곡은 여기 없다
+  explainDetailsOpen.clear();
   // 출생 연도 질문은 결과와 함께 바로 띄운다(위 '예외'). 건너뛴 뒤에는 거절 버튼만 보인다
   panelMode = isBirthYearQuestion() && !convo.birthYearSkipped && convo.results.length > 0 ? "asking" : "idle";
   markHits(convo.results.map((r) => String(r.id)));
@@ -1088,6 +1089,8 @@ function clarifyContent() {
 
 // 펼쳐 둔 곡. 목록을 다시 그려도 펼친 상태가 남게 화면 밖에 둔다
 const explainOpen = new Set();
+// 그 안에서 "점수 상세 보기"까지 펼친 곡. 질문이 뜨거나 닫혀 목록을 다시 그려도 접히지 않게 따로 둔다
+const explainDetailsOpen = new Set();
 
 // 서버의 _fmt와 같은 표기여야 요약문과 표의 숫자가 어긋나 보이지 않는다
 function exDelta(v) {
@@ -1146,6 +1149,7 @@ function toggleExplain(id, btn, x) {
   const open = explainOpen.has(id);
   if (open) {
     explainOpen.delete(id);
+    explainDetailsOpen.delete(id); // 근거를 닫았다 — 다시 열면 점수 상세는 기본(접힘)으로 돌아간다
     const panel = li.nextElementSibling;
     if (panel && panel.classList.contains("explainrow")) panel.remove();
   } else {
@@ -1156,13 +1160,90 @@ function toggleExplain(id, btn, x) {
   syncRailMetrics(); // 좁은 화면에서는 레일이 높아진다 — 지도가 그만큼 내려간다
 }
 
+/*
+ * 패널의 순서: 짧은 설명 → 기억한 단서 대조 → 접힌 "점수 상세 보기".
+ *
+ * 사용자용 설명(user_explanation)은 서버가 원문·답변·곡 자료·실행 기록을 대조해 만든 것이다.
+ * 여기서는 그 문장과 표를 그대로 그린다 — "곡 정보가 맞다"와 "점수에 반영됐다"를 화면이 합치거나
+ * 바꿔 말하지 않는다(둘은 서버가 따로 적어 보낸다). 숫자·경로·순위 기록은 지우지 않고 접힌
+ * <details>에 보존한다. 네이티브 <details>라 키보드(Enter·Space)로 펼칠 수 있다.
+ *
+ * user_explanation이 없는 응답(구형 서버·평가 도구)은 예전 배치 그대로 — 기록 요약과 표를 바로 보인다.
+ */
 function explainPanel(x) {
   const li = makeEl("li", "explainrow");
   const box = makeEl("div", "explain");
+  const ux = x.user_explanation;
 
-  // 서버가 기록만으로 만든 문장. 화면이 고쳐 쓰지 않는다
-  box.append(makeEl("p", "exsummary", x.summary));
+  if (ux && typeof ux.summary === "string") {
+    box.append(makeEl("p", "exsummary exuser", ux.summary));
+    const checks = Array.isArray(ux.clue_checks) ? ux.clue_checks : [];
+    if (checks.length) box.append(explainClues(checks));
 
+    const details = makeEl("details", "exdetails");
+    const songId = String(x.song_id || "");
+    details.open = explainDetailsOpen.has(songId); // 다시 그려도 펼쳐 둔 상세는 펼친 채로
+    details.append(makeEl("summary", "exdetailsum", "점수 상세 보기"));
+    const body = makeEl("div", "exdetailbody");
+    // 서버가 기록만으로 만든 문장. 화면이 고쳐 쓰지 않는다
+    body.append(makeEl("p", "exsummary exrecord", x.summary));
+    explainRecord(body, x);
+    details.append(body);
+    details.addEventListener("toggle", () => {
+      if (details.open) explainDetailsOpen.add(songId);
+      else explainDetailsOpen.delete(songId);
+      syncRailMetrics(); // 펼치면 좁은 화면에서 레일이 높아진다 — 지도가 그만큼 내려가야 한다
+    });
+    box.append(details);
+  } else {
+    box.append(makeEl("p", "exsummary", x.summary));
+    explainRecord(box, x);
+  }
+
+  li.append(box);
+  return li;
+}
+
+/*
+ * 기억한 단서 / 이 곡에서 확인한 내용 / 상태. 모든 칸은 텍스트 노드다 — 질의·가사·곡 설명에
+ * 어떤 글자가 와도 마크업으로 해석되지 않는다. 상태는 색뿐 아니라 글자(일치·부분 일치·다름·미확인)로
+ * 보인다. 행 수를 제한하지 않는다 — 미확인 단서를 숨기면 "확인됐다"로 읽힌다.
+ */
+function explainClues(checks) {
+  const table = makeEl("table", "exclues");
+  const head = makeEl("thead");
+  const headRow = makeEl("tr");
+  for (const title of ["기억한 단서", "이 곡에서 확인한 내용", "상태"]) headRow.append(makeEl("th", "", title));
+  head.append(headRow);
+  table.append(head);
+
+  const body = makeEl("tbody");
+  for (const c of checks) {
+    const status = c.status || "unverified";
+    const tr = makeEl("tr", `exclue exclue-${status}`);
+
+    const clue = makeEl("td", "excluetext", c.clue || "");
+    clue.setAttribute("data-label", "기억한 단서");
+
+    const observed = makeEl("td", "exclueobs");
+    observed.setAttribute("data-label", "확인한 내용");
+    observed.append(document.createTextNode(c.observed || ""));
+    // 순위 기여는 곡 정보 일치와 별개다. 기록이 있을 때만 "반영"이라고 적힌 서버 문구를 그대로 쓴다
+    if (c.basis_label) observed.append(makeEl("span", "excluebasis", c.basis_label));
+
+    const state = makeEl("td", "excluestatus");
+    state.setAttribute("data-label", "상태");
+    state.append(makeEl("span", `exstatus exstatus-${status}`, c.status_label || "미확인"));
+
+    tr.append(clue, observed, state);
+    body.append(tr);
+  }
+  table.append(body);
+  return table;
+}
+
+/* 실행 기록 — 순위·순서 규칙·경로 기여·가감점·리랭킹·가사 일치·원문 인용. 숫자 장부는 여기 전부 남는다 */
+function explainRecord(box, x) {
   // 이 곡이 어디서 어디로 갔는가. 아래는 전부 그 이유다
   if (x.rank_before_rerank != null && x.rank_after_rerank != null) {
     box.append(
@@ -1174,9 +1255,9 @@ function explainPanel(x) {
    * 순서 규칙이 점수표보다 먼저 온다. 점수와 무관하게 자리를 정하는 규칙이라,
    * 점수를 먼저 보여주면 그 점수가 순서를 정했다고 읽힌다.
    */
-  if (x.order_rules.length) {
+  if ((x.order_rules || []).length) {
     const g = exGroup("순서 규칙", "점수와 무관하게 순서만 바꿈");
-    for (const rule of x.order_rules) {
+    for (const rule of x.order_rules || []) {
       const row = makeEl("div", "exrow");
       const left = makeEl("span", "exlabel", rule.label);
       if (rule.detail) left.append(makeEl("span", "exdetail", rule.detail));
@@ -1190,15 +1271,18 @@ function explainPanel(x) {
    * 경로 기여 + 가감점 = 검색 점수. 합이 실제로 맞는 장부다 — 그래야 보는
    * 사람이 "이 줄들이 정말 저 점수를 만들었나"를 직접 확인할 수 있다.
    */
-  if (x.paths.length) {
+  if ((x.paths || []).length) {
     const g = exGroup("경로 기여");
-    for (const path of x.paths) g.append(exItem(path.label, exPathDetail(path), path.delta));
+    for (const path of x.paths || []) g.append(exItem(path.label, exPathDetail(path), path.delta));
     g.append(exSum(exDelta(x.path_total)));
     box.append(g);
   }
-  if (x.adjustments.length) {
+  if ((x.adjustments || []).length) {
     const g = exGroup("가감점");
-    for (const adj of x.adjustments) g.append(exItem(adj.label, adj.detail, adj.delta));
+    // adj.note는 서버 문구 — 정정 전 답·검색 해석값으로 계산된 줄의 표시. 화면이 짓지 않는다
+    for (const adj of x.adjustments || []) {
+      g.append(exItem(adj.label, [adj.detail, adj.note].filter(Boolean).join(" · "), adj.delta));
+    }
     g.append(exSum(exDelta(x.adjustment_total)));
     box.append(g);
   }
@@ -1216,9 +1300,9 @@ function explainPanel(x) {
   }
 
   // 1차 절단에서 탈락한 기여. 위 합계에 넣으면 설명이 실제 점수보다 커진다
-  if (x.dropped_paths.length) {
+  if ((x.dropped_paths || []).length) {
     const g = exGroup("반영 안 된 기여", "1차 절단에서 탈락 · 최종 점수에 없음");
-    for (const path of x.dropped_paths) {
+    for (const path of x.dropped_paths || []) {
       const row = exItem(path.label, exPathDetail(path), path.delta);
       row.classList.add("dim");
       g.append(row);
@@ -1251,9 +1335,6 @@ function explainPanel(x) {
    * 입력 어디에도 없는 뮤직비디오 장면을 사실처럼 쓴 사례가 있었고, "미검증" 경고를
    * 붙여도 사용자에게는 확인된 근거로 읽혔다(2026-10-11).
    */
-
-  li.append(box);
-  return li;
 }
 
 function exPathDetail(path) {

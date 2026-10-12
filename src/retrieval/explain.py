@@ -244,11 +244,19 @@ class PathContribution:
 
 @dataclass
 class ScoreAdjustment:
-    """점수를 더하거나 뺀 규칙. delta가 음수면 감점이다."""
+    """점수를 더하거나 뺀 규칙. delta가 음수면 감점이다.
+
+    `slot`·`value`는 **이 규칙이 무엇과 비교했는가**를 구조로 남긴 것이다(선택). 사용자용 설명이
+    "이 가산이 지금 사용자가 말한 단서의 것인가"를 판단할 때 쓴다 — 재질문에서 남성→여성으로
+    정정하면 남성 기준 가산이 기록에 남는데, 그것을 여성 단서의 근거로 말하면 안 된다.
+    사람이 읽는 `detail`을 파싱하지 않기 위한 자리다. 비어 있으면 모른다는 뜻이고 점수 계산과는 무관하다.
+    """
 
     rule: str
     delta: float
     detail: str = ""
+    slot: str = ""      # 비교한 슬롯(vocal_gender · genre · release_era · lyric_clue …)
+    value: str = ""     # 비교에 쓴 질의 쪽 값(검색에 실제로 쓴 값)
 
 
 @dataclass
@@ -523,11 +531,23 @@ class ExplainRecorder:
             PathContribution(path=path, rank=rank, delta=float(delta), detail=detail)
         )
 
-    def adjust(self, song_id: str, rule: str, delta: float, detail: str = "") -> None:
+    def adjust(
+        self,
+        song_id: str,
+        rule: str,
+        delta: float,
+        detail: str = "",
+        *,
+        slot: str = "",
+        value: str = "",
+    ) -> None:
         if not delta:
             return
         self.record.get(song_id).adjustments.append(
-            ScoreAdjustment(rule=rule, delta=float(delta), detail=detail)
+            ScoreAdjustment(
+                rule=rule, delta=float(delta), detail=detail,
+                slot=str(slot or ""), value=str(value or ""),
+            )
         )
 
     def order(self, song_id: str, rule: str, detail: str = "") -> None:
@@ -650,7 +670,7 @@ class _NullRecorder(ExplainRecorder):
     def path(self, song_id, path, rank, delta, detail="") -> None:
         return
 
-    def adjust(self, song_id, rule, delta, detail="") -> None:
+    def adjust(self, song_id, rule, delta, detail="", *, slot="", value="") -> None:
         return
 
     def order(self, song_id, rule, detail="") -> None:
@@ -761,6 +781,7 @@ def render_ko(
     *,
     max_items: int = 3,
     reorder_stage: str = REORDER_NOT_ATTEMPTED,
+    adjustment_notes: Optional[Dict[Tuple[str, str, str], str]] = None,
 ) -> str:
     """기록만으로 짧은 한국어 설명을 만든다.
 
@@ -774,6 +795,10 @@ def render_ko(
     `explain.model_notes`는 **쓰지 않는다.** 모델이 스스로 쓴 문장은 검증된 기록이
     아니고, 여기에 섞으면 확인된 근거와 구별할 수 없게 된다. 일반 응답에도 나가지 않는다 —
     내부 진단 기록에만 남는다.
+
+    adjustment_notes는 (규칙, 슬롯, 비교값) → 덧붙일 말이다. 재질문에서 성별을 정정하면 정정 전 값으로
+    계산된 가산이 기록에 남는데, 그 줄이 "말한 성별과 일치"로만 읽히면 지금 단서와 반대로 보인다.
+    호출자가 "정정 전 값(남성) 기준" 같은 표시를 주면 그 줄에 붙인다. 점수·순서는 바뀌지 않는다.
     """
     parts: List[str] = []
 
@@ -792,6 +817,9 @@ def render_ko(
     for a in strongest_adj[:max_items]:
         label = RULE_LABELS.get(a.rule, a.rule)
         detail = f", {a.detail}" if a.detail else ""
+        note = (adjustment_notes or {}).get((a.rule, a.slot, a.value), "")
+        if note:
+            detail += f" · {note}"
         parts.append(f"{label}{detail} ({_fmt(a.delta)})")
 
     before, after = explain.rank_before_rerank, explain.rank_after_rerank
