@@ -10,7 +10,7 @@ from src.backend.api.dependencies import close_vector_client, get_vector_client
 from src.common.gemini_client import RETRIEVAL, backend_setting
 from src.backend.api.routes import search
 from src.backend.api.routes import feedback
-from src.feedback.store import close_feedback_store
+from src.feedback.store import close_feedback_store, prepare_indexes
 from src.backend import warmup
 from src.retrieval import timing
 
@@ -50,6 +50,11 @@ async def lifespan(app: FastAPI):
     # 진행 상태는 /health에 있다. SEARCH_WARMUP=0이면 건너뛴다.
     warmup.start_background()
 
+    # 피드백 보관 기간(TTL) 색인도 요청이 오기 전에 만든다. 요청 경로에서는 0.75초 예산 안에서만
+    # 시도하기 때문에 거기에만 맡기면 큰 컬렉션의 색인이 끝내 안 만들어질 수 있다. 수집이 꺼져 있으면
+    # 연결하지 않고, 실패해도 기동을 막지 않는다. 기다리지 않는다 — 종료할 때만 정리한다.
+    index_task = asyncio.create_task(asyncio.to_thread(prepare_indexes))
+
     try:
         yield
     finally:
@@ -58,6 +63,9 @@ async def lifespan(app: FastAPI):
         # 중일 수 있어서, 여기서 시간을 끊으면 닫은 뒤에 그 단계가 저장소를 다시 연다.
         await asyncio.to_thread(warmup.stop_and_wait)
         await asyncio.to_thread(close_vector_client)
+        # 색인 작업이 아직 돌고 있으면 끝난 뒤에 닫는다(최대 INDEX_BUDGET_SECONDS). 먼저 닫으면
+        # 그 작업이 닫힌 클라이언트를 다시 열어 둔 채로 남는다.
+        await asyncio.gather(index_task, return_exceptions=True)
         await asyncio.to_thread(close_feedback_store)
 
 

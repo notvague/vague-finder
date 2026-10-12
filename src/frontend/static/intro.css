@@ -6,6 +6,7 @@
  * 기본값(dotStep 110 · flyMs 640)과 같다. 움직이는 속성은 transform·opacity뿐이다.
  *
  * 단계 클래스: vi-off(검정만) → vi-run(점등·대기) → vi-exit(비행+커튼). 끝나면 DOM째 제거.
+ * 유예(graceMs) 안에 준비가 끝나면 vi-off → vi-skip(검정만 짧게 사라짐)으로 가고 연출은 없다.
  * 애니메이션은 vi-run/vi-exit 아래에만 걸어, off 동안 시계가 흐르지 않게 한다.
  */
 
@@ -85,6 +86,11 @@ html.vi-lock body {
   will-change: transform;
 }
 .vi-off .vi-icon { visibility: hidden; }
+
+/* 기다릴 것이 없었던 경우 — 연출 없이 검정만 걷는다 (intro.js 의 SKIP_FADE_MS 와 짝) */
+.vi-skip .vi-icon { visibility: hidden; }
+.vi-root.vi-skip { pointer-events: none; animation: vi-skipfade 160ms ease-out both; }
+@keyframes vi-skipfade { to { opacity: 0; } }
 .vi-exit .vi-icon { animation: vi-fly var(--vi-fly) linear forwards; }
 @keyframes vi-fly {
   0%   { transform: translate3d(0, 0, 0) scale(1, 1); animation-timing-function: cubic-bezier(.2, .6, .3, 1); }

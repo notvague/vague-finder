@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from typing import Annotated, List, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 from src.backend.schemas.explain import SearchExplainOut, TrackExplain
 from src.backend.schemas.query import QueryAnalysis
@@ -78,6 +86,22 @@ class SearchRequest(BaseModel):
     feedback_parent: Optional[FeedbackReceipt] = Field(
         default=None, description="재검색 전 실행의 피드백 권한. 대화 기록 연결용이며 검색에는 사용하지 않는다",
     )
+
+    @field_validator("feedback_parent", mode="before")
+    @classmethod
+    def drop_unusable_feedback_parent(cls, value: object) -> object:
+        """형식이 틀린 연결은 버리고 검색은 받는다 — 새 대화로 기록될 뿐이다.
+
+        검색에 쓰지 않는 값인데 검증에 걸리면 요청 전체가 422가 된다. 잘린 토큰이나 예전 화면이
+        보낸 값 때문에 검색이 막히면 안 된다(저장소도 같은 원칙이다: 잘못된 연결은 무시한다).
+        """
+        if value is None or isinstance(value, FeedbackReceipt):
+            return value
+        try:
+            return FeedbackReceipt.model_validate(value)
+        except ValidationError:
+            return None
+
     query: str = Field(..., min_length=1, description="자연어 텍스트 형태의 검색 질의어")
     top_k: int = Field(default=10, ge=1, le=50, description="반환할 검색 결과의 개수")
     use_rerank: bool = Field(default=True, description="Cross-Encoder 리랭킹 사용 여부")

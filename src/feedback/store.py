@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import logging
 import os
 import secrets
 import threading
@@ -18,9 +19,13 @@ from pymongo.errors import DuplicateKeyError
 
 from src.backend.schemas.feedback import FeedbackReceipt, FeedbackRequest, FeedbackResponse
 
+logger = logging.getLogger(__name__)
+
 RETENTION_DAYS = 30
 MAX_REVISIONS = 20
 DB_BUDGET_SECONDS = 0.75
+# 기동할 때 TTL 색인을 만드는 데 주는 시간. 요청 경로 예산으로는 큰 컬렉션의 색인을 못 만든다.
+INDEX_BUDGET_SECONDS = 10.0
 
 
 class FeedbackError(Exception):
@@ -54,19 +59,33 @@ class FeedbackStore:
         self._indexed = False
         self._index_lock = threading.Lock()
 
-    def ensure_indexes(self):
+    def ensure_indexes(self) -> bool:
+        """TTL 색인을 만든다. **만들지 못해도 기록을 막지 않는다** — 됐는지만 돌려준다.
+
+        이 색인은 보관 기간이 지난 문서를 지우는 용도다. 만료 판정은 조회할 때 `expires_at`으로
+        직접 하므로 색인이 아직 없어도 기록과 제출은 정확하다. 예전에는 다른 요청이 만드는 동안
+        0.05초만 기다리다 예외를 내서, 기동 직후 동시에 들어온 검색이 제출 권한 없이 나갔다.
+
+        다른 요청이 만드는 중이면 기다리지 않고 지나간다. 실패하면 다음 기록에서 다시 시도한다.
+        요청 경로에서는 기록 예산(`DB_BUDGET_SECONDS`) 안에서만 돌기 때문에 색인 생성이 그보다
+        오래 걸리는 컬렉션은 여기서 끝내 못 만든다 — 기동할 때 넉넉한 예산으로 한 번 만든다
+        (`prepare_indexes`).
+        """
         if self._indexed:
-            return
-        # 첫 검색이 경합해도 색인은 한 번만 만든다. 잠금 대기도 짧게 제한한다.
-        if not self._index_lock.acquire(timeout=0.05):
-            raise TimeoutError("feedback index initialization busy")
+            return True
+        if not self._index_lock.acquire(blocking=False):
+            return False
         try:
             if not self._indexed:
                 self.runs.create_index("expires_at", expireAfterSeconds=0)
                 self.feedback.create_index("expires_at", expireAfterSeconds=0)
                 self._indexed = True
+        except Exception as exc:
+            # DB 예외에는 URI·명령 문서가 포함될 수 있어 예외 종류만 남긴다.
+            logger.warning("feedback TTL index not ready: %s", type(exc).__name__)
         finally:
             self._index_lock.release()
+        return self._indexed
 
     def record_search(self, snapshot: dict, parent=None) -> FeedbackReceipt:
         with timeout(DB_BUDGET_SECONDS):
@@ -174,6 +193,22 @@ def get_feedback_store() -> FeedbackStore:
             )
             _store = FeedbackStore(client[DB_NAME], client)
         return _store
+
+
+def prepare_indexes() -> bool:
+    """기동할 때 TTL 색인을 만들어 둔다. 수집이 꺼져 있으면 연결하지 않는다.
+
+    요청 경로의 0.75초 예산과 달리 `INDEX_BUDGET_SECONDS`를 준다. 실패해도 서버는 뜬다 —
+    기록할 때마다 다시 시도한다.
+    """
+    if not collection_enabled():
+        return False
+    try:
+        with timeout(INDEX_BUDGET_SECONDS):
+            return get_feedback_store().ensure_indexes()
+    except Exception as exc:
+        logger.warning("feedback TTL index not ready: %s", type(exc).__name__)
+        return False
 
 
 def close_feedback_store():
