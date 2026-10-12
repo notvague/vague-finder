@@ -102,3 +102,77 @@ def test_text_sparse_source_picks_what_bm25_receives(monkeypatch, raw, expected:
     router._text_svc = spy
     _run(router, _analysis(korean_tags=["이별", "그리움"]), top_k=3, use_rerank=False)
     assert spy.sparse_queries[0] == expected
+
+
+# --- PR #49 리뷰 반영 ------------------------------------------------------------------------
+
+_SCALE_HELPERS = [
+    ("AUDIO_FUSION_SCALE", sr._audio_fusion_scale, 1.0),
+    ("BOOST_SCALE", sr._explicit_boost_scale, 1.0),
+    ("ATTR_BOOST_SCALE", sr._attr_boost_scale, 1.0),
+    ("LYRIC_BOOST_SCALE", sr._lyric_boost_scale, 1.0),
+    ("GENDER_MISMATCH_SCALE", sr._gender_mismatch_scale, 0.0),
+]
+
+
+@pytest.mark.parametrize("raw", ["nan", "NaN", "inf", "-inf", "1e999", "infinity"])
+@pytest.mark.parametrize("name, helper, default", _SCALE_HELPERS)
+def test_a_non_finite_scale_falls_back_to_the_default(monkeypatch, name, helper, default, raw: str) -> None:
+    """`float()`는 nan·inf를 예외 없이 받는다. 예전에는 nan이 0(스위치 끔)이 되고 inf가 그대로 곱해졌다."""
+    monkeypatch.setenv(name, raw)
+    assert helper() == default
+
+
+@pytest.mark.parametrize("name, helper, default", _SCALE_HELPERS)
+def test_scale_helpers_keep_their_old_reading_of_ordinary_values(monkeypatch, name, helper, default) -> None:
+    for raw, expected in (("", default), ("0", 0.0), ("0.2", 0.2), ("3", 3.0), ("-1", 0.0), ("없음", default)):
+        monkeypatch.setenv(name, raw)
+        assert helper() == expected, (name, raw)
+
+
+def test_an_infinite_scale_no_longer_poisons_the_fusion_weights(monkeypatch) -> None:
+    """inf가 통과하면 inf/inf = NaN 가중이 된다. 이제 기본값으로 읽혀 현행과 같은 결과다."""
+    ids, weights, _ = _search(monkeypatch, "inf")
+    assert weights == {"text": 0.3, "image": 0.0, "audio": 0.7}
+    assert ids[:3] == ["a1", "a2", "a3"]
+
+
+def test_a_scale_above_one_raises_the_audio_share(monkeypatch) -> None:
+    ids, weights, _ = _search(monkeypatch, "2")
+    assert weights["audio"] == pytest.approx(1.4 / 1.7) and weights["text"] == pytest.approx(0.3 / 1.7)
+    assert "t1" not in ids
+
+
+def test_forced_weights_ignore_the_scale(monkeypatch) -> None:
+    """가중을 직접 주는 ablation 실행(`force_weights`)은 준 가중 그대로 돈다 — 배율을 0으로 둬도 소리 경로가 돈다."""
+    monkeypatch.setenv("AUDIO_FUSION_SCALE", "0")
+    text_hits = [_track(f"t{i}", title=f"텍스트{i}") for i in range(1, 61)]
+    rec = ExplainRecorder("q")
+    analysis = _analysis(audio_english_query="a reggae groove", modality_weights=AUDIO_HEAVY)
+    results = _run(
+        _router(text_hits, audio_ids=[f"a{i}" for i in range(1, 31)]), analysis,
+        top_k=30, use_rerank=False, recorder=rec, force_weights=[0.3, 0.0, 0.7],
+    )
+    assert [t.id for t in results][:3] == ["a1", "a2", "a3"]
+    assert rec.record.modality_weights == {"text": 0.3, "image": 0.0, "audio": 0.7}
+
+
+def test_the_scale_applies_before_the_lyric_meaning_clamp(monkeypatch) -> None:
+    """가사 뜻만 말한 mixed 질의는 text ≥ 0.6 · audio ≤ 0.4로 묶인다. 배율은 그 앞에서 곱해진다."""
+    def weights(scale):
+        if scale is None:
+            monkeypatch.delenv("AUDIO_FUSION_SCALE", raising=False)
+        else:
+            monkeypatch.setenv("AUDIO_FUSION_SCALE", scale)
+        rec = ExplainRecorder("q")
+        analysis = _analysis(
+            intent_type="mixed", lyric_semantic_query="헤어진 사람을 그리워하는 내용",
+            audio_english_query="a slow piano ballad", modality_weights=AUDIO_HEAVY,
+        )
+        text_hits = [_track(f"t{i}", title=f"텍스트{i}") for i in range(1, 31)]
+        _run(_router(text_hits, audio_ids=["a1"]), analysis, top_k=10, use_rerank=False, recorder=rec)
+        return rec.record.modality_weights
+
+    assert weights(None) == {"text": 0.6, "image": 0.0, "audio": 0.4}          # 현행: 0.3/0.7 → 묶임
+    scaled = weights("0.25")                                                    # 0.7 × 0.25 = 0.175 → 묶임 아래
+    assert scaled["text"] == pytest.approx(0.6 / 0.775) and scaled["audio"] == pytest.approx(0.175 / 0.775)

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 import os
 import re
 import time
@@ -591,6 +592,20 @@ def call_reranker(
 # 1.0보다 크게 주면 보호가 전부 꺼진다 — 보호 규칙 자체의 비용을 재는 진단용이다.
 # q211이 그 비용의 실례다: "위험하다" 한 조각이 다른 곡에 있어서 그 곡이 보호를 받고
 # 1위에 고정되고, 리랭커가 그것을 고칠 수 없다(보호 곡은 일반 풀에서 빠진다).
+def _env_scale(name: str, default: float) -> float:
+    """환경 변수로 받는 배율. 비었거나, 숫자가 아니거나, **유한하지 않으면** 기본값이고 음수는 0이다.
+
+    `float("nan")`·`float("inf")`는 예외 없이 통과한다. 그대로 두면 nan은 `max(0.0, nan)`이 0이 되어
+    스위치가 "기본값"이 아니라 "끔"으로 떨어지고, inf는 융합 가중을 inf/inf = NaN으로 만든다(PR #49 리뷰).
+    """
+    raw = os.getenv(name, "").strip()
+    try:
+        value = float(raw) if raw else default
+    except ValueError:
+        return default
+    return max(0.0, value) if math.isfinite(value) else default
+
+
 def _lyric_protect_min_confidence() -> float:
     raw = os.getenv("LYRIC_PROTECT_MIN_CONFIDENCE", "").strip()
     try:
@@ -610,11 +625,7 @@ def _lyric_boost_scale() -> float:
     보호 규칙을 끄는 것(`LYRIC_PROTECT_MIN_CONFIDENCE`)과는 **다른 실험이다** —
     보호를 꺼도 부스트는 그대로 걸린다.
     """
-    raw = os.getenv("LYRIC_BOOST_SCALE", "").strip()
-    try:
-        return max(0.0, float(raw)) if raw else 1.0
-    except ValueError:
-        return 1.0
+    return _env_scale("LYRIC_BOOST_SCALE", 1.0)
 
 
 def _explicit_boost_scale() -> float:
@@ -626,11 +637,7 @@ def _explicit_boost_scale() -> float:
     배율을 줄이면 가산은 "검색 순위를 뒤집는 힘"에서 "같은 순위대 안의 순서"로 내려간다.
     가사 표면 부스트(`LYRIC_BOOST_SCALE`)와 답변 보너스는 이 배율의 영향을 받지 않는다.
     """
-    raw = os.getenv("BOOST_SCALE", "").strip()
-    try:
-        return max(0.0, float(raw)) if raw else 1.0
-    except ValueError:
-        return 1.0
+    return _env_scale("BOOST_SCALE", 1.0)
 
 
 def _attr_boost_scale() -> float:
@@ -642,11 +649,7 @@ def _attr_boost_scale() -> float:
     그래서 제목(`title_*`)·아티스트·가사 키워드 가산은 그대로 두고 일반 속성 가산만 줄인다.
     `BOOST_SCALE`과 곱으로 함께 작용한다.
     """
-    raw = os.getenv("ATTR_BOOST_SCALE", "").strip()
-    try:
-        return max(0.0, float(raw)) if raw else 1.0
-    except ValueError:
-        return 1.0
+    return _env_scale("ATTR_BOOST_SCALE", 1.0)
 
 
 def _audio_fusion_scale() -> float:
@@ -657,12 +660,12 @@ def _audio_fusion_scale() -> float:
     소리 가중을 0.2~0.7로 준다. 가중 RRF에서 소리 가중 0.7이면 텍스트 1위(0.3/61)가 소리 경로 상위
     80곡 안팎보다 낮아져 후보 30에서 밀린다(v10 t058). 분석의 가중·프롬프트는 건드리지 않고 융합에서만
     줄인다 — 표지 지배 판정(`rerank_policy`)처럼 분석 가중을 읽는 다른 규칙이 따라 바뀌지 않게.
+
+    `force_weights`(가중을 직접 주는 ablation 실행)에는 적용하지 않는다 — 그 실행은 준 가중 그대로 돈다.
+    지금 `force_weights`를 넘기는 것은 `src/eval/evaluate.py`뿐이고, runinfo에 이 배율을 적는
+    `evaluate_search_accuracy`는 넘기지 않는다.
     """
-    raw = os.getenv("AUDIO_FUSION_SCALE", "").strip()
-    try:
-        return max(0.0, float(raw)) if raw else 1.0
-    except ValueError:
-        return 1.0
+    return _env_scale("AUDIO_FUSION_SCALE", 1.0)
 
 
 def _text_sparse_source() -> str:
@@ -688,11 +691,7 @@ def _gender_mismatch_scale() -> float:
     전혀 바뀌지 않았다. 0이면 감점을 **기록도 하지 않는다** — "말한 성별과 다름 (−0.0000)"은 설명이 아니다.
     일치·부분 일치 가산은 그대로다. `BOOST_SCALE`과 곱으로 함께 작용한다.
     """
-    raw = os.getenv("GENDER_MISMATCH_SCALE", "").strip()
-    try:
-        return max(0.0, float(raw)) if raw else 0.0
-    except ValueError:
-        return 0.0
+    return _env_scale("GENDER_MISMATCH_SCALE", 0.0)
 
 
 def _lyric_match_note(track: MatchingTrack) -> str:
