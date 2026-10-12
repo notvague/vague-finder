@@ -60,7 +60,7 @@ function screen(first = reply()) {
       setItem: (key, value) => storage.set(key, value),
       removeItem: key => storage.delete(key),
     },
-    explainOpen: new Set(), resultList: { scrollTop: 0 }, clearBtn: {},
+    explainOpen: new Set(), explainDetailsOpen: new Set(), resultList: { scrollTop: 0 }, clearBtn: {},
     renderPanel() {}, markHits() { return 0; }, setRailClosed() {}, localSearch: () => [],
     statusLog: [],
     requests: [],

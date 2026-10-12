@@ -95,6 +95,15 @@ class ScoreAdjustmentOut(BaseModel):
     label: str = Field(..., description="규칙 이름 (화면용)")
     delta: float
     detail: str = ""
+    slot: str = Field(default="", description="이 규칙이 비교한 슬롯(기록에 있을 때만). 점수와 무관한 추적 정보")
+    value: str = Field(default="", description="비교에 쓴 질의 쪽 값 — 검색이 실제로 비교한 값. 정정 전 값일 수 있다")
+    note: str = Field(
+        default="",
+        description=(
+            "서버 문구. 이 가산이 **지금 사용자 단서가 아닌 값**으로 계산됐을 때만 채운다"
+            "(예: '정정 전 값(남성) 기준' · '검색이 해석한 값(여성) 기준'). 점수·기록은 그대로다 — 화면이 현재 단서의 근거로 읽지 않게 하는 표시"
+        ),
+    )
 
     @classmethod
     def of(cls, item: ScoreAdjustment) -> "ScoreAdjustmentOut":
@@ -103,6 +112,8 @@ class ScoreAdjustmentOut(BaseModel):
             label=RULE_LABELS.get(item.rule, item.rule),
             delta=item.delta,
             detail=item.detail,
+            slot=getattr(item, "slot", "") or "",
+            value=getattr(item, "value", "") or "",
         )
 
 
@@ -191,6 +202,56 @@ class LyricEvidenceOut(BaseModel):
     kind_label: str = Field(..., description="kind의 화면용 이름")
 
 
+class RankingBasisOut(BaseModel):
+    """단서 한 줄과 **연결되는** 실제 기록 — 가산·경로 기여·순서 규칙·정책 생략. 없으면 목록이 비어 있다."""
+
+    kind: str = Field(..., description="adjustment · path · order_rule · rerank_skip")
+    code: str = Field(..., description="규칙·경로·사유 코드")
+    label: str = Field(..., description="화면용 이름")
+    delta: Optional[float] = Field(default=None, description="점수에 더해진 양(가산·경로일 때)")
+
+
+class ClueCheckOut(BaseModel):
+    """기억한 단서 / 이 곡에서 확인한 내용 / 상태 — 사용자용 대조표의 한 줄."""
+
+    slot: str = Field(..., description="vocal_gender · genre · lyrics · release_era · mv_scene")
+    clue: str = Field(..., description="기억한 단서(사용자 표현 또는 실제 답변)")
+    clue_origin: str = Field(..., description="query · answer · analysis · birth_year")
+    observed: str = Field(..., description="이 곡에서 확인한 내용. 자료 없음은 없음이 아니라 미확인이다")
+    status: str = Field(..., description="match · partial · mismatch · unverified")
+    status_label: str = Field(..., description="일치 · 부분 일치 · 다름 · 미확인")
+    source: str = Field(..., description="추적 가능한 근거 참조(곡 필드·가사 인용 판·기록)")
+    ranking_basis: List[RankingBasisOut] = Field(
+        default_factory=list,
+        description="이 단서와 연결된 실제 순위 기록. **곡 정보가 맞다는 것과 별개다** — 비어 있으면 기록이 없다는 뜻",
+    )
+    basis_label: str = Field(..., description="순위 기여 요약(검색 점수에 반영 · 먼저 배치 · 순위 반영 기록 없음 …)")
+    detail_kind: str = Field(
+        default="",
+        description="행의 세부 종류(lyric_exact · lyric_summary · slot_conflict · era_earlier_than_estimate …). 진단용",
+    )
+
+
+class AdjustmentNoteOut(BaseModel):
+    """상세 기록의 가산 줄에 붙는 문구의 근거 — 어느 규칙·슬롯·값에 어떤 표시를 붙였는가."""
+
+    rule: str
+    slot: str
+    value: str
+    note: str
+
+
+class UserExplanationOut(BaseModel):
+    """사용자용 설명. 템플릿과 기록·곡 자료만으로 만들며 LLM을 쓰지 않는다(`src/retrieval/user_explanation.py`)."""
+
+    summary: str = Field(..., description="확인된 정보와 실제 기록으로 만든 최대 2문장")
+    clue_checks: List[ClueCheckOut] = Field(default_factory=list)
+    adjustment_notes: List[AdjustmentNoteOut] = Field(
+        default_factory=list,
+        description="현재 단서가 아닌 값으로 계산된 가산에 붙인 표시. 같은 내용이 adjustments[].note에도 실린다",
+    )
+
+
 class TrackExplain(BaseModel):
     """곡 한 개가 이 자리에 온 근거."""
 
@@ -198,6 +259,13 @@ class TrackExplain(BaseModel):
     summary: str = Field(
         ...,
         description="기록만으로 만든 한 문장. LLM을 쓰지 않으므로 기록에 없는 말은 없다",
+    )
+    user_explanation: Optional[UserExplanationOut] = Field(
+        default=None,
+        description=(
+            "사용자용 설명(짧은 문장 + 단서 대조표). 없으면(None) 구형 응답·평가 도구처럼 요청 문맥을 "
+            "모르는 호출자다 — 화면은 기존 기록만 보인다"
+        ),
     )
 
     paths: List[PathContributionOut] = Field(
@@ -414,23 +482,46 @@ def to_track_explain(
     reorder_stage: str = REORDER_NOT_ATTEMPTED,
     max_items: int = 3,
     evidence: Optional[List[Any]] = None,
+    user_explanation: Optional[Any] = None,
 ) -> TrackExplain:
     """곡 하나의 기록을 응답 모델로 옮긴다.
 
     reorder_stage는 요청 전체에서 파생한 값이라 밖에서 받는다. 이것 없이는
     "리랭킹이 N위 유지"처럼 하지 않은 일을 말하게 된다 — 리랭킹을 끈 경우와
     실패한 경우에도 전후 순위는 기록되기 때문이다.
+
+    user_explanation은 `src/retrieval/user_explanation.UserExplanation`(또는 같은 모양의 dict)이다.
+    요청 문맥(원문·답변·시기 창)을 아는 호출자(검색 라우트)만 넘기고, 평가 도구는 비운다.
     """
+    user_out: Optional[UserExplanationOut] = None
+    if user_explanation is not None:
+        payload = (
+            user_explanation.to_dict() if hasattr(user_explanation, "to_dict") else user_explanation
+        )
+        user_out = UserExplanationOut.model_validate(payload)
+    # 정정 전 값·검색 해석값으로 계산된 가산 줄에 서버 문구를 붙인다. 점수·순서는 그대로다.
+    stale_notes = {
+        (n.rule, n.slot, n.value): n.note for n in (user_out.adjustment_notes if user_out else [])
+    }
+
+    def _adjustment_out(item: ScoreAdjustment) -> ScoreAdjustmentOut:
+        out = ScoreAdjustmentOut.of(item)
+        note = stale_notes.get((out.rule, out.slot, out.value), "")
+        return out.model_copy(update={"note": note}) if note else out
+
     return TrackExplain(
         song_id=explain.song_id,
-        summary=render_ko(explain, max_items=max_items, reorder_stage=reorder_stage),
+        summary=render_ko(
+            explain, max_items=max_items, reorder_stage=reorder_stage, adjustment_notes=stale_notes,
+        ),
+        user_explanation=user_out,
         paths=[
             PathContributionOut.of(item)
             for item in sorted(explain.live_paths(), key=lambda p: p.delta, reverse=True)
         ],
         dropped_paths=[PathContributionOut.of(item) for item in explain.dropped_paths()],
         adjustments=[
-            ScoreAdjustmentOut.of(item)
+            _adjustment_out(item)
             for item in sorted(
                 explain.adjustments, key=lambda a: abs(a.delta), reverse=True
             )

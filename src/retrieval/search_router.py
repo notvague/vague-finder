@@ -1988,11 +1988,15 @@ class SearchRouter:
             score = rrf_score
             track = meta_cache.get(song_id)
 
-            def bump(rule: str, delta: float, detail: str = "", _id=song_id) -> None:
-                """점수를 더하고 같은 값을 기록한다. 감점은 delta가 음수다."""
+            def bump(rule: str, delta: float, detail: str = "", _id=song_id, *, slot: str = "", value: str = "") -> None:
+                """점수를 더하고 같은 값을 기록한다. 감점은 delta가 음수다.
+
+                slot·value는 기록에만 간다 — 이 규칙이 질의의 어느 값과 비교했는지(사용자용 설명이
+                정정된 답과 과거 가산을 구분하는 데 쓴다). 점수 계산은 `score += delta` 한 줄 그대로다.
+                """
                 nonlocal score
                 score += delta
-                recorder.adjust(_id, rule, delta, detail)
+                recorder.adjust(_id, rule, delta, detail, slot=slot, value=value)
 
             if track is not None and not disable_boost:
                 # 가사 키워드 매칭 (highlight/summary 토큰과 교집합)
@@ -2023,6 +2027,8 @@ class SearchRouter:
                                 f"lyric_{kind}_in_{field}",
                                 boost_unit * multiplier * clue.confidence,
                                 f"{clue.kind} ×{multiplier:.1f}",
+                                slot="lyric_clue",
+                                value=clue.text,
                             )
                             break
 
@@ -2099,13 +2105,15 @@ class SearchRouter:
                     actual_gender = str(track.vocal_gender).strip()
 
                     if actual_gender == want_gender:
-                        bump("vocal_gender_match", attr_unit * 1.0, f"{actual_gender}")
+                        bump("vocal_gender_match", attr_unit * 1.0, f"{actual_gender}",
+                             slot="vocal_gender", value=want_gender)
 
                     elif (
                         actual_gender == "혼성"
                         and want_gender in ("남성", "여성")
                     ):
-                        bump("vocal_gender_partial", attr_unit * 0.25, f"{actual_gender}")
+                        bump("vocal_gender_partial", attr_unit * 0.25, f"{actual_gender}",
+                             slot="vocal_gender", value=want_gender)
 
                     elif gender_mismatch_scale <= 0.0:
                         # 불일치 감점 없음(기본). 기록도 남기지 않는다 — 0점 감점을
@@ -2120,6 +2128,7 @@ class SearchRouter:
                             "vocal_gender_mismatch",
                             -(attr_unit * 0.5 * gender_mismatch_scale),
                             f"{actual_gender}",
+                            slot="vocal_gender", value=want_gender,
                         )
 
                     elif {
@@ -2130,6 +2139,7 @@ class SearchRouter:
                             "vocal_gender_mismatch",
                             -(attr_unit * 1.0 * gender_mismatch_scale),
                             f"{actual_gender}",
+                            slot="vocal_gender", value=want_gender,
                         )
 
                 # 발매 시기 soft boost
@@ -2143,6 +2153,8 @@ class SearchRouter:
                         "release_era",
                         attr_unit * 1.25 * analysis.release_era.confidence * era_similarity,
                         f"시기 유사 {era_similarity:.2f}",
+                        slot="release_era",
+                        value=f"{analysis.release_era.start_year}~{analysis.release_era.end_year}",
                     )
 
                 # 솔로/그룹/듀오/밴드 soft boost
@@ -2178,7 +2190,7 @@ class SearchRouter:
                     and track.genre
                     and want_genre in _norm(track.genre)
                 ):
-                    bump("genre_match", attr_unit * 1)
+                    bump("genre_match", attr_unit * 1, slot="genre", value=analysis.genre)
 
             boosted.append((song_id, score))
 

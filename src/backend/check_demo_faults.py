@@ -688,7 +688,9 @@ def _explain(s: Screen) -> Dict[str, Any]:
       const last = window.__vfLast || {};
       const top = (last.results || [])[0] || {};
       return {
-        summary: panel ? ((panel.querySelector(".exsummary") || {}).textContent || "").trim() : "",
+        // 기록 요약은 접힌 상세 안의 .exsummary.exrecord다(2026-10-12). 첫 .exsummary는 사용자용 문장이라
+        // "리랭킹이 실패" 같은 기록 문구가 없다. 구형 배치(사용자용 설명 없음)에서는 .exsummary 하나뿐이다.
+        summary: panel ? ((panel.querySelector(".exsummary.exrecord") || panel.querySelector(".exsummary") || {}).textContent || "").trim() : "",
         paths: rows("경로 기여"),
         groups: groups.map((g) => ((g.querySelector(".exhead") || {}).textContent || "").trim()),
         weights: (last.explain || {}).modality_weights || {},

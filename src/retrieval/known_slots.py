@@ -282,6 +282,15 @@ def known_slot_values(query: str) -> Dict[str, str]:
         elif len(genders) == 1:
             found["vocal_gender"] = next(iter(genders))
 
+    genres = _genre_statements(text)
+    if genres:
+        found["genre"] = genres[0]   # 슬롯 판정은 첫 진술 하나로 충분하다(돌려주는 것은 슬롯 이름이다)
+    return found
+
+
+def _genre_statements(text: str) -> List[str]:
+    """인용·이름 구절을 지운 원문(`_evidence_text`)에서 확정된 장르 진술 전부 — 나온 순서, 중복 없음."""
+    out: List[str] = []
     for start, end in _clauses(text):
         clause = text[start:end]
         scene = _SCENE_RE.search(clause) is not None
@@ -293,8 +302,29 @@ def known_slot_values(query: str) -> Dict[str, str]:
                 continue
             if not _is_certain(clause, m.end(), "genre"):
                 continue
-            found.setdefault("genre", _GENRE_CANON.get(raw.lower(), raw))
-    return found
+            value = _GENRE_CANON.get(raw.lower(), raw)
+            if value not in out:
+                out.append(value)
+    return out
+
+
+def genre_aliases() -> Dict[str, str]:
+    """장르 낱말의 다른 표기 → 정규 표기(사본). `락`·`롹` → `록`, `edm`·`일렉트로닉` → `일렉트로니카` (열쇠는 소문자).
+
+    원문 판정이 쓰는 것과 **같은 표**다. 설명이 분석의 장르 값("일렉트로닉")과 원문의 진술("일렉트로니카")을
+    견줄 때 표기 차이를 다른 장르로 읽지 않게 한다. 판정 규칙은 이 함수를 쓰지 않는다.
+    """
+    return dict(_GENRE_CANON)
+
+
+def known_genre_values(query: str) -> List[str]:
+    """원문에서 확정된 장르 진술 **전부**. 예: "R&B 발라드" → `["알앤비", "발라드"]`.
+
+    사용자용 설명 전용이다 — 사용자가 장르를 둘 말했을 때 첫 값만 보면 검색이 고른 둘째 값과 어긋나 보인다.
+    재질문 판정(`known_slot_values`·`known_slots_from_text`)은 이 함수를 쓰지 않고, 결과도 달라지지 않는다
+    (같은 규칙의 첫 값이 그 함수의 장르다).
+    """
+    return _genre_statements(_evidence_text(query))
 
 
 def known_slots_from_text(query: str) -> List[str]:
