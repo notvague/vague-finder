@@ -27,6 +27,7 @@
   const OFF_MS = 80;
   const DONE_MARGIN_MS = 60;
   const REDUCED_FADE_MS = 400;
+  const MAX_WAIT_CAP_MS = 10000; // intro.css 의 vi-failsafe(12s)와 짝
 
   // 아이콘 박스 대비 %. i 는 점등 순서 (SPEC.md 4번)
   const DOT_ROWS = [
@@ -125,6 +126,8 @@
       this.icon = deps.icon || null;
       this.doc = deps.doc || null;
       this.opts = Object.assign({}, DEFAULTS, deps.options);
+      // intro.css 의 최후 안전장치(12s)보다 먼저 나가도록 상한을 둔다
+      this.opts.maxWaitMs = Math.min(this.opts.maxWaitMs, MAX_WAIT_CAP_MS);
       this.timing = computeTiming(this.opts);
       this.setT = deps.setTimeout || setTimeout.bind(globalThis);
       this.clearT = deps.clearTimeout || clearTimeout.bind(globalThis);
@@ -154,6 +157,11 @@
     start() {
       if (this.phase !== 'idle') return;
 
+      // 안전장치를 가장 먼저 건다 — 아래 어느 단계에서 예외가 나도 검정에 갇히지 않게.
+      // ready 가 끝내 안 오는 경우도 여기서 막는다. 먼저 phase 를 바꿔 중복 호출을 막는다.
+      this.phase = 'starting';
+      this._later(this.opts.maxWaitMs, () => this._exitOrFinish());
+
       if (this.opts.oncePerSession && this.storage) {
         let seen = false;
         try { seen = this.storage.getItem(this.opts.storageKey) === '1'; } catch (_) { /* 저장소 차단 */ }
@@ -170,7 +178,13 @@
       style.setProperty('--vi-flash-delay', t.flashDelay + 'ms');
       style.setProperty('--vi-gain-opacity', String(Math.min(1, t.glow)));
       style.setProperty('--vi-gain-scale', String(0.7 + 0.3 * t.glow));
-      if (this.icon && this.doc) buildIcon(this.doc, this.icon, t);
+      try {
+        if (this.icon && this.doc) buildIcon(this.doc, this.icon, t);
+      } catch (_) {
+        // 아이콘을 못 그리는 환경(replaceChildren 없음 등)이면 인트로를 건너뛴다
+        this._finish();
+        return;
+      }
 
       this._setPhase('off');
       this._startedAt = this._now();
@@ -179,8 +193,12 @@
         this._runAt = this._now();
         this._scheduleExit();
       });
-      // ready 가 끝내 안 와도 화면이 검정에 갇히지 않게 하는 안전장치
-      this._later(this.opts.maxWaitMs, () => this._exit());
+    }
+
+    /** 안전장치용: 아직 나가는 중이 아니면 나간다. 시작도 못 했으면 바로 걷어낸다. */
+    _exitOrFinish() {
+      if (this.phase === 'starting') this._finish();
+      else this._exit();
     }
 
     /** 앱이 첫 화면을 그릴 준비가 됐다는 신호. */
@@ -238,20 +256,27 @@
     let storage = null;
     try { storage = win.sessionStorage; } catch (_) { /* 차단된 환경 */ }
 
-    const intro = new Intro({
-      el,
-      icon: el.querySelector('.vi-icon'),
-      doc,
-      options,
-      reducedMotion: reduced,
-      storage,
-      onComplete() {
-        unlock();
-        win.dispatchEvent(new win.CustomEvent('vagueintro:complete'));
-      },
-    });
-    intro.start();
-    return intro;
+    try {
+      const intro = new Intro({
+        el,
+        icon: el.querySelector('.vi-icon'),
+        doc,
+        options,
+        reducedMotion: reduced,
+        storage,
+        onComplete() {
+          unlock();
+          win.dispatchEvent(new win.CustomEvent('vagueintro:complete'));
+        },
+      });
+      intro.start();
+      return intro;
+    } catch (_) {
+      // 인트로는 장식이다. 어떤 이유로든 못 돌리면 앱을 가리지 않고 물러난다.
+      if (el.remove) el.remove();
+      unlock();
+      return null;
+    }
   }
 
   return { Intro, computeTiming, mount, DOT_ROWS, DEFAULTS };

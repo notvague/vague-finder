@@ -142,3 +142,19 @@ test('글로우 세기는 gain 변수에 반영된다 (opacity 는 1 에서 멈�
   assert.equal(h.el.style.props['--vi-gain-opacity'], '1');
   assert.equal(h.el.style.props['--vi-gain-scale'], String(0.7 + 0.3 * 1.5));
 });
+
+test('아이콘 생성이 던지면 인트로를 건너뛰고 오버레이를 걷어낸다', () => {
+  const icon = { replaceChildren() { throw new Error('unsupported'); } };
+  const h = harness({}, { icon, doc: {} });
+  h.intro.start();
+  assert.equal(h.calls.complete, 1);
+  assert.equal(h.el.removed, true);
+  assert.equal(h.pending.size, 0);
+});
+
+test('maxWaitMs 는 CSS 최후 안전장치(12s)보다 짧게 제한된다', () => {
+  const h = harness({ maxWaitMs: 60000 });
+  h.intro.start();
+  h.advance(10000);
+  assert.ok(h.classes.has('vi-exit'));
+});

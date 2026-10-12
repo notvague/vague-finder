@@ -15,6 +15,17 @@ html.vi-lock body {
   overflow: hidden;
 }
 
+/*
+ * 최후 안전장치(CSS만으로 동작): intro.js 가 아예 안 불려오거나 도중에 멈춰도
+ * 12초 뒤에는 오버레이를 숨기고 스크롤을 푼다. intro.js 의 maxWaitMs(상한 10s)
+ * + 퇴장(~1s)보다 길어야 정상 흐름을 끊지 않는다.
+ */
+html.vi-lock,
+html.vi-lock body {
+  animation: vi-unlock 0s linear 12s forwards;
+}
+@keyframes vi-unlock { to { overflow: auto; } }
+
 .vi-root {
   --vi-fly: 640ms;
   --vi-sweep-delay: 200ms;
@@ -32,8 +43,10 @@ html.vi-lock body {
   z-index: 10000;
   overflow: hidden;
   background: transparent;
+  animation: vi-failsafe 0s linear 12s forwards;
 }
 .vi-root.vi-exit { pointer-events: none; }
+@keyframes vi-failsafe { to { visibility: hidden; pointer-events: none; } }
 
 .vi-curtain {
   position: absolute;
