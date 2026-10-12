@@ -1,17 +1,20 @@
 """/search 응답의 사용자용 설명 — 실제 라우트 경로로 확인한다.
 
 고정하는 것: explain=true면 각 결과에 user_explanation이 실린다. explain을 켜도 결과 ID·순서·점수와
-분석기·리랭커 호출 수가 같다. 재질문의 정정 답변이 현재 단서다. 설명 생성이 실패해도 검색은 성공한다.
+분석기·리랭커 호출 수가 같다. 재질문의 정정 답변이 현재 단서다. 설명 생성이 실패해도, 만든 설명이
+응답 스키마와 어긋나도 검색은 성공한다.
 """
 from __future__ import annotations
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 import src.backend.api.routes.search as route_module
 from src.backend.api.dependencies import get_query_analyzer, get_search_router
 from src.backend.api.routes.search import router as search_route
+from src.backend.schemas.explain import UserExplanationOut, to_user_explanation_out
 from tests.test_search_explain import _StubReranker, _analysis, _router, _track
 
 
@@ -260,3 +263,74 @@ def test_route_mv_cell_holds_only_the_scene_when_another_clue_follows(query, sce
         mv = next(c for c in track["explain"]["user_explanation"]["clue_checks"] if c["slot"] == "mv_scene")
         assert mv["clue"] == scene, mv["clue"]
         assert mv["status"] == "unverified" and mv["basis_label"] == "자료가 없어 리랭킹 생략"
+
+
+# ---------------------------------------------------------------------------
+# PR #52 자동 리뷰 — UFE-16: 만든 설명이 응답 스키마와 어긋나도 검색은 성공한다 (실제 라우트)
+# ---------------------------------------------------------------------------
+
+class _Misshapen:
+    """생성은 됐지만 응답 스키마와 어긋난 설명 — 대조표 줄에 필수 필드가 빠졌다."""
+
+    def __init__(self, built):
+        self.built = built
+
+    def to_dict(self):
+        return {**self.built.to_dict(), "clue_checks": [{"slot": "vocal_gender"}]}
+
+
+def _misshape_for(monkeypatch, song_id):
+    real = route_module.build_user_explanation
+
+    def build(**kw):
+        built = real(**kw)
+        return _Misshapen(built) if kw["track"].id == song_id else built
+    monkeypatch.setattr(route_module, "build_user_explanation", build)
+
+
+def _record_only(track):
+    return {k: v for k, v in track["explain"].items() if k != "user_explanation"}
+
+
+def test_route_survives_an_explanation_that_does_not_fit_the_response_schema(monkeypatch):
+    request = {"top_k": 3, "explain": True}
+    normal, _, _ = _post(request, analyzer=_CountingAnalyzer(vocal_gender="남성", genre="인디"))
+    _misshape_for(monkeypatch, "s1")
+    body, _, _ = _post(request, analyzer=_CountingAnalyzer(vocal_gender="남성", genre="인디"))   # 200은 _post가 본다
+    assert [(t["id"], t["score"]) for t in body["results"]] == [(t["id"], t["score"]) for t in normal["results"]]
+    before = {t["id"]: t for t in normal["results"]}
+    after = {t["id"]: t for t in body["results"]}
+    # 어긋난 곡은 설명만 비고, 그 곡의 기록 요약 · 경로 · 가감점은 그대로다
+    s1 = after["s1"]["explain"]
+    assert before["s1"]["explain"]["user_explanation"] is not None and s1["user_explanation"] is None
+    assert _record_only(after["s1"]) == _record_only(before["s1"])
+    assert s1["summary"] and s1["paths"]
+    assert "vocal_gender_match" in [a["rule"] for a in s1["adjustments"]]
+    # 다른 곡의 설명은 그대로 실린다 — 한 곡의 실패가 응답 전체를 비우지 않는다
+    for song_id in ("s2", "s3"):
+        assert after[song_id]["explain"]["user_explanation"] is not None
+        assert after[song_id]["explain"] == before[song_id]["explain"]
+
+
+def test_route_shows_the_plain_record_line_when_the_explanation_that_carried_its_note_is_dropped(monkeypatch):
+    # 가산 줄의 "정정 전 값" 표시는 설명에서 나온다. 설명이 빠진 곡은 표시 없는 기록 그대로다(생성 실패와 같다)
+    _misshape_for(monkeypatch, "s1")
+    prior = _analysis(original_query="남자 가수 노래", vocal_gender="남성").model_dump()
+    body, _, _ = _post({
+        "query": "남자 가수 노래", "top_k": 3, "explain": True, "prior_analysis": prior,
+        "answers": [{"slot": "vocal_gender", "value": "여성", "skipped": False}],
+        "asked_slots": ["vocal_gender"], "turn": 1,
+    })
+    s1 = {t["id"]: t for t in body["results"]}["s1"]["explain"]
+    assert s1["user_explanation"] is None
+    old = [a for a in s1["adjustments"] if a["rule"] == "vocal_gender_match"]
+    assert old and old[0]["value"] == "남성" and old[0]["note"] == ""
+    assert "말한 성별과 일치, 남성 (+" in s1["summary"] and "기준" not in s1["summary"]
+
+
+def test_a_validated_explanation_passes_through_and_a_misshapen_one_is_rejected():
+    out = UserExplanationOut(summary="요약")
+    assert to_user_explanation_out(out) is out, "라우트가 검증한 모델을 to_track_explain이 다시 만들지 않는다"
+    assert to_user_explanation_out({"summary": "요약"}) == out
+    with pytest.raises(ValidationError):
+        to_user_explanation_out({"summary": "요약", "clue_checks": [{"slot": "vocal_gender"}]})

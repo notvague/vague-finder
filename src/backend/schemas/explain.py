@@ -476,6 +476,17 @@ def evidence_kind(explain: SongExplain) -> str:
     return EVIDENCE_RANKING if (scored or protected) else EVIDENCE_SUPPLEMENTARY
 
 
+def to_user_explanation_out(user_explanation: Any) -> UserExplanationOut:
+    """사용자용 설명을 응답 모델로 검증한다. 모양이 어긋나면 예외를 낸다.
+
+    `src/retrieval/user_explanation.UserExplanation`(또는 같은 모양의 dict)을 받는다. 이미 검증된
+    `UserExplanationOut`은 그대로 돌려준다. 설명은 부가 정보이므로 검색 라우트는 이 검증까지 끝낸 뒤에
+    `to_track_explain`에 넘긴다 — 어긋난 설명이 응답 전체를 실패시키면 안 된다.
+    """
+    payload = user_explanation.to_dict() if hasattr(user_explanation, "to_dict") else user_explanation
+    return UserExplanationOut.model_validate(payload)
+
+
 def to_track_explain(
     explain: SongExplain,
     *,
@@ -490,15 +501,12 @@ def to_track_explain(
     "리랭킹이 N위 유지"처럼 하지 않은 일을 말하게 된다 — 리랭킹을 끈 경우와
     실패한 경우에도 전후 순위는 기록되기 때문이다.
 
-    user_explanation은 `src/retrieval/user_explanation.UserExplanation`(또는 같은 모양의 dict)이다.
+    user_explanation은 `to_user_explanation_out`이 받는 것이다(검증된 모델 · `UserExplanation` · 같은 모양의 dict).
     요청 문맥(원문·답변·시기 창)을 아는 호출자(검색 라우트)만 넘기고, 평가 도구는 비운다.
     """
-    user_out: Optional[UserExplanationOut] = None
-    if user_explanation is not None:
-        payload = (
-            user_explanation.to_dict() if hasattr(user_explanation, "to_dict") else user_explanation
-        )
-        user_out = UserExplanationOut.model_validate(payload)
+    user_out: Optional[UserExplanationOut] = (
+        None if user_explanation is None else to_user_explanation_out(user_explanation)
+    )
     # 정정 전 값·검색 해석값으로 계산된 가산 줄에 서버 문구를 붙인다. 점수·순서는 그대로다.
     stale_notes = {
         (n.rule, n.slot, n.value): n.note for n in (user_out.adjustment_notes if user_out else [])

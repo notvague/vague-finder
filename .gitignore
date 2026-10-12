@@ -60,6 +60,8 @@ artifacts/*
 src/frontend/static/map_data.json
 *.csv
 # 질의 작성 양식은 예시 2행뿐이라 곡 목록 노출이 없다
+docs/plans
+docs/reviews
 !docs/eval/query_writing_template.csv
 cookies.txt
 logs/

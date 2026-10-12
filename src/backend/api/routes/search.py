@@ -12,7 +12,12 @@ from src.backend.api.dependencies import (
     get_search_router,
     get_vector_client,
 )
-from src.backend.schemas.explain import SearchExplainOut, to_track_explain
+from src.backend.schemas.explain import (
+    SearchExplainOut,
+    UserExplanationOut,
+    to_track_explain,
+    to_user_explanation_out,
+)
 from src.backend.schemas.query import QueryAnalysis
 from src.backend.schemas.search import (
     MAX_ASKED_SLOTS,
@@ -53,7 +58,7 @@ from src.retrieval.lyrics_exact_search import (
 from src.retrieval.query_analyzer import QueryAnalyzer, rule_fallback
 from src.retrieval.search_router import SearchRouter
 from src.retrieval.search_service import SearchService
-from src.retrieval.user_explanation import UserExplanation, build_user_explanation
+from src.retrieval.user_explanation import build_user_explanation
 from src.feedback.capture import capture_search
 from src.vector_db.settings import TEXT_HYBRID_INDEX_NAME
 
@@ -191,22 +196,25 @@ def _user_explanation(
     explain: SongExplain,
     evidence: list,
     rerank_skip_reason: str,
-) -> Optional[UserExplanation]:
+) -> Optional[UserExplanationOut]:
     """사용자용 설명. **같은 실행의 것만 쓴다** — 원문·검색에 쓴 분석·답변·결과 곡·기록·가사 인용.
 
-    모델·DB를 부르지 않고 입력을 바꾸지 않는다(`build_user_explanation`). 설명을 못 만들어도
-    검색 응답은 실패하지 않는다 — 그 곡은 기존 기록만 보인다.
+    모델·DB를 부르지 않고 입력을 바꾸지 않는다(`build_user_explanation`). 설명을 못 만들어도,
+    만든 설명이 응답 스키마와 어긋나도 검색 응답은 실패하지 않는다 — 그 곡은 기존 기록만 보인다.
+    그래서 응답 모델 검증까지 여기서 끝내고 검증된 모델을 넘긴다.
     """
     try:
-        return build_user_explanation(
-            query=query,
-            analysis=analysis,
-            search_analysis=search_analysis,
-            answers=answers,
-            track=track,
-            explain=explain,
-            evidence=evidence,
-            rerank_skip_reason=rerank_skip_reason,
+        return to_user_explanation_out(
+            build_user_explanation(
+                query=query,
+                analysis=analysis,
+                search_analysis=search_analysis,
+                answers=answers,
+                track=track,
+                explain=explain,
+                evidence=evidence,
+                rerank_skip_reason=rerank_skip_reason,
+            )
         )
     except Exception:  # 설명은 부가 정보다 — 결과를 막지 않는다
         logger.exception("[explain] %s 사용자용 설명 생성 실패", explain.song_id)
