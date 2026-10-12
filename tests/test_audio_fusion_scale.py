@@ -130,6 +130,28 @@ def test_scale_helpers_keep_their_old_reading_of_ordinary_values(monkeypatch, na
         assert helper() == expected, (name, raw)
 
 
+@pytest.mark.parametrize("raw, expected", [
+    ("", 0.80), ("없음", 0.80), ("nan", 0.80), ("NaN", 0.80),   # 못 읽는 값은 기본값
+    ("0.5", 0.5), ("-1", -1.0),                                  # 평소 값은 그대로(음수도 자르지 않는다)
+    ("1.5", 1.5), ("inf", float("inf")),                         # 1.0 초과 = 보호 끔 (진단용)
+])
+def test_lyric_protect_threshold_reads_nan_as_the_default(monkeypatch, raw: str, expected: float) -> None:
+    """nan이 그대로 나가면 `score >= nan`이 항상 거짓이라 가사 보호가 조용히 전부 꺼진다(PR #51 리뷰)."""
+    monkeypatch.setenv("LYRIC_PROTECT_MIN_CONFIDENCE", raw)
+    assert sr._lyric_protect_min_confidence() == expected
+
+
+def test_a_nan_threshold_does_not_switch_lyric_protection_off(monkeypatch) -> None:
+    exact = _track("s1", lyric_match_type="exact", lyric_match_score=0.9)
+    weak = _track("s2", lyric_match_type="exact", lyric_match_score=0.5)
+    monkeypatch.delenv("LYRIC_PROTECT_MIN_CONFIDENCE", raising=False)
+    assert sr.select_protected_lyric_ids([exact, weak]) == {"s1"}
+    monkeypatch.setenv("LYRIC_PROTECT_MIN_CONFIDENCE", "nan")
+    assert sr.select_protected_lyric_ids([exact, weak]) == {"s1"}, "기본값(0.80)과 같아야 한다"
+    monkeypatch.setenv("LYRIC_PROTECT_MIN_CONFIDENCE", "inf")
+    assert sr.select_protected_lyric_ids([exact, weak]) == set(), "1.0 초과는 보호 끔"
+
+
 def test_an_infinite_scale_no_longer_poisons_the_fusion_weights(monkeypatch) -> None:
     """inf가 통과하면 inf/inf = NaN 가중이 된다. 이제 기본값으로 읽혀 현행과 같은 결과다."""
     ids, weights, _ = _search(monkeypatch, "inf")

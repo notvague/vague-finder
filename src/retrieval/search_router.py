@@ -585,13 +585,6 @@ def call_reranker(
     return run.tracks
 
 
-# 보호를 받을 최소 단서 확신도. **문자 유사도 기준이 아니다**
-# (`lyrics_exact_search.py`는 정규화 후 부분문자열로 발견되면 단서의 confidence를
-# 그대로 점수로 쓴다).
-#
-# 1.0보다 크게 주면 보호가 전부 꺼진다 — 보호 규칙 자체의 비용을 재는 진단용이다.
-# q211이 그 비용의 실례다: "위험하다" 한 조각이 다른 곡에 있어서 그 곡이 보호를 받고
-# 1위에 고정되고, 리랭커가 그것을 고칠 수 없다(보호 곡은 일반 풀에서 빠진다).
 def _env_scale(name: str, default: float) -> float:
     """환경 변수로 받는 배율. 비었거나, 숫자가 아니거나, **유한하지 않으면** 기본값이고 음수는 0이다.
 
@@ -606,12 +599,22 @@ def _env_scale(name: str, default: float) -> float:
     return max(0.0, value) if math.isfinite(value) else default
 
 
+# 보호를 받을 최소 단서 확신도. **문자 유사도 기준이 아니다**
+# (`lyrics_exact_search.py`는 정규화 후 부분문자열로 발견되면 단서의 confidence를
+# 그대로 점수로 쓴다).
+#
+# 1.0보다 크게 주면 보호가 전부 꺼진다 — 보호 규칙 자체의 비용을 재는 진단용이다.
+# q211이 그 비용의 실례다: "위험하다" 한 조각이 다른 곡에 있어서 그 곡이 보호를 받고
+# 1위에 고정되고, 리랭커가 그것을 고칠 수 없다(보호 곡은 일반 풀에서 빠진다).
 def _lyric_protect_min_confidence() -> float:
     raw = os.getenv("LYRIC_PROTECT_MIN_CONFIDENCE", "").strip()
     try:
-        return float(raw) if raw else 0.80
+        value = float(raw) if raw else 0.80
     except ValueError:
         return 0.80
+    # nan은 `score >= nan`이 항상 거짓이라 보호가 조용히 전부 꺼진다 — 숫자가 아닌 값처럼 기본값으로 읽는다.
+    # inf는 "1.0보다 크게"와 같은 뜻(보호 끔)이라 그대로 둔다. 음수도 자르지 않는다(전부 보호).
+    return 0.80 if math.isnan(value) else value
 
 
 LYRIC_PROTECT_MIN_CONFIDENCE = 0.80  # 기본값. 실제 판정은 위 함수를 쓴다.
