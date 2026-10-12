@@ -1,0 +1,2 @@
+split,query_id,song_id,pool_rank,stage,paths_now,active_main_paths,text_hybrid_rank,image_rank,audio_rank,best_main_rank,aux_paths_deep,fused_rank_deep,boosted_rank_deep,pool_rank_deep,adjustments
+dev,q115,31829536,,경로 밖,,text_hybrid|audio,359,,295,295,,363,102,,vocal_gender_match:+0.0164|release_era:+0.0072|performance_clues:+0.0173|genre_match:+0.0164

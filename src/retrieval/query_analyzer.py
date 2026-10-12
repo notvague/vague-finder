@@ -569,12 +569,29 @@ Query: "{query}"
 # QueryAnalyzer
 # ---------------------------------------------------------------------------
 
+class _Salvage:
+    """재시도하는 동안 들고 있는 "모달리티 경계만 어긴 응답".
+
+    가사·메타데이터 후처리까지 끝난 dict다. 여러 번 어겼으면 마지막 것을 쓴다 —
+    정정을 받은 뒤의 응답이라 모델의 최종 판단에 가깝다.
+    """
+
+    __slots__ = ("raw", "error")
+
+    def __init__(self) -> None:
+        self.raw: Optional[dict] = None
+        self.error: str = ""
+
+
 class QueryAnalyzer:
     """
     Gemini를 호출해 QueryAnalysis를 반환한다.
     API 키 미설정 또는 3회 연속 실패 시 confidence=0.0 fallback을 반환하며
     전용 영어 질의를 규칙 기반으로 안전하게 분리한다. 인식할 수 없는 단서는
     공용 원문으로 두 모델을 오염시키지 않고 text-only로 폴백한다.
+
+    실패가 **모달리티 경계 검증뿐**이면 분석 전체를 버리지 않는다. 마지막으로 어긴
+    응답에서 그 모달리티만 내려놓고(`degraded_modalities`) 나머지는 그대로 쓴다.
     """
 
     def __init__(self, api_key: Optional[str] = None):
@@ -648,11 +665,25 @@ class QueryAnalyzer:
             "http_options": {"timeout": max(1, int(remaining * 1000))},
         }
 
-    def _parse(self, query: str, response: Any) -> QueryAnalysis:
+    def _parse(
+        self,
+        query: str,
+        response: Any,
+        salvage: Optional[_Salvage] = None,
+    ) -> QueryAnalysis:
         raw: dict = json.loads(response.text)
         raw = _apply_lyric_safeguards(query, raw)
         raw = _apply_metadata_safeguards(query, raw)
-        raw = apply_modality_query_safeguards(query, raw)
+        try:
+            checked = apply_modality_query_safeguards(query, raw)
+        except ModalityQueryValidationError as exc:
+            # 모달리티 경계만 어긴 응답이다. 재시도가 다 실패하면 이것으로 분석을 만든다.
+            if salvage is not None:
+                salvage.raw, salvage.error = raw, str(exc)
+            raise
+        return self._build(query, checked)
+
+    def _build(self, query: str, raw: dict) -> QueryAnalysis:
         raw["original_query"] = query
         analysis = QueryAnalysis(**raw)
         logger.debug(
@@ -707,7 +738,39 @@ class QueryAnalyzer:
             )
         return ""
 
-    def _give_up(self, query: str, attempts: int, spent: bool) -> QueryAnalysis:
+    def _degrade(self, query: str, salvage: _Salvage) -> Optional[QueryAnalysis]:
+        """모달리티 경계만 어긴 응답에서 그 모달리티만 내려놓고 분석을 만든다.
+
+        예전에는 이런 응답도 통째로 버리고 규칙 폴백으로 갔다. 규칙이 한 모달리티에서
+        모델과 어긋났다는 이유로 가사·제목·가수 단서까지 잃었다(results_v38: 4건).
+        """
+        if salvage.raw is None:
+            return None
+        try:
+            raw = apply_modality_query_safeguards(query, salvage.raw, degrade=True)
+            analysis = self._build(query, raw)
+        except Exception as exc:  # 다른 필드까지 못 쓰는 응답이면 규칙 폴백으로 간다
+            logger.warning("[QueryAnalyzer] 모달리티만 내려놓지 못함: %s", exc)
+            return None
+        logger.warning(
+            "[QueryAnalyzer] 모달리티 검증을 끝내 통과하지 못함 → %s만 내려놓고 "
+            "나머지 분석은 유지: '%s' (%s)",
+            "·".join(analysis.degraded_modalities),
+            query,
+            salvage.error,
+        )
+        return analysis
+
+    def _give_up(
+        self,
+        query: str,
+        attempts: int,
+        spent: bool,
+        salvage: _Salvage,
+    ) -> QueryAnalysis:
+        degraded = self._degrade(query, salvage)
+        if degraded is not None:
+            return degraded
         if spent:
             logger.warning(
                 "[QueryAnalyzer] 분석 예산 %.0f초를 다 썼다 (%d회 시도) → fallback: '%s'",
@@ -734,6 +797,7 @@ class QueryAnalyzer:
             return _fallback(query)
 
         prompt, correction = self._prompt(query), ""
+        salvage = _Salvage()
         # 재시도와 대기를 **합쳐서** 여기까지다. 시도마다 제한을 걸면 3회 × 제한
         # 만큼 늘어나 결국 같은 문제가 커진 채로 남는다.
         deadline = time.monotonic() + self._budget_seconds
@@ -741,7 +805,7 @@ class QueryAnalyzer:
         for attempt in range(3):
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                return self._give_up(query, attempts, spent=True)
+                return self._give_up(query, attempts, True, salvage)
             attempts += 1
             try:
                 # 시도마다 따로 남긴다. 성공 요청과 재시도 요청의 시간이 한 칸에
@@ -752,7 +816,7 @@ class QueryAnalyzer:
                         contents=prompt + correction,
                         config=self._config(remaining),
                     )
-                return self._parse(query, response)
+                return self._parse(query, response, salvage)
             except Exception as exc:
                 # **새 지시가 있을 때만 바꾼다.** 통신·JSON 오류로 앞서 만든 정정을
                 # 지우면 마지막 시도가 최초 프롬프트로 돌아가 같은 모달리티 오류를
@@ -765,7 +829,7 @@ class QueryAnalyzer:
                 with timing.step("analysis.retry_sleep", attempt=attempt + 1):
                     time.sleep(nap)
 
-        return self._give_up(query, attempts, spent=False)
+        return self._give_up(query, attempts, False, salvage)
 
     async def analyze_async(self, query: str) -> QueryAnalysis:
         """같은 분석을 **취소할 수 있는 형태로** 한다.
@@ -778,12 +842,13 @@ class QueryAnalyzer:
             return _fallback(query)
 
         prompt, correction = self._prompt(query), ""
+        salvage = _Salvage()
         deadline = time.monotonic() + self._budget_seconds
         attempts = 0
         for attempt in range(3):
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                return self._give_up(query, attempts, spent=True)
+                return self._give_up(query, attempts, True, salvage)
             attempts += 1
             try:
                 with timing.step("analysis.gemini", attempt=attempt + 1):
@@ -792,7 +857,7 @@ class QueryAnalyzer:
                         contents=prompt + correction,
                         config=self._config(remaining),
                     )
-                return self._parse(query, response)
+                return self._parse(query, response, salvage)
             except Exception as exc:
                 # 동기판과 같은 이유로 **유지**한다(위 주석 참고).
                 correction = self._correction_for(exc, attempt) or correction
@@ -802,7 +867,7 @@ class QueryAnalyzer:
                 with timing.step("analysis.retry_sleep", attempt=attempt + 1):
                     await asyncio.sleep(nap)
 
-        return self._give_up(query, attempts, spent=False)
+        return self._give_up(query, attempts, False, salvage)
 
 
 def rule_fallback(query: str) -> QueryAnalysis:

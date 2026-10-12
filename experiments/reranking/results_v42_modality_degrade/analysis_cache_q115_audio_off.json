@@ -1,0 +1,126 @@
+{
+  "format": 1,
+  "meta": {
+    "created_at": "2026-09-22T19:39:32+0900",
+    "query_source": "experiments/reranking/eval_queries_v05.csv",
+    "split": "dev",
+    "analyzer": {
+      "model_name": "gemini-3.1-flash-lite",
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "reference_year": 2026,
+      "reference_year_env": "2026",
+      "prompt_sha": "08f0b3bc4c37",
+      "postprocess_sha": "34754316cc34"
+    },
+    "drift_notes": [
+      {
+        "at": "2026-09-24T21:32:22+0900",
+        "drifted": [
+          "postprocess_sha"
+        ],
+        "kept_entries": 53,
+        "analyzer_now": {
+          "model_name": "gemini-3.1-flash-lite",
+          "temperature": 0.0,
+          "top_p": 1.0,
+          "reference_year": 2026,
+          "reference_year_env": "2026",
+          "prompt_sha": "08f0b3bc4c37",
+          "postprocess_sha": "0796bca8aedb"
+        },
+        "reason": "분석기를 동기·비동기 두 고리로 쪼갰지만 결과를 정하는 코드(_PROMPT_TEMPLATE·_apply_lyric_safeguards·_apply_metadata_safeguards·_fallback·modality_queries.py·후처리 순서)는 HEAD와 바이트 단위로 같음을 대조 확인했다. v05 공통 질의를 같은 분석으로 재기 위해 유지한다.",
+        "added_after_drift": [
+          "m302",
+          "m303",
+          "m403",
+          "q117"
+        ]
+      }
+    ],
+    "notes": [
+      "q115 한 건짜리 가정 실험 캐시 — audio_off (make_q115_leak_variants.py)"
+    ]
+  },
+  "entries": {
+    "q115": {
+      "query": "반주가 거의 피아노 하나뿐인데 남자가 호소하듯이 부르는 발라드였어. 오케스트라 같은 게 뒤에서 조금씩 깔렸던 것 같고 최근 곡이야",
+      "fallback": false,
+      "analyzed_at": "2026-09-22T19:39:59+0900",
+      "analysis": {
+        "original_query": "반주가 거의 피아노 하나뿐인데 남자가 호소하듯이 부르는 발라드였어. 오케스트라 같은 게 뒤에서 조금씩 깔렸던 것 같고 최근 곡이야",
+        "intent_type": "mixed",
+        "korean_tags": [
+          "발라드",
+          "남성보컬",
+          "피아노",
+          "오케스트라",
+          "호소력"
+        ],
+        "lyric_keywords": [],
+        "lyric_clues": [],
+        "lyric_semantic_query": "",
+        "song_title": "",
+        "title_constraints": {
+          "script": null,
+          "char_count": null,
+          "word_count": null,
+          "contains_number": null,
+          "repeated_char": null,
+          "repeated_word": null,
+          "confidence": 0.0
+        },
+        "artist_name": "",
+        "artist_name_alt": [],
+        "vocal_gender": "남성",
+        "genre": "발라드",
+        "image_english_query": "",
+        "audio_english_query": "",
+        "has_visual_clue": false,
+        "degraded_modalities": [
+          "audio"
+        ],
+        "modality_weights": {
+          "text": 1.0,
+          "image": 0.0,
+          "audio": 0.0
+        },
+        "text_alpha": 0.7,
+        "confidence": 0.95,
+        "release_era": {
+          "start_year": 2018,
+          "end_year": 2026,
+          "confidence": 0.35
+        },
+        "artist_type": {
+          "values": [],
+          "confidence": 0.0
+        },
+        "title_meaning_clue": {
+          "kind": null,
+          "text": "",
+          "confidence": 0.0
+        },
+        "performance_clues": {
+          "vocal_count": "solo",
+          "vocal_roles": [
+            "남성노래"
+          ],
+          "sound_ensemble": [
+            "피아노",
+            "오케스트라"
+          ],
+          "confidence": 0.9
+        },
+        "life_stage": {
+          "stage": null,
+          "text": "",
+          "spans": [],
+          "age_from": null,
+          "age_to": null,
+          "confidence": 0.0
+        }
+      }
+    }
+  }
+}
