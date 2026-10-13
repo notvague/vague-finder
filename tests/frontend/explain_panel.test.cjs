@@ -31,6 +31,7 @@ const FUNCTIONS = [
   'makeEl', 'exDelta', 'exGroup', 'exItem', 'exFact', 'exSum', 'exPathDetail',
   'explainMix', 'explainLyric', 'explainEvidence', 'explainPanel', 'explainClues', 'explainRecord',
   'toggleExplain', 'renderRunNote', 'applyResponse', 'isBirthYearQuestion',
+  'explainToggle', 'resultActions',
 ];
 const PROGRAM = [...DECLARATIONS.map(declaration), ...FUNCTIONS.map(functionSource)].join('\n');
 
@@ -378,9 +379,50 @@ test('UFE-09: 가감점 줄의 서버 표시(note)가 부연으로 보인다 · 
 
 test('정적 파일 버전이 올라갔다', () => {
   const html = fs.readFileSync(path.join(__dirname, '../../src/frontend/static/index.html'), 'utf8');
-  // 피드백(#47)이 문자열 버전(?v=feedback-1)으로 바꾼 뒤라 숫자가 아니라 새 문자열로 올린다 — 두 파일 모두 다시 바뀌었다
-  assert.ok(/map\.js\?v=evidence-1/.test(html), 'map.js 버전');
-  assert.ok(/style\.css\?v=evidence-1/.test(html), 'style.css 버전');
+  // 피드백(#47)이 문자열 버전(?v=feedback-1)으로 바꾼 뒤라 숫자가 아니라 새 문자열로 올린다.
+  // 정답 버튼을 근거 옆으로 옮기며 세 파일이 함께 바뀌었다(evidence-1 → answer-1, feedback.js 3 → 4)
+  assert.ok(/map\.js\?v=answer-1/.test(html), 'map.js 버전');
+  assert.ok(/style\.css\?v=answer-1/.test(html), 'style.css 버전');
+  assert.ok(/feedback\.js\?v=4/.test(html), 'feedback.js 버전');
+});
+
+test('결과 행 오른쪽 묶음은 근거 → 정답 순서다 · 제출 권한이 없으면 근거만, 둘 다 없으면 묶음이 없다', () => {
+  const { FeedbackController } = require('../../src/frontend/static/feedback.js');
+  const r = realm();
+  // 사유 입력 상자 자리. 여기서는 행의 버튼만 본다 — 상자의 내용은 feedback.test.cjs가 본다
+  const root = Object.assign(node('section'), { ownerDocument: r.ctx.document, replaceChildren() {}, querySelector: () => null });
+  const feedback = new FeedbackController(root, { send: async () => ({}) });
+  r.ctx.VagueFeedback = feedback;
+  r.ctx.track = { id: 602193305, title: '젊은 우리 사랑', explain: legacyExplain() };
+  r.ctx.bare = { id: 1, title: '기록 없는 곡' };
+
+  // 수집이 꺼진 응답(feedback 없음) — 근거만 선다
+  feedback.reset({ results: [r.ctx.track, r.ctx.bare] });
+  assert.deepEqual(r.ev(`resultActions('602193305', track)`).children.map((b) => b.textContent), ['근거']);
+  assert.equal(r.ev(`resultActions('1', bare)`), null, '버튼이 하나도 없으면 빈 묶음을 행에 넣지 않는다');
+
+  feedback.reset({ feedback: { search_id: 's', token: 't', retention_days: 30 }, results: [r.ctx.track, r.ctx.bare] });
+  const actions = r.ev(`resultActions('602193305', track)`);
+  assert.ok(hasClass(actions, 'resultactions'));
+  assert.deepEqual(actions.children.map((b) => [b.tag, b.className, b.textContent]),
+    [['button', 'exbtn', '근거'], ['button', 'answerbtn', '정답']]);
+  // 기록이 없는 곡(문자열 검색 대체)에도 정답은 붙는다
+  assert.deepEqual(r.ev(`resultActions('1', bare)`).children.map((b) => b.textContent), ['정답']);
+  // 정답을 눌러도 지도 카드(행 클릭)는 열리지 않고, 숫자 id도 문자열로 맞춰 고른다
+  let stopped = false;
+  actions.children[1].listeners.click({ stopPropagation() { stopped = true; } });
+  assert.ok(stopped);
+  assert.equal(feedback.draft.id, '602193305');
+  assert.equal(actions.children[1].attrs['aria-pressed'], 'true');
+
+  // 화면 전체에 옛 문구·옛 클래스가 남지 않았다
+  const dir = path.join(__dirname, '../../src/frontend/static');
+  for (const name of ['map.js', 'feedback.js', 'style.css', 'index.html']) {
+    const text = fs.readFileSync(path.join(dir, name), 'utf8');
+    assert.ok(!/찾던 곡이에요|feedbackpick/.test(text), name);
+  }
+  delete r.ctx.VagueFeedback;
+  assert.deepEqual(r.ev(`resultActions('602193305', track)`).children.map((b) => b.textContent), ['근거'], 'feedback.js가 없는 화면');
 });
 
 test('UFE-05: 리허설 스크립트(check_demo_faults.py)가 읽는 곡별 설명은 기록 요약이다 — 사용자용 문장이 아니다', () => {

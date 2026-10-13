@@ -69,6 +69,52 @@ test('버튼 선택 → 사유 입력 → 저장. 텍스트로 렌더하고 클�
   assert.equal(ui.draft, null);
 });
 
+test('행의 버튼은 "정답"이다 — 근거와 같은 묶음 규칙을 쓰는 클래스이고 옛 문구는 남지 않는다', () => {
+  const { ui, doc } = screen();
+  const row = element('span', doc);
+  ui.attach(row, reply().results[0]);
+  const button = row.children[0];
+  assert.equal(button.tag, 'button');
+  assert.equal(button.textContent, '정답');
+  assert.equal(button.className, 'answerbtn');
+  assert.equal(button.type, 'button');
+  // 보이는 글자(정답)가 접근성 이름에도 들어 있고, 어느 곡의 버튼인지 구분된다
+  assert.match(button.attrs['aria-label'], /^<script>곡<\/script> — 정답/);
+  assert.doesNotMatch([button.textContent, button.title, button.attrs['aria-label']].join(' '), /찾던 곡이에요/);
+  assert.equal(button.attrs['aria-pressed'], 'false');
+});
+
+test('눌린 표시는 고르는 중인 곡에, 없으면 저장된 정답에 한다 · 철회·새 검색이면 지운다', async () => {
+  const { ui, doc } = screen(body => saved(body, body.expected_revision + 1));
+  const rows = () => {
+    // map.js의 renderPanel처럼 결과 행을 새로 만든다 — 붙을 때 상태를 받아야 한다
+    ui.setBusy(ui.busy);
+    return reply().results.map(track => { const row = element('span', doc); ui.attach(row, track); return row.children[0]; });
+  };
+  const pressed = buttons => buttons.map(b => b.attrs['aria-pressed']);
+  let [a, b] = rows();
+  assert.deepEqual(pressed([a, b]), ['false', 'false']);
+
+  a.listeners.click({ stopPropagation() {} });            // a를 고르는 중
+  assert.deepEqual(pressed([a, b]), ['true', 'false']);
+  await ui.submit();                                       // a 저장
+  assert.deepEqual(pressed([a, b]), ['true', 'false']);
+  assert.deepEqual(pressed(rows()), ['true', 'false'], '목록을 다시 그려도 저장된 정답에 남는다');
+
+  [a, b] = rows();
+  b.listeners.click({ stopPropagation() {} });            // b로 바꾸는 중 — 입력칸이 가리키는 곡에 표시한다
+  assert.deepEqual(pressed([a, b]), ['false', 'true']);
+  ui.draft = null; ui.render();                            // 닫기 — 저장된 a로 돌아간다
+  assert.deepEqual(pressed([a, b]), ['true', 'false']);
+
+  await ui.submit('withdraw');
+  assert.deepEqual(pressed([a, b]), ['false', 'false']);
+  ui.choose('b'); await ui.submit();
+  assert.deepEqual(pressed([a, b]), ['false', 'true']);
+  ui.reset(reply('second'));
+  assert.deepEqual(pressed(rows()), ['false', 'false'], '새 검색에는 앞 검색의 선택이 남지 않는다');
+});
+
 test('저장 중 중복 클릭은 요청 한 번, 응답 유실 재시도는 같은 제출 번호', async () => {
   const pending = deferred();
   const { ui, calls } = screen(() => pending.promise);
