@@ -55,7 +55,7 @@ STATUS_FAILED = "failed"              # 조회·확인 실패(Mongo·Qdrant·임
 DROP_MISSING = "missing"              # Mongo에 원본이 없다(TTL로 지워졌거나 포인트만 남았다)
 DROP_INVALID = "not_reusable"         # 철회·미승인·만료·판 불일치
 DROP_REJECTED = "rejected_song"       # 재질문에서 사용자가 거절한 곡
-DROP_SONG_GONE = "song_missing"       # 곡 색인에 없는 곡(삭제)
+DROP_SONG_GONE = "song_missing"       # 곡 색인에 없는 곡(삭제) · 색인에 제목이 없는 곡
 DROP_DUPLICATE = "same_song"          # 같은 곡의 더 가까운 사례가 이미 있다
 # 유효한 사례 가운데 후보에 더하지 않은 것(already_candidate·over_limit·no_gain)은 라우터가 센다 —
 # 이름은 `explain.FeedbackCaseExplain.outcome`과 같다.
@@ -162,7 +162,16 @@ class FeedbackRetriever:
         if self._song_index is None:
             self._song_index = self._vector_client.Index(TEXT_HYBRID_INDEX_NAME)
         matches = self._song_index.fetch(song_ids)["matches"]
-        lookup.tracks = {str(match["id"]): SearchService.track_from_match(match) for match in matches}
+        # 곡 색인에 제목이 없는 포인트는 곡 정보로 쓰지 않는다 — 그대로 두면 "Unknown" 곡이 후보에 들어가고
+        # 리랭커가 올리면 화면에 그대로 뜬다. 배경 지식 경로의 `SearchService.fetch_tracks_by_ids`와 같은 규칙이다.
+        # 빠진 곡은 validate가 곡 없음(DROP_SONG_GONE)으로 세어 보충하지 않는다.
+        lookup.tracks = {}
+        for match in matches:
+            if not str((match.get("metadata") or {}).get("title") or "").strip():
+                continue
+            track = SearchService.track_from_match(match)
+            if track.title != "Unknown":
+                lookup.tracks[track.id] = track
         return lookup
 
     # --- 2단계 ---------------------------------------------------------------

@@ -176,6 +176,26 @@ def test_rejected_and_deleted_songs_are_not_supplied(rig):
     assert supplement.dropped == {DROP_REJECTED: 1, DROP_SONG_GONE: 1}
 
 
+@pytest.mark.parametrize("payload", [
+    {"artist": "제목 칸이 없는 곡"}, {"title": None, "artist": "가수"}, {"title": "", "artist": "가수"},
+    {"title": "   ", "artist": "가수"}, {"title": "Unknown", "artist": "가수"},
+], ids=["없음", "None", "빈 값", "공백", "Unknown"])
+def test_a_song_without_a_title_in_the_index_is_not_supplied(rig, payload):
+    """곡 색인 포인트에 제목이 없으면 곡 정보가 "Unknown"으로 만들어진다. 그런 곡은 제보가 있어도 후보에 넣지 않는다.
+
+    배경 지식 경로(`SearchService.fetch_tracks_by_ids`)와 같은 규칙이다 — 리랭커가 올리면 화면에 "Unknown"이 뜬다.
+    """
+    seed_songs(rig.client, {"untitled": payload})
+    rig.case("untitled", "휘파람 부는 노래")
+    rig.case("f1", "휘파람 노래")
+    supplement = rig.supplement("휘파람 불던 노래")
+    assert [item.track.id for item in supplement.items] == ["f1"], "제목이 있는 곡은 그대로 보충한다"
+    assert supplement.dropped == {DROP_SONG_GONE: 1}
+    on = _search(_router(_hits(), rig.retriever))
+    assert "untitled" not in on["pool"] and on["feedback"][0].entered_ids == ["f1"]
+    assert all(title != "Unknown" for _, title, _, _ in on["meta"])
+
+
 @pytest.mark.parametrize("change", ["withdraw", "user_edit", "approval_cancelled", "text_edited", "expired", "deleted"])
 def test_a_case_that_changed_after_indexing_is_not_used_even_if_its_point_remains(rig, change):
     """Qdrant 포인트 삭제는 한 주기 늦다. 그 사이의 검색은 Mongo의 최신 상태로 걸러야 한다."""
