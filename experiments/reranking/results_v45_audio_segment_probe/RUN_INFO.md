@@ -106,7 +106,7 @@ results_v44의 "C. 소리 표현을 바꾼다"를 5,143곡 재임베딩 전에 �
 
 | | |
 |---|---|
-| `pick_sample.py` · `sample_ids.txt` | 표본 곡 목록 |
+| `pick_sample.py` | 표본 곡 목록 `sample_ids.txt`를 만든다. 목록 자체는 커밋하지 않는다(`docs/data_policy.md` — 곡 목록 비공개). 씨앗이 고정이라 같은 로컬 `artifacts/`에서 같은 목록이 나온다 |
 | `embed_segments.py` | 구간별 벡터 생성(`--model`로 모델 선택) |
 | `eval_segments.py` · `ranks_clap_fused.csv` · `ranks_clap_music.csv` | §1 · §2 — 질의별 순위 |
 | `sanity_genre.py` | §2의 장르 점검 |
