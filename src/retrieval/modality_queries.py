@@ -15,6 +15,8 @@ from __future__ import annotations
 import re
 from typing import Any, Mapping
 
+from src.retrieval.lyrics_query import unquoted_lyric_start
+
 
 class ModalityQueryValidationError(ValueError):
     """Raised when a generated embedding prompt violates modality boundaries.
@@ -71,6 +73,11 @@ _LYRIC_LINE_HEADER_RE = re.compile(
 
 
 def _mask_lyric_literals(query: str) -> str:
+    """Blank lyric literals once, at a public entry point.
+
+    Do not mask the result again: once a quotation is blanked, the description
+    before it reads like an unquoted fragment. Helpers take the masked text.
+    """
     text = str(query or "")
     spans: list[tuple[int, int]] = []
     active_end: int | None = None
@@ -89,8 +96,14 @@ def _mask_lyric_literals(query: str) -> str:
             active_end = quote.end()
         else:
             active_end = None
-    for pattern in (_UNQUOTED_LYRIC_RE, _LYRIC_FRAGMENT_BEFORE_RE, _LYRIC_LINE_HEADER_RE):
-        spans.extend(match.span("phrase") for match in pattern.finditer(text))
+    spans.extend(match.span("phrase") for match in _LYRIC_LINE_HEADER_RE.finditer(text))
+    # An unquoted fragment has no marked left edge: a leading clause that
+    # describes the song ("피아노 반주가 있는 발라드인데 사랑해라는 가사") is not
+    # sung. Text after a lyric marker ("가사에 …") stays literal as a whole.
+    for pattern, anchored in ((_UNQUOTED_LYRIC_RE, True), (_LYRIC_FRAGMENT_BEFORE_RE, False)):
+        for match in pattern.finditer(text):
+            start, end = match.span("phrase")
+            spans.append((unquoted_lyric_start(text, start, end, anchored=anchored), end))
     masked = list(text)
     for start, end in spans:
         masked[start:end] = [c if c in "\r\n" else " " for c in text[start:end]]
@@ -237,13 +250,15 @@ def _find_album_cover_context(text: str) -> re.Match[str] | None:
     return None
 
 
-def explicit_artwork_reference_start(query: str) -> int | None:
-    """Return a literal artwork offset, ignoring negation and cover events."""
-    text = _NEGATED_COVER_CONTEXT_RE.sub(
-        lambda match: " " * len(match.group()), _mask_lyric_literals(query),
-    )
+def _artwork_reference_start(text: str) -> int | None:
+    text = _NEGATED_COVER_CONTEXT_RE.sub(lambda match: " " * len(match.group()), text)
     match = _find_album_cover_context(text)
     return match.start() if match else None
+
+
+def explicit_artwork_reference_start(query: str) -> int | None:
+    """Return a literal artwork offset, ignoring negation and cover events."""
+    return _artwork_reference_start(_mask_lyric_literals(query))
 
 
 def has_explicit_artwork_reference(query: str) -> bool:
@@ -928,9 +943,12 @@ def has_explicit_visual_clue(query: str) -> bool:
     The public name is kept for compatibility.  "Explicit" includes a detailed
     static artwork description whose cover noun is naturally omitted.
     """
-    text = _mask_lyric_literals(query)
+    return _has_visual_clue(_mask_lyric_literals(query))
+
+
+def _has_visual_clue(text: str) -> bool:
     positive_text = _NEGATED_COVER_CONTEXT_RE.sub("", text)
-    if has_explicit_artwork_reference(positive_text):
+    if _artwork_reference_start(positive_text) is not None:
         return True
     positive_text = _mask_performed_venue_names(positive_text)
     # "다음 앨범" may describe a release teased in an MV, while a different
@@ -971,7 +989,7 @@ def extract_audio_evidence_text(query: str) -> str:
     context is preserved.
     """
     text = _UNREALIZED_PERFORMANCE_PLAN_RE.sub("", _mask_lyric_literals(query))
-    if not has_explicit_visual_clue(text):
+    if not _has_visual_clue(text):
         return _NON_AUDITORY_GENRE_CONTEXT_RE.sub("", text)
 
     kept: list[str] = []
@@ -1503,9 +1521,9 @@ def build_fallback_modality_queries(
 ) -> tuple[str, str]:
     """Build conservative, English modality prompts without an LLM."""
     text = _mask_lyric_literals(query)
-    audio_text = extract_audio_evidence_text(text)
+    audio_text = extract_audio_evidence_text(query)
     visual_features: list[str] = []
-    if has_explicit_visual_clue(text):
+    if has_explicit_visual_clue(query):
         for pattern, phrase in _VISUAL_FEATURES:
             if re.search(pattern, text, re.IGNORECASE):
                 visual_features.append(phrase)
@@ -1537,11 +1555,11 @@ def build_fallback_modality_queries(
     audio_features = _dedupe(audio_features)
     audio_query = (
         "An audio track with " + ", ".join(audio_features) + "."
-        if audio_features and has_explicit_audio_clue(text, clue)
+        if audio_features and has_explicit_audio_clue(query, clue)
         else ""
     )
     if audio_query:
-        audio_query = _supplement_audio_prompt(text, audio_query)
+        audio_query = _supplement_audio_prompt(query, audio_query)
     return image_query, audio_query
 
 
