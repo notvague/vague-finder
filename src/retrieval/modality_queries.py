@@ -15,6 +15,8 @@ from __future__ import annotations
 import re
 from typing import Any, Mapping
 
+from src.retrieval.lyrics_query import unquoted_lyric_start
+
 
 class ModalityQueryValidationError(ValueError):
     """Raised when a generated embedding prompt violates modality boundaries.
@@ -64,6 +66,7 @@ _LYRIC_FRAGMENT_BEFORE_RE = re.compile(
     r"(?:^|[.,;!?。！？\n]\s*)(?P<phrase>[^\"'“”‘’「」『』`.,;!?。！？\n]{2,160}?)\s*"
     r"(?:이라는|라는)\s*(?:가사|가삿말|노랫말|구절)"
 )
+_MASKED_GAP_RE = re.compile(r"[ \t]{3,}")
 _LYRIC_LINE_HEADER_RE = re.compile(
     r"(?:^|\n)\s*(?:가사|가삿말|노랫말)\s*[:：]\s*"
     r"(?P<phrase>[^\n]+?)(?=\s+(?:보컬|반주|음향|표지|앨범|커버)\s*[:：]|\n|$)"
@@ -89,8 +92,18 @@ def _mask_lyric_literals(query: str) -> str:
             active_end = quote.end()
         else:
             active_end = None
-    for pattern in (_UNQUOTED_LYRIC_RE, _LYRIC_FRAGMENT_BEFORE_RE, _LYRIC_LINE_HEADER_RE):
-        spans.extend(match.span("phrase") for match in pattern.finditer(text))
+    spans.extend(match.span("phrase") for match in _LYRIC_LINE_HEADER_RE.finditer(text))
+    # An unquoted fragment has no marked left edge: a leading clause that
+    # describes the song ("피아노 반주가 있는 발라드인데 사랑해라는 가사") is not
+    # sung. Text after a lyric marker ("가사에 …") stays literal as a whole.
+    for pattern, anchored in ((_UNQUOTED_LYRIC_RE, True), (_LYRIC_FRAGMENT_BEFORE_RE, False)):
+        for match in pattern.finditer(text):
+            start, end = match.span("phrase")
+            # Three or more blanks before the attribution are a lyric that is
+            # already masked; what precedes them is not a second lyric.
+            if not anchored and _MASKED_GAP_RE.match(text, end):
+                continue
+            spans.append((unquoted_lyric_start(text, start, end, anchored=anchored), end))
     masked = list(text)
     for start, end in spans:
         masked[start:end] = [c if c in "\r\n" else " " for c in text[start:end]]

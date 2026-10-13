@@ -106,6 +106,64 @@ _LEADING_FILLERS = re.compile(
 )
 
 
+# 따옴표 없는 구절("X라는 가사")은 X의 왼쪽 끝이 표시되지 않는다. 이음말로 끝난 절이
+# **곡을 설명하는 말**이면 그 절까지는 가사가 아니다 — "피아노 반주가 있는 발라드인데
+# 사랑해라는 가사". 설명 낱말이 없는 절은 가사로 남긴다 — "피아노를 쳤는데 눈물이
+# 났어라는 가사". 가사가 소리·표지 단서로 읽히는 것보다 설명 하나를 놓치는 편이 낫다.
+# 이음말: 받침 ㄴ 음절 + 데(는데·인데·한데, 줄임꼴 "노랜데"), -지만, 이고,
+# 받침 ㅆ 음절 + 고(였고·있고·했고), 반면, 그리고.
+_FINAL_N = "".join(map(chr, range(0xAC00 + 4, 0xD7A4, 28)))
+_FINAL_SS = "".join(map(chr, range(0xAC00 + 20, 0xD7A4, 28)))
+_CLAUSE_LINK = (
+    r"(?:(?<!가운)[" + _FINAL_N + r"]데|지만|이고|[" + _FINAL_SS + r"]고)(?=\s)"
+)
+_CLAUSE_LINK_RE = re.compile(
+    _CLAUSE_LINK + r"|(?<![가-힣])(?:반면|그리고)(?=\s)"
+)
+# 녹음·음반을 가리키는 말만 적는다. 노랫말에도 흔한 낱말(목소리·노래·멜로디 …)은
+# "노래인데"처럼 그것이 무엇인지 말하는 꼴일 때만 설명으로 본다.
+_SONG_DESCRIPTION_RE = re.compile(
+    r"가사|가삿말|노랫말|반주|보컬|음색|창법|템포|음질|편곡|장르|"
+    r"표지|커버|자켓|재킷|앨범|색감|곡명|제목|가수|그룹|아이돌|듀엣|혼성|"
+    r"뮤비|뮤직\s*비디오|도입부|인트로|간주|후렴|ost|"
+    r"발라드|힙합|알앤비|r\s*&\s*b|트로트|댄스곡|허스키|미성|고음|저음|"
+    r"(?:남자|여자|남성|여성)(?:가|이)?\s*(?:부르|부른|불렀)|"
+    r"(?:으)?로\s*시작(?:하|되|해|했|됐)|"
+    r"(?:노래|(?<![가-힣])곡|음악|목소리|멜로디|리듬|비트|사운드|느낌|분위기)"
+    r"(?:인데|이고|이지만|(?:이)?였는데|(?:이)?였고|(?:이)?였지만|이었는데|이었고)|"
+    r"노랜데",
+    re.IGNORECASE,
+)
+# "가사는 잘 모르겠는데 …"는 가사를 여는 말이 아니다.
+_LYRIC_UNKNOWN_RE = re.compile(
+    r"\s*(?:(?:잘|정확히|자세히|거의|하나도|전혀)\s*)*"
+    r"(?:모르(?:겠)?|기억(?:이|은|도)?\s*(?:잘\s*)?(?:안|못)\s*나|"
+    r"생각(?:이|은|도)?\s*(?:잘\s*)?안\s*나)" + _CLAUSE_LINK
+)
+
+
+def unquoted_lyric_start(text: str, start: int, end: int, *, anchored: bool = False) -> int:
+    """따옴표 없는 가사 구절 ``text[start:end]``에서 가사가 실제로 시작하는 자리.
+
+    ``anchored``는 "가사에 …", "가사는 …"처럼 구절이 가사 표지 바로 뒤에서 열린
+    경우다. 그 안은 통째로 가사다 — 가사를 모른다는 말로 시작할 때만 그 뒤를 본다.
+    이음말은 구절 밖의 실제 다음 글자로 판정한다(``end``에서 끊지 않는다).
+    """
+    if anchored:
+        unknown = _LYRIC_UNKNOWN_RE.match(text, start)
+        if unknown is None or unknown.end() > end:
+            return start
+        start = unknown.end()
+    lyric_start = clause_start = start
+    for link in _CLAUSE_LINK_RE.finditer(text, start):
+        if link.end() > end:
+            break
+        if _SONG_DESCRIPTION_RE.search(text, clause_start, link.end()):
+            lyric_start = link.end()
+        clause_start = link.end()
+    return lyric_start
+
+
 def normalize_lyric_surface(text: str) -> str:
     """활용형과 문자 순서는 유지하고 표기상 잡음만 제거한다."""
     normalized = unicodedata.normalize("NFKC", text or "").lower()
@@ -222,14 +280,16 @@ def extract_lyric_clues(query: str) -> List[ExtractedLyricClue]:
                 )
             )
 
-    for pattern, confidence, source in (
-        (_CUE_BEFORE_RE, 0.92, "cue_before_rule"),
-        (_PHRASE_BEFORE_RE, 0.90, "phrase_before_rule"),
-        (_BARE_PHRASE_RE, 0.82, "bare_phrase_rule"),
-        (_CUE_COPULA_RE, 0.82, "cue_copula_rule"),
+    for pattern, confidence, source, anchored in (
+        (_CUE_BEFORE_RE, 0.92, "cue_before_rule", True),
+        (_PHRASE_BEFORE_RE, 0.90, "phrase_before_rule", False),
+        (_BARE_PHRASE_RE, 0.82, "bare_phrase_rule", False),
+        (_CUE_COPULA_RE, 0.82, "cue_copula_rule", True),
     ):
         for match in pattern.finditer(query):
-            phrase = _clean_phrase(match.group("phrase"))
+            start, end = match.span("phrase")
+            start = unquoted_lyric_start(query, start, end, anchored=anchored)
+            phrase = _clean_phrase(query[start:end])
             if _is_safe_surface_phrase(phrase, quoted=False):
                 clues.append(
                     ExtractedLyricClue(

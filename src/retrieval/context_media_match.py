@@ -12,12 +12,13 @@ def media_name_in_text(name: str, text: str) -> bool:
     In particular a title followed by another lexical syllable is a different
     entity. Equivalences must be supplied by the caller's explicit alias list.
     """
-    name = unicodedata.normalize("NFKC", name).casefold().strip()
+    name = re.sub(r"[\s_]+", "", unicodedata.normalize("NFKC", name).casefold())
     text = unicodedata.normalize("NFKC", text).casefold()
-    parts = [re.escape(part) for part in re.split(r"[\s_]+", name) if part]
-    if not parts or len(re.sub(r"[\s_]", "", name)) < 2:
+    if len(name) < 2:
         return False
-    literal = r"[\s_]*".join(parts)
+    # Either side may join or split the same title ("호텔델루나" / "호텔 델루나"),
+    # so a separator is optional at every position, not only where the name has one.
+    literal = r"[\s_]*".join(re.escape(char) for char in name)
     boundary = r"(?=$|[\W_])"
     # Korean suffixes attach to a proper noun. Do not match e.g. a work name
     # inside another song/work title merely because their prefixes coincide.

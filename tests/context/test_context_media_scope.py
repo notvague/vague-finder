@@ -89,9 +89,20 @@ def test_literal_work_in_profile_preserves_sparse_only_recall_but_not_citation(t
     assert context_evidence_for_result(hit, query_clues=[cue]) is None
 
 
-def test_literal_work_in_dense_fact_can_supply_a_retrieval_anchor():
-    cue = clue("가상 작품 드라마 OST", target="가상 작품")
-    hit = route(cue, "가상 작품의 OST로 사용되었다.")
+@pytest.mark.parametrize("target", ("가상 작품", "가상작품", "가상_작품"))
+@pytest.mark.parametrize("terms", (("가상_작품",), ("가상 작품 OST",), ("가상작품",)))
+def test_spacing_of_the_supplied_name_does_not_decide_sparse_recall(target, terms):
+    cue = clue(f"{target} OST", target=target)
+    assert context_candidate_matches_media_description(route(cue, sparse_terms=terms), query_clues=[cue])
+    assert not context_candidate_matches_media_description(
+        route(cue, sparse_terms=("가상작품불", "가상_작품2")), query_clues=[cue])
+
+
+@pytest.mark.parametrize("target", ("가상 작품", "가상작품"))
+@pytest.mark.parametrize("fact", ("가상 작품의 OST로 사용되었다.", "가상작품의 OST로 사용되었다."))
+def test_literal_work_in_dense_fact_can_supply_a_retrieval_anchor(target, fact):
+    cue = clue(f"{target} 드라마 OST", target=target)
+    hit = route(cue, fact)
     assert context_candidate_matches_media_description(hit, query_clues=[cue])
     assert context_evidence_for_result(hit, query_clues=[cue]) is not None
 
@@ -109,6 +120,13 @@ def test_wrong_song_cannot_supply_the_profile_or_fact_anchor():
     ("가상 작품", "가상작품에서 흐른 노래", True),
     ("가상 작품", "가상 작품의 삽입곡", True),
     ("가상 작품", "가상 작품불 OST", False),
+    ("가상작품", "가상 작품 OST", True),
+    ("가상작품", "가상_작품", True),
+    ("가상_작품", "가상작품의 삽입곡", True),
+    ("가상작품", "가상 작품불 OST", False),
+    ("가상작품", "새가상 작품 OST", False),
+    ("MYSHOW", "My Show OST", True),
+    ("MYSHOW", "My Showcase", False),
     ("가상 작품", "새가상 작품 OST", False),
     ("MY SHOW", "My_Show", True),
     ("MY SHOW", "MY SHOWCASE", False),
@@ -137,8 +155,9 @@ def test_router_preserves_the_entire_old_pool_when_a_plot_has_no_fact_support(ro
     assert query.model_dump() == frozen
 
 
-def test_named_router_filters_unrelated_profile_but_retains_related_sparse_candidate_once(router):
-    cue = clue("가상 작품 OST", target="가상 작품")
+@pytest.mark.parametrize("target", ("가상 작품", "가상작품"))
+def test_named_router_filters_unrelated_profile_but_retains_related_sparse_candidate_once(router, target):
+    cue = clue(f"{target} OST", target=target)
     router._context_search.hits = (
         route(cue, sid="unrelated", sparse_terms=("ost",)).fused_hit,
         route(cue, sid="related", sparse_terms=("가상_작품",)).fused_hit,

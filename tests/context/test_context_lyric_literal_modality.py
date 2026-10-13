@@ -12,6 +12,7 @@ from src.retrieval.modality_queries import (
     build_fallback_modality_queries, explicit_artwork_reference_start,
     extract_audio_evidence_text, has_explicit_audio_clue, has_explicit_visual_clue,
 )
+from src.retrieval.lyrics_query import extract_lyric_clues
 from src.retrieval.query_analyzer import QueryAnalyzer, rule_fallback
 
 
@@ -50,6 +51,96 @@ def test_attributed_lyrics_are_text_only_for_supported_quotes(fragment, quotes, 
 def test_unquoted_attributed_fragments_and_dedicated_lines(query):
     assert not has_explicit_audio_clue(query) and not has_explicit_visual_clue(query)
     assert build_fallback_modality_queries(query) == ("", "")
+
+
+@pytest.mark.parametrize("lead,prompt", (
+    ("피아노 반주가 있는 발라드인데", "A ballad with piano accompaniment."),
+    ("피아노로 시작하는데", "A song that opens with piano."),
+    ("잔잔한 노랜데", "A calm, gentle song."),
+    ("남자가 부르는 발라드였고", "A ballad with male vocals."),
+    ("템포가 빠르지만", "A fast tempo."),
+    ("남자 목소리인데", "Male vocals."),
+))
+def test_description_before_an_unquoted_lyric_keeps_its_audio(lead, prompt):
+    query = f"{lead} 사랑해라는 가사가 나와"
+    masked = _mask_lyric_literals(query)
+    assert len(masked) == len(query) and lead in masked and "사랑해" not in masked
+    assert _mask_lyric_literals(masked) == masked
+    assert has_explicit_audio_clue(query) and not has_explicit_visual_clue(query)
+    result = apply_modality_query_safeguards(query, model(audio_english_query=prompt))
+    assert result["audio_english_query"] and result["modality_weights"]["audio"] > 0
+
+
+def test_description_before_an_unquoted_lyric_keeps_its_artwork():
+    query = "표지가 파란색인 앨범이고 사랑해라는 가사가 있어"
+    masked = _mask_lyric_literals(query)
+    assert "사랑해" not in masked and _mask_lyric_literals(masked) == masked
+    assert has_explicit_visual_clue(query) and not has_explicit_audio_clue(query)
+    assert explicit_artwork_reference_start(query) == 0
+    assert build_fallback_modality_queries(query) == ("Album cover with blue tones.", "")
+    result = apply_modality_query_safeguards(query, model(image_english_query="Album cover with blue tones."))
+    assert result["image_english_query"] and result["modality_weights"]["image"] > 0
+
+
+@pytest.mark.parametrize("query", (
+    "노래는 잘 모르겠는데 피아노 기타 드럼이 잠든다라는 가사가 있어",
+    "제목은 기억 안 나지만 앨범 커버엔 붉은 꽃이 보인다라는 가사가 나와",
+    "어둠 가운데 피아노 소리라는 가사가 있었어",
+    "피아노가 잠들었지만이라는 가사가 있어",
+    # A clause link inside the lyric does not end the lyric.
+    "피아노를 쳤는데 눈물이 났어라는 가사가 있어",
+    "네 목소리가 들리는데 볼 수 없어라는 가사가 있어",
+    "슬픈데 웃는다라는 가사가 있어",
+    "붉은 꽃 그림을 그렸지만 지워버렸어라는 가사가 있어",
+    # Everything after a lyric marker is sung, whatever it names.
+    "가사에 피아노를 쳤는데 눈물이 났어라고 나와",
+    "가사에서 반주가 멈췄는데 눈물이 나라고 나와",
+    "가사는 따뜻한 밤인데 피아노가 운다라고 나와",
+    "가사는 기억 안 나지만 피아노를 쳤는데 눈물이 났어라는 말이 있었어",
+))
+def test_unquoted_lyric_words_stay_text_only(query):
+    masked = _mask_lyric_literals(query)
+    assert len(masked) == len(query) and _mask_lyric_literals(masked) == masked
+    assert not has_explicit_audio_clue(query) and not has_explicit_visual_clue(query)
+    assert build_fallback_modality_queries(query) == ("", "")
+
+
+def test_an_unknown_lyric_remark_does_not_open_the_lyric():
+    query = "가사는 잘 모르겠는데 피아노 반주가 있고 사랑해라는 말이 나와"
+    masked = _mask_lyric_literals(query)
+    assert "피아노 반주" in masked and "사랑해" not in masked and _mask_lyric_literals(masked) == masked
+    assert has_explicit_audio_clue(query)
+    assert [clue.text for clue in extract_lyric_clues(query)] == ["사랑해"]
+
+
+def test_description_ends_where_the_lyric_with_its_own_clause_link_begins():
+    query = "피아노 반주가 있는 발라드인데 기타를 쳤는데 눈물이 났어라는 가사가 있어"
+    evidence = extract_audio_evidence_text(query)
+    assert "피아노 반주" in evidence and "기타" not in evidence and "눈물" not in evidence
+    assert has_explicit_audio_clue(query)
+    assert [clue.text for clue in extract_lyric_clues(query)][0] == "기타를 쳤는데 눈물이 났어"
+
+
+@pytest.mark.parametrize("lyric", ('"사랑해"', "'사랑해'", "사랑해"))
+def test_rule_fallback_keeps_the_description_before_a_lyric(lyric):
+    sound = rule_fallback(f"잔잔한 발라드인데 {lyric}라는 가사가 있어")
+    assert "ballad" in sound.audio_english_query and sound.modality_weights.audio > 0
+    art = rule_fallback(f"표지가 파란색인 앨범이고 {lyric}라는 가사가 있어")
+    assert art.image_english_query == "Album cover with blue tones." and not art.audio_english_query
+    for analysis in (sound, art):
+        assert "사랑해" in [clue.text for clue in analysis.lyric_clues]
+        assert not any("발라드" in clue.text or "표지" in clue.text for clue in analysis.lyric_clues)
+
+
+def test_actual_parser_keeps_the_model_lyric_beside_a_described_cover():
+    query = "표지가 파란색인 앨범이고 사랑해라는 가사가 있어"
+    raw = model(image_english_query="Album cover with blue tones.",
+                modality_weights=dict(text=0.6, image=0.4, audio=0),
+                lyric_clues=[dict(text="사랑해", kind="partial", variants=[], confidence=0.9, source="model")])
+    analysis = QueryAnalyzer(api_key="placeholder")._parse(query, SimpleNamespace(text=json.dumps(raw, ensure_ascii=False)))
+    assert "사랑해" in [clue.text for clue in analysis.lyric_clues]
+    assert not any("표지" in clue.text for clue in analysis.lyric_clues)
+    assert analysis.image_english_query and analysis.modality_weights.image > 0
 
 
 def test_connected_quotes_apostrophes_and_newlines_keep_offsets():
