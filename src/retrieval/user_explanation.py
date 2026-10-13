@@ -29,7 +29,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from src.retrieval.explain import (
@@ -104,6 +104,13 @@ BASIS_SEMANTIC = "의미 검색 유사도로 반영(구절 확인 아님)"
 BASIS_SUPPLEMENTARY = "순위 계산에 쓰이지 않음"
 BASIS_RERANK_SKIPPED = "자료가 없어 리랭킹 생략"
 BASIS_NONE = "순위 반영 기록 없음"
+# 이전 사용자 제보로 후보에 들어온 곡의 가산·감점. 그 기록은 "후보에 드는가"를 가릴 때만 쓰였고 자리는 후보 끝으로
+# 고정됐다(`search_router.pin_feedback_entrants`). "검색 점수에 반영"이라고 하면 순위를 만든 것처럼 읽힌다.
+BASIS_ENTRY_ONLY = "후보에 드는 데만 쓰임 · 자리는 후보 끝(순위는 리랭커가 정함)"
+
+# 제보로 들어온 곡의 설명은 이 문장으로 시작한다. 출처만 말한다 — 제보 내용을 사실로 확인했다거나 이 곡이
+# 정답이라는 뜻으로 쓰지 않는다.
+FEEDBACK_SOURCE_SENTENCE = "이전 사용자 제보를 참고해 후보에 포함한 곡이에요(제보 내용을 사실로 확인한 것은 아니에요)."
 
 # RankingBasis.kind
 BASIS_KIND_ADJUSTMENT = "adjustment"
@@ -150,6 +157,7 @@ _PATH_SEARCH_NAMES: Dict[str, str] = {
     "performance": "보컬·편성 단서 검색",
     "performance_metadata": "편성 메타데이터 검색",
     "metadata": "메타데이터 검색",
+    "feedback_case": "이전 사용자 제보",
 }
 
 # 사실 일치 규칙 — "직접 확인한 것은 아니다"를 붙이지 않는다(제목·가수·형태는 등록 정보와 맞춘 것이다).
@@ -911,12 +919,14 @@ def _lyric_clause(row: ClueCheck) -> Clause:
     return (f"{unused} 이 순위 계산에는 쓰이지 않았고", f"{unused} 이 순위 계산에는 쓰이지 않았어요")
 
 
-def _positive_clauses(checks: Sequence[ClueCheck]) -> List[Clause]:
+def _positive_clauses(checks: Sequence[ClueCheck], *, facts_only: bool = False) -> List[Clause]:
+    """확인된 것. `facts_only`면 곡 자료와 맞는다는 사실만 말하고 "검색 점수에 반영"이라는 말을 쓰지 않는다
+    (제보로 들어온 곡 — 호출부가 순위 기록을 뗀 행을 넘긴다)."""
     clauses: List[Clause] = []
     lyric_hit = _strongest_lyric_hit(checks)
     if lyric_hit is not None:
         clauses.append(_lyric_clause(lyric_hit))
-    elif any(c.detail_kind == KIND_LYRIC_UNATTRIBUTED for c in checks):
+    elif not facts_only and any(c.detail_kind == KIND_LYRIC_UNATTRIBUTED for c in checks):
         clauses.append(("가사 구절 일치 기록이 검색 점수에 반영됐지만 어느 구절인지는 기록에 없고",
                         "가사 구절 일치 기록이 검색 점수에 반영됐지만 어느 구절인지는 기록에 없어요"))
 
@@ -940,8 +950,11 @@ def _positive_clauses(checks: Sequence[ClueCheck]) -> List[Clause]:
 
     if lyric_hit is None and any(c.detail_kind == KIND_LYRIC_KEYWORDS for c in checks):
         # 키워드 겹침은 구절 확인이 아니다 — 따로, 겹침으로만 말한다.
-        clauses.append(("가사 키워드 일부가 발췌·요약과 겹쳐 검색 점수에 반영됐고",
-                        "가사 키워드 일부가 발췌·요약과 겹쳐 검색 점수에 반영됐어요"))
+        if facts_only:
+            clauses.append(("가사 키워드 일부가 발췌·요약과 겹치고", "가사 키워드 일부가 발췌·요약과 겹쳐요"))
+        else:
+            clauses.append(("가사 키워드 일부가 발췌·요약과 겹쳐 검색 점수에 반영됐고",
+                            "가사 키워드 일부가 발췌·요약과 겹쳐 검색 점수에 반영됐어요"))
     return clauses
 
 
@@ -994,6 +1007,9 @@ def _limited_sentence(explain: SongExplain, checks: Sequence[ClueCheck]) -> str:
     if strongest is not None and strongest.path == "lyrics_surface":
         # 가사 구절 경로는 유사도가 아니라 일치다. 어느 구절인지 모를 뿐이다(단서 행이 없는 경우).
         return "가사 구절 일치 기록이 검색 점수에 반영된 후보예요(어느 구절인지는 기록에 없어요)."
+    if strongest is not None and strongest.path == "feedback_case":
+        # 들어온 곡은 `_summary`가 먼저 처리한다. 여기는 그 표시 없이 기록만 받은 호출자를 위한 자리다.
+        return FEEDBACK_SOURCE_SENTENCE
     if strongest is not None:
         name = _PATH_SEARCH_NAMES.get(strongest.path, strongest.label)
         return f"{name}{_subject_particle(name)} 비슷하게 평가한 후보예요(특정 구절이나 장면을 확인한 것은 아니에요)."
@@ -1001,9 +1017,18 @@ def _limited_sentence(explain: SongExplain, checks: Sequence[ClueCheck]) -> str:
 
 
 def _summary(checks: Sequence[ClueCheck], explain: SongExplain) -> str:
-    """최대 2문장. ① 확인된 것을 한 문장으로(없으면 제한된 설명) ② 확인하지 못한 것을 한 문장으로."""
-    first = _sentence(_positive_clauses(checks)) or _limited_sentence(explain, checks)
+    """최대 2문장. ① 확인된 것을 한 문장으로(없으면 제한된 설명) ② 확인하지 못한 것을 한 문장으로.
+
+    **이전 사용자 제보로 후보에 들어온 곡은 출처 문장이 먼저 온다**(그 뒤에 위 두 문장, 최대 3문장). 이 곡은 기존
+    검색만으로는 후보 밖이었다 — 단서 행이 있든 없든, 다른 경로 기여가 남아 있든 그 사실을 먼저 말한다.
+    확인된 것은 곡 자료와 맞는다는 사실로만 적는다. 이 곡의 가산은 진입 판정에만 쓰였고 자리는 후보 끝이라
+    "검색 점수에 반영됐다"고 하면 순위를 만든 것처럼 읽힌다(리뷰 FR-07).
+    """
     second = _sentence(_negative_clauses(checks))
+    if getattr(explain, "feedback_entrant", False):
+        facts = _sentence(_positive_clauses([replace(c, ranking_basis=[]) for c in checks], facts_only=True))
+        return " ".join(s for s in (FEEDBACK_SOURCE_SENTENCE, facts, second) if s)
+    first = _sentence(_positive_clauses(checks)) or _limited_sentence(explain, checks)
     return " ".join(s for s in (first, second) if s)
 
 
@@ -1045,6 +1070,14 @@ def build_user_explanation(
     mv = _check_mv(query, rerank_skip_reason)
     if mv is not None:
         checks.append(mv)
+    if getattr(explain, "feedback_entrant", False):
+        # 제보로 들어온 곡: 가산·감점·경로 기록과 이어진 행은 "검색 점수에 반영"이 아니라 진입 판정에만 쓰였다고 적는다.
+        # 연결된 기록(`ranking_basis`)은 지우지 않는다 — 그 가산이 있었던 것은 사실이고 상세 기록에도 남아 있다.
+        scored_kinds = {BASIS_KIND_ADJUSTMENT, BASIS_KIND_PATH}
+        checks = [
+            replace(c, basis_label=BASIS_ENTRY_ONLY) if any(b.kind in scored_kinds for b in c.ranking_basis) else c
+            for c in checks
+        ]
     return UserExplanation(
         summary=_summary(checks, explain),
         clue_checks=checks,

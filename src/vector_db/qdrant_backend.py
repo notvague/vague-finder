@@ -34,6 +34,7 @@ from qdrant_client import QdrantClient, models
 
 from src.vector_db.settings import (
     AUDIO_INDEX_NAME,
+    FEEDBACK_INDEX_NAME,
     IMAGE_INDEX_NAME,
     NAMESPACE,
     TEXT_HYBRID_INDEX_NAME,
@@ -50,6 +51,10 @@ INDEX_DISTANCE: Dict[str, models.Distance] = {
     TEXT_HYBRID_INDEX_NAME: models.Distance.DOT,
     IMAGE_INDEX_NAME: models.Distance.COSINE,
     AUDIO_INDEX_NAME: models.Distance.COSINE,
+    # 사례 문장은 곡 텍스트와 같은 KoE5(1024차원·L2 정규화)라 cosine == dot이다. 텍스트 컬렉션이 DOT인 것은
+    # 하이브리드 합산에서 alpha로 스케일한 벡터를 그대로 내적해야 해서다. 여기는 그 합산이 없고 점수를
+    # 유사도 문턱(0~1)과 비교하므로 COSINE으로 둔다.
+    FEEDBACK_INDEX_NAME: models.Distance.COSINE,
 }
 
 # 하이브리드 합산을 위해 한 번에 훑을 상한. 코퍼스(905곡)보다 크면 전수 합산이 된다.

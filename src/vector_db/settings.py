@@ -39,6 +39,10 @@ CONTEXT_SPARSE_INDEX_NAME = os.getenv(
     "CONTEXT_SPARSE_INDEX_NAME", "vaguefinder-context-sparse-bm25"
 )
 
+# 승인된 피드백 사례(운영자가 쓴 재사용 문장의 KoE5 벡터). 곡 컬렉션과 단위가 다르다 — 포인트 하나가
+# 곡이 아니라 사례 하나다. 곡 검색·BM25 통계에 섞이지 않게 전용 컬렉션에 둔다(`src/feedback/case_index.py`).
+FEEDBACK_INDEX_NAME = os.getenv("QDRANT_FEEDBACK_COLLECTION", "vaguefinder-feedback-cases-1024-koe5")
+
 NAMESPACE = os.getenv("QDRANT_NAMESPACE", "dev")
 
 # -----------------------------

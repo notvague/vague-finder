@@ -13,6 +13,7 @@ import logging
 import math
 import os
 import re
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -24,6 +25,17 @@ from src.backend.schemas.search import ClarifyAnswer, MatchingTrack
 from src.embedding.models.audio_clap import CLAPAudioEmbedder
 from src.embedding.models.image_siglip2 import SigLIP2Embedder
 from src.retrieval import timing
+from src.feedback.retrieval import (
+    STATUS_ALREADY as FEEDBACK_ALREADY,
+    STATUS_APPLIED as FEEDBACK_APPLIED,
+    STATUS_FAILED as FEEDBACK_FAILED,
+    STATUS_NO_CASE as FEEDBACK_NO_CASE,
+    STATUS_NOT_ENTERED as FEEDBACK_NOT_ENTERED,
+    STATUS_TIMEOUT as FEEDBACK_TIMEOUT,
+    FeedbackSupplement,
+    SupplementItem,
+    build_case_query,
+)
 from src.retrieval.context_qdrant_search import ContextQdrantSearch
 from src.retrieval.context_route import ContextRouteHit, combine_context_clues
 from src.retrieval.context_query import (
@@ -31,6 +43,12 @@ from src.retrieval.context_query import (
 )
 from src.retrieval.context_evidence import context_candidate_matches_media_description
 from src.retrieval.explain import (
+    FEEDBACK_ADDED,
+    FEEDBACK_ALREADY_CANDIDATE,
+    FEEDBACK_NO_GAIN,
+    FEEDBACK_OVER_LIMIT,
+    FEEDBACK_PATH,
+    FEEDBACK_TAIL_RULE,
     LYRIC_MATCH_LABELS,
     LYRIC_SCORE_LABELS,
     NULL_RECORDER,
@@ -40,6 +58,8 @@ from src.retrieval.explain import (
     RERANK_SKIP_MV_SCENE_UNVERIFIABLE,
     RERANK_UNKNOWN,
     ExplainRecorder,
+    FeedbackCaseExplain,
+    FeedbackExplain,
     RerankRun,
 )
 from src.retrieval.reranker import MusicReranker
@@ -525,6 +545,151 @@ def _reject_and_trim(
     return ranked[:candidates]
 
 
+@dataclass
+class _FeedbackJob:
+    """한 요청의 피드백 사례 조회. `future`가 None이면 시작하지 못한 것이다."""
+
+    retriever: Any
+    settings: Any
+    future: Optional["asyncio.Future"]
+    cancel: threading.Event
+
+    def abandon(self) -> None:
+        """결과를 쓰지 않기로 했다. 아직 시작 전이면 돌지 않고, 도는 중이면 다음 단계 앞에서 멈춘다."""
+        self.cancel.set()
+        if self.future is not None:
+            self.future.cancel()
+
+
+# 보충 곡끼리의 순서를 가르는 아주 작은 차이. 유사도가 높은 사례의 곡이 조금 앞에 선다.
+_FEEDBACK_ORDER_STEP = 1e-6
+
+
+def fuse_feedback_supplement(
+    fused: List[Tuple[str, float]],
+    items: Sequence[SupplementItem],
+    weight: float,
+    meta_cache: Dict[str, MatchingTrack],
+    baseline_ids: Sequence[str],
+    max_songs: int,
+    pool_size: int,
+) -> Tuple[List[Tuple[str, float]], Dict[str, MatchingTrack], List[FeedbackCaseExplain]]:
+    """피드백 보충 곡을 융합 점수에 넣은 **새 목록**을 만든다. 입력은 바꾸지 않는다.
+
+    **보충은 후보 밖 곡에만 한다.** `baseline_ids`(보충이 없을 때의 최종 후보, 순위 순)에 이미 있는 곡은
+    점수를 건드리지 않는다 — 첫 버전의 피드백은 "후보에 넣는 것"까지이고 기존 후보의 순위를 올리는 신호가
+    아니다.
+
+    **여기서 주는 점수는 "후보에 들어오는가"를 가리는 데만 쓴다.** 후보 밖 곡을 유사도 순으로
+    `max_songs`곡까지 고르고, 그 곡들이 들어오면 밀려날 꼬리 후보 가운데 가장 앞선 곡(기준 곡)의
+    **보정 전 융합 점수 × weight**를 준다. 그 뒤의 명시 단서 보정은 기존 후보와 똑같이 받는다. 그래서
+
+    - 기준 곡과 보정이 같거나 많으면 절단을 넘어 꼬리 후보를 그 수만큼 밀어낸다.
+    - 질의의 명시 단서(성별·장르·제목…)와 맞지 않아 기준 곡보다 보정이 적으면 절단을 넘지 못한다.
+    - 남은 기존 후보의 점수와 서로의 순서는 그대로다.
+
+    **들어온 곡의 자리는 이 점수로 정하지 않는다.** 보정 한 번(1/61)이 후보 30곡의 융합 점수 폭과
+    비슷해서, 이 점수를 그대로 순위로 쓰면 질의에 성별·장르가 있을 때 보충 곡이 상위에 선다. 절단 뒤에
+    `pin_feedback_entrants`가 들어온 곡을 후보의 끝에 세운다(리뷰 FR-01).
+
+    `max_songs`는 호출부가 "리랭커 없이는 표시되지 않는 자리 수"로 한 번 더 묶어 넘긴다(리뷰 FR-02).
+
+    RRF 가중을 고정값으로 주지 않는 이유: 경로 가중은 질의마다 다르다(텍스트 0.5~1.0). 고정 가산은
+    진입 여부가 질의의 경로 가중에 따라 달라진다. 꼬리 기준은 가중과 무관하게 같은 조건으로 판정한다.
+
+    돌려주는 것: (새 융합 목록, 메타 캐시에 더할 곡 정보, 사례별 기록). 호출부는 전부 계산된 뒤에만
+    반영한다 — 도중에 실패해도 점수가 일부만 바뀐 채 남지 않는다.
+    """
+    scores = dict(fused)
+    ordered = [str(song_id) for song_id in baseline_ids]
+    baseline = set(ordered)
+    fresh = [item for item in items if str(item.track.id) not in baseline][:max_songs]
+    chosen = {str(item.track.id): position for position, item in enumerate(fresh, start=1)}
+    if not math.isfinite(weight) or weight <= 0.0:
+        raise ValueError("피드백 융합 가중이 양의 유한한 수가 아니다")
+
+    start_score = 0.0
+    if fresh and ordered:
+        # 후보가 꽉 찼으면 들어올 수만큼의 꼬리가 밀려난다. 그 꼬리의 맨 앞 곡이 기준이다.
+        # 꽉 차지 않았으면 밀려날 곡이 없으므로 마지막 후보 바로 위에 선다.
+        displaced = len(fresh) if len(ordered) >= pool_size else 1
+        anchor = ordered[max(0, len(ordered) - displaced)]
+        start_score = scores.get(anchor, 0.0) * weight
+
+    meta_updates: Dict[str, MatchingTrack] = {}
+    cases: List[FeedbackCaseExplain] = []
+    for item in items:
+        song_id = str(item.track.id)
+        before = scores.get(song_id)
+        position = chosen.get(song_id)
+        if song_id in baseline:
+            outcome = FEEDBACK_ALREADY_CANDIDATE
+        elif position is None:
+            outcome = FEEDBACK_OVER_LIMIT
+        else:
+            target = start_score * (1.0 + _FEEDBACK_ORDER_STEP * (len(fresh) - position + 1))
+            if target > (before or 0.0):
+                outcome = FEEDBACK_ADDED
+                scores[song_id] = target
+                cached = meta_cache.get(song_id)
+                if cached is None or cached.title == "Unknown":
+                    # 기존 경로가 못 찾은 곡이다. 리랭커가 볼 곡 정보(제목·태그·가사 요약)를 여기서 채운다.
+                    meta_updates[song_id] = item.track
+            else:
+                # 융합 목록에는 있었지만 후보 밖이던 곡이 이미 꼬리 자리보다 높은 점수를 갖고 있다
+                # (명시 단서 보정이 적어 밀려난 곡). 점수를 낮추지도 올리지도 않는다.
+                outcome = FEEDBACK_NO_GAIN
+        cases.append(FeedbackCaseExplain(
+            song_id=song_id,
+            feedback_id=item.case.feedback_id,
+            source_revision=item.case.source_revision,
+            review_version=item.case.review_version,
+            similarity=float(item.similarity),
+            rank=item.rank,
+            delta=scores.get(song_id, 0.0) - (before or 0.0),
+            new_to_pool=before is None,
+            outcome=outcome,
+        ))
+    if not all(math.isfinite(score) for score in scores.values()):
+        raise ValueError("피드백 융합 점수가 유한하지 않다")
+    ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+    return ranked, meta_updates, cases
+
+
+def pin_feedback_entrants(
+    ranked: List[Tuple[str, float]],
+    entrant_ids: Sequence[str],
+    recorder: ExplainRecorder = NULL_RECORDER,
+) -> List[Tuple[str, float]]:
+    """피드백으로 후보에 들어온 곡을 **후보의 끝에** 세운다. 나머지 곡의 점수와 순서는 그대로다.
+
+    첫 버전의 피드백은 후보에 넣는 것까지다. 들어온 곡이 명시 단서 보정이나 재질문 답변 보너스로 후보
+    상위에 서면, 리랭킹이 생략되거나(정책 생략) 실패해 후보 순서가 그대로 나가는 요청에서 **검색 근거 없이
+    피드백만으로** 표시된다. 그래서 진입 여부는 보정까지 본 점수로 정하되(`fuse_feedback_supplement`),
+    들어온 뒤의 자리는 끝으로 고정한다. 순위를 올리는 것은 리랭커뿐이다.
+
+    점수도 남은 후보의 최저점 바로 아래로 맞춘다 — 목록이 점수 순서와 어긋나지 않게(뒤에서 다시
+    정렬해도 그대로다). 낮춘 만큼은 `feedback_tail` 조정으로 기록해 설명의 장부가 맞게 한다.
+    이미 그보다 낮은 점수면 건드리지 않는다. `entrant_ids`의 순서(유사도 순)가 끝자리 안의 순서다.
+    """
+    order = {str(song_id): position for position, song_id in enumerate(entrant_ids)}
+    kept = [item for item in ranked if item[0] not in order]
+    moved = sorted((item for item in ranked if item[0] in order), key=lambda item: order[item[0]])
+    if not moved or not kept:
+        return list(ranked)
+    ceiling = kept[-1][1]
+    pinned = list(kept)
+    for song_id, score in moved:
+        ceiling -= max(abs(ceiling), 1e-12) * _FEEDBACK_ORDER_STEP
+        placed = min(score, ceiling)
+        # 점수를 낮추지 않았어도(이미 끝자리 점수였다) 들어온 곡이라는 표시는 남긴다 — 사용자용 설명이 본다.
+        recorder.mark_feedback_entrant(song_id)
+        recorder.adjust(song_id, FEEDBACK_TAIL_RULE, placed - score, "순위는 리랭커가 정한다")
+        pinned.append((song_id, placed))
+        ceiling = placed
+    return pinned
+
+
 def call_reranker(
     reranker: Any,
     query: str,
@@ -856,6 +1021,11 @@ class SearchRouter:
     
     """멀티모달 후보 생성, RRF, 규칙 부스팅, Cross-Encoder 리랭킹을 담당"""
 
+    # 피드백 후보 보충은 선택 기능이다. 주입하지 않은 라우터(시험이 `__new__`로 만든 것 포함)는
+    # 이 기본값으로 기존 경로만 돈다.
+    _feedback: Optional[Any] = None
+    _feedback_pool: Optional[ThreadPoolExecutor] = None
+
     def __init__(
         self,
         search_service: SearchService,
@@ -871,6 +1041,7 @@ class SearchRouter:
         context_sparse_k: int = 100,
         context_named_media_multiplier: float = 1.0,
         default_candidate_k: int = 30,
+        feedback_retriever: Optional[Any] = None,
     ):
         if not math.isfinite(context_weight) or context_weight < 0:
             raise ValueError("context_weight must be finite and nonnegative")
@@ -900,6 +1071,16 @@ class SearchRouter:
             max_workers=max_workers,
             thread_name_prefix="search_worker",
         )
+        # 승인된 피드백 사례로 후보를 보충하는 조회 서비스(src.feedback.retrieval.FeedbackRetriever).
+        # None이거나 스위치(FEEDBACK_RETRIEVAL_ENABLED)가 꺼져 있으면 이 경로는 아무것도 부르지 않는다.
+        # 기존 경로와 스레드를 다투지 않게 전용 풀을 둔다. 동시에 두 건까지 — 질의 임베딩이 검색 경로와
+        # 같은 KoE5 모델을 쓴다.
+        self._feedback = feedback_retriever
+        self._feedback_pool = (
+            ThreadPoolExecutor(max_workers=2, thread_name_prefix="feedback_lookup")
+            if feedback_retriever is not None
+            else None
+        )
 
     def shutdown(self, wait: bool = True) -> None:
         """FastAPI lifespan 종료 시 스레드풀을 정리한다.
@@ -912,6 +1093,9 @@ class SearchRouter:
         wait=False는 기다릴 수 없는 자리에서만 쓴다.
         """
         self._pool.shutdown(wait=wait, cancel_futures=True)
+        # 피드백 사례 조회도 벡터 클라이언트를 쓴다. 같이 기다려야 닫힌 클라이언트를 만지지 않는다.
+        if self._feedback_pool is not None:
+            self._feedback_pool.shutdown(wait=wait, cancel_futures=True)
 
     # ------------------------------------------------------------------
     # Public
@@ -938,6 +1122,7 @@ class SearchRouter:
         context_hits_out: Optional[List[ContextRouteHit]] = None,
         path_k: Optional[int] = None,
         rerank_skip_out: Optional[List[str]] = None,
+        feedback_out: Optional[List[FeedbackExplain]] = None,
     ) -> List[MatchingTrack]:
         """
         QueryAnalysis를 받아 3개 경로를 병렬 실행하고
@@ -979,6 +1164,8 @@ class SearchRouter:
             않는다.** candidate_k를 올리면 경로 깊이와 최종 후보 수가 함께 바뀌어
             리랭커의 검색 점수 정규화 범위까지 달라지므로, 깊이만 따로 넓힐 때 쓴다.
             보조 신호(metadata·performance)는 원래 깊이의 목록만 본다.
+        feedback_out: 리스트를 넘기면 피드백 후보 보충을 **조회한 요청에서** 그 실행 기록이 담긴다
+            (설명 기록을 끈 요청에서도 받을 수 있는 통로). 스위치가 꺼져 있으면 비어 있다.
         """
         """
         1) 세 모달리티 병렬 후보 검색
@@ -1226,6 +1413,14 @@ class SearchRouter:
             if use_lyrics_surface
             else None
         )
+        # 피드백 사례 조회(1단계)는 기존 경로와 나란히 시작한다. 가중치를 고정한 ablation과 보정을 끈
+        # 실행은 경로 기여만 떼어 보는 측정이라 넣지 않는다. 스위치가 꺼져 있으면 None이다.
+        feedback_job = (
+            self._start_feedback_lookup(loop, analysis, answers, timer)
+            if force_weights is None and not disable_boost
+            else None
+        )
+
         if not use_image:
             logger.debug(
                 "[SearchRouter] image 경로 skip "
@@ -1726,8 +1921,23 @@ class SearchRouter:
                 "[SearchRouter] 전체 경로 결과 없음 — 빈 리스트 반환 (query='%s')",
                 analysis.original_query,
             )
+            if feedback_job is not None:
+                feedback_job.abandon()  # 보충은 기존 후보에 더하는 것이다. 후보가 없으면 만들지 않는다
             return []
-        
+
+        # 피드백 사례 보충 — **최종 후보 절단 전에** 합류한다. 여기서 최신 상태를 확인하고(2단계),
+        # 유효한 사례가 가리키는 **후보 밖 곡**을 후보의 꼬리 자리 점수로 융합 목록에 넣는다. 이미 후보인
+        # 곡의 점수는 바꾸지 않는다. 실패·시간 초과·유효 사례 없음이면 fused는 손대지 않은 그대로다.
+        # 아래 명시 단서 보정·거절 제외·절단·답변 보너스·리랭킹은 기존과 같다.
+        feedback_record: Optional[FeedbackExplain] = None
+        # 보충이 없을 때의 최종 후보(보정·거절 제외·절단 반영, 답변 전). 보충을 반영했을 때만 있다.
+        feedback_baseline: Optional[List[Tuple[str, float]]] = None
+        if feedback_job is not None:
+            fused, feedback_record, feedback_baseline = await self._apply_feedback_supplement(
+                loop, feedback_job, analysis, fused, meta_cache, excluded, candidates, top_k,
+                disable_boost, recorder, timer,
+            )
+
         for song_id, fused_score in fused:
             recorder.set_fused(song_id, fused_score)
 
@@ -1741,20 +1951,66 @@ class SearchRouter:
 
         boosted = _reject_and_trim(boosted, excluded, candidates)
 
+        # 피드백으로 들어온 곡(유사도 순). 진입 여부는 위 절단이 정했다 — 보정까지 본 점수가 절단을 넘었는가.
+        feedback_entrants: List[str] = []
+        if feedback_record is not None and feedback_baseline is not None:
+            final_set = {song_id for song_id, _ in boosted}
+            baseline_set = {song_id for song_id, _ in feedback_baseline}
+            for case in feedback_record.cases:
+                case.in_candidates = case.song_id in final_set
+                case.entered = case.in_candidates and case.song_id not in baseline_set
+            feedback_entrants = [case.song_id for case in feedback_record.cases if case.entered]
+
+        if feedback_entrants:
+            # 들어온 곡은 **보충 없는 최종 후보 순서의 끝자리를 그 수만큼 대신한다.** 기준은 답변 보너스까지
+            # 반영한 순서다 — 절단 시점의 꼴찌가 재질문 답과 맞는 곡이면 보너스로 올라설 곡이라, 그 곡이 아니라
+            # 보너스 뒤의 꼴찌가 자리를 내준다. 그래서 끝자리를 뺀 나머지는 점수·순서 모두 보충이 없을 때와 같다.
+            entrant_scores = dict(boosted)
+            base = list(feedback_baseline)
+            ranked_base = (
+                apply_answer_bonus(
+                    base, meta_cache, answers, 1.0 / (_RRF_K + 1),
+                    multiplier=answer_multiplier, recorder=recorder,
+                )
+                if answers else base
+            )
+            keep = min(len(base), candidates - len(feedback_entrants))
+            kept_ids = {song_id for song_id, _ in ranked_base[:keep]}
+            entrant_pairs = [(song_id, entrant_scores[song_id]) for song_id in feedback_entrants]
+            # 답변 전 순서(실험 스위치가 리랭커 입력으로 쓴다)도 같은 곡들로 맞춘다. 기록은 한 번만 남긴다.
+            pre_bonus = pin_feedback_entrants(
+                [pair for pair in base if pair[0] in kept_ids] + entrant_pairs, feedback_entrants,
+            )
+            boosted = pin_feedback_entrants(ranked_base[:keep] + entrant_pairs, feedback_entrants, recorder)
+            feedback_record.entered_ids = list(feedback_entrants)
+            feedback_record.displaced_ids = [song_id for song_id, _ in ranked_base[keep:]]
+            for case in feedback_record.cases:
+                case.in_candidates = case.entered or case.song_id in kept_ids
+            # 상태는 실제로 들어온 곡이 있을 때만 applied다(점수만 받고 절단을 못 넘은 것은 아니다).
+            feedback_record.status = FEEDBACK_APPLIED
+        else:
+            # 답변은 여기서만 반영한다 — 후보 풀은 그대로 두고 순위만 바꾼다.
+            pre_bonus = list(boosted)
+            if answers:
+                boosted = apply_answer_bonus(
+                    boosted, meta_cache, answers, 1.0 / (_RRF_K + 1),
+                    multiplier=answer_multiplier,
+                    recorder=recorder,
+                )
+
+        # Context 사실은 **최종 후보에 남은 곡**의 것만 내보낸다. 피드백 보충이 끝자리를 바꾼 뒤에 채워야
+        # 밀려난 곡의 사실이 실리지 않고, 보충으로 들어온 곡이 Context 경로에도 걸렸으면 그 사실이 빠지지 않는다.
+        # 보충이 없으면 절단 직후의 후보와 같은 집합이다(답변 보너스는 순서만 바꾼다).
         if context_hits_out is not None:
             surviving = {song_id for song_id, _ in boosted}
             context_hits_out.extend(
                 hit.route for hit in context_hits if hit.route.song_id in surviving
             )
 
-        # 답변은 여기서만 반영한다 — 후보 풀은 그대로 두고 순위만 바꾼다.
-        pre_bonus = list(boosted)
-        if answers:
-            boosted = apply_answer_bonus(
-                boosted, meta_cache, answers, 1.0 / (_RRF_K + 1),
-                multiplier=answer_multiplier,
-                recorder=recorder,
-            )
+        if feedback_record is not None:
+            recorder.note_feedback(feedback_record)
+            if feedback_out is not None:
+                feedback_out.append(feedback_record)
 
         # LLM 리랭커 프롬프트에 넘길 답변. 보너스·가사 exact 묶음은 위처럼 전부 쓴다.
         # 답이 없어도 부른다 — 프로필 출생 연도로 분석에 들어온 시기 창은 answers가 아니라 분석에 있다(리뷰)
@@ -1813,7 +2069,10 @@ class SearchRouter:
         recorder.set_reranker(
             type(self._reranker).__name__ if self._reranker is not None else "none"
         )
-        timer.mark("search.fuse", fuse_started, candidates=len(candidate_tracks))
+        # 융합 구간에는 피드백 보충을 기다린 시간이 들어 있다. 조회한 요청에는 그 시간을 따로 적어
+        # 융합 자체가 느려진 것으로 읽히지 않게 한다(꺼져 있으면 이 칸이 없다).
+        fuse_notes = {"feedback_wait_ms": round(feedback_record.elapsed_ms, 1)} if feedback_record is not None else {}
+        timer.mark("search.fuse", fuse_started, candidates=len(candidate_tracks), **fuse_notes)
 
         # 정책 생략은 모델을 부르기 **전에**, 부를 수 있는 요청에서만 판정한다 — 꺼져 있거나
         # 후보가 하나뿐인 요청에 "생략했다"고 적으면 하지 않을 일을 생략한 것이 된다.
@@ -2014,6 +2273,148 @@ class SearchRouter:
             final = candidate_tracks[:top_k]
         recorder.set_rank_after([t.id for t in final])
         return final
+
+    def _start_feedback_lookup(
+        self,
+        loop: asyncio.AbstractEventLoop,
+        analysis: QueryAnalysis,
+        answers: Optional[Sequence[ClarifyAnswer]],
+        timer: Any,
+    ) -> Optional[_FeedbackJob]:
+        """피드백 사례 조회를 전용 스레드에 건다. 꺼져 있으면 None — 설정도 읽지 않고 아무것도 만들지 않는다."""
+        retriever = self._feedback
+        if retriever is None or self._feedback_pool is None:
+            return None
+        cancel = threading.Event()
+        try:
+            if not retriever.enabled:
+                return None
+            settings = retriever.settings()
+            query_text = build_case_query(analysis, answers)
+            future = loop.run_in_executor(
+                self._feedback_pool,
+                timer.job(
+                    "path.feedback_cases",
+                    partial(retriever.find_cases, query_text, cancel=cancel, settings=settings),
+                ),
+            )
+        except Exception as exc:
+            logger.warning("[SearchRouter] 피드백 사례 조회를 시작하지 못했다: %s", type(exc).__name__)
+            return _FeedbackJob(retriever, None, None, cancel)
+        # 결과를 기다리지 않고 끝나는 길(후보 없음·요청 취소)에서 예외가 "가져가지 않음"으로 남지 않게.
+        future.add_done_callback(lambda done: done.cancelled() or done.exception())
+        return _FeedbackJob(retriever, settings, future, cancel)
+
+    async def _apply_feedback_supplement(
+        self,
+        loop: asyncio.AbstractEventLoop,
+        job: _FeedbackJob,
+        analysis: QueryAnalysis,
+        fused: List[Tuple[str, float]],
+        meta_cache: Dict[str, MatchingTrack],
+        excluded: Optional[Set[str]],
+        candidates: int,
+        top_k: int,
+        disable_boost: bool,
+        recorder: ExplainRecorder,
+        timer: Any,
+    ) -> Tuple[List[Tuple[str, float]], FeedbackExplain, Optional[List[Tuple[str, float]]]]:
+        """피드백 보충을 융합 목록에 합친다. (융합 목록, 실행 기록, 보충이 없었을 때의 후보)를 돌려준다.
+
+        **어느 단계에서 실패하든 `fused`와 `meta_cache`는 들어온 그대로다.** 새 목록은 전부 계산된 뒤에만
+        돌려주고, 곡 정보도 그때 한 번에 넣는다. 세 번째 값은 보충을 실제로 반영했을 때만 있다.
+
+        기다리는 시간은 기존 경로가 끝난 지금부터 `budget_seconds`까지다 — 조회(1단계)의 남은 시간과
+        최신 상태 확인(2단계)을 합친 상한이다. 넘으면 버리고 기존 후보로 간다.
+        """
+        started = time.monotonic()
+        settings = job.settings
+        record = FeedbackExplain(status=FEEDBACK_FAILED)
+        if settings is not None:
+            record.settings = {
+                "top_cases": settings.top_cases, "max_songs": settings.max_songs,
+                "min_similarity": settings.min_similarity, "fusion_weight": settings.fusion_weight,
+                "budget_seconds": settings.budget_seconds,
+                "display_k": settings.display_count(top_k, candidates),
+            }
+        supplement: Optional[FeedbackSupplement] = None
+        if job.future is not None and settings is not None:
+            try:
+                with timer.step("search.feedback"):
+                    deadline = started + settings.budget_seconds
+                    lookup = await asyncio.wait_for(job.future, timeout=settings.budget_seconds)
+                    if not lookup.hits:
+                        supplement = FeedbackSupplement(status=FEEDBACK_NO_CASE, settings=settings)
+                    else:
+                        remaining = deadline - time.monotonic()
+                        if remaining <= 0:
+                            raise asyncio.TimeoutError()
+                        # 최신 상태 확인은 후보에 합치기 직전인 지금 한다. 그 시각 기준으로 철회·수정·만료를 본다.
+                        supplement = await asyncio.wait_for(
+                            loop.run_in_executor(
+                                self._feedback_pool,
+                                partial(job.retriever.validate, lookup, excluded_ids=excluded,
+                                        budget_seconds=remaining),
+                            ),
+                            timeout=remaining,
+                        )
+            except asyncio.TimeoutError:
+                record.status = FEEDBACK_TIMEOUT
+                logger.warning("[SearchRouter] 피드백 사례 조회가 %.2f초 안에 끝나지 않았다 — 기존 후보로 진행",
+                               settings.budget_seconds)
+            except Exception as exc:
+                # 저장소 예외에는 연결 정보가 들어갈 수 있다. 종류만 남긴다.
+                record.status = FEEDBACK_FAILED
+                logger.warning("[SearchRouter] 피드백 사례 조회 실패 — 기존 후보로 진행: %s", type(exc).__name__)
+            finally:
+                job.cancel.set()
+
+        baseline: Optional[List[Tuple[str, float]]] = None
+        if supplement is not None:
+            record.status = supplement.status
+            record.scanned = supplement.scanned
+            record.dropped = dict(supplement.dropped)
+            if supplement.items:
+                try:
+                    # 보충이 없다면 최종 후보는 무엇인가. 같은 보정·거절 제외·절단을 기록 없이 먼저 돌린다 —
+                    # 이미 후보인 곡을 가려내는 기준이자, 무엇이 들어오고 밀려났는지 비교할 기준이다.
+                    baseline = _reject_and_trim(
+                        self._apply_explicit_boosts(analysis, fused, meta_cache, disable_boost=disable_boost),
+                        excluded, candidates,
+                    )
+                    baseline_ids = [song_id for song_id, _ in baseline]
+                    # 보충 곡은 리랭커 없이는 표시되지 않는 자리(표시 수 뒤)에만 선다. 그 자리 수가 상한이다 —
+                    # 후보 수 = 표시 수면 보충하지 않고, 기존 후보가 표시 수보다 적을 때도 하지 않는다
+                    # (끝에 세워도 표시 구간 안이다). 표시 수는 top_k다. 후보 전체를 요청한 측정기 호출
+                    # (top_k = 후보 수)에서만 설정의 display_k를 쓴다(`RetrievalSettings.display_count`).
+                    shown = settings.display_count(top_k, candidates)
+                    room = max(0, candidates - shown) if len(baseline_ids) >= shown else 0
+                    ranked, meta_updates, cases = fuse_feedback_supplement(
+                        fused, supplement.items, settings.fusion_weight, meta_cache,
+                        baseline_ids, min(settings.max_songs, room), candidates,
+                    )
+                except Exception as exc:
+                    record.status = FEEDBACK_FAILED
+                    baseline = None
+                    logger.warning("[SearchRouter] 피드백 보충 융합 실패 — 기존 후보로 진행: %s", type(exc).__name__)
+                else:
+                    meta_cache.update(meta_updates)
+                    fused = ranked
+                    record.cases = cases
+                    applied = [case for case in cases if case.added]
+                    for outcome in (FEEDBACK_ALREADY_CANDIDATE, FEEDBACK_OVER_LIMIT, FEEDBACK_NO_GAIN):
+                        count = sum(1 for case in cases if case.outcome == outcome)
+                        if count:
+                            record.dropped[outcome] = count
+                    # 여기서는 "들어올 수 있는 곡이 있었는가"까지만 안다. 실제로 들어왔으면 절단 뒤에 applied로 바꾼다.
+                    record.status = (
+                        FEEDBACK_ALREADY if all(case.already_candidate for case in cases) else FEEDBACK_NOT_ENTERED
+                    )
+                    for position, case in enumerate(applied, start=1):
+                        # 출처만 남긴다. 사례의 문장·사유는 여기까지 오지 않는다.
+                        recorder.path(case.song_id, FEEDBACK_PATH, position, case.delta)
+        record.elapsed_ms = (time.monotonic() - started) * 1000.0
+        return fused, record, baseline
 
     @staticmethod
     def _call_applied(statuses: Sequence[str], n_before: int) -> bool:

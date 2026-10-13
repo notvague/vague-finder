@@ -96,6 +96,14 @@ reports/
 # 지연 측정 요약도 같은 이유로 커밋한다 — 기준선이 없으면 다음 측정과 비교할 수 없다.
 # detail(질의별, ~19KB)은 관례대로 제외한다. 요약에 중앙값·p95·최댓값이 다 있다.
 !experiments/latency/*/latency_summary.csv
+# 피드백 후보 보충 측정(docs/feedback.md §8). 합성 평가 자료(실제 곡·피드백과 무관)와 집계만 커밋한다.
+# 질의별 변화(changes)는 **합성 자료로 잰 것만** 커밋한다 — 운영 사례로 잰 것에는 사례가 가리킨 곡이
+# 질의별로 들어 있고, 그것은 원래 만료 뒤에 남기지 않는다. detail·유사도 쌍은 어느 쪽이든 커밋하지 않는다.
+# 집계(summary)는 건수·비율뿐이다.
+!experiments/feedback_reuse/synthetic/*.csv
+!experiments/feedback_reuse/results_*/feedback_reuse_summary.csv
+!experiments/feedback_reuse/results_*/feedback_reuse_similarity_summary.csv
+!experiments/feedback_reuse/results_synthetic_*/feedback_reuse_changes.csv
 
 # 질의별 전체 실행 기록. 조건당 ~600KB, 전체 22MB다.
 # analysis_cache_*.json과 같은 저장소에 있으면 결정적으로 재생성되므로 추적하지 않는다.

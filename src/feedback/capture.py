@@ -9,8 +9,12 @@ from dataclasses import asdict, is_dataclass
 from functools import lru_cache
 from pathlib import Path
 
+from typing import Optional
+
+from src.feedback.settings import EMBEDDING_VERSION
 from src.feedback.store import collection_enabled, get_feedback_store
 from src.retrieval import timing
+from src.retrieval.explain import FeedbackExplain
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +50,26 @@ def _plain(value):
     return json.loads(json.dumps(value, ensure_ascii=False, default=str))
 
 
-def _capture_search(request, analysis, results, candidate_ids, turn, search_router):
+def _feedback_supplement(record: Optional[FeedbackExplain]) -> Optional[dict]:
+    """이 검색에서 피드백 사례가 후보를 어떻게 바꿨는가. 조회하지 않았으면(스위치 꺼짐) None.
+
+    곡 ID와 건수만 남긴다 — 다른 사용자의 사례 ID·재사용 문장은 넣지 않는다. 나중에 "피드백이 들인 곡을
+    다시 정답으로 고른 사례"를 가려 보기 위한 값이다(같은 사례가 스스로를 강화하는지 볼 수 있게).
+    """
+    if record is None:
+        return None
+    return {
+        "status": record.status,
+        "supplemented_ids": [case.song_id for case in record.cases if case.added],
+        "entered_ids": list(record.entered_ids),
+        "displaced_ids": list(record.displaced_ids),
+        "embedding_version": EMBEDDING_VERSION,
+        "settings": dict(record.settings),
+    }
+
+
+def _capture_search(request, analysis, results, candidate_ids, turn, search_router,
+                    feedback_record: Optional[FeedbackExplain] = None):
     # 파일 읽기·해시·직렬화부터 DB 기록까지 같은 작업 스레드에서 처리한다.
     # 출생 연도 슬롯 원값 대신 실제 검색에서 사용하는 연도 창을 기록한다.
     from src.retrieval.clarify import apply_birth_year_answers
@@ -69,15 +92,18 @@ def _capture_search(request, analysis, results, candidate_ids, turn, search_rout
             "reranker_model": getattr(config, "model_name", None),
             "reranker_config": _plain(asdict(config)) if is_dataclass(config) else None,
             "retrieval_backend": os.getenv("GEMINI_RETRIEVAL_BACKEND", "auto"),
-            "feedback_index": None,
+            # 피드백 후보 보충을 조회한 검색에만 값이 있다(사례 벡터의 판). 꺼져 있었으면 None이다.
+            "feedback_index": EMBEDDING_VERSION if feedback_record is not None else None,
         },
+        "feedback_supplement": _feedback_supplement(feedback_record),
         "options": {"top_k": request.top_k, "candidate_k": request.candidate_k,
                     "use_rerank": request.use_rerank},
     }
     return get_feedback_store().record_search(snapshot, request.feedback_parent)
 
 
-async def capture_search(request, analysis, results, candidate_ids, turn, search_router):
+async def capture_search(request, analysis, results, candidate_ids, turn, search_router,
+                         feedback_record: Optional[FeedbackExplain] = None):
     global _unavailable_until
     if not collection_enabled() or not results:
         return None
@@ -89,6 +115,7 @@ async def capture_search(request, analysis, results, candidate_ids, turn, search
         with timing.step("feedback.capture"):
             return await asyncio.to_thread(
                 _capture_search, request, analysis, results, candidate_ids, turn, search_router,
+                feedback_record,
             )
     except Exception as exc:
         _unavailable_until = time.monotonic() + RETRY_AFTER_SECONDS
