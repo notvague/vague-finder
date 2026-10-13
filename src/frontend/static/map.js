@@ -1024,15 +1024,11 @@ function renderPanel() {
       } catch (_) { /* 출처 주소가 유효하지 않으면 링크를 생략한다. */ }
       text.append(proof);
     }
-    if (typeof VagueFeedback !== "undefined") VagueFeedback.attach(text, r);
     li.append(text);
 
-    /*
-     * 근거는 서버가 기록을 실어 보낸 곡에만 붙는다. 의미 검색 서버에 닿지
-     * 못해 문자열 검색으로 대체했을 때는 설명할 기록 자체가 없다.
-     */
     const x = r.explain;
-    if (x) li.append(explainToggle(id, x));
+    const actions = resultActions(id, r);
+    if (actions) li.append(actions);
     frag.appendChild(li);
     // 다시 그리기 전에 펼쳐 둔 곡은 펼친 채로 되돌린다
     if (x && explainOpen.has(id)) frag.appendChild(explainPanel(x));
@@ -1151,6 +1147,20 @@ function exSum(value) {
   const row = makeEl("div", "exrow exsum");
   row.append(makeEl("span", "exlabel", "합"), makeEl("span", "exnum", value));
   return row;
+}
+
+/*
+ * 결과 행 오른쪽 끝의 버튼 묶음 — 근거, 그 오른쪽에 정답.
+ *
+ * 근거는 서버가 기록을 실어 보낸 곡에만 붙는다. 의미 검색 서버에 닿지 못해 문자열
+ * 검색으로 대체했을 때는 설명할 기록 자체가 없다. 정답은 응답에 제출 권한이 실려 온
+ * 검색에만 붙는다(feedback.js). 둘 다 없으면 묶음도 만들지 않는다.
+ */
+function resultActions(id, r) {
+  const actions = makeEl("span", "resultactions");
+  if (r.explain) actions.append(explainToggle(id, r.explain));
+  if (typeof VagueFeedback !== "undefined") VagueFeedback.attach(actions, r);
+  return actions.children.length ? actions : null;
 }
 
 function explainToggle(id, x) {

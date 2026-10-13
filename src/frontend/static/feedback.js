@@ -61,16 +61,28 @@ class FeedbackController {
 
   attach(container, track) {
     if (!this.receipt) return;
-    const button = this.element("button", "feedbackpick", "찾던 곡이에요");
+    const id = String(track.id);
+    // 근거 버튼 오른쪽에 같은 모양으로 선다(style.css의 .exbtn·.answerbtn 묶음 규칙).
+    const button = this.element("button", "answerbtn", "정답");
     button.type = "button";
-    button.setAttribute("aria-label", `${track.title} — 찾던 곡이에요`);
-    button.disabled = this.busy || this.sending || Boolean(this.selectionLimitMessage);
+    button.title = "찾던 곡이면 눌러서 알려 주세요";
+    button.setAttribute("aria-label", `${track.title} — 정답으로 알려 주기`);
     button.addEventListener("click", event => {
       event.stopPropagation();
-      this.choose(String(track.id));
+      this.choose(id);
     });
-    this.buttons.push(button);
+    const entry = { button, id };
+    this.buttons.push(entry);
+    this.syncButton(entry);
     container.append(button);
+  }
+
+  // 눌린 표시는 지금 고르는 곡(사유 입력 중)에, 그런 곡이 없으면 저장된 정답에 한다.
+  syncButton({ button, id }) {
+    const marked = this.draft ? this.draft.id
+      : this.saved && this.saved.status !== "withdrawn" ? this.saved.selected_song_id : null;
+    button.disabled = this.busy || this.sending || Boolean(this.selectionLimitMessage);
+    button.setAttribute("aria-pressed", String(id === marked));
   }
 
   choose(id) {
@@ -139,7 +151,7 @@ class FeedbackController {
   render() {
     this.root.replaceChildren();
     this.root.hidden = !this.receipt || (!this.draft && !this.saved && !this.message && !this.selectionLimitMessage);
-    for (const button of this.buttons) button.disabled = this.busy || this.sending || Boolean(this.selectionLimitMessage);
+    for (const entry of this.buttons) this.syncButton(entry);
     if (this.root.hidden) { this.onChange(); return; }
     if (this.saved) {
       const track = this.tracks.find(t => String(t.id) === this.saved.selected_song_id);

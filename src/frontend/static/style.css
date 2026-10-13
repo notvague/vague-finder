@@ -659,7 +659,7 @@ body.listmode .sitefooter { min-width: 0; }
   background: #f0f0f0;
 }
 /*
- * flex:1 — 남는 폭을 글자가 다 가져가고, 오른쪽 끝의 근거 버튼은 늘 같은
+ * flex:1 — 남는 폭을 글자가 다 가져가고, 오른쪽 끝의 버튼 묶음(근거·정답)은 늘 같은
  * 자리에 선다. 없으면 제목·장르가 긴 행(예: "첫눈처럼 너에게 가겠다 ·
  * 발라드, 국내드라마")에서 버튼이 레일 밖으로 밀려 잘린다.
  */
@@ -701,7 +701,6 @@ body.listmode .sitefooter { min-width: 0; }
 .resultcontextsource { flex: none; color: #286746; text-decoration: underline; }
 .resultcontextsource:focus-visible { outline: 2px solid currentColor; }
 
-.feedbackpick { align-self: flex-start; border: 0; background: none; color: #76600a; padding: 5px 0; font: inherit; font-size: 12px; cursor: pointer; }
 .feedbackbox[hidden] { display: none; }
 .feedbackbox { flex: 0 1 auto; overflow-y: auto; padding: 12px 16px; border-top: 1px solid #eee; background: #fffdf5; }
 .feedbacktitle, .feedbackstatus { font-size: 13px; margin: 0 0 8px; overflow-wrap: anywhere; }
@@ -710,9 +709,9 @@ body.listmode .sitefooter { min-width: 0; }
 .feedbacknote { font-size: 11px; color: #666; line-height: 1.5; }
 .feedbackactions { display: flex; gap: 8px; flex-wrap: wrap; }
 .feedbackaction { font: inherit; font-size: 12px; padding: 7px 10px; border: 1px solid #c8b66e; border-radius: 4px; background: #fff; cursor: pointer; }
-.feedbackpick:disabled, .feedbackaction:disabled { opacity: .5; cursor: default; }
+.feedbackaction:disabled { opacity: .5; cursor: default; }
 .feedbackerror { color: #a12f20; font-size: 12px; }
-.feedbackpick:focus-visible, .feedbackaction:focus-visible, .feedbackreason:focus-visible { outline: 2px solid #76600a; outline-offset: 2px; }
+.feedbackaction:focus-visible, .feedbackreason:focus-visible { outline: 2px solid #76600a; outline-offset: 2px; }
 
 .clarify[hidden] { display: none; }
 .clarify {
@@ -913,7 +912,14 @@ body.listmode .sitefooter { min-width: 0; }
  * 강약에도 규칙이 있다: 합계에 들어가지 않는 줄(반영 안 된 기여)은 흐리게,
  * 표를 잘못 읽게 하는 자리(순서를 정하지 않은 합성 점수 등)는 주의 문구로.
  */
-.exbtn {
+/* 결과 행 오른쪽 끝의 버튼 묶음. 근거 오른쪽에 정답(feedback.js)이 같은 모양으로 선다 */
+.resultactions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.exbtn, .answerbtn {
   flex: none;
   padding: 3px 6px;
   font: inherit;
@@ -925,13 +931,17 @@ body.listmode .sitefooter { min-width: 0; }
   border-radius: 4px;
   cursor: pointer;
 }
-.exbtn:hover { color: #2258a5; border-color: #2258a5; }
-.exbtn:focus-visible { outline: 2px solid #2258a5; outline-offset: 1px; }
-.exbtn[aria-expanded="true"] {
+.exbtn:hover, .answerbtn:hover { color: #2258a5; border-color: #2258a5; }
+.exbtn:focus-visible, .answerbtn:focus-visible { outline: 2px solid #2258a5; outline-offset: 1px; }
+/* 근거는 펼친 곡에, 정답은 고르는 중이거나 저장된 곡에 채운다 */
+.exbtn[aria-expanded="true"], .answerbtn[aria-pressed="true"] {
   color: #fff;
   background: #2258a5;
   border-color: #2258a5;
 }
+/* 검색 중·저장 중에는 정답을 누를 수 없다 — 흐리게 두고 올려도 색이 바뀌지 않는다 */
+.answerbtn:disabled { opacity: .5; cursor: default; }
+.answerbtn:disabled:not([aria-pressed="true"]) { color: #999; border-color: #e5e5e5; }
 
 /* 결과 항목의 형제로 끼어든다 — 항목 안에 넣으면 그 가로 배치가 깨진다 */
 .explainrow {
