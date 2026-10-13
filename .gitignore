@@ -143,3 +143,10 @@ experiments/reranking/results_*/*/*/*_explain.jsonl
 experiments/reranking/results_v43_audio_path_weight/analysis_cache_*.json
 !experiments/reranking/results_v43_audio_path_weight/*/*/search_eval_*_summary.csv
 !experiments/reranking/results_v43_audio_path_weight/*/*/search_eval_*_top10.csv
+
+# 소리 경로 진단(results_v44) — 질의별 순위표
+!experiments/reranking/results_v44_audio_path_diag/*.csv
+
+# 소리 표현 타진(results_v45) — 질의별 순위표. 표본 곡 목록은 곡 목록이라 올리지 않는다(pick_sample.py로 다시 만든다)
+!experiments/reranking/results_v45_audio_segment_probe/*.csv
+experiments/reranking/results_v45_audio_segment_probe/sample_ids.txt
