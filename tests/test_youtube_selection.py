@@ -741,4 +741,3 @@ def test_manual_video_without_a_video_id_is_not_searched(fake_ydl) -> None:
     fake_ydl([entry("mv", "아이유 - 밤편지 Official MV", views=100)],
              {"mv": {"title": "아이유 - 밤편지 Official MV", "view_count": 100, "comments": None}})
     assert cr.fetch_youtube_reaction("아이유", "밤편지", melon_title="밤편지", video_url="없음") == {}
-

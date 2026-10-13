@@ -717,6 +717,46 @@ def test_with_clarify_answers_the_entrant_replaces_the_final_tail_not_an_answer_
     assert song.retrieval_score < on["scores"][28][1], "남은 후보의 최저점보다 아래다"
 
 
+def test_context_facts_follow_the_final_candidates_after_the_tail_is_replaced(rig):
+    """Context 경로(배경 지식)와 함께 돌 때. 응답에 실을 Context 사실은 **최종 후보에 남은 곡**의 것만 내보낸다.
+
+    절단 직후에 모으면 어긋난다 — 재질문 답이 있으면 절단 시점의 꼴찌(s30, 답과 맞아 3위가 될 곡)는 남고
+    답변 보너스 뒤의 꼴찌(s29)가 자리를 내주기 때문이다. 보충으로 들어온 곡이 Context 경로에도 걸렸으면
+    그 사실도 함께 나간다. Context 가중을 아주 작게 둬 순위는 텍스트 경로 그대로다.
+    """
+    from src.backend.schemas.query import ContextClue
+    from src.retrieval.context_route import ContextRouteHit
+
+    clue = ContextClue(target="", relation="삽입곡", search_query="드라마에 나온 노래", confidence=0.9)
+    context_ids = ["s5", "s29", "s30", "f1"]            # f1은 텍스트 경로에 없다 — Context에만 걸린 후보 밖 곡
+    answers = [ClarifyAnswer(slot="vocal_gender", value="여성")]
+
+    def run(retriever=None):
+        router = _router(_female_at(10, 20, 30, 40), retriever)
+        router._context_search, router._context_weight = object(), 1e-9
+        router._search_context = lambda analysis, pool_k: [
+            sr._ContextTrack(
+                ContextRouteHit(song_id, 1.0 / (60 + rank), clue, None),
+                _track(song_id, title=f"색인 제목 {song_id}", score=0.0, vocal_gender="여성" if song_id in ("s30", "f1") else "남성"),
+            )
+            for rank, song_id in enumerate(context_ids, start=1)
+        ]
+        facts = []
+        out = _search(router, _analysis(original_query="휘파람 불던 노래", context_clues=[clue]),
+                      answers=answers, context_hits_out=facts)
+        out["facts"] = [hit.song_id for hit in facts]
+        return out
+
+    rig.case("f1", "휘파람 노래")
+    baseline, on = run(), run(rig.retriever)
+    assert baseline["pool"][:3] == ["s10", "s20", "s30"] and baseline["pool"][-1] == "s29"
+    assert baseline["facts"] == ["s5", "s29", "s30"], "보충이 없으면 후보에 남은 Context 곡 그대로다(f1은 후보 밖)"
+    assert on["pool"] == baseline["pool"][:29] + ["f1"] and on["scores"][:29] == baseline["scores"][:29]
+    assert on["feedback"][0].entered_ids == ["f1"] and on["feedback"][0].displaced_ids == ["s29"]
+    assert on["facts"] == ["s5", "s30", "f1"], "밀려난 s29의 사실은 빠지고, 남은 s30과 들어온 f1의 사실은 실린다"
+    assert on["shown"] == baseline["shown"]
+
+
 def test_the_pre_bonus_order_given_to_an_answer_aware_reranker_has_the_same_songs(rig, monkeypatch):
     """실험 스위치 CLARIFY_RERANK_INPUT_ORDER=pre_bonus — 리랭커가 받는 '보너스 전 순서'도 같은 곡들이고 보충 곡은 끝이다."""
     from tests.test_router_rerank_input_order import _AnswerReranker

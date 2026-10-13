@@ -1,0 +1,138 @@
+{
+  "schema": "context_api_candidate_fix_local_checks_v1",
+  "local_test_environment": "Python 3.12, local test environment; user reports are Python 3.11.17 Docker",
+  "pytest": {
+    "passed": 3971,
+    "subtests_passed": 32,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 44.761,
+    "scope": [
+      "tests/context",
+      "tests/test_qdrant_backend.py",
+      "tests/test_clarify_state.py",
+      "tests/test_search_explain.py",
+      "tests/test_lyric_evidence.py"
+    ],
+    "console_sha256": "fd19fddea4bf74166e72348dc30cdb4ed0851e7ffd243d12733759256c9bd633"
+  },
+  "registered_search_code": {
+    "files_checked": 142,
+    "changed_files": []
+  },
+  "actual_payload_baseline_and_idempotency_check": "passed",
+  "saved_user_response_recheck": {
+    "original_http_requests": 18,
+    "passed_existing_records": 17,
+    "requires_full_candidate_replay": [
+      "q203"
+    ],
+    "q203_target_candidate_rank": 22,
+    "q203_target_top10": false,
+    "context_job_execution_verified": true
+  },
+  "submitted_user_evaluation": {
+    "status": "passed_observed_tests",
+    "dev_count": 74,
+    "test_count": 32,
+    "additional_count": 60,
+    "repeat_count": 10,
+    "metrics": [
+      {
+        "phase": "dev",
+        "group": "context_positive",
+        "questions": 18,
+        "candidate_hit30": {
+          "off": 6,
+          "on": 15
+        },
+        "hit10": {
+          "off": 6,
+          "on": 13
+        }
+      },
+      {
+        "phase": "dev",
+        "group": "regression_all",
+        "questions": 53,
+        "candidate_hit30": {
+          "off": 46,
+          "on": 47
+        },
+        "hit10": {
+          "off": 36,
+          "on": 36
+        }
+      },
+      {
+        "phase": "test",
+        "group": "context_positive",
+        "questions": 8,
+        "candidate_hit30": {
+          "off": 8,
+          "on": 8
+        },
+        "hit10": {
+          "off": 6,
+          "on": 8
+        }
+      },
+      {
+        "phase": "test",
+        "group": "regression_all",
+        "questions": 23,
+        "candidate_hit30": {
+          "off": 17,
+          "on": 17
+        },
+        "hit10": {
+          "off": 14,
+          "on": 14
+        }
+      },
+      {
+        "phase": "independent",
+        "group": "context_positive",
+        "questions": 36,
+        "candidate_hit30": {
+          "off": 26,
+          "on": 31
+        },
+        "hit10": {
+          "off": 23,
+          "on": 29
+        }
+      },
+      {
+        "phase": "independent",
+        "group": "regression_all",
+        "questions": 18,
+        "candidate_hit30": {
+          "off": 18,
+          "on": 18
+        },
+        "hit10": {
+          "off": 18,
+          "on": 18
+        }
+      }
+    ],
+    "context_rerank_enabled": false,
+    "context_setting": {
+      "weight": 0.5,
+      "fact_k": 100,
+      "sparse_k": 100,
+      "candidate_k": 30,
+      "top_k": 10,
+      "named_media_multiplier": 2.0
+    },
+    "validation_report_sha256": "cfcfc3fd3e13e46ddc960581743d81f5f36641ac8519f1b096241eff812cd33e"
+  },
+  "limitations": [
+    "Existing frozen user evaluation, not a new blind sample.",
+    "Local HTTP fixtures and FastAPI route checks use synthetic retrieval outputs.",
+    "New real Gemini/Qdrant API verification must run on the user machine; it has not been run here.",
+    "Candidate@30 entry is separate from a Top-10 hit and does not prove fact relevance."
+  ]
+}

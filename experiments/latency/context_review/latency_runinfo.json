@@ -1,0 +1,24 @@
+{
+  "created_at": "2026-09-29T16:41:09+0000",
+  "args": {
+    "input": "experiments/reranking/eval_queries_v05.csv",
+    "split": "all",
+    "base_url": "http://127.0.0.1:8000",
+    "top_k": 10,
+    "explain": true,
+    "repeat": 3,
+    "clarify": false,
+    "query_ids": "m101,m102,m104,q203",
+    "timing_log": "artifacts/timing/context_review.jsonl",
+    "output_dir": "experiments/latency/context_review"
+  },
+  "requests": {
+    "planned": 14,
+    "recorded": 14,
+    "matched_server_records": 0,
+    "failed": 0,
+    "retried_analysis": 0
+  },
+  "timing_log_lines_before_run": 0,
+  "analysis_cache": "off (service path)"
+}

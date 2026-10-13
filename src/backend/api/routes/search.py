@@ -43,6 +43,8 @@ from src.retrieval.clarify import (
     remaining_data_slots,
     with_birth_year,
 )
+from src.retrieval.context_evidence import context_evidence_for_result
+from src.retrieval.context_route import ContextRouteHit
 from src.retrieval.known_slots import known_slots_from_query
 from src.retrieval.explain import (
     NULL_RECORDER,
@@ -65,6 +67,21 @@ from src.vector_db.settings import TEXT_HYBRID_INDEX_NAME
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/search", tags=["Search"])
+
+def _attach_context_evidence(
+    track: MatchingTrack, context_by_id: dict[str, ContextRouteHit],
+    analysis: QueryAnalysis,
+) -> MatchingTrack:
+    hit = context_by_id.get(track.id)
+    if hit is None:
+        return track
+    try:
+        evidence = context_evidence_for_result(hit, query_clues=analysis.context_clues)
+    except Exception:
+        # A damaged citation must not take the search result down with it.
+        logger.exception("[context] fact verification failed for song %s", track.id)
+        return track
+    return track.model_copy(update={"context_evidence": evidence}) if evidence else track
 
 
 @router.post("/clarify", response_model=ClarifyResponse)
@@ -365,6 +382,7 @@ async def search(
         candidate_tracks: list[MatchingTrack] = []
         # 가사 경로가 **무슨 판을 봤는지**. 인용이 그 판에서만 뜨게 하려고 받는다.
         lyrics_snapshot: list[LyricsSnapshot] = []
+        context_hits: list[ContextRouteHit] = []
         # 리랭킹을 정책으로 생략했으면 그 사유. 기록(explain)과 별개로 받는다 — 기록을 끈 요청에도
         # "확인할 자료가 없어 다른 단서로 찾았다"는 안내는 실려야 한다.
         rerank_skips: list[str] = []
@@ -394,12 +412,18 @@ async def search(
                 candidate_ids_out=candidate_ids,
                 candidate_tracks_out=candidate_tracks,
                 lyrics_snapshot_out=lyrics_snapshot,
+                context_hits_out=context_hits,
                 answers=request.answers,
                 recorder=recorder,
                 timer=timer,
                 rerank_skip_out=rerank_skips,
                 feedback_out=feedback_runs,
             )
+
+        # Decide citations only for the final, possibly reranked results.
+        # These facts came from the same Context search snapshot as ranking.
+        context_by_id = {hit.song_id: hit for hit in context_hits}
+        results = [_attach_context_evidence(track, context_by_id, analysis) for track in results]
 
         # 안내 문구는 서버의 고정 문구다. 사유 코드와 함께 보내 화면이 문장을 짓지 않게 한다.
         # 자료 없는 MV 장면 생략에만 싣는다 — 표지 지배 생략은 기존 동작이고 문구가 없다(RERANK_SKIP_LABELS).

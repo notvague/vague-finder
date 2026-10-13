@@ -219,6 +219,9 @@ KoE5 임베딩(1024차원, E5 `passage: ` 접두사, L2 정규화 — 곡 텍스
   낮춘 점수는 근거 패널에 `이전 사용자 제보로 들어온 곡은 후보 끝에 배치` 조정으로 남는다(경로 기여 + 가감점 = 검색 점수).
   (리랭커 입력이 같다는 것은 보충이 없어도 리랭킹을 하던 요청에 한한다. 기존 후보가 1곡뿐이라 리랭킹 대상이 아니던 요청은
   보충으로 후보가 늘면 리랭커가 새로 불린다.)
+- **배경 지식(Context) 경로와 함께 돌 때도 같다.** Context 경로는 보충보다 먼저 융합되므로 보충이 보는 "기존 후보"에 이미 들어 있다.
+  응답에 싣는 Context 사실(`context_hits_out`)은 **끝자리를 바꾼 뒤의 최종 후보** 기준으로 모은다 — 밀려난 곡의 사실은 실리지 않고,
+  보충으로 들어온 곡이 Context 경로에도 걸렸으면 그 사실은 실린다. 보충이 없으면 절단 직후의 후보와 같은 집합이다.
 - **보충 곡은 리랭커 없이는 표시되지 않는 자리에만 선다.** 한 검색의 보충 수는 `FEEDBACK_SUPPLEMENT_SONGS`와
   **후보 수 − 표시 수** 가운데 작은 쪽이다(서비스 설정 30·15면 3). 후보 수 = 표시 수면 보충하지 않고, 기존 후보가 표시 수보다
   적을 때도 하지 않는다(끝에 세워도 표시 구간 안이다). 그래서 리랭킹이 꺼졌거나, 정책으로 생략됐거나, 실패해 후보 순서가
@@ -346,7 +349,8 @@ docker stop vf-feedback-test-mongo
 
 **2026-10-13 결과**(워크트리 `/private/tmp/vague-finder-feedback-reuse`, 기준 `10a8588`):
 
-- 전체(`pytest tests/ -q`): `FEEDBACK_TEST_MONGO_URI` 있음 **2,430 통과 · 1 실패 · 7 건너뜀** · 없음 **2,316 통과 · 1 실패 · 121 건너뜀**(실제 Mongo 계약·통합 시험 114건이 건너뛰어진다).
+- 전체(`pytest tests/ -q`): `FEEDBACK_TEST_MONGO_URI` 있음 **6,092 통과 · 1 실패 · 8 건너뜀** · 없음 **5,977 통과 · 1 실패 · 123 건너뜀**(실제 Mongo 계약·통합 시험 115건이 건너뛰어진다).
+  main의 #12(배경 지식 경로)를 합친 뒤의 숫자다 — 합치기 전에는 2,430 / 2,316이었다.
   인계문의 회귀 명령(`test_feedback` · `test_frontend_node` · `test_search_explain` · `test_router_rerank_input_order`)은 126 통과.
   실패 1건은 기준 코드(`10a8588`)에서도 같은 macOS 경로 비교 실패다(`test_default_artifact_path_follows_custom_raw_sandbox`, `/tmp` 대 `/private/tmp`).
   워크트리에 없던 `src/frontend/static/map_data.json`(git 제외 파일)은 원본에서 그 파일만 복사해 준비했다(없으면 데모 시험 6건이 실패한다).

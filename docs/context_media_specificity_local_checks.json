@@ -1,0 +1,55 @@
+{
+  "schema": "context_media_specificity_local_checks_v1",
+  "recorded_at": "2026-10-06T10:19:34.886598+00:00",
+  "local_unit_boundary_tests": {
+    "status": "passed",
+    "count": 2897,
+    "elapsed_seconds": 4.65,
+    "python": "3.12",
+    "pytest": "9.1.1",
+    "includes": [
+      "media specificity parser",
+      "Context boundaries",
+      "mixed audio/artwork/lyrics",
+      "review installer/runtime settings",
+      "backup/rollback/encoding/export gates",
+      "validated activation"
+    ]
+  },
+  "full_production_router_adapter_tests": {
+    "prepared": 4,
+    "executed_here": false,
+    "execute_on_user_environment": "run_context_media_specificity_fix.ps1 -Mode All runs tests/context"
+  },
+  "disclosed_analysis_diagnostic": {
+    "analysis_rows": 106,
+    "matched_user_context_query_sha256": true,
+    "changed_context_query_ids": [
+      "c703"
+    ],
+    "all_non_context_fields_preserved": true,
+    "stored_artifact_songs_checked": 3016,
+    "stored_facts_checked": 3995,
+    "supporting_stored_facts_for_restored_clue": 0,
+    "is_new_fresh_accuracy_measurement": false
+  },
+  "fixed_setting": {
+    "CONTEXT_WEIGHT": 0.5,
+    "CONTEXT_NAMED_MEDIA_MULTIPLIER": 2.0,
+    "CONTEXT_FACT_K": 100,
+    "CONTEXT_SPARSE_K": 100,
+    "SEARCH_DEFAULT_CANDIDATE_K": 30,
+    "display_top_k": 10,
+    "rerank_for_evaluation": false
+  },
+  "fresh_corpus_off_on_and_http_after_fix": "not_run_in_this_environment; required in the supplied user runner",
+  "protected": [
+    "merged search_router.py",
+    "merged qdrant_backend.py",
+    "shared credentials",
+    "labels",
+    "corpus",
+    "previous result folders"
+  ],
+  "evaluation_exposure": "Known dev/test/60 questions reanalyzed; not a new blind sample"
+}
