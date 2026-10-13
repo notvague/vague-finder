@@ -10,6 +10,8 @@ from src.backend.api.dependencies import close_vector_client, get_vector_client
 from src.common.gemini_client import RETRIEVAL, backend_setting
 from src.backend.api.routes import search
 from src.backend.api.routes import feedback
+from src.feedback import worker as feedback_worker
+from src.feedback.health import feedback_health
 from src.feedback.store import close_feedback_store, prepare_indexes
 from src.backend import warmup
 from src.retrieval import timing
@@ -34,6 +36,10 @@ async def lifespan(app: FastAPI):
     종료 순서: **예열을 먼저 세우고 그다음에 클라이언트를 닫는다.** 예열 도중에 서버를
     내리면 뒤쪽 vector_db 단계가 종료 처리 뒤에 실행되어 방금 닫은 저장소를 다시 연다.
     로컬 Qdrant는 폴더를 한 번에 하나만 열 수 있으므로 그 핸들이 다음 기동을 막는다.
+
+    피드백 색인 작업(`FEEDBACK_INDEX_WORKER_ENABLED`)도 같은 이유로 **벡터 클라이언트보다 먼저**
+    세운다. 이 프로세스의 Qdrant 클라이언트로 승인 사례를 쓰는 스레드라, 돌고 있는 묶음이 끝난 뒤에
+    클라이언트를 닫아야 한다. Mongo는 그 작업과 색인 준비가 모두 끝난 뒤 마지막에 닫는다.
     """
     # 검색 Gemini 경로 설정(GEMINI_RETRIEVAL_BACKEND)의 오타는 **기동에서** 실패시킨다. 분석기는 첫 요청에서 만들어지고
     # 예열은 리랭커 예외를 로그로만 남겨, 그대로 두면 서버가 정상으로 떠 있다가 첫 검색이 500으로 떨어진다(PR #31 리뷰).
@@ -55,6 +61,10 @@ async def lifespan(app: FastAPI):
     # 연결하지 않고, 실패해도 기동을 막지 않는다. 기다리지 않는다 — 종료할 때만 정리한다.
     index_task = asyncio.create_task(asyncio.to_thread(prepare_indexes))
 
+    # 승인 사례 색인과 만료·무효 사례 정리. 꺼져 있으면 스레드도 연결도 만들지 않는다. 기동을 막지 않고,
+    # 뜨자마자 한 주기를 돌려 꺼져 있던 동안 밀린 색인·정리를 처리한다.
+    feedback_worker.start_background()
+
     try:
         yield
     finally:
@@ -62,6 +72,9 @@ async def lifespan(app: FastAPI):
         # **제한을 두지 않고 기다린다.** 돌고 있는 단계가 벡터 클라이언트를 만지는
         # 중일 수 있어서, 여기서 시간을 끊으면 닫은 뒤에 그 단계가 저장소를 다시 연다.
         await asyncio.to_thread(warmup.stop_and_wait)
+        # 색인 작업은 asyncio 작업이 아니라 스레드다. 멈춤 신호를 주고 **끝날 때까지 기다린 뒤**
+        # 벡터 클라이언트를 닫는다 — 돌던 묶음이 닫힌 저장소에 쓰지 않게.
+        await asyncio.to_thread(feedback_worker.stop_and_wait)
         await asyncio.to_thread(close_vector_client)
         # 색인 작업이 아직 돌고 있으면 끝난 뒤에 닫는다(최대 INDEX_BUDGET_SECONDS). 먼저 닫으면
         # 그 작업이 닫힌 클라이언트를 다시 열어 둔 채로 남는다.
@@ -144,6 +157,9 @@ async def health_check():
         "status": "ok",
         "service": "vague-finder-backend",
         "warmup": warmup.status(),
+        # 피드백 수집·색인 작업·검색 반영의 준비 상태. 건수·시각·상태 코드뿐이다 —
+        # 원문·내부 오류 본문·연결 정보는 싣지 않는다.
+        "feedback": feedback_health(),
     }
 
 app.include_router(search.router, prefix="/api/v1")

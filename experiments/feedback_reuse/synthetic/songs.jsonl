@@ -1,0 +1,402 @@
+{"song_id": "syn001", "title": "합성곡 001", "artist": "합성가수 01", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 일렉트로니카. 묵직한 베이스와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn002", "title": "합성곡 002", "artist": "합성가수 02", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "청량하고 시원한 댄스. 피아노 반주와 고음이 시원한 남성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn003", "title": "합성곡 003", "artist": "합성가수 03", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 댄스. 묵직한 베이스와 맑은 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn004", "title": "합성곡 004", "artist": "합성가수 04", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 일렉트로니카. 묵직한 베이스와 허스키한 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn005", "title": "합성곡 005", "artist": "합성가수 05", "genre": "록", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 록. 일렉 기타 리프와 맑은 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn006", "title": "합성곡 006", "artist": "합성가수 06", "genre": "일렉트로니카", "vocal_gender": "혼성", "search_style_summary": "어둡고 무거운 일렉트로니카. 브라스 섹션와 남녀가 주고받는 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn007", "title": "합성곡 007", "artist": "합성가수 07", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 트로트. 어쿠스틱 드럼와 허스키한 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn008", "title": "합성곡 008", "artist": "합성가수 08", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 재즈. 신시사이저 패드와 맑은 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn009", "title": "합성곡 009", "artist": "합성가수 09", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 재즈. 통기타 반주와 허스키한 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn010", "title": "합성곡 010", "artist": "합성가수 10", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 댄스. 어쿠스틱 드럼와 고음이 시원한 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn011", "title": "합성곡 011", "artist": "합성가수 11", "genre": "발라드", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 발라드. 피아노 반주와 맑은 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn012", "title": "합성곡 012", "artist": "합성가수 12", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 포크. 묵직한 베이스와 허스키한 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn013", "title": "합성곡 013", "artist": "합성가수 13", "genre": "댄스", "vocal_gender": "혼성", "search_style_summary": "따뜻하고 포근한 댄스. 피아노 반주와 남녀가 주고받는 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn014", "title": "합성곡 014", "artist": "합성가수 14", "genre": "록", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 록. 일렉 기타 리프와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn015", "title": "합성곡 015", "artist": "합성가수 15", "genre": "록", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 록. 피아노 반주와 맑은 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn016", "title": "합성곡 016", "artist": "합성가수 16", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 일렉트로니카. 통기타 반주와 낮은 남성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn017", "title": "합성곡 017", "artist": "합성가수 17", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 트로트. 신시사이저 패드와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn018", "title": "합성곡 018", "artist": "합성가수 18", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 트로트. 피아노 반주와 맑은 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn019", "title": "합성곡 019", "artist": "합성가수 19", "genre": "힙합", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 힙합. 신시사이저 패드와 고음이 시원한 남성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn020", "title": "합성곡 020", "artist": "합성가수 20", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 R&B. 현악 편곡와 맑은 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn021", "title": "합성곡 021", "artist": "합성가수 21", "genre": "힙합", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 힙합. 묵직한 베이스와 맑은 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn022", "title": "합성곡 022", "artist": "합성가수 22", "genre": "발라드", "vocal_gender": "혼성", "search_style_summary": "밝고 경쾌한 발라드. 현악 편곡와 남녀가 주고받는 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn023", "title": "합성곡 023", "artist": "합성가수 23", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 트로트. 현악 편곡와 맑은 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn024", "title": "합성곡 024", "artist": "합성가수 24", "genre": "힙합", "vocal_gender": "혼성", "search_style_summary": "어둡고 무거운 힙합. 현악 편곡와 남녀가 주고받는 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn025", "title": "합성곡 025", "artist": "합성가수 25", "genre": "포크", "vocal_gender": "남성", "search_style_summary": "청량하고 시원한 포크. 피아노 반주와 고음이 시원한 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn026", "title": "합성곡 026", "artist": "합성가수 26", "genre": "힙합", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 힙합. 브라스 섹션와 낮은 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn027", "title": "합성곡 027", "artist": "합성가수 27", "genre": "댄스", "vocal_gender": "혼성", "search_style_summary": "청량하고 시원한 댄스. 통기타 반주와 남녀가 주고받는 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn028", "title": "합성곡 028", "artist": "합성가수 28", "genre": "록", "vocal_gender": "혼성", "search_style_summary": "잔잔하고 쓸쓸한 록. 브라스 섹션와 남녀가 주고받는 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn029", "title": "합성곡 029", "artist": "합성가수 29", "genre": "발라드", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 발라드. 신시사이저 패드와 맑은 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn030", "title": "합성곡 030", "artist": "합성가수 30", "genre": "록", "vocal_gender": "남성", "search_style_summary": "청량하고 시원한 록. 통기타 반주와 고음이 시원한 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn031", "title": "합성곡 031", "artist": "합성가수 31", "genre": "인디", "vocal_gender": "혼성", "search_style_summary": "청량하고 시원한 인디. 브라스 섹션와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn032", "title": "합성곡 032", "artist": "합성가수 32", "genre": "록", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 록. 묵직한 베이스와 고음이 시원한 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn033", "title": "합성곡 033", "artist": "합성가수 33", "genre": "댄스", "vocal_gender": "혼성", "search_style_summary": "애절하고 호소력 있는 댄스. 신시사이저 패드와 남녀가 주고받는 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn034", "title": "합성곡 034", "artist": "합성가수 34", "genre": "발라드", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 발라드. 현악 편곡와 맑은 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn035", "title": "합성곡 035", "artist": "합성가수 35", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 댄스. 신시사이저 패드와 고음이 시원한 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn036", "title": "합성곡 036", "artist": "합성가수 36", "genre": "트로트", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 트로트. 신시사이저 패드와 낮은 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn037", "title": "합성곡 037", "artist": "합성가수 37", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 댄스. 통기타 반주와 낮은 남성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn038", "title": "합성곡 038", "artist": "합성가수 01", "genre": "발라드", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 발라드. 통기타 반주와 허스키한 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn039", "title": "합성곡 039", "artist": "합성가수 02", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 포크. 일렉 기타 리프와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn040", "title": "합성곡 040", "artist": "합성가수 03", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 포크. 통기타 반주와 맑은 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn041", "title": "합성곡 041", "artist": "합성가수 04", "genre": "트로트", "vocal_gender": "혼성", "search_style_summary": "따뜻하고 포근한 트로트. 어쿠스틱 드럼와 남녀가 주고받는 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn042", "title": "합성곡 042", "artist": "합성가수 05", "genre": "록", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 록. 신시사이저 패드와 허스키한 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn043", "title": "합성곡 043", "artist": "합성가수 06", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 포크. 피아노 반주와 허스키한 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn044", "title": "합성곡 044", "artist": "합성가수 07", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 일렉트로니카. 현악 편곡와 허스키한 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn045", "title": "합성곡 045", "artist": "합성가수 08", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 포크. 현악 편곡와 맑은 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn046", "title": "합성곡 046", "artist": "합성가수 09", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 트로트. 브라스 섹션와 허스키한 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn047", "title": "합성곡 047", "artist": "합성가수 10", "genre": "록", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 록. 신시사이저 패드와 낮은 남성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn048", "title": "합성곡 048", "artist": "합성가수 11", "genre": "인디", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 인디. 브라스 섹션와 고음이 시원한 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn049", "title": "합성곡 049", "artist": "합성가수 12", "genre": "트로트", "vocal_gender": "혼성", "search_style_summary": "애절하고 호소력 있는 트로트. 피아노 반주와 남녀가 주고받는 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn050", "title": "합성곡 050", "artist": "합성가수 13", "genre": "발라드", "vocal_gender": "혼성", "search_style_summary": "잔잔하고 쓸쓸한 발라드. 어쿠스틱 드럼와 남녀가 주고받는 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn051", "title": "합성곡 051", "artist": "합성가수 14", "genre": "일렉트로니카", "vocal_gender": "혼성", "search_style_summary": "따뜻하고 포근한 일렉트로니카. 브라스 섹션와 남녀가 주고받는 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn052", "title": "합성곡 052", "artist": "합성가수 15", "genre": "발라드", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 발라드. 현악 편곡와 허스키한 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn053", "title": "합성곡 053", "artist": "합성가수 16", "genre": "힙합", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 힙합. 피아노 반주와 고음이 시원한 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn054", "title": "합성곡 054", "artist": "합성가수 17", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 일렉트로니카. 통기타 반주와 낮은 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn055", "title": "합성곡 055", "artist": "합성가수 18", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 R&B. 현악 편곡와 허스키한 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn056", "title": "합성곡 056", "artist": "합성가수 19", "genre": "인디", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 인디. 현악 편곡와 낮은 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn057", "title": "합성곡 057", "artist": "합성가수 20", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 트로트. 어쿠스틱 드럼와 맑은 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn058", "title": "합성곡 058", "artist": "합성가수 21", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 트로트. 피아노 반주와 맑은 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn059", "title": "합성곡 059", "artist": "합성가수 22", "genre": "힙합", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 힙합. 신시사이저 패드와 낮은 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn060", "title": "합성곡 060", "artist": "합성가수 23", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 댄스. 현악 편곡와 허스키한 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn061", "title": "합성곡 061", "artist": "합성가수 24", "genre": "포크", "vocal_gender": "남성", "search_style_summary": "청량하고 시원한 포크. 신시사이저 패드와 낮은 남성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn062", "title": "합성곡 062", "artist": "합성가수 25", "genre": "인디", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 인디. 브라스 섹션와 고음이 시원한 남성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn063", "title": "합성곡 063", "artist": "합성가수 26", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 재즈. 현악 편곡와 허스키한 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn064", "title": "합성곡 064", "artist": "합성가수 27", "genre": "인디", "vocal_gender": "혼성", "search_style_summary": "청량하고 시원한 인디. 어쿠스틱 드럼와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn065", "title": "합성곡 065", "artist": "합성가수 28", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 인디. 피아노 반주와 맑은 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn066", "title": "합성곡 066", "artist": "합성가수 29", "genre": "트로트", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 트로트. 일렉 기타 리프와 낮은 남성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn067", "title": "합성곡 067", "artist": "합성가수 30", "genre": "록", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 록. 브라스 섹션와 고음이 시원한 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn068", "title": "합성곡 068", "artist": "합성가수 31", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 일렉트로니카. 브라스 섹션와 허스키한 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn069", "title": "합성곡 069", "artist": "합성가수 32", "genre": "인디", "vocal_gender": "혼성", "search_style_summary": "잔잔하고 쓸쓸한 인디. 어쿠스틱 드럼와 남녀가 주고받는 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn070", "title": "합성곡 070", "artist": "합성가수 33", "genre": "록", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 록. 현악 편곡와 허스키한 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn071", "title": "합성곡 071", "artist": "합성가수 34", "genre": "힙합", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 힙합. 어쿠스틱 드럼와 허스키한 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn072", "title": "합성곡 072", "artist": "합성가수 35", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 R&B. 피아노 반주와 맑은 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn073", "title": "합성곡 073", "artist": "합성가수 36", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 댄스. 묵직한 베이스와 허스키한 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn074", "title": "합성곡 074", "artist": "합성가수 37", "genre": "트로트", "vocal_gender": "남성", "search_style_summary": "청량하고 시원한 트로트. 브라스 섹션와 낮은 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn075", "title": "합성곡 075", "artist": "합성가수 01", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 댄스. 현악 편곡와 허스키한 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn076", "title": "합성곡 076", "artist": "합성가수 02", "genre": "R&B", "vocal_gender": "남성", "search_style_summary": "몽환적이고 느린 R&B. 현악 편곡와 고음이 시원한 남성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn077", "title": "합성곡 077", "artist": "합성가수 03", "genre": "힙합", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 힙합. 일렉 기타 리프와 맑은 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn078", "title": "합성곡 078", "artist": "합성가수 04", "genre": "포크", "vocal_gender": "혼성", "search_style_summary": "잔잔하고 쓸쓸한 포크. 어쿠스틱 드럼와 남녀가 주고받는 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn079", "title": "합성곡 079", "artist": "합성가수 05", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 인디. 통기타 반주와 허스키한 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn080", "title": "합성곡 080", "artist": "합성가수 06", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 인디. 피아노 반주와 맑은 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn081", "title": "합성곡 081", "artist": "합성가수 07", "genre": "댄스", "vocal_gender": "혼성", "search_style_summary": "애절하고 호소력 있는 댄스. 일렉 기타 리프와 남녀가 주고받는 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn082", "title": "합성곡 082", "artist": "합성가수 08", "genre": "재즈", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 재즈. 어쿠스틱 드럼와 낮은 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn083", "title": "합성곡 083", "artist": "합성가수 09", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 일렉트로니카. 어쿠스틱 드럼와 낮은 남성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn084", "title": "합성곡 084", "artist": "합성가수 10", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 포크. 묵직한 베이스와 맑은 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn085", "title": "합성곡 085", "artist": "합성가수 11", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 트로트. 피아노 반주와 허스키한 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn086", "title": "합성곡 086", "artist": "합성가수 12", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 일렉트로니카. 현악 편곡와 낮은 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn087", "title": "합성곡 087", "artist": "합성가수 13", "genre": "록", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 록. 브라스 섹션와 허스키한 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn088", "title": "합성곡 088", "artist": "합성가수 14", "genre": "R&B", "vocal_gender": "혼성", "search_style_summary": "어둡고 무거운 R&B. 현악 편곡와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn089", "title": "합성곡 089", "artist": "합성가수 15", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 포크. 브라스 섹션와 허스키한 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn090", "title": "합성곡 090", "artist": "합성가수 16", "genre": "인디", "vocal_gender": "혼성", "search_style_summary": "애절하고 호소력 있는 인디. 피아노 반주와 남녀가 주고받는 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn091", "title": "합성곡 091", "artist": "합성가수 17", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 일렉트로니카. 브라스 섹션와 맑은 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn092", "title": "합성곡 092", "artist": "합성가수 18", "genre": "재즈", "vocal_gender": "남성", "search_style_summary": "따뜻하고 포근한 재즈. 통기타 반주와 낮은 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn093", "title": "합성곡 093", "artist": "합성가수 19", "genre": "트로트", "vocal_gender": "혼성", "search_style_summary": "어둡고 무거운 트로트. 통기타 반주와 남녀가 주고받는 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn094", "title": "합성곡 094", "artist": "합성가수 20", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 재즈. 어쿠스틱 드럼와 맑은 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn095", "title": "합성곡 095", "artist": "합성가수 21", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 포크. 신시사이저 패드와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn096", "title": "합성곡 096", "artist": "합성가수 22", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 인디. 현악 편곡와 맑은 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn097", "title": "합성곡 097", "artist": "합성가수 23", "genre": "발라드", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 발라드. 어쿠스틱 드럼와 맑은 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn098", "title": "합성곡 098", "artist": "합성가수 24", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 일렉트로니카. 일렉 기타 리프와 맑은 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn099", "title": "합성곡 099", "artist": "합성가수 25", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 재즈. 브라스 섹션와 맑은 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn100", "title": "합성곡 100", "artist": "합성가수 26", "genre": "힙합", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 힙합. 묵직한 베이스와 맑은 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn101", "title": "합성곡 101", "artist": "합성가수 27", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 일렉트로니카. 신시사이저 패드와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn102", "title": "합성곡 102", "artist": "합성가수 28", "genre": "힙합", "vocal_gender": "혼성", "search_style_summary": "몽환적이고 느린 힙합. 묵직한 베이스와 남녀가 주고받는 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn103", "title": "합성곡 103", "artist": "합성가수 29", "genre": "재즈", "vocal_gender": "혼성", "search_style_summary": "강렬하고 빠른 재즈. 피아노 반주와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn104", "title": "합성곡 104", "artist": "합성가수 30", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 트로트. 피아노 반주와 허스키한 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn105", "title": "합성곡 105", "artist": "합성가수 31", "genre": "댄스", "vocal_gender": "혼성", "search_style_summary": "따뜻하고 포근한 댄스. 현악 편곡와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn106", "title": "합성곡 106", "artist": "합성가수 32", "genre": "발라드", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 발라드. 묵직한 베이스와 낮은 남성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn107", "title": "합성곡 107", "artist": "합성가수 33", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 재즈. 일렉 기타 리프와 허스키한 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn108", "title": "합성곡 108", "artist": "합성가수 34", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "몽환적이고 느린 댄스. 현악 편곡와 낮은 남성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn109", "title": "합성곡 109", "artist": "합성가수 35", "genre": "힙합", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 힙합. 일렉 기타 리프와 고음이 시원한 남성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn110", "title": "합성곡 110", "artist": "합성가수 36", "genre": "재즈", "vocal_gender": "혼성", "search_style_summary": "청량하고 시원한 재즈. 일렉 기타 리프와 남녀가 주고받는 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn111", "title": "합성곡 111", "artist": "합성가수 37", "genre": "포크", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 포크. 통기타 반주와 고음이 시원한 남성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn112", "title": "합성곡 112", "artist": "합성가수 01", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 인디. 일렉 기타 리프와 허스키한 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn113", "title": "합성곡 113", "artist": "합성가수 02", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 댄스. 피아노 반주와 허스키한 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn114", "title": "합성곡 114", "artist": "합성가수 03", "genre": "트로트", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 트로트. 브라스 섹션와 고음이 시원한 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn115", "title": "합성곡 115", "artist": "합성가수 04", "genre": "인디", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 인디. 통기타 반주와 낮은 남성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn116", "title": "합성곡 116", "artist": "합성가수 05", "genre": "R&B", "vocal_gender": "혼성", "search_style_summary": "애절하고 호소력 있는 R&B. 신시사이저 패드와 남녀가 주고받는 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn117", "title": "합성곡 117", "artist": "합성가수 06", "genre": "록", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 록. 통기타 반주와 낮은 남성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn118", "title": "합성곡 118", "artist": "합성가수 07", "genre": "재즈", "vocal_gender": "남성", "search_style_summary": "몽환적이고 느린 재즈. 신시사이저 패드와 고음이 시원한 남성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn119", "title": "합성곡 119", "artist": "합성가수 08", "genre": "발라드", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 발라드. 신시사이저 패드와 허스키한 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn120", "title": "합성곡 120", "artist": "합성가수 09", "genre": "포크", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 포크. 신시사이저 패드와 고음이 시원한 남성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn121", "title": "합성곡 121", "artist": "합성가수 10", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 일렉트로니카. 브라스 섹션와 맑은 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn122", "title": "합성곡 122", "artist": "합성가수 11", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 R&B. 현악 편곡와 허스키한 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn123", "title": "합성곡 123", "artist": "합성가수 12", "genre": "힙합", "vocal_gender": "혼성", "search_style_summary": "잔잔하고 쓸쓸한 힙합. 묵직한 베이스와 남녀가 주고받는 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn124", "title": "합성곡 124", "artist": "합성가수 13", "genre": "R&B", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 R&B. 브라스 섹션와 고음이 시원한 남성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn125", "title": "합성곡 125", "artist": "합성가수 14", "genre": "포크", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 포크. 브라스 섹션와 고음이 시원한 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn126", "title": "합성곡 126", "artist": "합성가수 15", "genre": "발라드", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 발라드. 통기타 반주와 낮은 남성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn127", "title": "합성곡 127", "artist": "합성가수 16", "genre": "발라드", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 발라드. 일렉 기타 리프와 맑은 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn128", "title": "합성곡 128", "artist": "합성가수 17", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 R&B. 현악 편곡와 맑은 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn129", "title": "합성곡 129", "artist": "합성가수 18", "genre": "인디", "vocal_gender": "남성", "search_style_summary": "따뜻하고 포근한 인디. 현악 편곡와 고음이 시원한 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn130", "title": "합성곡 130", "artist": "합성가수 19", "genre": "포크", "vocal_gender": "혼성", "search_style_summary": "따뜻하고 포근한 포크. 피아노 반주와 남녀가 주고받는 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn131", "title": "합성곡 131", "artist": "합성가수 20", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 R&B. 통기타 반주와 맑은 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn132", "title": "합성곡 132", "artist": "합성가수 21", "genre": "인디", "vocal_gender": "남성", "search_style_summary": "따뜻하고 포근한 인디. 어쿠스틱 드럼와 고음이 시원한 남성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn133", "title": "합성곡 133", "artist": "합성가수 22", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 인디. 현악 편곡와 허스키한 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn134", "title": "합성곡 134", "artist": "합성가수 23", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 트로트. 신시사이저 패드와 허스키한 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn135", "title": "합성곡 135", "artist": "합성가수 24", "genre": "힙합", "vocal_gender": "혼성", "search_style_summary": "따뜻하고 포근한 힙합. 어쿠스틱 드럼와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn136", "title": "합성곡 136", "artist": "합성가수 25", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 댄스. 일렉 기타 리프와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn137", "title": "합성곡 137", "artist": "합성가수 26", "genre": "포크", "vocal_gender": "혼성", "search_style_summary": "강렬하고 빠른 포크. 묵직한 베이스와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn138", "title": "합성곡 138", "artist": "합성가수 27", "genre": "록", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 록. 브라스 섹션와 허스키한 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn139", "title": "합성곡 139", "artist": "합성가수 28", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 일렉트로니카. 일렉 기타 리프와 맑은 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn140", "title": "합성곡 140", "artist": "합성가수 29", "genre": "트로트", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 트로트. 통기타 반주와 고음이 시원한 남성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn141", "title": "합성곡 141", "artist": "합성가수 30", "genre": "인디", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 인디. 통기타 반주와 낮은 남성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn142", "title": "합성곡 142", "artist": "합성가수 31", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 일렉트로니카. 신시사이저 패드와 낮은 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn143", "title": "합성곡 143", "artist": "합성가수 32", "genre": "발라드", "vocal_gender": "혼성", "search_style_summary": "어둡고 무거운 발라드. 어쿠스틱 드럼와 남녀가 주고받는 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn144", "title": "합성곡 144", "artist": "합성가수 33", "genre": "R&B", "vocal_gender": "혼성", "search_style_summary": "밝고 경쾌한 R&B. 신시사이저 패드와 남녀가 주고받는 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn145", "title": "합성곡 145", "artist": "합성가수 34", "genre": "록", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 록. 신시사이저 패드와 맑은 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn146", "title": "합성곡 146", "artist": "합성가수 35", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 트로트. 현악 편곡와 맑은 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn147", "title": "합성곡 147", "artist": "합성가수 36", "genre": "힙합", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 힙합. 피아노 반주와 허스키한 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn148", "title": "합성곡 148", "artist": "합성가수 37", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 댄스. 신시사이저 패드와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn149", "title": "합성곡 149", "artist": "합성가수 01", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 댄스. 피아노 반주와 허스키한 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn150", "title": "합성곡 150", "artist": "합성가수 02", "genre": "록", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 록. 통기타 반주와 낮은 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn151", "title": "합성곡 151", "artist": "합성가수 03", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 R&B. 피아노 반주와 맑은 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn152", "title": "합성곡 152", "artist": "합성가수 04", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 댄스. 신시사이저 패드와 허스키한 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn153", "title": "합성곡 153", "artist": "합성가수 05", "genre": "일렉트로니카", "vocal_gender": "혼성", "search_style_summary": "몽환적이고 느린 일렉트로니카. 어쿠스틱 드럼와 남녀가 주고받는 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn154", "title": "합성곡 154", "artist": "합성가수 06", "genre": "발라드", "vocal_gender": "남성", "search_style_summary": "청량하고 시원한 발라드. 통기타 반주와 낮은 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn155", "title": "합성곡 155", "artist": "합성가수 07", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 일렉트로니카. 브라스 섹션와 낮은 남성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn156", "title": "합성곡 156", "artist": "합성가수 08", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 인디. 묵직한 베이스와 맑은 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn157", "title": "합성곡 157", "artist": "합성가수 09", "genre": "힙합", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 힙합. 현악 편곡와 낮은 남성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn158", "title": "합성곡 158", "artist": "합성가수 10", "genre": "록", "vocal_gender": "혼성", "search_style_summary": "청량하고 시원한 록. 통기타 반주와 남녀가 주고받는 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn159", "title": "합성곡 159", "artist": "합성가수 11", "genre": "힙합", "vocal_gender": "혼성", "search_style_summary": "어둡고 무거운 힙합. 피아노 반주와 남녀가 주고받는 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn160", "title": "합성곡 160", "artist": "합성가수 12", "genre": "R&B", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 R&B. 통기타 반주와 낮은 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn161", "title": "합성곡 161", "artist": "합성가수 13", "genre": "인디", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 인디. 현악 편곡와 낮은 남성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn162", "title": "합성곡 162", "artist": "합성가수 14", "genre": "힙합", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 힙합. 피아노 반주와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn163", "title": "합성곡 163", "artist": "합성가수 15", "genre": "발라드", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 발라드. 피아노 반주와 맑은 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn164", "title": "합성곡 164", "artist": "합성가수 16", "genre": "인디", "vocal_gender": "혼성", "search_style_summary": "밝고 경쾌한 인디. 일렉 기타 리프와 남녀가 주고받는 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn165", "title": "합성곡 165", "artist": "합성가수 17", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 인디. 피아노 반주와 허스키한 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn166", "title": "합성곡 166", "artist": "합성가수 18", "genre": "일렉트로니카", "vocal_gender": "혼성", "search_style_summary": "잔잔하고 쓸쓸한 일렉트로니카. 현악 편곡와 남녀가 주고받는 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn167", "title": "합성곡 167", "artist": "합성가수 19", "genre": "발라드", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 발라드. 피아노 반주와 낮은 남성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn168", "title": "합성곡 168", "artist": "합성가수 20", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 인디. 현악 편곡와 맑은 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn169", "title": "합성곡 169", "artist": "합성가수 21", "genre": "록", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 록. 신시사이저 패드와 허스키한 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn170", "title": "합성곡 170", "artist": "합성가수 22", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 재즈. 묵직한 베이스와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn171", "title": "합성곡 171", "artist": "합성가수 23", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 인디. 어쿠스틱 드럼와 허스키한 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn172", "title": "합성곡 172", "artist": "합성가수 24", "genre": "재즈", "vocal_gender": "혼성", "search_style_summary": "따뜻하고 포근한 재즈. 일렉 기타 리프와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn173", "title": "합성곡 173", "artist": "합성가수 25", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 포크. 현악 편곡와 허스키한 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn174", "title": "합성곡 174", "artist": "합성가수 26", "genre": "발라드", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 발라드. 브라스 섹션와 맑은 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn175", "title": "합성곡 175", "artist": "합성가수 27", "genre": "포크", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 포크. 신시사이저 패드와 고음이 시원한 남성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn176", "title": "합성곡 176", "artist": "합성가수 28", "genre": "힙합", "vocal_gender": "혼성", "search_style_summary": "어둡고 무거운 힙합. 일렉 기타 리프와 남녀가 주고받는 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn177", "title": "합성곡 177", "artist": "합성가수 29", "genre": "재즈", "vocal_gender": "남성", "search_style_summary": "몽환적이고 느린 재즈. 통기타 반주와 낮은 남성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn178", "title": "합성곡 178", "artist": "합성가수 30", "genre": "인디", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 인디. 브라스 섹션와 고음이 시원한 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn179", "title": "합성곡 179", "artist": "합성가수 31", "genre": "록", "vocal_gender": "혼성", "search_style_summary": "몽환적이고 느린 록. 묵직한 베이스와 남녀가 주고받는 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn180", "title": "합성곡 180", "artist": "합성가수 32", "genre": "발라드", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 발라드. 일렉 기타 리프와 고음이 시원한 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn181", "title": "합성곡 181", "artist": "합성가수 33", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 일렉트로니카. 묵직한 베이스와 맑은 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn182", "title": "합성곡 182", "artist": "합성가수 34", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 댄스. 피아노 반주와 고음이 시원한 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn183", "title": "합성곡 183", "artist": "합성가수 35", "genre": "힙합", "vocal_gender": "혼성", "search_style_summary": "몽환적이고 느린 힙합. 어쿠스틱 드럼와 남녀가 주고받는 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn184", "title": "합성곡 184", "artist": "합성가수 36", "genre": "포크", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 포크. 브라스 섹션와 고음이 시원한 남성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn185", "title": "합성곡 185", "artist": "합성가수 37", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 재즈. 브라스 섹션와 맑은 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn186", "title": "합성곡 186", "artist": "합성가수 01", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 포크. 브라스 섹션와 허스키한 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn187", "title": "합성곡 187", "artist": "합성가수 02", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 인디. 브라스 섹션와 맑은 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn188", "title": "합성곡 188", "artist": "합성가수 03", "genre": "인디", "vocal_gender": "혼성", "search_style_summary": "어둡고 무거운 인디. 일렉 기타 리프와 남녀가 주고받는 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn189", "title": "합성곡 189", "artist": "합성가수 04", "genre": "인디", "vocal_gender": "혼성", "search_style_summary": "따뜻하고 포근한 인디. 신시사이저 패드와 남녀가 주고받는 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn190", "title": "합성곡 190", "artist": "합성가수 05", "genre": "재즈", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 재즈. 통기타 반주와 낮은 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn191", "title": "합성곡 191", "artist": "합성가수 06", "genre": "댄스", "vocal_gender": "혼성", "search_style_summary": "강렬하고 빠른 댄스. 일렉 기타 리프와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn192", "title": "합성곡 192", "artist": "합성가수 07", "genre": "록", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 록. 피아노 반주와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn193", "title": "합성곡 193", "artist": "합성가수 08", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 포크. 일렉 기타 리프와 맑은 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn194", "title": "합성곡 194", "artist": "합성가수 09", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 댄스. 어쿠스틱 드럼와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn195", "title": "합성곡 195", "artist": "합성가수 10", "genre": "R&B", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 R&B. 브라스 섹션와 낮은 남성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn196", "title": "합성곡 196", "artist": "합성가수 11", "genre": "트로트", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 트로트. 브라스 섹션와 낮은 남성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn197", "title": "합성곡 197", "artist": "합성가수 12", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 R&B. 통기타 반주와 허스키한 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn198", "title": "합성곡 198", "artist": "합성가수 13", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 댄스. 통기타 반주와 고음이 시원한 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn199", "title": "합성곡 199", "artist": "합성가수 14", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 댄스. 신시사이저 패드와 고음이 시원한 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn200", "title": "합성곡 200", "artist": "합성가수 15", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 트로트. 신시사이저 패드와 맑은 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn201", "title": "합성곡 201", "artist": "합성가수 16", "genre": "힙합", "vocal_gender": "혼성", "search_style_summary": "잔잔하고 쓸쓸한 힙합. 현악 편곡와 남녀가 주고받는 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn202", "title": "합성곡 202", "artist": "합성가수 17", "genre": "포크", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 포크. 브라스 섹션와 낮은 남성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn203", "title": "합성곡 203", "artist": "합성가수 18", "genre": "댄스", "vocal_gender": "혼성", "search_style_summary": "잔잔하고 쓸쓸한 댄스. 현악 편곡와 남녀가 주고받는 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn204", "title": "합성곡 204", "artist": "합성가수 19", "genre": "발라드", "vocal_gender": "혼성", "search_style_summary": "어둡고 무거운 발라드. 통기타 반주와 남녀가 주고받는 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn205", "title": "합성곡 205", "artist": "합성가수 20", "genre": "록", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 록. 브라스 섹션와 허스키한 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn206", "title": "합성곡 206", "artist": "합성가수 21", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 R&B. 피아노 반주와 맑은 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn207", "title": "합성곡 207", "artist": "합성가수 22", "genre": "포크", "vocal_gender": "혼성", "search_style_summary": "밝고 경쾌한 포크. 묵직한 베이스와 남녀가 주고받는 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn208", "title": "합성곡 208", "artist": "합성가수 23", "genre": "힙합", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 힙합. 묵직한 베이스와 허스키한 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn209", "title": "합성곡 209", "artist": "합성가수 24", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 재즈. 브라스 섹션와 맑은 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn210", "title": "합성곡 210", "artist": "합성가수 25", "genre": "록", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 록. 신시사이저 패드와 허스키한 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn211", "title": "합성곡 211", "artist": "합성가수 26", "genre": "트로트", "vocal_gender": "혼성", "search_style_summary": "잔잔하고 쓸쓸한 트로트. 묵직한 베이스와 남녀가 주고받는 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn212", "title": "합성곡 212", "artist": "합성가수 27", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 재즈. 브라스 섹션와 맑은 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn213", "title": "합성곡 213", "artist": "합성가수 28", "genre": "트로트", "vocal_gender": "남성", "search_style_summary": "청량하고 시원한 트로트. 현악 편곡와 낮은 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn214", "title": "합성곡 214", "artist": "합성가수 29", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 재즈. 현악 편곡와 맑은 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn215", "title": "합성곡 215", "artist": "합성가수 30", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 인디. 일렉 기타 리프와 허스키한 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn216", "title": "합성곡 216", "artist": "합성가수 31", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 댄스. 통기타 반주와 고음이 시원한 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn217", "title": "합성곡 217", "artist": "합성가수 32", "genre": "R&B", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 R&B. 묵직한 베이스와 고음이 시원한 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn218", "title": "합성곡 218", "artist": "합성가수 33", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 R&B. 어쿠스틱 드럼와 허스키한 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn219", "title": "합성곡 219", "artist": "합성가수 34", "genre": "인디", "vocal_gender": "혼성", "search_style_summary": "강렬하고 빠른 인디. 신시사이저 패드와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn220", "title": "합성곡 220", "artist": "합성가수 35", "genre": "발라드", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 발라드. 현악 편곡와 허스키한 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn221", "title": "합성곡 221", "artist": "합성가수 36", "genre": "포크", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 포크. 어쿠스틱 드럼와 낮은 남성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn222", "title": "합성곡 222", "artist": "합성가수 37", "genre": "록", "vocal_gender": "남성", "search_style_summary": "몽환적이고 느린 록. 신시사이저 패드와 낮은 남성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn223", "title": "합성곡 223", "artist": "합성가수 01", "genre": "인디", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 인디. 현악 편곡와 고음이 시원한 남성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn224", "title": "합성곡 224", "artist": "합성가수 02", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "몽환적이고 느린 일렉트로니카. 브라스 섹션와 낮은 남성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn225", "title": "합성곡 225", "artist": "합성가수 03", "genre": "포크", "vocal_gender": "남성", "search_style_summary": "따뜻하고 포근한 포크. 어쿠스틱 드럼와 고음이 시원한 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn226", "title": "합성곡 226", "artist": "합성가수 04", "genre": "포크", "vocal_gender": "혼성", "search_style_summary": "강렬하고 빠른 포크. 일렉 기타 리프와 남녀가 주고받는 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn227", "title": "합성곡 227", "artist": "합성가수 05", "genre": "록", "vocal_gender": "혼성", "search_style_summary": "애절하고 호소력 있는 록. 일렉 기타 리프와 남녀가 주고받는 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn228", "title": "합성곡 228", "artist": "합성가수 06", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "청량하고 시원한 댄스. 피아노 반주와 낮은 남성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn229", "title": "합성곡 229", "artist": "합성가수 07", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 일렉트로니카. 피아노 반주와 허스키한 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn230", "title": "합성곡 230", "artist": "합성가수 08", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 인디. 신시사이저 패드와 허스키한 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn231", "title": "합성곡 231", "artist": "합성가수 09", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 트로트. 신시사이저 패드와 허스키한 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn232", "title": "합성곡 232", "artist": "합성가수 10", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "따뜻하고 포근한 일렉트로니카. 묵직한 베이스와 고음이 시원한 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn233", "title": "합성곡 233", "artist": "합성가수 11", "genre": "트로트", "vocal_gender": "혼성", "search_style_summary": "잔잔하고 쓸쓸한 트로트. 신시사이저 패드와 남녀가 주고받는 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn234", "title": "합성곡 234", "artist": "합성가수 12", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 일렉트로니카. 통기타 반주와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn235", "title": "합성곡 235", "artist": "합성가수 13", "genre": "록", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 록. 묵직한 베이스와 낮은 남성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn236", "title": "합성곡 236", "artist": "합성가수 14", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "청량하고 시원한 일렉트로니카. 통기타 반주와 고음이 시원한 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn237", "title": "합성곡 237", "artist": "합성가수 15", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 댄스. 통기타 반주와 고음이 시원한 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn238", "title": "합성곡 238", "artist": "합성가수 16", "genre": "일렉트로니카", "vocal_gender": "혼성", "search_style_summary": "강렬하고 빠른 일렉트로니카. 브라스 섹션와 남녀가 주고받는 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn239", "title": "합성곡 239", "artist": "합성가수 17", "genre": "힙합", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 힙합. 브라스 섹션와 낮은 남성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn240", "title": "합성곡 240", "artist": "합성가수 18", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 인디. 일렉 기타 리프와 허스키한 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn241", "title": "합성곡 241", "artist": "합성가수 19", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 일렉트로니카. 일렉 기타 리프와 낮은 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn242", "title": "합성곡 242", "artist": "합성가수 20", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 인디. 현악 편곡와 맑은 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn243", "title": "합성곡 243", "artist": "합성가수 21", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 일렉트로니카. 현악 편곡와 낮은 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn244", "title": "합성곡 244", "artist": "합성가수 22", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 일렉트로니카. 일렉 기타 리프와 허스키한 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn245", "title": "합성곡 245", "artist": "합성가수 23", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 재즈. 브라스 섹션와 허스키한 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn246", "title": "합성곡 246", "artist": "합성가수 24", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 일렉트로니카. 피아노 반주와 낮은 남성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn247", "title": "합성곡 247", "artist": "합성가수 25", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 일렉트로니카. 피아노 반주와 허스키한 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn248", "title": "합성곡 248", "artist": "합성가수 26", "genre": "포크", "vocal_gender": "혼성", "search_style_summary": "잔잔하고 쓸쓸한 포크. 브라스 섹션와 남녀가 주고받는 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn249", "title": "합성곡 249", "artist": "합성가수 27", "genre": "발라드", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 발라드. 어쿠스틱 드럼와 낮은 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn250", "title": "합성곡 250", "artist": "합성가수 28", "genre": "트로트", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 트로트. 어쿠스틱 드럼와 고음이 시원한 남성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn251", "title": "합성곡 251", "artist": "합성가수 29", "genre": "발라드", "vocal_gender": "혼성", "search_style_summary": "어둡고 무거운 발라드. 일렉 기타 리프와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn252", "title": "합성곡 252", "artist": "합성가수 30", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 일렉트로니카. 신시사이저 패드와 허스키한 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn253", "title": "합성곡 253", "artist": "합성가수 31", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 포크. 어쿠스틱 드럼와 맑은 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn254", "title": "합성곡 254", "artist": "합성가수 32", "genre": "록", "vocal_gender": "혼성", "search_style_summary": "어둡고 무거운 록. 신시사이저 패드와 남녀가 주고받는 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn255", "title": "합성곡 255", "artist": "합성가수 33", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 R&B. 신시사이저 패드와 맑은 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn256", "title": "합성곡 256", "artist": "합성가수 34", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 댄스. 통기타 반주와 맑은 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn257", "title": "합성곡 257", "artist": "합성가수 35", "genre": "재즈", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 재즈. 피아노 반주와 고음이 시원한 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn258", "title": "합성곡 258", "artist": "합성가수 36", "genre": "트로트", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 트로트. 신시사이저 패드와 고음이 시원한 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn259", "title": "합성곡 259", "artist": "합성가수 37", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 재즈. 피아노 반주와 허스키한 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn260", "title": "합성곡 260", "artist": "합성가수 01", "genre": "발라드", "vocal_gender": "남성", "search_style_summary": "몽환적이고 느린 발라드. 브라스 섹션와 고음이 시원한 남성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn261", "title": "합성곡 261", "artist": "합성가수 02", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 R&B. 어쿠스틱 드럼와 맑은 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn262", "title": "합성곡 262", "artist": "합성가수 03", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 트로트. 신시사이저 패드와 허스키한 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn263", "title": "합성곡 263", "artist": "합성가수 04", "genre": "록", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 록. 현악 편곡와 고음이 시원한 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn264", "title": "합성곡 264", "artist": "합성가수 05", "genre": "재즈", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 재즈. 통기타 반주와 낮은 남성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn265", "title": "합성곡 265", "artist": "합성가수 06", "genre": "록", "vocal_gender": "혼성", "search_style_summary": "따뜻하고 포근한 록. 어쿠스틱 드럼와 남녀가 주고받는 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn266", "title": "합성곡 266", "artist": "합성가수 07", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 일렉트로니카. 묵직한 베이스와 허스키한 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn267", "title": "합성곡 267", "artist": "합성가수 08", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 일렉트로니카. 신시사이저 패드와 허스키한 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn268", "title": "합성곡 268", "artist": "합성가수 09", "genre": "일렉트로니카", "vocal_gender": "혼성", "search_style_summary": "청량하고 시원한 일렉트로니카. 묵직한 베이스와 남녀가 주고받는 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn269", "title": "합성곡 269", "artist": "합성가수 10", "genre": "댄스", "vocal_gender": "혼성", "search_style_summary": "청량하고 시원한 댄스. 통기타 반주와 남녀가 주고받는 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn270", "title": "합성곡 270", "artist": "합성가수 11", "genre": "발라드", "vocal_gender": "혼성", "search_style_summary": "어둡고 무거운 발라드. 통기타 반주와 남녀가 주고받는 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn271", "title": "합성곡 271", "artist": "합성가수 12", "genre": "발라드", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 발라드. 피아노 반주와 낮은 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn272", "title": "합성곡 272", "artist": "합성가수 13", "genre": "R&B", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 R&B. 일렉 기타 리프와 고음이 시원한 남성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn273", "title": "합성곡 273", "artist": "합성가수 14", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 일렉트로니카. 신시사이저 패드와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn274", "title": "합성곡 274", "artist": "합성가수 15", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 인디. 피아노 반주와 허스키한 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn275", "title": "합성곡 275", "artist": "합성가수 16", "genre": "발라드", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 발라드. 현악 편곡와 허스키한 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn276", "title": "합성곡 276", "artist": "합성가수 17", "genre": "인디", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 인디. 묵직한 베이스와 낮은 남성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn277", "title": "합성곡 277", "artist": "합성가수 18", "genre": "발라드", "vocal_gender": "남성", "search_style_summary": "몽환적이고 느린 발라드. 신시사이저 패드와 고음이 시원한 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn278", "title": "합성곡 278", "artist": "합성가수 19", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 포크. 일렉 기타 리프와 허스키한 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn279", "title": "합성곡 279", "artist": "합성가수 20", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 일렉트로니카. 브라스 섹션와 고음이 시원한 남성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn280", "title": "합성곡 280", "artist": "합성가수 21", "genre": "트로트", "vocal_gender": "혼성", "search_style_summary": "청량하고 시원한 트로트. 현악 편곡와 남녀가 주고받는 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn281", "title": "합성곡 281", "artist": "합성가수 22", "genre": "트로트", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 트로트. 통기타 반주와 낮은 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn282", "title": "합성곡 282", "artist": "합성가수 23", "genre": "R&B", "vocal_gender": "혼성", "search_style_summary": "강렬하고 빠른 R&B. 어쿠스틱 드럼와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn283", "title": "합성곡 283", "artist": "합성가수 24", "genre": "발라드", "vocal_gender": "남성", "search_style_summary": "몽환적이고 느린 발라드. 현악 편곡와 고음이 시원한 남성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn284", "title": "합성곡 284", "artist": "합성가수 25", "genre": "트로트", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 트로트. 현악 편곡와 낮은 남성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn285", "title": "합성곡 285", "artist": "합성가수 26", "genre": "댄스", "vocal_gender": "혼성", "search_style_summary": "애절하고 호소력 있는 댄스. 신시사이저 패드와 남녀가 주고받는 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn286", "title": "합성곡 286", "artist": "합성가수 27", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 댄스. 일렉 기타 리프와 낮은 남성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn287", "title": "합성곡 287", "artist": "합성가수 28", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 일렉트로니카. 통기타 반주와 허스키한 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn288", "title": "합성곡 288", "artist": "합성가수 29", "genre": "트로트", "vocal_gender": "혼성", "search_style_summary": "애절하고 호소력 있는 트로트. 묵직한 베이스와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn289", "title": "합성곡 289", "artist": "합성가수 30", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 일렉트로니카. 브라스 섹션와 허스키한 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn290", "title": "합성곡 290", "artist": "합성가수 31", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 포크. 일렉 기타 리프와 맑은 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn291", "title": "합성곡 291", "artist": "합성가수 32", "genre": "포크", "vocal_gender": "혼성", "search_style_summary": "몽환적이고 느린 포크. 신시사이저 패드와 남녀가 주고받는 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn292", "title": "합성곡 292", "artist": "합성가수 33", "genre": "발라드", "vocal_gender": "혼성", "search_style_summary": "어둡고 무거운 발라드. 브라스 섹션와 남녀가 주고받는 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn293", "title": "합성곡 293", "artist": "합성가수 34", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 댄스. 어쿠스틱 드럼와 허스키한 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn294", "title": "합성곡 294", "artist": "합성가수 35", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 트로트. 신시사이저 패드와 맑은 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn295", "title": "합성곡 295", "artist": "합성가수 36", "genre": "록", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 록. 현악 편곡와 낮은 남성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn296", "title": "합성곡 296", "artist": "합성가수 37", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 재즈. 통기타 반주와 허스키한 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn297", "title": "합성곡 297", "artist": "합성가수 01", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 R&B. 통기타 반주와 맑은 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn298", "title": "합성곡 298", "artist": "합성가수 02", "genre": "힙합", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 힙합. 신시사이저 패드와 허스키한 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn299", "title": "합성곡 299", "artist": "합성가수 03", "genre": "록", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 록. 묵직한 베이스와 낮은 남성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn300", "title": "합성곡 300", "artist": "합성가수 04", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 포크. 어쿠스틱 드럼와 맑은 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn301", "title": "합성곡 301", "artist": "합성가수 05", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 R&B. 어쿠스틱 드럼와 맑은 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn302", "title": "합성곡 302", "artist": "합성가수 06", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 댄스. 통기타 반주와 고음이 시원한 남성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn303", "title": "합성곡 303", "artist": "합성가수 07", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 인디. 묵직한 베이스와 맑은 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn304", "title": "합성곡 304", "artist": "합성가수 08", "genre": "힙합", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 힙합. 브라스 섹션와 허스키한 여성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn305", "title": "합성곡 305", "artist": "합성가수 09", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 R&B. 일렉 기타 리프와 맑은 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn306", "title": "합성곡 306", "artist": "합성가수 10", "genre": "발라드", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 발라드. 묵직한 베이스와 고음이 시원한 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn307", "title": "합성곡 307", "artist": "합성가수 11", "genre": "록", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 록. 현악 편곡와 낮은 남성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn308", "title": "합성곡 308", "artist": "합성가수 12", "genre": "포크", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 포크. 브라스 섹션와 낮은 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn309", "title": "합성곡 309", "artist": "합성가수 13", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 댄스. 브라스 섹션와 맑은 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn310", "title": "합성곡 310", "artist": "합성가수 14", "genre": "발라드", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 발라드. 현악 편곡와 맑은 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn311", "title": "합성곡 311", "artist": "합성가수 15", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 일렉트로니카. 어쿠스틱 드럼와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn312", "title": "합성곡 312", "artist": "합성가수 16", "genre": "힙합", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 힙합. 일렉 기타 리프와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn313", "title": "합성곡 313", "artist": "합성가수 17", "genre": "힙합", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 힙합. 피아노 반주와 허스키한 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn314", "title": "합성곡 314", "artist": "합성가수 18", "genre": "트로트", "vocal_gender": "혼성", "search_style_summary": "밝고 경쾌한 트로트. 묵직한 베이스와 남녀가 주고받는 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn315", "title": "합성곡 315", "artist": "합성가수 19", "genre": "록", "vocal_gender": "남성", "search_style_summary": "몽환적이고 느린 록. 피아노 반주와 낮은 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn316", "title": "합성곡 316", "artist": "합성가수 20", "genre": "R&B", "vocal_gender": "혼성", "search_style_summary": "몽환적이고 느린 R&B. 현악 편곡와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn317", "title": "합성곡 317", "artist": "합성가수 21", "genre": "힙합", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 힙합. 현악 편곡와 맑은 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn318", "title": "합성곡 318", "artist": "합성가수 22", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 댄스. 브라스 섹션와 고음이 시원한 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn319", "title": "합성곡 319", "artist": "합성가수 23", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 R&B. 피아노 반주와 맑은 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn320", "title": "합성곡 320", "artist": "합성가수 24", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 R&B. 어쿠스틱 드럼와 맑은 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn321", "title": "합성곡 321", "artist": "합성가수 25", "genre": "포크", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 포크. 어쿠스틱 드럼와 낮은 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn322", "title": "합성곡 322", "artist": "합성가수 26", "genre": "힙합", "vocal_gender": "남성", "search_style_summary": "몽환적이고 느린 힙합. 피아노 반주와 낮은 남성 보컬. 여름밤의 드라이브을 노래한다."}
+{"song_id": "syn323", "title": "합성곡 323", "artist": "합성가수 27", "genre": "포크", "vocal_gender": "혼성", "search_style_summary": "몽환적이고 느린 포크. 현악 편곡와 남녀가 주고받는 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn324", "title": "합성곡 324", "artist": "합성가수 28", "genre": "힙합", "vocal_gender": "혼성", "search_style_summary": "애절하고 호소력 있는 힙합. 현악 편곡와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn325", "title": "합성곡 325", "artist": "합성가수 29", "genre": "인디", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 인디. 신시사이저 패드와 낮은 남성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn326", "title": "합성곡 326", "artist": "합성가수 30", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 트로트. 일렉 기타 리프와 맑은 여성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn327", "title": "합성곡 327", "artist": "합성가수 31", "genre": "힙합", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 힙합. 현악 편곡와 맑은 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn328", "title": "합성곡 328", "artist": "합성가수 32", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 포크. 묵직한 베이스와 허스키한 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn329", "title": "합성곡 329", "artist": "합성가수 33", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 인디. 피아노 반주와 맑은 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn330", "title": "합성곡 330", "artist": "합성가수 34", "genre": "트로트", "vocal_gender": "남성", "search_style_summary": "몽환적이고 느린 트로트. 브라스 섹션와 낮은 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn331", "title": "합성곡 331", "artist": "합성가수 35", "genre": "R&B", "vocal_gender": "남성", "search_style_summary": "따뜻하고 포근한 R&B. 통기타 반주와 고음이 시원한 남성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn332", "title": "합성곡 332", "artist": "합성가수 36", "genre": "힙합", "vocal_gender": "남성", "search_style_summary": "청량하고 시원한 힙합. 브라스 섹션와 고음이 시원한 남성 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn333", "title": "합성곡 333", "artist": "합성가수 37", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 트로트. 어쿠스틱 드럼와 허스키한 여성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn334", "title": "합성곡 334", "artist": "합성가수 01", "genre": "R&B", "vocal_gender": "혼성", "search_style_summary": "어둡고 무거운 R&B. 브라스 섹션와 남녀가 주고받는 보컬. 도시의 외로움을 노래한다."}
+{"song_id": "syn335", "title": "합성곡 335", "artist": "합성가수 02", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 댄스. 신시사이저 패드와 낮은 남성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn336", "title": "합성곡 336", "artist": "합성가수 03", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 일렉트로니카. 피아노 반주와 허스키한 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn337", "title": "합성곡 337", "artist": "합성가수 04", "genre": "재즈", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 재즈. 현악 편곡와 낮은 남성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn338", "title": "합성곡 338", "artist": "합성가수 05", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 일렉트로니카. 일렉 기타 리프와 맑은 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn339", "title": "합성곡 339", "artist": "합성가수 06", "genre": "록", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 록. 피아노 반주와 맑은 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn340", "title": "합성곡 340", "artist": "합성가수 07", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 댄스. 묵직한 베이스와 맑은 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn341", "title": "합성곡 341", "artist": "합성가수 08", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 댄스. 브라스 섹션와 고음이 시원한 남성 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn342", "title": "합성곡 342", "artist": "합성가수 09", "genre": "댄스", "vocal_gender": "혼성", "search_style_summary": "청량하고 시원한 댄스. 일렉 기타 리프와 남녀가 주고받는 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn343", "title": "합성곡 343", "artist": "합성가수 10", "genre": "댄스", "vocal_gender": "혼성", "search_style_summary": "밝고 경쾌한 댄스. 신시사이저 패드와 남녀가 주고받는 보컬. 고향 생각을 노래한다."}
+{"song_id": "syn344", "title": "합성곡 344", "artist": "합성가수 11", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 댄스. 어쿠스틱 드럼와 맑은 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn345", "title": "합성곡 345", "artist": "합성가수 12", "genre": "록", "vocal_gender": "남성", "search_style_summary": "따뜻하고 포근한 록. 어쿠스틱 드럼와 낮은 남성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn346", "title": "합성곡 346", "artist": "합성가수 13", "genre": "R&B", "vocal_gender": "남성", "search_style_summary": "밝고 경쾌한 R&B. 묵직한 베이스와 고음이 시원한 남성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn347", "title": "합성곡 347", "artist": "합성가수 14", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 일렉트로니카. 피아노 반주와 허스키한 여성 보컬. 이별 뒤의 그리움을 노래한다."}
+{"song_id": "syn348", "title": "합성곡 348", "artist": "합성가수 15", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 트로트. 피아노 반주와 맑은 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn349", "title": "합성곡 349", "artist": "합성가수 16", "genre": "록", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 록. 일렉 기타 리프와 맑은 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn350", "title": "합성곡 350", "artist": "합성가수 17", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 인디. 브라스 섹션와 맑은 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn351", "title": "합성곡 351", "artist": "합성가수 18", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 인디. 묵직한 베이스와 맑은 여성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn352", "title": "합성곡 352", "artist": "합성가수 19", "genre": "일렉트로니카", "vocal_gender": "여성", "search_style_summary": "몽환적이고 느린 일렉트로니카. 어쿠스틱 드럼와 허스키한 여성 보컬. 다시 시작하는 용기을 노래한다."}
+{"song_id": "syn353", "title": "합성곡 353", "artist": "합성가수 20", "genre": "인디", "vocal_gender": "혼성", "search_style_summary": "따뜻하고 포근한 인디. 일렉 기타 리프와 남녀가 주고받는 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn354", "title": "합성곡 354", "artist": "합성가수 21", "genre": "록", "vocal_gender": "남성", "search_style_summary": "청량하고 시원한 록. 일렉 기타 리프와 낮은 남성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn355", "title": "합성곡 355", "artist": "합성가수 22", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 트로트. 브라스 섹션와 허스키한 여성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn356", "title": "합성곡 356", "artist": "합성가수 23", "genre": "트로트", "vocal_gender": "혼성", "search_style_summary": "강렬하고 빠른 트로트. 일렉 기타 리프와 남녀가 주고받는 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn357", "title": "합성곡 357", "artist": "합성가수 24", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 댄스. 신시사이저 패드와 고음이 시원한 남성 보컬. 친구와의 우정을 노래한다."}
+{"song_id": "syn358", "title": "합성곡 358", "artist": "합성가수 25", "genre": "포크", "vocal_gender": "남성", "search_style_summary": "몽환적이고 느린 포크. 통기타 반주와 고음이 시원한 남성 보컬. 첫사랑의 설렘을 노래한다."}
+{"song_id": "syn359", "title": "합성곡 359", "artist": "합성가수 26", "genre": "힙합", "vocal_gender": "혼성", "search_style_summary": "몽환적이고 느린 힙합. 피아노 반주와 남녀가 주고받는 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn360", "title": "합성곡 360", "artist": "합성가수 27", "genre": "록", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 록. 어쿠스틱 드럼와 맑은 여성 보컬. 새벽의 혼잣말을 노래한다."}
+{"song_id": "syn361", "title": "합성곡 361", "artist": "합성가수 28", "genre": "댄스", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 댄스. 후렴에 휘파람 소리가 들어가고 허스키한 여성 보컬가 이끈다."}
+{"song_id": "syn362", "title": "합성곡 362", "artist": "합성가수 29", "genre": "힙합", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 힙합. 후렴에 박수 소리가 들어가고 고음이 시원한 남성 보컬가 이끈다."}
+{"song_id": "syn363", "title": "합성곡 363", "artist": "합성가수 30", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 재즈. 도입부에 휘파람 소리가 들어가고 허스키한 여성 보컬가 이끈다."}
+{"song_id": "syn364", "title": "합성곡 364", "artist": "합성가수 31", "genre": "록", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 록. 도입부에 박수 소리가 들어가고 허스키한 여성 보컬가 이끈다."}
+{"song_id": "syn365", "title": "합성곡 365", "artist": "합성가수 32", "genre": "발라드", "vocal_gender": "혼성", "search_style_summary": "몽환적이고 느린 발라드. 도입부에 휘파람 소리가 들어가고 남녀가 주고받는 보컬가 이끈다."}
+{"song_id": "syn366", "title": "합성곡 366", "artist": "합성가수 33", "genre": "인디", "vocal_gender": "혼성", "search_style_summary": "어둡고 무거운 인디. 도입부에 박수 소리가 들어가고 남녀가 주고받는 보컬가 이끈다."}
+{"song_id": "syn367", "title": "합성곡 367", "artist": "합성가수 35", "genre": "포크", "vocal_gender": "남성", "search_style_summary": "담담한 포크. 통기타 반주와 낮은 남성 보컬. 기차역에서의 작별을 노래한다."}
+{"song_id": "syn368", "title": "합성곡 368", "artist": "합성가수 34", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 재즈. 간주에 어린이 합창가 들어가고 허스키한 여성 보컬가 이끈다."}
+{"song_id": "syn369", "title": "합성곡 369", "artist": "합성가수 35", "genre": "포크", "vocal_gender": "혼성", "search_style_summary": "밝고 경쾌한 포크. 도입부에 종소리가 들어가고 남녀가 주고받는 보컬가 이끈다."}
+{"song_id": "syn370", "title": "합성곡 370", "artist": "합성가수 36", "genre": "R&B", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 R&B. 간주에 어린이 합창가 들어가고 고음이 시원한 남성 보컬가 이끈다."}
+{"song_id": "syn371", "title": "합성곡 371", "artist": "합성가수 37", "genre": "인디", "vocal_gender": "혼성", "search_style_summary": "밝고 경쾌한 인디. 후렴에 종소리가 들어가고 남녀가 주고받는 보컬가 이끈다."}
+{"song_id": "syn372", "title": "합성곡 372", "artist": "합성가수 01", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 R&B. 후렴에 어린이 합창가 들어가고 맑은 여성 보컬가 이끈다."}
+{"song_id": "syn373", "title": "합성곡 373", "artist": "합성가수 02", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 일렉트로니카. 간주에 종소리가 들어가고 고음이 시원한 남성 보컬가 이끈다."}
+{"song_id": "syn374", "title": "합성곡 374", "artist": "합성가수 05", "genre": "인디", "vocal_gender": "여성", "search_style_summary": "미디엄 템포의 인디 팝. 신시사이저 패드와 맑은 여성 보컬. 졸업식 날의 기억을 노래한다."}
+{"song_id": "syn375", "title": "합성곡 375", "artist": "합성가수 03", "genre": "록", "vocal_gender": "혼성", "search_style_summary": "잔잔하고 쓸쓸한 록. 후렴에 전화벨 소리가 들어가고 남녀가 주고받는 보컬가 이끈다."}
+{"song_id": "syn376", "title": "합성곡 376", "artist": "합성가수 04", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "잔잔하고 쓸쓸한 포크. 곡 끝에 자동응답기 음성가 들어가고 허스키한 여성 보컬가 이끈다."}
+{"song_id": "syn377", "title": "합성곡 377", "artist": "합성가수 05", "genre": "포크", "vocal_gender": "남성", "search_style_summary": "몽환적이고 느린 포크. 후렴에 전화벨 소리가 들어가고 고음이 시원한 남성 보컬가 이끈다."}
+{"song_id": "syn378", "title": "합성곡 378", "artist": "합성가수 06", "genre": "댄스", "vocal_gender": "혼성", "search_style_summary": "몽환적이고 느린 댄스. 후렴에 자동응답기 음성가 들어가고 남녀가 주고받는 보컬가 이끈다."}
+{"song_id": "syn379", "title": "합성곡 379", "artist": "합성가수 07", "genre": "재즈", "vocal_gender": "혼성", "search_style_summary": "강렬하고 빠른 재즈. 간주에 전화벨 소리가 들어가고 남녀가 주고받는 보컬가 이끈다."}
+{"song_id": "syn380", "title": "합성곡 380", "artist": "합성가수 08", "genre": "록", "vocal_gender": "남성", "search_style_summary": "청량하고 시원한 록. 후렴에 자동응답기 음성가 들어가고 고음이 시원한 남성 보컬가 이끈다."}
+{"song_id": "syn381", "title": "합성곡 381", "artist": "합성가수 12", "genre": "R&B", "vocal_gender": "남성", "search_style_summary": "느린 R&B. 묵직한 베이스와 낮은 남성 보컬. 연락이 끊긴 사람을 그리워한다."}
+{"song_id": "syn382", "title": "합성곡 382", "artist": "합성가수 09", "genre": "록", "vocal_gender": "남성", "search_style_summary": "애절하고 호소력 있는 록. 간주에 관객 함성가 들어가고 고음이 시원한 남성 보컬가 이끈다."}
+{"song_id": "syn383", "title": "합성곡 383", "artist": "합성가수 10", "genre": "포크", "vocal_gender": "여성", "search_style_summary": "애절하고 호소력 있는 포크. 간주에 앵콜 외침가 들어가고 맑은 여성 보컬가 이끈다."}
+{"song_id": "syn384", "title": "합성곡 384", "artist": "합성가수 11", "genre": "인디", "vocal_gender": "혼성", "search_style_summary": "애절하고 호소력 있는 인디. 도입부에 관객 함성가 들어가고 남녀가 주고받는 보컬가 이끈다."}
+{"song_id": "syn385", "title": "합성곡 385", "artist": "합성가수 12", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 일렉트로니카. 곡 끝에 앵콜 외침가 들어가고 낮은 남성 보컬가 이끈다."}
+{"song_id": "syn386", "title": "합성곡 386", "artist": "합성가수 13", "genre": "트로트", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 트로트. 후렴에 관객 함성가 들어가고 맑은 여성 보컬가 이끈다."}
+{"song_id": "syn387", "title": "합성곡 387", "artist": "합성가수 14", "genre": "일렉트로니카", "vocal_gender": "남성", "search_style_summary": "청량하고 시원한 일렉트로니카. 간주에 앵콜 외침가 들어가고 낮은 남성 보컬가 이끈다."}
+{"song_id": "syn388", "title": "합성곡 388", "artist": "합성가수 19", "genre": "록", "vocal_gender": "남성", "search_style_summary": "록 발라드. 일렉 기타 리프와 어쿠스틱 드럼. 늦은 밤 귀갓길을 노래한다."}
+{"song_id": "syn389", "title": "합성곡 389", "artist": "합성가수 15", "genre": "인디", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 인디. 곡 끝에 빗소리가 들어가고 낮은 남성 보컬가 이끈다."}
+{"song_id": "syn390", "title": "합성곡 390", "artist": "합성가수 16", "genre": "R&B", "vocal_gender": "여성", "search_style_summary": "어둡고 무거운 R&B. 도입부에 천둥소리가 들어가고 맑은 여성 보컬가 이끈다."}
+{"song_id": "syn391", "title": "합성곡 391", "artist": "합성가수 17", "genre": "재즈", "vocal_gender": "남성", "search_style_summary": "어둡고 무거운 재즈. 도입부에 빗소리가 들어가고 낮은 남성 보컬가 이끈다."}
+{"song_id": "syn392", "title": "합성곡 392", "artist": "합성가수 18", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "따뜻하고 포근한 댄스. 간주에 천둥소리가 들어가고 낮은 남성 보컬가 이끈다."}
+{"song_id": "syn393", "title": "합성곡 393", "artist": "합성가수 19", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "따뜻하고 포근한 댄스. 간주에 빗소리가 들어가고 고음이 시원한 남성 보컬가 이끈다."}
+{"song_id": "syn394", "title": "합성곡 394", "artist": "합성가수 20", "genre": "댄스", "vocal_gender": "남성", "search_style_summary": "강렬하고 빠른 댄스. 곡 끝에 천둥소리가 들어가고 낮은 남성 보컬가 이끈다."}
+{"song_id": "syn395", "title": "합성곡 395", "artist": "합성가수 26", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "재즈풍 팝. 브라스 섹션과 허스키한 여성 보컬. 오래된 사진첩을 넘기는 마음을 노래한다."}
+{"song_id": "syn396", "title": "합성곡 396", "artist": "합성가수 21", "genre": "발라드", "vocal_gender": "여성", "search_style_summary": "청량하고 시원한 발라드. 후렴에 카운트다운가 들어가고 맑은 여성 보컬가 이끈다."}
+{"song_id": "syn397", "title": "합성곡 397", "artist": "합성가수 22", "genre": "힙합", "vocal_gender": "남성", "search_style_summary": "잔잔하고 쓸쓸한 힙합. 도입부에 잠깐의 정적가 들어가고 낮은 남성 보컬가 이끈다."}
+{"song_id": "syn398", "title": "합성곡 398", "artist": "합성가수 23", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "강렬하고 빠른 재즈. 도입부에 카운트다운가 들어가고 허스키한 여성 보컬가 이끈다."}
+{"song_id": "syn399", "title": "합성곡 399", "artist": "합성가수 24", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 재즈. 도입부에 잠깐의 정적가 들어가고 맑은 여성 보컬가 이끈다."}
+{"song_id": "syn400", "title": "합성곡 400", "artist": "합성가수 25", "genre": "재즈", "vocal_gender": "여성", "search_style_summary": "밝고 경쾌한 재즈. 후렴에 카운트다운가 들어가고 허스키한 여성 보컬가 이끈다."}
+{"song_id": "syn401", "title": "합성곡 401", "artist": "합성가수 26", "genre": "발라드", "vocal_gender": "여성", "search_style_summary": "따뜻하고 포근한 발라드. 후렴에 잠깐의 정적가 들어가고 맑은 여성 보컬가 이끈다."}
+{"song_id": "syn402", "title": "합성곡 402", "artist": "합성가수 33", "genre": "일렉트로니카", "vocal_gender": "혼성", "search_style_summary": "일렉트로니카. 신시사이저 패드와 남녀가 주고받는 보컬. 낯선 도시의 아침을 노래한다."}

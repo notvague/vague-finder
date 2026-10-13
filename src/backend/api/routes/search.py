@@ -368,6 +368,8 @@ async def search(
         # 리랭킹을 정책으로 생략했으면 그 사유. 기록(explain)과 별개로 받는다 — 기록을 끈 요청에도
         # "확인할 자료가 없어 다른 단서로 찾았다"는 안내는 실려야 한다.
         rerank_skips: list[str] = []
+        # 피드백 후보 보충을 조회했으면 그 실행 기록. 설명을 끈 요청에서도 검색 기록에 남기려고 따로 받는다.
+        feedback_runs: list = []
 
         # 끄면 아무것도 기록하지 않는 null object가 들어간다. 라우터에 `if` 분기가
         # 없으므로 "기록을 켰을 때만 지나가는 코드"가 생기지 않는다.
@@ -396,6 +398,7 @@ async def search(
                 recorder=recorder,
                 timer=timer,
                 rerank_skip_out=rerank_skips,
+                feedback_out=feedback_runs,
             )
 
         # 안내 문구는 서버의 고정 문구다. 사유 코드와 함께 보내 화면이 문장을 짓지 않게 한다.
@@ -489,6 +492,7 @@ async def search(
         return SearchResponse(
             feedback=await capture_search(
                 request, analysis_for_search, results, candidate_ids, turn, search_router,
+                feedback_runs[0] if feedback_runs else None,
             ),
             results=results,
             notice=notice,

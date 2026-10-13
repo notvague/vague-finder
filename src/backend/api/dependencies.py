@@ -11,6 +11,9 @@ from src.embedding.models.audio_clap import CLAPAudioEmbedder
 from src.embedding.models.image_siglip2 import SigLIP2Embedder
 from src.embedding.models.text_bm25 import BM25SparseEncoder
 from src.embedding.models.text_koe5 import KoE5Embedder
+from src.feedback.case_index import FeedbackCaseIndex
+from src.feedback.retrieval import FeedbackRetriever
+from src.feedback.store import get_feedback_store
 from src.retrieval.query_analyzer import QueryAnalyzer
 from src.retrieval.lyrics_exact_search import LyricsExactSearchService
 from src.retrieval.reranker import MusicReranker
@@ -79,7 +82,7 @@ def _vector_client_dependents() -> tuple:
     (test_every_factory_holding_the_vector_client_is_cleared_on_close).
     정의 순서 때문에 함수 안에서 이름을 찾는다.
     """
-    return (get_search_service, get_search_router)
+    return (get_search_service, get_search_router, get_feedback_case_index, get_feedback_retriever)
 
 
 def close_vector_client() -> None:
@@ -168,6 +171,29 @@ def get_lyrics_exact_search_service() -> LyricsExactSearchService:
     )
 
 
+@singleton
+def get_feedback_case_index() -> FeedbackCaseIndex:
+    """승인 사례 컬렉션. 색인 작업(쓰기)과 검색(읽기)이 **같은 객체**를 써야 한다 — 잠금이 여기에 있다.
+
+    만들기만 해서는 Qdrant에 아무것도 하지 않는다. 컬렉션은 색인 작업이 처음 돌 때 만든다.
+    """
+    return FeedbackCaseIndex(get_vector_client())
+
+
+@singleton
+def get_feedback_retriever() -> FeedbackRetriever:
+    """승인 사례로 후보를 보충하는 조회 서비스. `FEEDBACK_RETRIEVAL_ENABLED`가 꺼져 있으면 라우터가 부르지 않는다.
+
+    Mongo 저장소와 KoE5 모델은 **함수로 넘긴다** — 꺼져 있는 동안에는 연결도 모델 로딩도 일어나지 않는다.
+    """
+    return FeedbackRetriever(
+        case_index=get_feedback_case_index(),
+        store=get_feedback_store,
+        embedder=get_text_embedder,
+        vector_client=get_vector_client(),
+    )
+
+
 DEFAULT_RERANKER_BACKEND = "gemini_listwise"
 
 
@@ -208,4 +234,5 @@ def get_search_router() -> SearchRouter:
         vector_client=get_vector_client(),
         lyrics_search_service=get_lyrics_exact_search_service(),
         reranker=get_reranker(),
+        feedback_retriever=get_feedback_retriever(),
     )

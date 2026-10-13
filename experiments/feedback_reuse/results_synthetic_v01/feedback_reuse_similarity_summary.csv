@@ -1,0 +1,8 @@
+group,same_song,pairs,min,median,max,at_or_above_threshold
+target,1,6,0.5848,0.6946,0.7505,5
+target,0,54,0.2105,0.4255,0.6293,0
+similar_clue_other_song,0,20,0.2583,0.4273,0.7359,3
+other_clue_same_song,1,2,0.4379,0.4413,0.4446,0
+other_clue_same_song,0,18,0.2967,0.3886,0.4931,0
+wrong_reason,0,20,0.2321,0.4591,0.8183,2
+broad,0,20,0.1836,0.371,0.8512,1

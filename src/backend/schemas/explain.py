@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from src.retrieval.explain import (
+    FeedbackExplain,
     LYRIC_MATCH_LABELS,
     LYRIC_ORDER_RULES,
     PATH_LABELS,
@@ -268,6 +269,14 @@ class TrackExplain(BaseModel):
         ),
     )
 
+    feedback_entrant: bool = Field(
+        default=False,
+        description=(
+            "이전 사용자 제보로 후보에 들어온 곡인가. 참이면 기존 검색만으로는 후보 밖이었고 자리는 후보 끝에서 "
+            "시작했다 — 이 곡의 명시 단서 가산은 진입 판정에만 쓰였고, 표시 구간으로 올린 것은 리랭커다"
+        ),
+    )
+
     paths: List[PathContributionOut] = Field(
         default_factory=list,
         description="최종 점수에 반영된 경로 기여 (기여 큰 순)",
@@ -375,6 +384,43 @@ class FailedPathOut(BaseModel):
     reason: str = Field(..., description="예외 종류와 메시지")
 
 
+# 피드백 후보 보충의 상태 문구. **출처만 말한다** — "제보가 사실이다"·"정답이다"로 읽히는 말을 쓰지 않는다.
+FEEDBACK_SUPPLEMENT_LABELS: Dict[str, str] = {
+    # applied는 **실제로 후보에 들어온 곡이 있을 때만**이다. 점수만 받고 절단을 넘지 못한 것은 not_entered다.
+    "applied": "이전 사용자 제보를 참고해 후보에 포함한 곡이 있습니다",
+    "not_entered": "이전 사용자 제보를 참고했지만 후보에 새로 포함된 곡은 없습니다",
+    "already_in_candidates": "이전 사용자 제보가 가리킨 곡은 이미 후보에 있었습니다(순위는 바꾸지 않았습니다)",
+    "no_case": "참고할 이전 사용자 제보가 없었습니다",
+    "no_valid_case": "참고할 이전 사용자 제보가 없었습니다",
+    "timeout": "이전 사용자 제보 조회를 건너뛰었습니다(기존 검색만 사용)",
+    "failed": "이전 사용자 제보 조회를 건너뛰었습니다(기존 검색만 사용)",
+}
+
+
+class FeedbackSupplementOut(BaseModel):
+    """피드백 후보 보충 요약. 사례 ID·판·유사도·문장은 **응답에 싣지 않는다** — 건수와 고정 문구뿐이다.
+
+    어느 곡이 보충됐는지는 그 곡의 경로 기여(`paths`의 `feedback_case`)에 있다. 내부 진단 기록
+    (`FeedbackExplain`)은 평가 도구가 직접 읽는다.
+    """
+
+    status: str
+    label: str = ""
+    supplemented: int = Field(default=0, description="후보에 넣어 보려고 진입 판정 점수를 준 곡 수(후보 밖 곡만). 들어왔다는 뜻은 아니다")
+    entered: int = Field(default=0, description="그중 실제로 후보에 들어온 곡 수 — 보충이 없었다면 후보에 없었을 곡")
+
+    @classmethod
+    def of(cls, record: Optional[FeedbackExplain]) -> Optional["FeedbackSupplementOut"]:
+        if record is None:
+            return None
+        return cls(
+            status=record.status,
+            label=FEEDBACK_SUPPLEMENT_LABELS.get(record.status, ""),
+            supplemented=sum(1 for case in record.cases if case.added),
+            entered=len(record.entered_ids),
+        )
+
+
 class SearchExplainOut(BaseModel):
     """요청 한 번의 실행 기록 요약. 곡별 근거는 각 결과의 explain에 붙는다."""
 
@@ -425,6 +471,10 @@ class SearchExplainOut(BaseModel):
         default=0,
         description="그중 모델이 실제로 순서를 정한 횟수. 호출 수 ≠ 성공 수다",
     )
+    feedback_supplement: Optional[FeedbackSupplementOut] = Field(
+        default=None,
+        description="피드백 후보 보충 요약. 검색 반영 스위치가 꺼져 있었으면 None",
+    )
 
     @classmethod
     def of(cls, record: SearchExplain) -> "SearchExplainOut":
@@ -449,6 +499,7 @@ class SearchExplainOut(BaseModel):
             rerank_error=record.rerank_error,
             rerank_calls=len(record.rerank_runs),
             rerank_calls_applied=record.rerank_runs_applied,
+            feedback_supplement=FeedbackSupplementOut.of(record.feedback),
         )
 
 
@@ -518,6 +569,7 @@ def to_track_explain(
         return out.model_copy(update={"note": note}) if note else out
 
     return TrackExplain(
+        feedback_entrant=bool(getattr(explain, "feedback_entrant", False)),
         song_id=explain.song_id,
         summary=render_ko(
             explain, max_items=max_items, reorder_stage=reorder_stage, adjustment_notes=stale_notes,
