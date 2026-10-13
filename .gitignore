@@ -135,3 +135,8 @@ experiments/reranking/results_*/*/*/*_explain.jsonl
 experiments/reranking/results_v43_audio_path_weight/analysis_cache_*.json
 !experiments/reranking/results_v43_audio_path_weight/*/*/search_eval_*_summary.csv
 !experiments/reranking/results_v43_audio_path_weight/*/*/search_eval_*_top10.csv
+
+# #12 병합 뒤 기준선(results_v46) — 분석 전후표 · 두 단계 아래 요약과 top-10
+!experiments/reranking/results_v46_main_after_context/*.csv
+!experiments/reranking/results_v46_main_after_context/*/*/search_eval_*_summary.csv
+!experiments/reranking/results_v46_main_after_context/*/*/search_eval_*_top10.csv
