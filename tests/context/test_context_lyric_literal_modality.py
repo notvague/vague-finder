@@ -91,6 +91,8 @@ def test_description_before_an_unquoted_lyric_keeps_its_artwork():
     "피아노를 쳤는데 눈물이 났어라는 가사가 있어",
     "네 목소리가 들리는데 볼 수 없어라는 가사가 있어",
     "슬픈데 웃는다라는 가사가 있어",
+    "피아노 소리   라는 가사가 있어",
+    "앨범 커버엔 붉은 꽃이 보인다     라는 구절이 있어",
     "붉은 꽃 그림을 그렸지만 지워버렸어라는 가사가 있어",
     # Everything after a lyric marker is sung, whatever it names.
     "가사에 피아노를 쳤는데 눈물이 났어라고 나와",
@@ -130,6 +132,16 @@ def test_rule_fallback_keeps_the_description_before_a_lyric(lyric):
     for analysis in (sound, art):
         assert "사랑해" in [clue.text for clue in analysis.lyric_clues]
         assert not any("발라드" in clue.text or "표지" in clue.text for clue in analysis.lyric_clues)
+
+
+@pytest.mark.parametrize("quotes", QUOTES)
+def test_words_before_a_quoted_lyric_are_never_taken_for_a_second_lyric(quotes):
+    lyric = quotes[0] + "사랑해" + quotes[1]
+    sound = f"잔잔한 피아노 발라드 {lyric}라는 가사가 있어"
+    assert has_explicit_audio_clue(sound) and "ballad" in build_fallback_modality_queries(sound)[1]
+    art = f"파란 표지 앨범 {lyric}라는 가사가 있어"
+    assert has_explicit_visual_clue(art) and not has_explicit_audio_clue(art)
+    assert build_fallback_modality_queries(art) == ("Album cover with blue tones.", "")
 
 
 def test_actual_parser_keeps_the_model_lyric_beside_a_described_cover():
