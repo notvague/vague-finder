@@ -1,0 +1,112 @@
+set,query_id,audio_weight,current,raw,q_minus_amean,q_center,q_center_raw,csls,prompt
+v06,q101,0.3,68,162,369,43,327,43,"Upbeat, fast-paced dance track with multiple female vocalists."
+v06,q103,0.3,38,4,5,27,12,27,"Male R&B vocals with a unique, distinctive timbre, smooth and soulful delivery."
+v06,q104,0.3,687,510,620,621,553,621,"Female R&B vocals with heavy vocal runs, melisma, and intense vibrato."
+v06,q105,0.4,232,375,864,297,647,297,"Powerful female solo vocals with grand, heavy synthesizer sounds and an intense, upbeat dance rhythm."
+v06,q106,0.5,776,1263,2799,643,1096,643,"A rock band song featuring a husky male vocal and prominent, distorted or heavy electric guitar riffs, with a repetitive chorus structure."
+v06,q107,0.4,150,219,345,296,424,296,"Indie band song featuring vintage analog-style guitar sounds and a nostalgic, raw production texture."
+v06,q108,0.5,4323,4082,4883,4676,4397,4676,"A hip-hop track featuring a prominent, continuous piano melody throughout, with male vocals and rap, and a catchy, singable chorus."
+v06,q110,0.4,2475,2357,903,659,368,659,"Female group vocals with a unique, exotic, and Indian-inspired musical style."
+v06,q112,0.4,2097,1456,47,332,50,332,Hip-hop track featuring rap vocals with a prominent string section accompaniment.
+v06,q113,0.4,792,220,96,632,184,632,Upbeat dance track featuring a female solo vocal and a prominent classical music sample.
+v06,q114,0.4,954,606,468,151,102,151,"A hip-hop track featuring two male vocalists with a strong, driving electronic beat and heavy production."
+v06,q115,0.5,236,396,579,346,532,346,"A sparse arrangement featuring a solo piano, with a male vocalist singing in an emotional, pleading style, accompanied by a subtle, gradually building orchestral layer."
+v06,q203,0.2,1186,1555,2416,2190,2221,2190,"Emotional male vocal performance with a band arrangement, melancholic and sentimental mood."
+v06,q205,0.2,88,696,1074,435,1018,435,A male-vocal ballad with an emotional and slow-paced arrangement.
+v06,q206,0.3,586,489,659,723,716,723,"A traditional emotional ballad featuring a male vocalist with a clear, high-pitched, and powerful voice."
+v06,q207,0.3,546,307,303,79,74,79,"A catchy pop song featuring a prominent, repetitive, and addictive whistling sound."
+v06,q215,0.428571,3050,2909,4211,3688,3327,3688,"A melancholic song featuring a prominent acoustic bass, suitable for late-night driving."
+v06,q218,0.4,10,1,1,2,4,2,"A rock ballad featuring a prominent, iconic electric guitar riff in the intro with a high-energy, emotional male vocal performance."
+v06,q219,0.4,2559,2614,4327,2144,2282,2144,"A male-female duet featuring a husky male rap and a dreamy, ethereal female vocal. The song begins with the female vocal and concludes with a male spoken-word narration."
+v06,q308,0.3,617,629,1033,515,621,515,"Hip-hop track featuring male rapping and a female vocalist singing the chorus, melancholic mood."
+v06,q311,0.5,832,489,391,445,260,445,"Upbeat male idol dance track with heavy percussion and aggressive electronic synth layers, featuring a repetitive, chant-like English hook in the chorus."
+v06,q312,0.2,4696,4812,2470,3962,4360,3962,A song featuring a male vocalist.
+v06,q313,0.4,1230,1440,2910,1099,1409,1099,"Upbeat female-vocal track blending tropical house rhythms with pop-rock instrumentation, perfect for summer driving."
+v06,q314,0.4,835,672,711,400,397,400,"A relaxed, laid-back lounge style ballad with a male vocalist, featuring a clean and intimate production suitable for a cafe setting."
+v06,q316,0.4,2969,2845,4559,2357,2347,2357,"Upbeat and energetic track featuring prominent guitar and drum sounds, with a male lead vocal and a rap feature."
+v06,m102,0.3,1553,848,198,499,62,499,A rhythmic song featuring rap vocals and a prominent beat.
+v06,m103,0.5,970,178,42,334,40,334,"A male-vocal ballad featuring prominent string arrangements and an emotional, pleading vocal delivery."
+v06,m104,0.5,1496,669,228,820,260,820,"A male vocal ballad accompanied by a prominent, emotional piano arrangement."
+v06,m201,0.6,3562,3683,3175,3090,3198,3090,"A rhythmic acoustic song featuring a male and female duet with clear, pure, and bright vocal timbres, accompanied primarily by acoustic guitar — a clearly foregrounded, instrument-led arrangement."
+v06,m202,0.5,1683,1207,292,520,226,520,"A hip-hop track dominated by heavy synthesizer textures and electronic sound design, featuring both male and female vocals."
+v06,m203,0.6,550,491,723,788,787,788,"Electronic track with heavy emphasis on rhythmic sampling and prominent, driving beats, featuring multiple male vocalists."
+v06,m402,0.35,19,12,28,26,85,26,A male-vocal ballad featuring prominent string instrument accompaniment.
+v06,m403,0.35,567,167,135,245,130,245,"A gentle, calm piano-led ballad with a soft and intimate atmosphere."
+v06,c602,0.2,621,321,236,651,367,651,Hip-hop track with rhythmic rap vocals and a beat-driven production.
+v06,c605,0.3,4733,4713,4237,4769,4868,4769,"A vocal performance by an actor, often characterized by emotional delivery and dramatic expression."
+v06,c607,0.2,3456,3704,2205,3846,4278,3846,"A song featuring band instrumentation, likely a remake of an older track."
+v06,c701,0.3,928,1121,1361,1226,1314,1226,A sentimental male-vocal ballad with an emotional and melancholic tone.
+v06,c705,0.3,1113,1324,1542,1059,1268,1059,A calm and gentle male-vocal ballad with a sentimental and emotional atmosphere.
+v06,c706,0.4,612,1002,3717,1781,2081,1781,"A female duet featuring one vocalist singing and one rapper, with a sad and emotional tone."
+v06,c707,0.3,33,114,1047,188,597,188,"A female solo vocal performance with a bright, fluttering mood, featuring a distinct rap section."
+v09,n002,0.2,608,625,861,1462,1511,1462,Rock band sound with a male vocalist.
+v09,n006,0.3,1539,1733,2154,1623,1743,1623,"A light, acoustic male vocal performance accompanied by a single acoustic guitar."
+v09,n010,0.4,216,302,1031,282,486,282,"A sentimental hip-hop ballad featuring a male rapper and a female vocalist, typical of 2000s Korean pop production with melodic piano and rhythmic hip-hop beats."
+v09,n016,0.3,4636,4791,2722,4147,4481,4147,A powerful female vocal ballad featuring a dramatic high-pitched vocal climax.
+v09,n018,0.5,62,3,11,105,47,105,"Trot genre song featuring a sound effect of flowing water in the intro, traditional folk-style melody."
+v09,n019,0.2,1007,1352,1813,1271,1467,1271,An emotional male-vocal ballad with a melancholic tone.
+v09,n020,0.2,4509,4268,4979,4411,4264,4411,"Upbeat pop track with a mature, sultry, and confident vocal delivery typical of a girl group concept shift."
+v09,n021,0.4,3205,3259,2248,3261,3359,3261,"Two male vocalists with high-pitched, thin, and light vocal timbres in an indie-style arrangement."
+v09,n025,0.3,1489,1420,1662,1427,1444,1427,An audio track with two duet vocalists.
+v09,n029,0.3,559,138,118,332,151,332,"A female vocalist with a low, husky, and soothing timbre, singing in a comforting and gentle style."
+v09,n030,0.3,1372,1532,2302,619,827,619,Upbeat and energetic male-vocal band track with prominent live instrument performance.
+v09,n031,0.5,513,469,612,330,412,330,"A highly emotional male ballad with a powerful, sustained high-pitched vocal delivery and a melancholic, dramatic atmosphere."
+v09,n033,0.3,1053,1014,1224,735,742,735,"Male R&B vocal performance with a smooth, soulful delivery."
+v09,n034,0.4,892,34,3,4,1,4,"A grand, dramatic orchestral ballad featuring a powerful female soprano vocal with a classical operatic style."
+v09,n035,0.4,944,619,480,620,491,620,Sophisticated lounge music with electronic elements and a male-female vocal duet.
+v09,n038,0.2,584,770,1858,1519,1724,1519,"A female vocal performance without rap, featuring a melodic singing style."
+v09,n042,0.4,1088,1087,1453,773,879,773,"Upbeat and light rhythmic hip-hop track with a prominent male rapper, characterized by a bouncy and danceable tempo."
+v09,n043,0.2,543,1105,2016,355,954,355,"A male vocal performance accompanied by acoustic guitar, featuring a band-style arrangement."
+v09,n045,0.3,2565,2565,2966,4145,4107,4145,"A female-fronted band song with a youthful, energetic rock or pop-rock sound."
+v09,n046,0.6,2237,1872,280,1366,714,1366,"Heavy, distorted guitar riffs with aggressive, shouting male vocals blending rap and singing, featuring turntable scratching sound effects."
+v09,n048,0.5,2856,2961,863,2356,2164,2356,"A long R&B ballad featuring a female vocalist, accompanied by gentle piano and strings, with a distinct section where the music pauses for a spoken-word narration."
+v09,n051,0.6,939,178,41,1046,278,1046,"Powerful girl group dance track starting with intense, rapid-fire marching snare drums and distinct whistle sound effects, high energy and rhythmic."
+v09,n054,0.6,940,1348,2038,496,1022,496,"Upbeat disco track with a bouncy, prominent bassline, explosive brass section, rhythmic handclaps, and bright group chorus vocals sung in English."
+v09,n055,0.7,1601,1707,2489,3204,3139,3204,"A male vocal with a raspy, gravelly, and strained texture, singing with intense, desperate, and screaming-like delivery. The arrangement features a cinematic orchestra that builds in volume and intensity, culminating in a powerful, explosive climax."
+v09,n057,0.6,1991,2199,4172,1968,2099,1968,"Starts with a soft male vocal, transitioning into an explosive synth-led EDM chorus. Features repetitive chopped vocal samples and a melancholic, nostalgic atmosphere — a powerful dynamic lift in the chorus."
+v09,n058,0.6,2736,2723,3036,2346,2349,2346,"80s synth-pop style with a bouncy, prominent bassline and electronic bleeping sounds. Features a smooth male vocal lead followed by a male rap section."
+v09,n061,0.6,394,274,380,117,186,117,"Upbeat girl group dance track featuring prominent Latin-style percussion, a deep driving bassline, and a repetitive, staccato vocal hook in the chorus."
+v09,n062,0.6,1739,1542,1226,685,543,685,"Upbeat dance track with a trot-inspired 'ppongjjak' rhythm and Chinese-style melodic motifs. Multiple female vocalists singing with a cute, nasal, and high-pitched delivery."
+v09,n065,0.5,2966,2928,4089,2115,2168,2115,"Upbeat rock song featuring energetic electric guitar riffs and powerful, high-energy female vocals."
+v09,n081,0.3,3727,4525,351,918,267,918,"90s R&B track with a bouncy, groovy rhythm and three-part male vocal harmonies."
+v09,n082,0.35,72,6,10,58,26,58,"Upbeat rock song with a female vocalist singing in a unique, powerful, belting style, accompanied by energetic, fast-paced electric guitar riffs."
+v09,n086,0.3,4948,4969,3979,3907,4228,3907,Upbeat and refreshing band sound with female vocals and live instrumentation.
+v09,n088,0.2,1314,1016,834,481,318,481,"Upbeat, rhythmic dance track with a female vocal, characteristic of a popular dance song."
+v09,n089,0.3,620,833,2810,751,1052,751,"A bright, upbeat song featuring a male-female duo and a female solo vocalist trading lines."
+v09,n095,0.5,535,591,902,690,755,690,"A bright, acoustic song featuring a clear, high-pitched male vocal singing in a confessional style, accompanied by a bouncy, rhythmic acoustic guitar — a sparse, minimal accompaniment."
+v09,n096,0.3,638,201,111,641,355,641,A melancholic rock song featuring a female solo vocalist with a band arrangement.
+v09,n097,0.5,599,16,2,541,26,541,"Fast-paced dance beat with rock band instrumentation, featuring a female vocalist hitting extremely high, powerful notes in the chorus."
+v10,t001,0.3,158,41,88,197,217,197,"A male vocal ballad featuring intense, high-pitched emotional belting accompanied by a prominent piano arrangement."
+v10,t004,0.3,4089,4689,60,3118,3511,3118,Emotional male ballad with a very high-pitched chorus and powerful vocal delivery.
+v10,t007,0.3,439,169,211,55,86,55,"Upbeat, energetic, and bright dance track with mixed male and female vocals."
+v10,t008,0.3,4235,4810,1921,3844,4579,3844,Emotional male R&B ballad with soulful vocal delivery and a melancholic atmosphere.
+v10,t009,0.4,753,973,2103,468,790,468,"Upbeat and bright tempo despite the sad breakup lyrical theme, featuring a male vocalist."
+v10,t010,0.2,4142,4189,3213,2235,2118,2235,A winter-themed ballad featuring multiple male vocalists.
+v10,t011,0.5,2247,2139,1362,1767,1575,1767,"A hip-hop track featuring male rapping and a male R&B singer with a high-pitched, smooth vocal timbre in the chorus."
+v10,t031,0.2,212,414,1830,563,925,563,"Bright, cheerful, and upbeat pop song with a light female vocal."
+v10,t033,0.2,3041,3017,3873,2037,2108,2037,A popular karaoke-friendly song featuring a male and female vocal duet.
+v10,t036,0.2,1518,1344,1146,1262,1146,1262,"A sad, emotional ballad with a female vocalist and a melancholic atmosphere."
+v10,t037,0.3,416,798,1619,1124,1397,1124,"A male vocal performance with a husky, raspy timbre, singing in a desperate, intense, and emotional style."
+v10,t038,0.2,1568,1295,700,2336,2265,2336,A rock song arrangement featuring two male vocalists.
+v10,t039,0.4,1933,1244,255,973,261,973,"A male-vocal ballad featuring a powerful, sustained high-pitched note at the climax."
+v10,t040,0.2,1748,1486,1083,1150,793,1150,A calm and gentle ballad with a slow tempo and emotional vocal delivery.
+v10,t041,0.3,1128,1460,2603,2535,2543,2535,"An upbeat song with a rap section, characteristic of an anime ending theme."
+v10,t042,0.4,102,202,348,177,338,177,"A powerful rock ballad featuring a male vocalist who builds to an intense, high-pitched, explosive climax with electric guitars and drums."
+v10,t043,0.3,3053,2993,4088,2827,2791,2827,"High-pitched, powerful vocal performance with English lyrics, dramatic and intense atmosphere."
+v10,t044,0.4,1406,892,327,435,141,435,"Upbeat, energetic song with a distinct American Western or country music vibe, featuring rhythmic acoustic elements."
+v10,t046,0.2,109,1,1,10,4,10,"A sentimental, emotional male vocal performance in a folk-style arrangement, likely acoustic and slow-tempo."
+v10,t053,0.3,45,112,150,54,160,54,"Energetic rock band sound with an uplifting, anthemic atmosphere suitable for sports events."
+v10,t058,0.7,782,238,73,734,239,734,"Reggae rhythm with staccato guitar chops on the off-beat, a male vocal with a slightly nasal and playful, cheeky delivery, and a bouncy, prominent bassline."
+v10,t068,0.3,643,1005,2224,913,1341,913,"An upbeat, bright track featuring alternating sections between a female vocalist and a male rapper."
+v10,t070,0.6,1462,767,284,250,44,250,"Very fast-tempo dance track with a male vocalist delivering lyrics in a rapid, breathless, and continuous style."
+v10,t073,0.6,36,168,231,253,387,253,"A thin, nasal male vocal timbre singing in a calm, restrained manner over a sparse piano accompaniment, with a very quiet and minimalist arrangement, featuring repetitive short phrases in the chorus."
+v10,t075,0.6,381,341,399,514,537,514,"A calm, slow-tempo ballad featuring a deep, low-register male vocal, accompanied only by piano and strings — a sparse, minimal accompaniment."
+v10,t077,0.5,2033,2075,3143,1380,1486,1380,"Upbeat, energetic pop song with a prominent, heavy, and driving bassline, creating a confident and empowering atmosphere."
+v10,t078,0.6,1252,547,106,455,156,455,"Fast-paced rock track featuring driving drums and piano, with a male vocalist singing in a powerful, soaring style that builds to an explosive chorus."
+v10,t079,0.6,784,1008,1510,867,1126,867,"A male ballad featuring powerful, chest-voice high notes without falsetto, accompanied by piano and orchestral strings, with a climactic high-pitched chorus."
+v10,t080,0.6,3392,3269,4257,3566,3394,3566,"Light and bouncy acoustic guitar riff, male rap verses, and sweet, airy female vocals in the chorus, creating a breezy and playful atmosphere."
+v10,t100,0.3,1187,1341,1638,1028,1183,1028,"A slow, melancholic R&B track featuring a husky female vocal delivery with a heavy, downcast mood."
+v10,t101,0.35,151,285,460,199,340,199,"A bright, cheerful song featuring rhythmic, upbeat acoustic guitar strumming."
+v10,t104,0.3,2763,2763,2874,2869,2866,2869,"A gentle, melancholic song featuring only a solo female vocal and acoustic guitar accompaniment."
+v10,t107,0.3,2329,2433,4067,2639,2599,2639,"A cute, lighthearted song featuring a bouncy acoustic guitar and a sweet, delicate female vocal."
+v10,t111,0.6,751,582,575,393,385,393,"A song featuring a prominent, startling siren sound effect at the very beginning of the track."
