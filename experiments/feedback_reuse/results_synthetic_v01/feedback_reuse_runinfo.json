@@ -1,0 +1,60 @@
+{
+  "git_head": "10a858854f4d723e9bca1a5ffd05a71e3b6f916f",
+  "input": "experiments/feedback_reuse/synthetic/queries.csv",
+  "input_sha256_16": "32e231d7dae9443b",
+  "split": "dev",
+  "queries": 10,
+  "runs": 2,
+  "top_k": 15,
+  "candidate_k": 30,
+  "rerank": false,
+  "reject_check": true,
+  "settings": {
+    "top_cases": 20,
+    "max_songs": 3,
+    "min_similarity": 0.65,
+    "fusion_weight": 1.0,
+    "budget_seconds": 0.6,
+    "display_k": null
+  },
+  "cases": {
+    "source": "experiments/feedback_reuse/synthetic/cases.jsonl",
+    "digest": "6e1fd5d1ce69eb13",
+    "count": 14,
+    "by_group": {
+      "target": 6,
+      "similar_clue_other_song": 2,
+      "other_clue_same_song": 2,
+      "wrong_reason": 2,
+      "broad": 2
+    },
+    "embedding_version": "koe5:nlpai-lab/KoE5:passage:l2:v1"
+  },
+  "bench": {
+    "corpus": "synthetic",
+    "songs": 402,
+    "analysis": "fixed(text-only)",
+    "reranker": null
+  },
+  "gates": {
+    "hit10_lost_queries": 0,
+    "candidate_lost_queries": 0,
+    "hit10_no_loss": true,
+    "rejected_reappeared_total": 0,
+    "rejected_reappear_zero": true,
+    "off_candidate_changes_between_runs": 0,
+    "off_unchanged": true,
+    "latency_median_delta_ms": 11.1,
+    "latency_p95_delta_ms": 14.8,
+    "latency_within_budget": true,
+    "hit10_gain": 0.0,
+    "off_hit10_spread_between_runs": 0.0,
+    "gain_exceeds_run_variation": null,
+    "rerank_failed_rows": 0,
+    "comparable": true,
+    "entered_total": 16,
+    "entered_judged_by_reranker": null,
+    "entrants_outside_judged_range": null
+  },
+  "note": "합성 자료로 돈 기능 확인이다. 검색 품질 개선의 근거로 쓰지 않는다."
+}

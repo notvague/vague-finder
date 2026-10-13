@@ -48,7 +48,19 @@ PATH_LABELS: Dict[str, str] = {
     "performance": "보컬·편성 단서",
     "performance_metadata": "편성 메타데이터",
     "metadata": "메타데이터 단서",
+    # 승인된 피드백 사례가 이 곡을 후보로 보충했다. **출처만 말한다** — 제보 내용이 사실이라는 뜻도,
+    # 이 곡이 정답이라는 뜻도 아니다. 최종 순위는 리랭커가 곡 정보로 정한다.
+    "feedback_case": "이전 사용자 제보 참고",
 }
+
+FEEDBACK_PATH = "feedback_case"
+# 피드백으로 후보에 들어온 곡을 후보 끝에 세우는 조정(`ScoreAdjustment.rule`). 검색 점수를 꼬리 값으로 맞춘다.
+FEEDBACK_TAIL_RULE = "feedback_tail"
+# 사례별 처리 결과(`FeedbackCaseExplain.outcome`).
+FEEDBACK_ADDED = "added"
+FEEDBACK_ALREADY_CANDIDATE = "already_candidate"
+FEEDBACK_OVER_LIMIT = "over_limit"
+FEEDBACK_NO_GAIN = "no_gain"
 
 
 # 가사 비교는 **표기 정규화 뒤에** 한다.
@@ -292,6 +304,11 @@ class SongExplain:
     group_rank_before: Optional[int] = None
     group_rank_after: Optional[int] = None
 
+    # 이 곡은 **이전 사용자 제보로 후보에 들어왔다**(기존 검색만으로는 후보 밖이었다). 자리는 후보의 끝으로
+    # 고정되고, 이 곡이 받은 명시 단서 보정은 진입 판정에만 쓰였다 — 순위를 만든 것이 아니다.
+    # 사용자용 설명이 이 값을 보고 출처를 말하고 "검색 점수에 반영"이라는 말을 쓰지 않는다.
+    feedback_entrant: bool = False
+
     # 이 곡 앞에 배치된 **가사 보호 곡의 수.**
     #
     # 하락 폭이 아니다. 보호 곡이 애초에 1위였다면 2위 곡은 2위 그대로다.
@@ -351,6 +368,57 @@ class SongExplain:
 
 
 @dataclass
+class FeedbackCaseExplain:
+    """후보 보충에 **실제로 쓴** 피드백 사례 하나. 재사용 문장·사유 본문은 담지 않는다."""
+
+    song_id: str
+    feedback_id: str
+    source_revision: int     # 사용자 제출 판
+    review_version: int      # 검토 판
+    similarity: float        # 질의와 사례 문장의 코사인 유사도
+    rank: int                # 유효 사례 안에서의 유사도 순위
+    delta: float             # 진입 판정용으로 융합 점수에 더해진 양. added가 아니면 0이다
+    new_to_pool: bool        # 보충 전에는 융합 목록에 없던 곡인가
+    # 이 사례의 곡을 어떻게 했는가.
+    #   added             후보 밖 곡이라 꼬리 자리의 점수를 줬다
+    #   already_candidate 보충 없이도 최종 후보였다 — **점수를 건드리지 않았다**
+    #   over_limit        후보 밖 곡이지만 보충 곡 수 상한 밖이다(상한은 곡 수 설정과
+    #                     "리랭커 없이는 표시되지 않는 자리 수" 가운데 작은 쪽)
+    #   no_gain           후보 밖 곡인데 이미 가진 융합 점수가 꼬리 자리보다 높아 더한 것이 없다
+    outcome: str = "added"
+    in_candidates: bool = False       # 최종 후보(절단 뒤)에 남았는가
+    entered: bool = False             # 보충이 없었다면 최종 후보에 없었을 곡인가
+
+    @property
+    def already_candidate(self) -> bool:
+        return self.outcome == FEEDBACK_ALREADY_CANDIDATE
+
+    @property
+    def added(self) -> bool:
+        return self.outcome == FEEDBACK_ADDED
+
+
+@dataclass
+class FeedbackExplain:
+    """피드백 후보 보충의 실행 기록. 꺼져 있던 요청에는 이 기록 자체가 없다(None).
+
+    `entered_ids`·`displaced_ids`는 **같은 요청에서 보충만 뺀 후보 목록**과 비교한 것이다 —
+    보충으로 새로 들어온 곡과 그 때문에 후보에서 밀려난 곡.
+    """
+
+    # applied(후보에 들어온 곡이 있다) · not_entered(유효한 사례는 있었지만 들어온 곡이 없다) ·
+    # already_in_candidates(가리킨 곡이 모두 이미 후보였다) · no_case · no_valid_case · timeout · failed
+    status: str = ""
+    scanned: int = 0         # 문턱을 넘어 최신 상태 확인 대상이 된 사례 수
+    dropped: Dict[str, int] = field(default_factory=dict)   # 빠진 사유별 사례 수
+    cases: List[FeedbackCaseExplain] = field(default_factory=list)
+    entered_ids: List[str] = field(default_factory=list)
+    displaced_ids: List[str] = field(default_factory=list)
+    settings: Dict[str, float] = field(default_factory=dict)
+    elapsed_ms: float = 0.0  # 기존 경로가 끝난 뒤 보충을 더 기다린 시간
+
+
+@dataclass
 class SearchExplain:
     """한 요청의 실행 기록."""
 
@@ -383,6 +451,8 @@ class SearchExplain:
     reorder_committed: bool = False
     # 규칙이 순서를 바꿨는가(가사 보호 배치). 모델 실패와 **동시에** 참일 수 있다.
     order_rules_applied: bool = False
+    # 피드백 후보 보충. 스위치가 꺼져 있었으면 None이다 — "조회했지만 없었다"와 구분한다.
+    feedback: Optional[FeedbackExplain] = None
 
     @property
     def rerank_runs_applied(self) -> int:
@@ -518,6 +588,14 @@ class ExplainRecorder:
         for song_id in song_ids:
             for contribution in self.record.get(song_id).paths:
                 contribution.dropped = True
+
+    def note_feedback(self, feedback: FeedbackExplain) -> None:
+        """피드백 후보 보충의 결과. 곡별 기여는 `path(..., "feedback_case", ...)`로 따로 남는다."""
+        self.record.feedback = feedback
+
+    def mark_feedback_entrant(self, song_id: str) -> None:
+        """이 곡이 피드백으로 후보에 들어와 끝자리에 섰다는 표시. 점수 조정(`feedback_tail`)이 0이어도 남긴다."""
+        self.record.get(song_id).feedback_entrant = True
 
     # --- 곡 단위 ---
     def path(
@@ -668,6 +746,12 @@ class _NullRecorder(ExplainRecorder):
     def mark_paths_dropped(self, song_ids) -> None:
         return
 
+    def note_feedback(self, feedback) -> None:
+        return
+
+    def mark_feedback_entrant(self, song_id) -> None:
+        return
+
     def path(self, song_id, path, rank, delta, detail="") -> None:
         return
 
@@ -747,6 +831,9 @@ RULE_LABELS: Dict[str, str] = {
     "performance_clues": "보컬 역할·편성 단서 일치",
     "genre_match": "장르 일치",
     "answer_match": "재질문 답변과 일치",
+    # 피드백으로 들어온 곡은 다른 보정을 받았더라도 후보의 끝에 선다. 그 차이를 이 줄이 메운다 —
+    # 장부(경로 기여 + 가감점 = 검색 점수)가 맞게. 순위는 리랭커가 정한다.
+    "feedback_tail": "이전 사용자 제보로 들어온 곡은 후보 끝에 배치",
     # 보호 배치는 일치 유형마다 규칙이 다르다. 하나로 묶으면 음차 추정 일치에
     # "가사가 그대로 일치"가 붙어 두 번 틀린 말이 된다(정규화 후 비교 + 음차 추정).
     "lyrics_exact_priority": "기억한 구절이 가사와 일치해 먼저 배치",

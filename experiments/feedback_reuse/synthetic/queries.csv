@@ -1,0 +1,11 @@
+query_id,split,query_type,query,relevant_ids
+f01,dev,search,신나는 노래였던 것 같은데 처음에 휘파람 불고 중간에 다 같이 박수 치는 부분이 있었어,syn367
+f02,dev,search,여자 가수 노래인데 후렴에서 애들이 떼로 따라 부르고 마지막에 종이 울렸던 걸로 기억해,syn374
+f03,dev,search,전화가 울리면서 시작하고 누가 음성 메시지 남기는 소리가 나오는 슬픈 노래,syn381
+f04,dev,search,노래 끝날 때 사람들이 환호하면서 한 곡 더 해 달라고 외치는 게 그대로 들어가 있던 곡,syn388
+f05,dev,search,처음부터 끝까지 비 내리는 소리가 깔려 있던 차분한 여자 노래,syn395
+f06,dev,search,한창 달리다가 갑자기 뚝 끊기고 숫자를 세고 나서 다시 터지는 빠른 곡,syn402
+f07,dev,search,슬픈 발라드 추천해 줘,syn050
+f08,dev,search,여름밤에 드라이브하면서 듣기 좋은 노래,syn052
+f09,dev,search,휘파람 소리가 들어간 밝은 댄스곡,syn361
+f10,dev,search,고향 생각이 나는 따뜻한 노래,syn105
