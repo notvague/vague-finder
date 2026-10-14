@@ -1,0 +1,106 @@
+{
+  "created_at": "2026-10-13T23:30:11+0900",
+  "args": {
+    "command": "answers",
+    "input": "experiments/reranking/eval_queries_v09.csv",
+    "analysis_cache": "experiments/reranking/results_v46_main_after_context/analysis_cache_v09_dev_ctx.json",
+    "scales": "1,0.5,0",
+    "genre_match_scale": null,
+    "candidate_k": 30,
+    "top_k": 10,
+    "output_dir": "experiments/genre_memory_gap/results_v01/answers_v09"
+  },
+  "analysis": {
+    "mode": "cache",
+    "path": "experiments/reranking/results_v46_main_after_context/analysis_cache_v09_dev_ctx.json",
+    "meta": {
+      "created_at": "2026-10-13T11:21:18+0900",
+      "query_source": "experiments/reranking/eval_queries_v09.csv",
+      "split": "dev",
+      "analyzer": {
+        "model_name": "gemini-3.1-flash-lite",
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "reference_year": 2026,
+        "reference_year_env": "2026",
+        "prompt_sha": "80c464515d9c",
+        "postprocess_sha": "203a9248e607"
+      }
+    },
+    "fingerprint_drift": [
+      "postprocess_sha"
+    ]
+  },
+  "corpus": {
+    "vector_backend": "qdrant",
+    "namespace": "dev",
+    "text_index": "vaguefinder-text-1024-koe5",
+    "image_index": "vaguefinder-image-768",
+    "audio_index": "vaguefinder-audio-512",
+    "qdrant_path": "artifacts/qdrant_snapshot_5143_pre45_b",
+    "point_count": 5143
+  },
+  "bm25": {
+    "path": "artifacts/bm25_params.json",
+    "exists": true,
+    "sha256_12": "bf606b19ab02",
+    "bytes": 754642
+  },
+  "lyrics_source": {
+    "db": "vaguefinder",
+    "collection": "songs",
+    "document_count": 5143,
+    "full_lyrics_songs": 5143,
+    "full_lyrics_total_chars": 4076174,
+    "content_sha256_16": "e0d58f28f1f4a563"
+  },
+  "reranker": {
+    "backend": "NoneType",
+    "requested_backend": "gemini_listwise",
+    "class": "NoneType",
+    "enabled": false,
+    "config": {}
+  },
+  "gemini": {
+    "backend": "api_key",
+    "setting": "api_key"
+  },
+  "ranking_switches": {
+    "boost_scale": 1.0,
+    "attr_boost_scale": 1.0,
+    "gender_mismatch_scale": 0.0,
+    "genre_match_scale": 1.0,
+    "genre_answer_scale": 1.0,
+    "audio_fusion_scale": 1.0,
+    "text_sparse_source": "tags",
+    "lyric_protect_phonetic_top1": false,
+    "lyric_protect_min_confidence": 0.8,
+    "lyric_boost_scale": 1.0,
+    "reranker_min_spread": null,
+    "gemini_rerank_corrections": "all",
+    "gemini_rerank_type_slot_label": "artist type (solo/group/duo/band)",
+    "clarify_rerank_input_order": "bonus"
+  },
+  "search_reference_year_env": "2026",
+  "genre_gap": {
+    "tool": "answers",
+    "rerank": false,
+    "genre_answer_scales_applied": [
+      1.0,
+      0.5,
+      0.0
+    ],
+    "genre_match_scale_applied": 1.0,
+    "shown_set": "후보 순서의 앞 top_k곡(리랭커 없음 — 서비스가 보여 주는 10곡과 다를 수 있다)",
+    "perceived_option_map": {
+      "발라드": "발라드",
+      "댄스": "댄스",
+      "힙합": "랩/힙합",
+      "알앤비": "R&B/Soul",
+      "록": "록/메탈",
+      "포크": "포크/블루스",
+      "인디": "인디음악",
+      "트로트": "성인가요/트로트"
+    }
+  }
+}

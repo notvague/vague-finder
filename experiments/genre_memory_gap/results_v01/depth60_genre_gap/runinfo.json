@@ -1,0 +1,120 @@
+{
+  "created_at": "2026-10-13T23:11:43+0900",
+  "args": {
+    "command": "trace",
+    "input": "experiments/genre_memory_gap/queries_dev.csv",
+    "analysis_cache": "experiments/genre_memory_gap/analysis_cache_genre_gap_dev.json",
+    "model_raw": "",
+    "scales": "1,0",
+    "candidate_k": 30,
+    "top_k": 10,
+    "deep_k": 0,
+    "variants": "",
+    "blank_genre": false,
+    "path_k": 60,
+    "output_dir": "experiments/genre_memory_gap/results_v01/depth60_genre_gap"
+  },
+  "analysis": {
+    "mode": "cache",
+    "path": "experiments/genre_memory_gap/analysis_cache_genre_gap_dev.json",
+    "meta": {
+      "created_at": "2026-10-13T21:14:00+0900",
+      "query_source": "experiments/genre_memory_gap/queries_dev.csv",
+      "split": "dev",
+      "analyzer": {
+        "model_name": "gemini-3.1-flash-lite",
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "reference_year": 2026,
+        "reference_year_env": "2026",
+        "prompt_sha": "80c464515d9c",
+        "postprocess_sha": "5b5928672224"
+      }
+    },
+    "fingerprint_drift": [],
+    "model_raw": "원본 미확보",
+    "model_raw_entries": 0
+  },
+  "corpus": {
+    "vector_backend": "qdrant",
+    "namespace": "dev",
+    "text_index": "vaguefinder-text-1024-koe5",
+    "image_index": "vaguefinder-image-768",
+    "audio_index": "vaguefinder-audio-512",
+    "qdrant_path": "artifacts/qdrant_snapshot_5143_pre45_c",
+    "point_count": 5143
+  },
+  "bm25": {
+    "path": "artifacts/bm25_params.json",
+    "exists": true,
+    "sha256_12": "bf606b19ab02",
+    "bytes": 754642
+  },
+  "lyrics_source": {
+    "db": "vaguefinder",
+    "collection": "songs",
+    "document_count": 5143,
+    "full_lyrics_songs": 5143,
+    "full_lyrics_total_chars": 4076174,
+    "content_sha256_16": "e0d58f28f1f4a563"
+  },
+  "reranker": {
+    "backend": "NoneType",
+    "requested_backend": "gemini_listwise",
+    "class": "NoneType",
+    "enabled": false,
+    "config": {}
+  },
+  "gemini": {
+    "backend": "api_key",
+    "setting": "api_key"
+  },
+  "ranking_switches": {
+    "boost_scale": 1.0,
+    "attr_boost_scale": 1.0,
+    "gender_mismatch_scale": 0.0,
+    "genre_match_scale": 1.0,
+    "genre_answer_scale": 1.0,
+    "audio_fusion_scale": 1.0,
+    "text_sparse_source": "tags",
+    "lyric_protect_phonetic_top1": false,
+    "lyric_protect_min_confidence": 0.8,
+    "lyric_boost_scale": 1.0,
+    "reranker_min_spread": null,
+    "gemini_rerank_corrections": "all",
+    "gemini_rerank_type_slot_label": "artist type (solo/group/duo/band)",
+    "clarify_rerank_input_order": "bonus"
+  },
+  "search_reference_year_env": "2026",
+  "genre_gap": {
+    "tool": "trace",
+    "rerank": false,
+    "genre_match_scales_applied": [
+      1.0,
+      0.0
+    ],
+    "scope_of_scale": "search_router._apply_explicit_boosts의 genre_match 한 줄",
+    "held_fixed": [
+      "가사 exact 후보를 묶는 보조 점수 exact_lyric_constraint_score의 장르 +1.0 (보호 그룹 안의 순서)",
+      "보조 경로의 BM25 질의에 들어가는 analysis.genre (_search_performance_clues · _search_title_meaning)",
+      "공연 단서 필터 _build_performance_metadata_filter의 genre=랩/힙합",
+      "텍스트 경로의 dense 질의·korean_tags에 들어 있는 장르 낱말(분석이 만든 검색문)",
+      "곡 passage에 들어 있는 등록 장르 문자열(임베딩·BM25 색인)",
+      "리랭커 프롬프트의 후보 genre 칸과 일반 속성 충돌 지침",
+      "재질문에서 장르 답을 읽는 analysis_with_answers(가사 exact 묶음) · 리랭커에 넘기는 답변"
+    ],
+    "queries": {
+      "registered": 20,
+      "perceived": 15,
+      "genre_omitted": 20,
+      "identity_sound": 20,
+      "contrast": 4,
+      "broad": 8
+    },
+    "targets_missing_from_index": [],
+    "deep_k": 0,
+    "path_k": 60,
+    "blank_genre": false,
+    "elapsed_seconds": 147.8
+  }
+}

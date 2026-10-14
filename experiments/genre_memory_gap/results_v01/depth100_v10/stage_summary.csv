@@ -1,0 +1,61 @@
+query_id,pair_id,group,variant,stated_genre,analysis_genre,raw_genre,analysis_note,raw_artist_type,analysis_artist_type,target_registered_genre,target_genre_match,target_type_match,stage@baseline,pool_rank@baseline,target_paths@baseline,target_paths@0,pool_rank@0,genre_scale_effect,pool_genre_matched@baseline,text_rank,audio_rank,performance_search_rank,fused_rank_deep,boosted_rank_deep@baseline,boosted_rank_deep@0,target_adjustments@baseline
+t001,t001,v10,all,,발라드,원본 미확보,원본 미확보,원본 미확보,,발라드,1,0,경로 밖,,,,,어느 배율에서도 후보 밖,30,,,,,,,
+t003,t003,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,록/메탈,0,0,후보 안,1,text_hybrid:6|lyrics_surface:1|performance:15,text_hybrid:6|lyrics_surface:1|performance:15,1,변화 없음,0,,,,,,,vocal_gender_match:+0.0164|performance_clues:+0.0205
+t004,t004,v10,all,,발라드,원본 미확보,원본 미확보,원본 미확보,솔로,발라드,1,1,후보 안,2,text_hybrid:4|performance:4|metadata:2,text_hybrid:4|performance:4|metadata:2,2,변화 없음,30,,,,,,,vocal_gender_match:+0.0164|release_era:+0.0184|artist_type:+0.0139|performance_clues:+0.0182|genre_match:+0.0164
+t007,t007,v10,all,,댄스,원본 미확보,원본 미확보,원본 미확보,그룹,댄스,1,1,후보 안,1,text_hybrid:3|balanced_semantic:8|performance:3|metadata:8,text_hybrid:3|balanced_semantic:8|performance:3|metadata:8,1,변화 없음,28,,,,,,,vocal_gender_match:+0.0164|artist_type:+0.0115|performance_clues:+0.0125|genre_match:+0.0164
+t008,t008,v10,all,,R&B/Soul,원본 미확보,원본 미확보,원본 미확보,그룹,발라드,0,0,후보 안,10,text_hybrid:1|balanced_semantic:1|performance:6,text_hybrid:1|balanced_semantic:1|performance:6,6,후보 안에서 오름(10→6),17,,,,,,,vocal_gender_match:+0.0164|release_era:+0.0184|performance_clues:+0.0203
+t009,t009,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,발라드,0,0,경로 밖,,,,,어느 배율에서도 후보 밖,0,,,,,,,
+t010,t010,v10,all,,발라드,원본 미확보,원본 미확보,원본 미확보,,댄스,0,0,후보 안,9,text_hybrid:59|title:2|metadata:13,text_hybrid:59|title:2|metadata:13,1,후보 안에서 오름(9→1),27,,,,,,,title_constraints:+0.0115|vocal_gender_match:+0.0164|release_era:+0.0154|performance_clues:+0.0187
+t011,t011,v10,all,,랩/힙합,원본 미확보,원본 미확보,원본 미확보,듀오,랩/힙합,1,1,경로 밖,,,,,어느 배율에서도 후보 밖,23,,,,,,,
+t016,t016,v10,all,,댄스,원본 미확보,원본 미확보,원본 미확보,그룹,댄스,1,1,경로 밖,,,,,어느 배율에서도 후보 밖,23,,,,,,,
+t018,t018,v10,all,,펑크,원본 미확보,원본 미확보,원본 미확보,밴드,"인디음악, 록/메탈",0,1,후보 안,1,text_hybrid:2|lyrics_surface:1|metadata:1,text_hybrid:2|lyrics_surface:1|metadata:1,1,변화 없음,0,,,,,,,release_era:+0.0138|artist_type:+0.0139
+t024,t024,v10,all,,,원본 미확보,원본 미확보,원본 미확보,밴드,록/메탈,0,1,후보 안,5,text_hybrid:29|metadata:5,text_hybrid:29|metadata:5,5,변화 없음,0,,,,,,,artist_type:+0.0139
+t025,t025,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,발라드,0,0,후보 안,1,text_hybrid:1|lyrics_surface:1,text_hybrid:1|lyrics_surface:1,1,변화 없음,0,,,,,,,vocal_gender_match:+0.0164|performance_clues:+0.0221
+t026,t026,v10,all,,랩/힙합,원본 미확보,원본 미확보,원본 미확보,,록/메탈,0,0,보정 뒤 절단,,text_hybrid:10|metadata:1,text_hybrid:10|metadata:1,27,가산을 낮추면 후보에 듦,30,,,,,,,vocal_gender_match:+0.0164|release_era:+0.0154
+t029,t029,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,"인디음악, 포크/블루스",0,0,보정 뒤 절단,,text_hybrid:59,text_hybrid:59,,어느 배율에서도 후보 밖,0,,,,,,,release_era:+0.0082|performance_clues:+0.0073
+t031,t031,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,록/메탈,0,0,경로 밖,,,,,어느 배율에서도 후보 밖,0,,,,,,,
+t032,t032,v10,all,,EDM,원본 미확보,원본 미확보,원본 미확보,,댄스,0,0,후보 안,1,text_hybrid:1|lyrics_surface:1|performance:10,text_hybrid:1|lyrics_surface:1|performance:10,1,변화 없음,0,,,,,,,vocal_gender_match:+0.0164|performance_clues:+0.0173
+t033,t033,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,발라드,0,0,후보 안,2,text_hybrid:17|title:6|performance:2,text_hybrid:17|title:6|performance:2,2,변화 없음,0,,,,,,,title_constraints:+0.0098|vocal_gender_match:+0.0164|performance_clues:+0.0172
+t036,t036,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,"발라드, 국내드라마",0,0,후보 안,17,text_hybrid:15,text_hybrid:15,17,변화 없음,0,,,,,,,vocal_gender_match:+0.0164|performance_clues:+0.0182
+t037,t037,v10,all,,OST,원본 미확보,원본 미확보,원본 미확보,,"발라드, 국내드라마",0,0,후보 안,2,text_hybrid:2|performance:2,text_hybrid:2|performance:2,2,변화 없음,0,,,,,,,vocal_gender_match:+0.0164|performance_clues:+0.0205
+t038,t038,v10,all,,록,원본 미확보,원본 미확보,원본 미확보,,포크/블루스,0,0,경로 밖,,,,,어느 배율에서도 후보 밖,18,,,,,,,
+t039,t039,v10,all,,발라드,원본 미확보,원본 미확보,원본 미확보,,"발라드, 국내영화",1,0,후보 안,7,text_hybrid:15|performance:4,text_hybrid:15|performance:4,7,변화 없음,30,,,,,,,vocal_gender_match:+0.0164|performance_clues:+0.0199|genre_match:+0.0164
+t040,t040,v10,all,,발라드,원본 미확보,원본 미확보,원본 미확보,그룹,"발라드, 국내영화",1,0,경로 밖,,,,,어느 배율에서도 후보 밖,30,,,,,,,
+t041,t041,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,"애니메이션/웹툰, 키즈",0,0,후보 안,24,text_hybrid:22,text_hybrid:22,24,변화 없음,0,,,,,,,
+t042,t042,v10,all,,록발라드,원본 미확보,원본 미확보,원본 미확보,솔로,록/메탈,0,1,경로 밖,,,,,어느 배율에서도 후보 밖,0,,,,,,,
+t043,t043,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,애니메이션/웹툰,0,0,경로 밖,,,,,어느 배율에서도 후보 밖,0,,,,,,,
+t044,t044,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,록/메탈,0,0,후보 안,6,text_hybrid:5,text_hybrid:5,6,변화 없음,0,,,,,,,
+t046,t046,v10,all,,포크,원본 미확보,원본 미확보,원본 미확보,,성인가요/트로트,0,0,후보 안,11,text_hybrid:1|performance:12,text_hybrid:1|performance:12,11,변화 없음,10,,,,,,,vocal_gender_match:+0.0164|performance_clues:+0.0121
+t053,t053,v10,all,,록,원본 미확보,원본 미확보,원본 미확보,밴드,록/메탈,1,1,후보 안,1,text_hybrid:1|audio:95|balanced_semantic:2|metadata:1,text_hybrid:1|audio:95|balanced_semantic:2|metadata:1,1,변화 없음,26,,,,,,,release_era:+0.0184|artist_type:+0.0139|genre_match:+0.0164
+t058,t058,v10,all,,레게,원본 미확보,원본 미확보,원본 미확보,,댄스,0,0,보정 뒤 절단,,text_hybrid:1,text_hybrid:1,,어느 배율에서도 후보 밖,0,,,,,,,vocal_gender_match:+0.0164|performance_clues:+0.0136
+t060,t060,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,댄스,0,0,경로 밖,,,,,어느 배율에서도 후보 밖,0,,,,,,,
+t062,t062,v10,all,,,원본 미확보,원본 미확보,원본 미확보,그룹,댄스,0,1,후보 안,24,text_hybrid:33,text_hybrid:33,24,변화 없음,0,,,,,,,vocal_gender_match:+0.0164|artist_type:+0.0139
+t063,t063,v10,all,,록발라드,원본 미확보,원본 미확보,원본 미확보,,발라드,0,0,후보 안,3,text_hybrid:2|lyrics_surface:92,text_hybrid:2|lyrics_surface:92,3,변화 없음,0,,,,,,,vocal_gender_match:+0.0164|performance_clues:+0.0132
+t068,t068,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,R&B/Soul,0,0,융합 절단,,text_hybrid:96*,text_hybrid:96*,,어느 배율에서도 후보 밖,0,,,,,,,
+t070,t070,v10,all,,댄스,원본 미확보,원본 미확보,원본 미확보,,댄스,1,0,후보 안,8,text_hybrid:38|performance:15,text_hybrid:38|performance:15,9,후보 안에서 내림(8→9),30,,,,,,,vocal_gender_match:+0.0164|performance_clues:+0.0187|genre_match:+0.0164
+t071,t071,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,랩/힙합,0,0,경로 밖,,,,,어느 배율에서도 후보 밖,0,,,,,,,
+t073,t073,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,R&B/Soul,0,0,보정 뒤 절단,,audio:35,audio:35,,어느 배율에서도 후보 밖,0,,,,,,,vocal_gender_match:+0.0164|performance_clues:+0.0136
+t075,t075,v10,all,,발라드,원본 미확보,원본 미확보,원본 미확보,,발라드,1,0,경로 밖,,,,,어느 배율에서도 후보 밖,30,,,,,,,
+t077,t077,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,댄스,0,0,융합 절단,,text_hybrid:82*,text_hybrid:82*,,어느 배율에서도 후보 밖,0,,,,,,,
+t078,t078,v10,all,,록,원본 미확보,원본 미확보,원본 미확보,,록/메탈,1,0,경로 밖,,,,,어느 배율에서도 후보 밖,30,,,,,,,
+t079,t079,v10,all,,발라드,원본 미확보,원본 미확보,원본 미확보,,발라드,1,0,경로 밖,,,,,어느 배율에서도 후보 밖,30,,,,,,,
+t080,t080,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,랩/힙합,0,0,경로 밖,,,,,어느 배율에서도 후보 밖,0,,,,,,,
+t082,t082,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,발라드,0,0,후보 안,4,image:1,image:1,4,변화 없음,0,,,,,,,
+t083,t083,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,"인디음악, 록/메탈",0,0,후보 안,1,text_hybrid:47|image:1,text_hybrid:47|image:1,1,변화 없음,0,,,,,,,
+t084,t084,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,"인디음악, 록/메탈",0,0,후보 안,13,text_hybrid:14,text_hybrid:14,13,변화 없음,0,,,,,,,artist_match:+0.0164|vocal_gender_match:+0.0164
+t085,t085,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,"인디음악, 록/메탈",0,0,후보 안,2,image:1,image:1,2,변화 없음,0,,,,,,,vocal_gender_match:+0.0164
+t086,t086,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,"인디음악, 포크/블루스",0,0,후보 안,1,text_hybrid:2|image:8,text_hybrid:2|image:8,1,변화 없음,0,,,,,,,
+t092,t092,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,댄스,0,0,경로 밖,,,,,어느 배율에서도 후보 밖,0,,,,,,,
+t096,t096,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,랩/힙합,0,0,후보 안,7,image:7,image:7,7,변화 없음,0,,,,,,,
+t097,t097,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,록/메탈,0,0,후보 안,1,image:1,image:1,1,변화 없음,0,,,,,,,
+t098,t098,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,"인디음악, 포크/블루스",0,0,후보 안,4,image:1,image:1,4,변화 없음,0,,,,,,,
+t099,t099,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,댄스,0,0,후보 안,2,image:1,image:1,2,변화 없음,0,,,,,,,
+t100,t100,v10,all,,R&B,원본 미확보,원본 미확보,원본 미확보,,R&B/Soul,1,0,후보 안,13,text_hybrid:47|image:29,text_hybrid:47|image:29,15,후보 안에서 내림(13→15),27,,,,,,,vocal_gender_match:+0.0164|performance_clues:+0.0205|genre_match:+0.0164
+t101,t101,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,포크/블루스,0,0,후보 안,2,text_hybrid:14|image:11,text_hybrid:14|image:11,2,변화 없음,0,,,,,,,vocal_gender_match:+0.0164
+t103,t103,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,록/메탈,0,0,보정 뒤 절단,,image:34,image:34,,어느 배율에서도 후보 밖,0,,,,,,,
+t104,t104,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,포크/블루스,0,0,후보 안,19,image:3,image:3,19,변화 없음,0,,,,,,,vocal_gender_match:+0.0164|performance_clues:+0.0161
+t105,t105,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,발라드,0,0,후보 안,1,text_hybrid:5|image:1|lyrics_surface:1,text_hybrid:5|image:1|lyrics_surface:1,1,변화 없음,0,,,,,,,
+t107,t107,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,"인디음악, 포크/블루스",0,0,후보 안,20,image:1,image:1,20,변화 없음,0,,,,,,,vocal_gender_match:+0.0164|performance_clues:+0.0118
+t108,t108,v10,all,,,원본 미확보,원본 미확보,원본 미확보,밴드,록/메탈,0,1,후보 안,3,image:1,image:1,3,변화 없음,0,,,,,,,vocal_gender_match:+0.0164|artist_type:+0.0139
+t110,t110,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,댄스,0,0,후보 안,1,text_hybrid:3|lyrics_surface:3,text_hybrid:3|lyrics_surface:3,1,변화 없음,0,,,,,,,vocal_gender_match:+0.0164
+t111,t111,v10,all,,,원본 미확보,원본 미확보,원본 미확보,,댄스,0,0,융합 절단,,text_hybrid:84*,text_hybrid:84*,,어느 배율에서도 후보 밖,0,,,,,,,

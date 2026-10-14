@@ -833,6 +833,37 @@ def _attr_boost_scale() -> float:
     return _env_scale("ATTR_BOOST_SCALE", 1.0)
 
 
+def _genre_match_scale() -> float:
+    """최초 질의의 장르 일치 가산(`_apply_explicit_boosts`의 `genre_match`)에만 곱하는 배율. 1.0이 현행, 범위는 0~1.
+
+    **실험용이다(experiments/genre_memory_gap/RUN_INFO.md).** 사용자가 기억하는 장르(체감 스타일·가수의
+    활동 배경)는 멜론 등록 장르와 다를 수 있다. 장르 가산에는 불일치 감점이 없지만, 말한 장르로 등록된
+    다른 곡들이 +1단위씩 받아 등록 장르가 다른 정답이 후보 30 밖으로 밀릴 수 있다. `ATTR_BOOST_SCALE`은
+    성별·시기·형태 가산까지 함께 줄이므로 장르만 떼어 볼 수 없다 — 이 배율은 `genre_match` 한 줄만 바꾼다.
+
+    **바꾸지 않는 것.** 가사 exact 후보를 묶는 보조 점수(`exact_lyric_constraint_score`의 장르 +1.0),
+    보조 경로의 BM25 질의에 들어가는 장르 낱말(`_search_performance_clues` · `_search_title_meaning`),
+    공연 단서 필터(`_build_performance_metadata_filter`의 랩/힙합), 재질문 장르 답변 가산
+    (`_genre_answer_scale`), 리랭커 프롬프트. 그래서 0이어도 "장르의 영향을 모두 없앤" 실행은 아니다.
+
+    0이면 가산하지 않고 **기록도 남기지 않는다**(`GENDER_MISMATCH_SCALE`과 같은 이유 — "장르 일치 (+0.0000)"은
+    순위의 근거가 아니다). 등록 장르가 말한 장르와 같다는 사실은 사용자용 설명이 곡 정보에서 따로 읽는다.
+    1보다 큰 값은 1로 읽는다(가산을 키우는 실험이 아니다). `BOOST_SCALE` · `ATTR_BOOST_SCALE`과 곱으로 함께 작용한다.
+    """
+    return min(1.0, _env_scale("GENRE_MATCH_SCALE", 1.0))
+
+
+def _genre_answer_scale() -> float:
+    """재질문의 **장르 답변** 가산(`clarify.apply_answer_bonus`)에만 곱하는 배율. 1.0이 현행, 범위는 0~1.
+
+    **실험용이며 `GENRE_MATCH_SCALE`과 다른 요인이다** — 그쪽은 최초 질의의 장르 낱말이 만든 가산이고, 이쪽은
+    사용자가 재질문 선택지에서 고른 장르가 만든 가산(답변 배수 ×3)이다. 따로 바꿔 가며 잰다.
+    성별 답변 가산, 답의 일치 판정(`answer_matches`), 거절 곡 제외, 리랭커에 넘기는 답변, 가사 exact
+    묶음이 답을 읽는 방식(`analysis_with_answers`)은 바꾸지 않는다. 0이면 장르 답변의 가산과 기록이 없다.
+    """
+    return min(1.0, _env_scale("GENRE_ANSWER_SCALE", 1.0))
+
+
 def _audio_fusion_scale() -> float:
     """소리 경로(CLAP)의 융합 가중에 곱하는 배율. 1.0이 현행, 0이면 소리 경로를 돌리지 않는다.
 
@@ -1971,6 +2002,7 @@ class SearchRouter:
                 apply_answer_bonus(
                     base, meta_cache, answers, 1.0 / (_RRF_K + 1),
                     multiplier=answer_multiplier, recorder=recorder,
+                    genre_scale=_genre_answer_scale(),
                 )
                 if answers else base
             )
@@ -1996,6 +2028,7 @@ class SearchRouter:
                     boosted, meta_cache, answers, 1.0 / (_RRF_K + 1),
                     multiplier=answer_multiplier,
                     recorder=recorder,
+                    genre_scale=_genre_answer_scale(),
                 )
 
         # Context 사실은 **최종 후보에 남은 곡**의 것만 내보낸다. 피드백 보충이 끝자리를 바꾼 뒤에 채워야
@@ -2463,6 +2496,7 @@ class SearchRouter:
         # 일반 속성 가산 전용 단위. 제목·아티스트·가사 가산은 boost_unit을 그대로 쓴다.
         attr_unit = boost_unit * _attr_boost_scale()
         gender_mismatch_scale = _gender_mismatch_scale()
+        genre_match_scale = _genre_match_scale()
         want_title = _norm(analysis.song_title)
         want_artist = _norm(analysis.artist_name)
         want_gender = analysis.vocal_gender
@@ -2672,12 +2706,14 @@ class SearchRouter:
 
                 # genre는 멜론 세분류와 사용자 체감이 자주 어긋나므로
                 # 페널티 없이 일치 시 약한 보너스만 적용
+                # 배율 0이면 가산도 기록도 없다(`_genre_match_scale`). 1.0이면 `attr_unit * 1` 그대로다.
                 if (
                     want_genre
                     and track.genre
                     and want_genre in _norm(track.genre)
+                    and genre_match_scale > 0.0
                 ):
-                    bump("genre_match", attr_unit * 1, slot="genre", value=analysis.genre)
+                    bump("genre_match", attr_unit * 1 * genre_match_scale, slot="genre", value=analysis.genre)
 
             boosted.append((song_id, score))
 

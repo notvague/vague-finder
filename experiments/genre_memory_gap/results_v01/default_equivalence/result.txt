@@ -1,0 +1,4 @@
+v06: 같음 (228회 검색, sha256 e2fd9b9b9eac)
+v09: 같음 (236회 검색, sha256 82e14a30eb76)
+v10: 같음 (240회 검색, sha256 da6d0263b281)
+기반 354b9cc · 브랜치 354b9cc+작업 트리 · 색인 qdrant_snapshot_5143_pre45_c

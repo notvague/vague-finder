@@ -1,0 +1,544 @@
+{
+  "version": "genre_gap_v01",
+  "created": "2026-10-13",
+  "split": "dev",
+  "review_status": "author_draft",
+  "notes": [
+    "등록 장르와 사용자가 기억하는 장르·가수 정체성의 간격을 재려는 비교 질의다. 실제 사용자 로그가 아니다.",
+    "곡을 고른 뒤 검색을 한 번도 돌리지 않은 상태에서 질의를 확정했다(2026-10-13, 브랜치 exp/genre-memory-gap, 기반 354b9cc). 순위를 본 뒤 질의를 빼거나 고치지 않는다.",
+    "작성자는 곡의 metadata 원본 필드(title·artist·release_date·genre·type·vocal_gender)만 조회했다. semantic_analysis·lyrics_data·community_feedback·comments·album_summary는 보지 않았다. 나머지 단서는 작성자가 아는 공개 사실이다. g01(Counting Star)의 소리 단서만 계획서 §2가 요약해 준 앨범 소개(피아노·일렉기타·부드럽고 청량한 무드)에서 왔다.",
+    "체감 장르(perceived_term)는 작성자의 판단이다. 모든 청자가 그렇게 기억한다는 뜻이 아니다.",
+    "registered · perceived 쌍은 같은 템플릿에서 장르 낱말 하나만 바꾼다. identity_sound · contrast 변형은 여러 단서가 함께 바뀌므로 탐색용으로 따로 집계하고 장르 하나의 효과로 읽지 않는다.",
+    "genre_omitted 변형(…o)은 첫 후보 단계 추적(results_v01/trace_genre_gap)을 본 뒤 2026-10-13에 더한 대조군이다. 20곡 전부에 같은 규칙(템플릿에서 장르 낱말만 뺀 문장)으로 기계적으로 만들었고, 곡이나 문장을 고르지 않았다. 장르 낱말이 틀린 것과 장르 낱말이 없는 것을 같은 문장에서 견주려는 것이다. 먼저 만든 59건의 문장과 분석은 그대로다.",
+    "broad 질의는 맞는 곡이 여럿이라 정답 ID가 없다. 단일 정답 지표(Hit@10·MRR)에 넣지 않고 조건 적합성·후보 다양성으로만 본다.",
+    "사람 검토 전 초안이다(review_status=author_draft)."
+  ],
+  "songs": [
+    {
+      "pair_id": "g01",
+      "song_id": "37674087",
+      "group": "gap",
+      "title": "Counting Star",
+      "artist": "RESCENE (리센느)",
+      "registered": {
+        "genre": "R&B/Soul",
+        "type": "그룹",
+        "vocal_gender": "여성",
+        "release_date": "2024.06.26"
+      },
+      "template": "2024년 여름쯤 나온 신인 여자 그룹의 {genre} 노래인데 피아노랑 일렉기타 소리가 부드럽고 청량했어",
+      "registered_term": "알앤비",
+      "perceived_term": "발라드",
+      "identity_sound": "2024년 여름쯤 나온 신인 여자 아이돌 노래인데 피아노랑 일렉기타 소리가 부드럽고 잔잔했어",
+      "contrast": [
+        {
+          "suffix": "k",
+          "label": "그룹→아이돌(체감 장르 문장)",
+          "query": "2024년 여름쯤 나온 신인 여자 아이돌의 발라드 노래인데 피아노랑 일렉기타 소리가 부드럽고 청량했어",
+          "stated_genre": "발라드"
+        }
+      ],
+      "basis": "metadata.genre·type·vocal_gender·release_date / 소리 단서는 계획서 §2의 앨범 소개 요약 / 2024년 데뷔(작성자 지식)",
+      "self_check": "단서가 적어 넓다. '아이돌'은 구조화 필드로 확인되지 않는다"
+    },
+    {
+      "pair_id": "g02",
+      "song_id": "30244931",
+      "group": "gap",
+      "title": "봄날",
+      "artist": "방탄소년단",
+      "registered": {
+        "genre": "랩/힙합",
+        "type": "그룹",
+        "vocal_gender": "남성",
+        "release_date": "2017.02.13"
+      },
+      "template": "2017년쯤 나온 남자 그룹의 {genre} 노래인데 멀어진 친구를 그리워하면서 추운 겨울이 끝나길 기다리는 내용이었어",
+      "registered_term": "힙합",
+      "perceived_term": "발라드",
+      "identity_sound": "2017년쯤 나온 남자 아이돌 노래인데 잔잔하게 시작하고 멀어진 친구를 그리워하면서 추운 겨울이 끝나길 기다리는 내용이었어",
+      "basis": "metadata.genre·type·vocal_gender·release_date / 가사 내용(작성자 지식)",
+      "self_check": "제목 낱말(봄)을 피하려고 '겨울이 끝나길'로 썼다"
+    },
+    {
+      "pair_id": "g03",
+      "song_id": "34819473",
+      "group": "gap",
+      "title": "사건의 지평선",
+      "artist": "윤하 (YOUNHA)",
+      "registered": {
+        "genre": "록/메탈",
+        "type": "솔로",
+        "vocal_gender": "여성",
+        "release_date": "2022.03.30"
+      },
+      "template": "2022년에 역주행해서 유명해진 여자 솔로 가수의 {genre} 노래인데 이별을 우주에 빗대서 담담하게 보내주는 내용이었어",
+      "registered_term": "록",
+      "perceived_term": "발라드",
+      "identity_sound": "2022년에 역주행해서 유명해진 밴드 사운드의 여자 솔로곡인데 이별을 우주에 빗대서 담담하게 보내주는 내용이었어",
+      "basis": "metadata.genre·type·vocal_gender·release_date / 2022년 하반기 역주행·가사 내용(작성자 지식)",
+      "self_check": "identity_sound가 '밴드 사운드의 솔로곡' 대조 사례다 — 가수 형태는 솔로다"
+    },
+    {
+      "pair_id": "g04",
+      "song_id": "30232719",
+      "group": "gap",
+      "title": "예뻤어",
+      "artist": "DAY6 (데이식스)",
+      "registered": {
+        "genre": "록/메탈",
+        "type": "밴드",
+        "vocal_gender": "남성",
+        "release_date": "2017.02.06"
+      },
+      "template": "남자 밴드가 부른 {genre} 노래인데 헤어진 연인이 자기를 바라봐 주던 순간들을 떠올리는 슬픈 내용이었고 몇 년 뒤에 역주행했어",
+      "registered_term": "록",
+      "perceived_term": "발라드",
+      "identity_sound": "아이돌 밴드가 부른 노래인데 헤어진 연인이 자기를 바라봐 주던 순간들을 떠올리는 슬픈 내용이었고 몇 년 뒤에 역주행했어",
+      "basis": "metadata.genre·type·vocal_gender / 가사 내용·역주행(작성자 지식)",
+      "self_check": "발매 연도를 넣지 않았다(역주행으로 기억하는 사용자를 가정)"
+    },
+    {
+      "pair_id": "g05",
+      "song_id": "3853978",
+      "group": "gap",
+      "title": "강남스타일",
+      "artist": "싸이 (PSY)",
+      "registered": {
+        "genre": "랩/힙합",
+        "type": "솔로",
+        "vocal_gender": "남성",
+        "release_date": "2012.07.15"
+      },
+      "template": "2012년에 말 타는 춤으로 전 세계에서 유행한 남자 솔로 가수의 {genre} 노래",
+      "registered_term": "힙합",
+      "perceived_term": "댄스",
+      "identity_sound": "2012년에 말 타는 춤으로 전 세계에서 유행한 남자 솔로 가수의 신나는 전자음 노래",
+      "basis": "metadata.genre·type·vocal_gender·release_date / 말춤·세계적 유행(작성자 지식)",
+      "self_check": "제목 낱말(강남)을 넣지 않았다"
+    },
+    {
+      "pair_id": "g06",
+      "song_id": "34754292",
+      "group": "gap",
+      "title": "TOMBOY",
+      "artist": "i-dle (아이들)",
+      "registered": {
+        "genre": "록/메탈",
+        "type": "그룹",
+        "vocal_gender": "여성",
+        "release_date": "2022.03.14"
+      },
+      "template": "2022년 봄에 나온 여자 그룹의 {genre} 노래인데 누구의 인형도 되지 않겠다는 당당한 가사였고 중간에 삐 소리로 가린 부분이 있었어",
+      "registered_term": "록",
+      "perceived_term": "댄스",
+      "identity_sound": "2022년 봄에 나온 여자 아이돌 노래인데 거친 기타 소리에 누구의 인형도 되지 않겠다는 당당한 가사였고 중간에 삐 소리로 가린 부분이 있었어",
+      "basis": "metadata.genre·type·vocal_gender·release_date / 가사 내용·비프음 처리(작성자 지식)",
+      "self_check": "같은 제목의 다른 곡(혁오 TOMBOY, g20)이 코퍼스에 있다. 질의에는 제목이 없다"
+    },
+    {
+      "pair_id": "g07",
+      "song_id": "4671151",
+      "group": "gap",
+      "title": "눈, 코, 입",
+      "artist": "태양",
+      "registered": {
+        "genre": "R&B/Soul",
+        "type": "솔로",
+        "vocal_gender": "남성",
+        "release_date": "2014.06.03"
+      },
+      "template": "2014년쯤 나온 남자 솔로 가수의 {genre} 노래인데 헤어진 연인의 얼굴과 손길을 하나하나 떠올리며 못 잊는 내용이었고 피아노 반주로 시작했어",
+      "registered_term": "알앤비",
+      "perceived_term": "발라드",
+      "identity_sound": "2014년쯤 아이돌 그룹 멤버가 솔로로 낸 노래인데 헤어진 연인의 얼굴과 손길을 하나하나 떠올리며 못 잊는 내용이었고 피아노 반주로 시작했어",
+      "basis": "metadata.genre·type·vocal_gender·release_date / 가사 내용·피아노 도입(작성자 지식)",
+      "self_check": "제목 낱말(눈·코·입)을 '얼굴'로 바꿔 썼다"
+    },
+    {
+      "pair_id": "g08",
+      "song_id": "30461396",
+      "group": "gap",
+      "title": "무제(無題) (Untitled, 2014)",
+      "artist": "G-DRAGON",
+      "registered": {
+        "genre": "R&B/Soul",
+        "type": "솔로",
+        "vocal_gender": "남성",
+        "release_date": "2017.06.08"
+      },
+      "template": "2017년쯤 나온 남자 솔로 가수의 {genre} 노래인데 피아노 한 대 반주에 헤어진 사람을 한 번만 다시 보고 싶다고 하는 내용이었어",
+      "registered_term": "알앤비",
+      "perceived_term": "발라드",
+      "identity_sound": "2017년쯤 래퍼로 유명한 남자 가수가 랩 없이 부른 노래인데 피아노 한 대 반주에 헤어진 사람을 한 번만 다시 보고 싶다고 하는 내용이었어",
+      "basis": "metadata.genre·type·vocal_gender·release_date / 피아노 반주·가사 내용(작성자 지식)",
+      "self_check": "g07과 단서 구조가 비슷하다(남자 솔로·피아노·이별)"
+    },
+    {
+      "pair_id": "g09",
+      "song_id": "5760115",
+      "group": "gap",
+      "title": "IF YOU",
+      "artist": "BIGBANG (빅뱅)",
+      "registered": {
+        "genre": "포크/블루스",
+        "type": "그룹",
+        "vocal_gender": "남성",
+        "release_date": "2015.07.01"
+      },
+      "template": "2015년 여름쯤 남자 그룹이 낸 {genre} 노래인데 떠나가는 사람을 붙잡지 못하는 아주 느리고 슬픈 곡이었어",
+      "registered_term": "포크",
+      "perceived_term": "발라드",
+      "identity_sound": "2015년 여름쯤 남자 아이돌 그룹이 낸 노래인데 랩 없이 통기타 반주에 떠나가는 사람을 붙잡지 못하는 아주 느리고 슬픈 곡이었어",
+      "basis": "metadata.genre·type·vocal_gender·release_date / 가사 내용·랩 없는 구성·기타 반주(작성자 지식)",
+      "self_check": "같은 제목의 다른 곡(에일리 If You)이 코퍼스에 있다. 질의에는 제목이 없다"
+    },
+    {
+      "pair_id": "g10",
+      "song_id": "32183386",
+      "group": "gap",
+      "title": "Blueming",
+      "artist": "아이유",
+      "registered": {
+        "genre": "록/메탈",
+        "type": "솔로",
+        "vocal_gender": "여성",
+        "release_date": "2019.11.18"
+      },
+      "template": "2019년쯤 나온 여자 솔로 가수의 {genre} 노래인데 좋아하는 사람과 메신저로 대화를 주고받는 설렘을 꽃이 피는 것에 빗댄 밝은 곡이었어",
+      "registered_term": "록",
+      "perceived_term": "댄스",
+      "identity_sound": "2019년쯤 나온 여자 솔로 가수 노래인데 경쾌한 밴드 사운드에 좋아하는 사람과 메신저로 대화를 주고받는 설렘을 꽃이 피는 것에 빗댄 밝은 곡이었어",
+      "basis": "metadata.genre·type·vocal_gender·release_date / 가사 내용(작성자 지식)",
+      "self_check": "identity_sound에 '밴드 사운드'가 있다 — 가수 형태는 솔로다"
+    },
+    {
+      "pair_id": "g11",
+      "song_id": "3753304",
+      "group": "gap",
+      "title": "벚꽃 엔딩",
+      "artist": "버스커 버스커",
+      "registered": {
+        "genre": "록/메탈",
+        "type": "밴드",
+        "vocal_gender": "남성",
+        "release_date": "2012.03.29"
+      },
+      "template": "매년 봄만 되면 차트에 다시 올라오는 남자 밴드의 {genre} 노래인데 꽃잎이 흩날리는 거리를 둘이 걷자는 내용이야",
+      "registered_term": "록",
+      "perceived_term": "포크",
+      "identity_sound": "오디션 프로그램에 나왔던 인디 느낌의 밴드가 통기타 치면서 부른 노래인데 매년 봄만 되면 차트에 다시 올라오고 꽃잎이 흩날리는 거리를 둘이 걷자는 내용이야",
+      "basis": "metadata.genre·type·vocal_gender / 봄철 차트 재진입·가사 내용·오디션 출신(작성자 지식)",
+      "self_check": "제목 낱말(벚꽃)을 '꽃잎'으로 바꿔 썼다. 발매 연도 없음"
+    },
+    {
+      "pair_id": "g12",
+      "song_id": "34061322",
+      "group": "gap",
+      "title": "사랑은 늘 도망가",
+      "artist": "임영웅",
+      "registered": {
+        "genre": "발라드, 국내드라마",
+        "type": "솔로",
+        "vocal_gender": "남성",
+        "release_date": "2021.10.11"
+      },
+      "template": "2021년쯤 주말 드라마 OST로 나온 남자 가수의 {genre} 노래인데 지나간 사랑을 쓸쓸하게 돌아보는 내용이고 예전 노래를 다시 부른 곡이었어",
+      "registered_term": "발라드",
+      "perceived_term": "트로트",
+      "identity_sound": "트로트 경연 프로그램에서 우승한 남자 가수가 2021년쯤 부른 주말 드라마 OST인데 지나간 사랑을 쓸쓸하게 돌아보는 내용이고 예전 노래를 다시 부른 곡이었어",
+      "other_versions": [
+        "2983548",
+        "8252569"
+      ],
+      "basis": "metadata.genre·type·vocal_gender·release_date / 드라마 OST·리메이크·가수 이력(작성자 지식)",
+      "self_check": "같은 곡의 다른 판 2곡(이문세 원곡 2983548, 로이킴 8252569)이 코퍼스에 있다 — 정답은 2021년 판 하나로 두고 다른 판이 보이면 결과에 따로 적는다. 체감 장르 '트로트'는 곡이 아니라 가수 정체성에서 온 표현이다"
+    },
+    {
+      "pair_id": "g13",
+      "song_id": "5826465",
+      "group": "gap",
+      "title": "멋진헛간",
+      "artist": "오대천왕 (정형돈, 밴드 혁오)",
+      "registered": {
+        "genre": "록/메탈",
+        "type": "밴드, 그룹",
+        "vocal_gender": "남성",
+        "release_date": "2015.08.22"
+      },
+      "template": "2015년 무한도전 가요제에서 개그맨이랑 밴드가 같이 부른 {genre} 노래인데 컨트리풍으로 신나는 곡이었어",
+      "registered_term": "록",
+      "perceived_term": "인디",
+      "identity_sound": "2015년 무한도전 가요제에서 개그맨이랑 인디 밴드가 같이 부른 노래인데 컨트리풍으로 신나는 곡이었어",
+      "contrast": [
+        {
+          "suffix": "k",
+          "label": "인디 밴드가 부른 → 인디 느낌",
+          "query": "2015년 무한도전 가요제에서 개그맨이랑 밴드가 같이 부른 인디 느낌의 노래인데 컨트리풍으로 신나는 곡이었어",
+          "stated_genre": ""
+        }
+      ],
+      "basis": "metadata.genre·type·vocal_gender·release_date / 방송 가요제 출품곡·곡 분위기(작성자 지식)",
+      "self_check": "참여 밴드의 인디 정체성과 곡의 등록 장르(록/메탈)가 다른 협업곡. 방송 이름이 강한 단서다"
+    },
+    {
+      "pair_id": "g14",
+      "song_id": "32313543",
+      "group": "gap",
+      "title": "아무노래",
+      "artist": "지코 (ZICO)",
+      "registered": {
+        "genre": "랩/힙합",
+        "type": "솔로",
+        "vocal_gender": "남성",
+        "release_date": "2020.01.13"
+      },
+      "template": "2020년 초에 춤 따라 하는 챌린지가 크게 유행한 남자 솔로 가수의 {genre} 노래인데 분위기가 처지니까 뭐라도 신나는 걸 틀어 달라는 내용이었어",
+      "registered_term": "힙합",
+      "perceived_term": "댄스",
+      "identity_sound": "2020년 초에 춤 따라 하는 챌린지가 크게 유행한 래퍼의 노래인데 분위기가 처지니까 뭐라도 신나는 걸 틀어 달라는 내용이었어",
+      "basis": "metadata.genre·type·vocal_gender·release_date / 챌린지 유행·가사 내용(작성자 지식)",
+      "self_check": "제목(아무노래)을 '뭐라도 신나는 걸'로 바꿔 썼다"
+    },
+    {
+      "pair_id": "g15",
+      "song_id": "30069774",
+      "group": "gap",
+      "title": "STAY",
+      "artist": "BLACKPINK",
+      "registered": {
+        "genre": "포크/블루스",
+        "type": "그룹",
+        "vocal_gender": "여성",
+        "release_date": "2016.11.01"
+      },
+      "template": "2016년쯤 여자 그룹이 낸 {genre} 노래인데 통기타 반주에 상처를 줘도 좋으니 떠나지만 말아 달라고 하는 느린 곡이었어",
+      "registered_term": "포크",
+      "perceived_term": "발라드",
+      "identity_sound": "2016년쯤 여자 아이돌 그룹이 낸 노래인데 평소의 강한 곡들과 다르게 통기타 반주에 상처를 줘도 좋으니 떠나지만 말아 달라고 하는 느린 곡이었어",
+      "contrast": [
+        {
+          "suffix": "k",
+          "label": "그룹→아이돌(체감 장르 문장)",
+          "query": "2016년쯤 여자 아이돌이 낸 발라드 노래인데 통기타 반주에 상처를 줘도 좋으니 떠나지만 말아 달라고 하는 느린 곡이었어",
+          "stated_genre": "발라드"
+        }
+      ],
+      "basis": "metadata.genre·type·vocal_gender·release_date / 기타 반주·가사 내용(작성자 지식)",
+      "self_check": "같은 제목의 다른 곡 5곡이 코퍼스에 있다. 질의에는 제목이 없다"
+    },
+    {
+      "pair_id": "g16",
+      "song_id": "1467722",
+      "group": "control",
+      "title": "거리에서",
+      "artist": "성시경",
+      "registered": {
+        "genre": "발라드",
+        "type": "솔로",
+        "vocal_gender": "남성",
+        "release_date": "2006.10.10"
+      },
+      "template": "2006년쯤 나온 남자 솔로 가수의 {genre} 노래인데 헤어진 뒤에 같이 걷던 길을 혼자 걸으며 그 사람을 떠올리는 내용이었어",
+      "registered_term": "발라드",
+      "perceived_term": "",
+      "identity_sound": "2006년쯤 나온 부드러운 목소리의 남자 솔로 가수 노래인데 잔잔한 피아노 반주에 헤어진 뒤에 같이 걷던 길을 혼자 걸으며 그 사람을 떠올리는 내용이었어",
+      "basis": "metadata.genre·type·vocal_gender·release_date / 가사 내용(작성자 지식)",
+      "self_check": "등록 장르와 체감이 같은 대조군"
+    },
+    {
+      "pair_id": "g17",
+      "song_id": "33487342",
+      "group": "control",
+      "title": "Next Level",
+      "artist": "aespa",
+      "registered": {
+        "genre": "댄스",
+        "type": "그룹",
+        "vocal_gender": "여성",
+        "release_date": "2021.05.17"
+      },
+      "template": "2021년에 나온 여자 그룹의 {genre} 노래인데 가상 세계 세계관 가사에 중간에 분위기가 확 바뀌는 구성이었고 팔을 디귿 자로 꺾는 춤이 유행했어",
+      "registered_term": "댄스",
+      "perceived_term": "",
+      "identity_sound": "2021년에 나온 여자 아이돌 노래인데 묵직한 베이스에 가상 세계 세계관 가사였고 중간에 분위기가 확 바뀌는 구성에 팔을 디귿 자로 꺾는 춤이 유행했어",
+      "basis": "metadata.genre·type·vocal_gender·release_date / 세계관 가사·곡 구성·안무(작성자 지식)",
+      "self_check": "등록 장르와 체감이 같은 대조군"
+    },
+    {
+      "pair_id": "g18",
+      "song_id": "1850253",
+      "group": "control",
+      "title": "우산 (Feat. 윤하)",
+      "artist": "에픽하이 (EPIK HIGH)",
+      "registered": {
+        "genre": "랩/힙합",
+        "type": "그룹",
+        "vocal_gender": "혼성",
+        "release_date": "2008.04.17"
+      },
+      "template": "2008년쯤 나온 {genre} 노래인데 비 오는 날 헤어진 사람을 떠올리는 내용이고 남자들이 랩을 하고 여자 가수가 후렴을 불렀어",
+      "registered_term": "힙합",
+      "perceived_term": "",
+      "identity_sound": "2008년쯤 나온 노래인데 잔잔한 피아노 선율에 비 오는 날 헤어진 사람을 떠올리는 내용이고 남자들이 랩을 하고 여자 가수가 후렴을 불렀어",
+      "other_versions": [
+        "4711065"
+      ],
+      "basis": "metadata.genre·type·vocal_gender·release_date / 가사 내용·구성(작성자 지식)",
+      "self_check": "등록 장르와 체감이 같은 대조군. 피처링 가수의 솔로 판(4711065, 2014)이 코퍼스에 있다 — 질의는 랩이 있는 2008년 판을 가리킨다"
+    },
+    {
+      "pair_id": "g19",
+      "song_id": "5385974",
+      "group": "control",
+      "title": "위잉위잉",
+      "artist": "혁오 (HYUKOH)",
+      "registered": {
+        "genre": "인디음악, 록/메탈",
+        "type": "밴드",
+        "vocal_gender": "남성",
+        "release_date": "2014.09.18"
+      },
+      "template": "남자 밴드가 부른 {genre} 노래인데 다들 바쁘게 사는데 혼자 하루살이처럼 무기력하게 지내는 청춘의 자조적인 내용이었어",
+      "registered_term": "인디",
+      "perceived_term": "",
+      "identity_sound": "인디 밴드가 부른 노래인데 나른한 기타 리프에 다들 바쁘게 사는데 혼자 하루살이처럼 무기력하게 지내는 청춘의 자조적인 내용이었어",
+      "contrast": [
+        {
+          "suffix": "k",
+          "label": "인디 밴드가 부른 → 인디 느낌",
+          "query": "인디 느낌의 남자 밴드 노래인데 다들 바쁘게 사는데 혼자 하루살이처럼 무기력하게 지내는 청춘의 자조적인 내용이었어",
+          "stated_genre": ""
+        }
+      ],
+      "basis": "metadata.genre·type·vocal_gender / 가사 내용(작성자 지식)",
+      "self_check": "등록 장르(인디음악)와 가수 형태(밴드)가 '인디 밴드' 두 단서에 각각 맞는 대조군. 발매 연도 없음"
+    },
+    {
+      "pair_id": "g20",
+      "song_id": "30383949",
+      "group": "control",
+      "title": "TOMBOY",
+      "artist": "혁오 (HYUKOH)",
+      "registered": {
+        "genre": "인디음악, 록/메탈",
+        "type": "밴드",
+        "vocal_gender": "남성",
+        "release_date": "2017.04.24"
+      },
+      "template": "2017년쯤 남자 밴드가 낸 {genre} 노래인데 어른이 되어 가는 불안한 청춘을 느리고 담담하게 노래했고 젊은 우리 나이테는 잘 보이지 않는다는 가사가 있었어",
+      "registered_term": "인디",
+      "perceived_term": "",
+      "identity_sound": "2017년쯤 인디 밴드가 낸 노래인데 어른이 되어 가는 불안한 청춘을 느리고 담담하게 노래했고 젊은 우리 나이테는 잘 보이지 않는다는 가사가 있었어",
+      "basis": "metadata.genre·type·vocal_gender·release_date / 가사 구절(작성자 기억)",
+      "self_check": "가사 구절이 든 유일한 사례 — 가사 경로가 걸리면 장르 가산의 영향이 가려진다(가사 exact 보조 점수는 이번 실험에서 고정). 같은 제목의 다른 곡(g06)이 있다"
+    }
+  ],
+  "broad": [
+    {
+      "query_id": "gb01",
+      "query": "여자 아이돌의 잔잔한 발라드",
+      "stated_genre": "발라드",
+      "conditions": {
+        "vocal_gender": "여성",
+        "type_any": [
+          "그룹"
+        ]
+      },
+      "unverifiable": [
+        "아이돌",
+        "잔잔한"
+      ],
+      "note": "계획서가 든 표현. '아이돌'을 '그룹'으로 바꿔 판정하지 않는다 — 형태 조건은 참고용이다(솔로 아이돌도 맞을 수 있다)"
+    },
+    {
+      "query_id": "gb02",
+      "query": "여자 그룹의 잔잔한 발라드",
+      "stated_genre": "발라드",
+      "conditions": {
+        "vocal_gender": "여성",
+        "type_any": [
+          "그룹"
+        ]
+      },
+      "unverifiable": [
+        "잔잔한"
+      ],
+      "note": "gb01과 '아이돌/그룹'만 다르다"
+    },
+    {
+      "query_id": "gb03",
+      "query": "인디 밴드가 부른 잔잔한 노래",
+      "stated_genre": "인디",
+      "conditions": {
+        "type_any": [
+          "밴드"
+        ]
+      },
+      "unverifiable": [
+        "인디(가수 배경)",
+        "잔잔한"
+      ],
+      "note": "'인디'가 가수 정체성으로 쓰였다"
+    },
+    {
+      "query_id": "gb04",
+      "query": "인디 느낌의 잔잔한 노래",
+      "stated_genre": "인디",
+      "conditions": {},
+      "unverifiable": [
+        "인디 느낌",
+        "잔잔한"
+      ],
+      "note": "'인디'가 곡의 인상으로 쓰였다. 형태 조건 없음"
+    },
+    {
+      "query_id": "gb05",
+      "query": "밴드 사운드의 여자 솔로곡",
+      "stated_genre": "",
+      "conditions": {
+        "vocal_gender": "여성",
+        "type_any": [
+          "솔로"
+        ]
+      },
+      "unverifiable": [
+        "밴드 사운드"
+      ],
+      "note": "'밴드'가 가수 형태가 아니라 소리다 — 가수 형태 가산이 밴드로 걸리면 안 된다"
+    },
+    {
+      "query_id": "gb06",
+      "query": "남자 아이돌이 부른 발라드",
+      "stated_genre": "발라드",
+      "conditions": {
+        "vocal_gender": "남성"
+      },
+      "unverifiable": [
+        "아이돌"
+      ],
+      "note": "형태 조건을 두지 않았다(솔로·그룹 모두 가능)"
+    },
+    {
+      "query_id": "gb07",
+      "query": "트로트 가수가 부른 발라드",
+      "stated_genre": "발라드",
+      "conditions": {},
+      "unverifiable": [
+        "트로트 가수(가수 배경)"
+      ],
+      "note": "장르 낱말이 둘이다 — 하나는 가수 정체성, 하나는 곡"
+    },
+    {
+      "query_id": "gb08",
+      "query": "피아노 반주의 잔잔한 알앤비",
+      "stated_genre": "알앤비",
+      "conditions": {},
+      "unverifiable": [
+        "피아노 반주",
+        "잔잔한"
+      ],
+      "note": "등록 장르 표현 + 소리 단서"
+    }
+  ]
+}

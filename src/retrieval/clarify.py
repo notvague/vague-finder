@@ -416,6 +416,7 @@ def apply_answer_bonus(
     boost_unit: float,
     multiplier: Optional[float] = None,
     recorder=None,
+    genre_scale: float = 1.0,
 ) -> list:
     """답변을 **후보 풀 내부 재정렬**로만 반영한다. 재검색하지 않는다.
 
@@ -434,6 +435,12 @@ def apply_answer_bonus(
 
     multiplier는 보정용이다. 기본값(모듈 상수)이 운영 값이고, 하네스가
     `--answer-multiplier`로 바꿔 가며 재서 고른다.
+
+    genre_scale은 **장르 답변의 가산에만** 곱하는 실험 배율이다(라우터가 `GENRE_ANSWER_SCALE`을 읽어
+    넘긴다, 기본 1.0 = 현행). 재질문은 "어떤 장르에 가까웠나요?"라고 묻지만 일치는 등록 장르로 판정하므로,
+    체감 장르로 답한 사용자의 정답은 가산을 못 받고 등록 장르가 그 답인 다른 곡이 올라간다. 성별 등 다른
+    슬롯의 가산과 `answer_matches`의 판정은 바꾸지 않는다 — 0이어도 "답과 맞는 곡"이라는 사실은 그대로고
+    가산과 그 기록만 없다(0점 가산을 "재질문 답변과 일치"로 설명하지 않는다).
     """
     if not answers:
         return list(scored)
@@ -445,13 +452,18 @@ def apply_answer_bonus(
         if track is not None:
             for answer in answers:
                 if answer_matches(track, answer):
-                    score += boost_unit * weight
+                    delta = boost_unit * weight
+                    if answer.slot == "genre":
+                        if genre_scale <= 0.0:
+                            continue
+                        delta = delta * genre_scale
+                    score += delta
                     # 기록만 남긴다 — 점수 계산은 위 한 줄이 전부다.
                     if recorder is not None:
                         recorder.adjust(
                             song_id,
                             "answer_match",
-                            boost_unit * weight,
+                            delta,
                             f"{answer.slot}={answer.value}",
                             slot=answer.slot,
                             value=answer.value,
