@@ -429,8 +429,9 @@ _ALBUM_EDITION_SUFFIX = re.compile(
 # with its artist (``bomb(ILLIT)``).
 _ALBUM_PAGE_QUALIFIERS = {"음반", "앨범", "정규", "미니", "싱글", "ep"}
 _TRACKLIST_HEADINGS = {"수록곡", "수록곡상세", "트랙리스트", "트랙목록", "곡목록"}
+# Whole Latin words only: ``(Forever)`` and ``(Alive)`` are glosses, not versions.
 _TRACK_VERSION_SUFFIX = re.compile(
-    r"inst|ver\b|ver\.|version|remix|mix\b|acoustic|live|demo|edit\b|"
+    r"\b(?:inst(?:rumental)?|ver(?:sion)?|remix|mix|acoustic|live|demo|edit)\b|"
     r"반주|버전|리믹스|어쿠스틱|라이브|데모",
     re.I,
 )

@@ -432,6 +432,24 @@ class PageIdentityTests(unittest.TestCase):
         self.assertTrue(decision.verified)
         self.assertEqual(len(decision.candidate_section_ids), 1)
 
+    def test_version_suffix_is_matched_as_a_whole_word(self):
+        # '(Forever)' · '(Alive)'는 판 표기가 아니라 제목 풀이다.
+        for gloss, bound in (
+            ("Forever", True), ("Alive", True), ("Instinct", True),
+            ("Inst.", False), ("Original Ver.", False), ("Remix", False),
+            ("Live", False), ("어쿠스틱 버전", False),
+        ):
+            with self.subTest(gloss=gloss):
+                document = self.parse(
+                    "bomb(ILLIT)",
+                    "<h2>1. 개요</h2><p>ILLIT의 미니 3집이다.</p>"
+                    f"<h2>2. 수록곡</h2><h3>2.1. 영원히 ({gloss})</h3><p>작사 홍길동</p>",
+                )
+                decision = decide_song_page(
+                    "영원히", ["아일릿(ILLIT)"], document, album="bomb",
+                )
+                self.assertEqual(decision.verified, bound)
+
     def test_tracklist_section_wins_over_the_same_title_under_charts(self):
         # 멜론은 음반 이름 뒤에 판 표기를 붙인다(' - The 1st Album').
         document = self.parse(
