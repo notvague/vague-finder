@@ -34,12 +34,12 @@ logger = logging.getLogger(__name__)
 # .env 로드
 load_dotenv()
 
-# Gemini 설정 — Vertex(GCP_PROJECT_ID) 또는 AI Studio 키(GEMINI_API_KEY) 중 하나라도 있으면 쓴다
+# Gemini 설정 — AI Studio 키(GEMINI_API_KEY)가 있으면 쓴다
 GEMINI_CONFIGURED = gemini_configured()
 
 # 설정이 없으면 경고
 if not GEMINI_CONFIGURED:
-    logger.warning("Gemini 설정(GCP_PROJECT_ID·GEMINI_API_KEY)이 없습니다.")
+    logger.warning("Gemini 설정(GEMINI_API_KEY)이 없습니다.")
 
 
 def _ensure_list(value: Any) -> List[str]:
@@ -357,7 +357,7 @@ def refine_data(metadata: Dict, lyrics: Optional[str], reaction: Optional[Dict])
     # 4) Gemini 설정 없으면 즉시 실패
     # === Gemini 모드 ===
     if not GEMINI_CONFIGURED:
-        logger.error("Gemini 설정 누락! .env의 GCP_PROJECT_ID(Vertex) 또는 GEMINI_API_KEY 확인요망")
+        logger.error("Gemini 설정 누락! .env의 GEMINI_API_KEY 확인요망")
         return {}
 
     # 5) 재시도 설정 (유료 플랜이므로 안정성을 위해 3회 재시도)

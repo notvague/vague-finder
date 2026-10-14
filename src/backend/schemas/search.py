@@ -15,6 +15,7 @@ from pydantic import (
 from src.backend.schemas.explain import SearchExplainOut, TrackExplain
 from src.backend.schemas.query import QueryAnalysis
 from src.backend.schemas.feedback import FeedbackReceipt
+from src.common.search_models import ModelProvider
 
 
 # 거절·질문 한도. 라우트가 종료 판정에 같은 값을 써야 해서 상수로 노출한다.
@@ -82,7 +83,37 @@ class ClarifyQuestion(BaseModel):
     )
 
 
+class SearchModelSelection(BaseModel):
+    """검색 본문에서 **모델 선택만** 읽는 축소 모델. 분석기·라우터 의존성이 쓴다.
+
+    의존성이 `SearchRequest` 전체를 다시 선언하면 FastAPI가 같은 본문을 의존성마다 다시 검증한다(요청당 3회).
+    나머지 칸은 무시한다 — 본문 검증은 라우트의 `SearchRequest`가 한다.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    model_provider: Optional[ModelProvider] = None
+
+
+class SearchModelOption(BaseModel):
+    provider: ModelProvider
+    label: str
+    model: str
+    available: bool = Field(description="키가 설정돼 있는가. 키·조직·잔액은 싣지 않는다")
+
+
+class SearchModelOptions(BaseModel):
+    """`GET /search/models` 응답 — 화면 선택창이 읽는다."""
+
+    default: ModelProvider
+    models: List[SearchModelOption]
+
+
 class SearchRequest(BaseModel):
+    model_provider: Optional[ModelProvider] = Field(
+        default=None, description="질의 분석과 리랭킹 모델. 생략하면 서버 기본값",
+    )
+
     feedback_parent: Optional[FeedbackReceipt] = Field(
         default=None, description="재검색 전 실행의 피드백 권한. 대화 기록 연결용이며 검색에는 사용하지 않는다",
     )
@@ -409,6 +440,9 @@ class SearchNotice(BaseModel):
 
 
 class SearchResponse(BaseModel):
+    model_provider: Optional[ModelProvider] = None
+    model_name: Optional[str] = None
+
     feedback: Optional[FeedbackReceipt] = Field(
         default=None,
         description="이 실행의 표시 결과를 저장했을 때만 발급하는 피드백 제출 권한. 없으면 제출 불가",

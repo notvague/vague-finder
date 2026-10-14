@@ -584,7 +584,7 @@ def stub_search_stack(monkeypatch):
     from src.backend.api import dependencies
 
     for name in ("KoE5Embedder", "BM25SparseEncoder", "SigLIP2Embedder", "CLAPAudioEmbedder",
-                 "LyricsExactSearchService", "MusicReranker", "QueryAnalyzer", "SearchService"):
+                 "LyricsExactSearchService", "MusicReranker", "ClaudeListwiseReranker", "QueryAnalyzer", "SearchService"):
         monkeypatch.setattr(dependencies, name, Stub)
     monkeypatch.setattr(dependencies, "ContextQdrantSearch", Stub)
     monkeypatch.setattr(dependencies, "SearchRouter", StubRouter)

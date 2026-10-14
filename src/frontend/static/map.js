@@ -683,15 +683,15 @@ function localSearch(q) {
  * 않는다 — 2026-09-24 실패 경로 확인에서 15초를 더 기다려도 벗어나지 못했고,
  * 발표 중에는 새로고침 말고 빠져나갈 길이 없다는 뜻이었다.
  *
- * 30초인 이유: 예열 직후 첫 검색이 5.6초, 예열 전 최악이 17.2초였다
- * (experiments/latency). 정상 검색은 자르지 않으면서 멈춘 화면은 끝낸다.
- * 서버 쪽 질의 분석에도 따로 20초 예산이 있다(QUERY_ANALYSIS_TIMEOUT_SECONDS).
+ * 분석 기본 예산 20초 + 리랭킹 기본 예산 30초에 검색·응답 여유 10초를 둔다.
+ * Sonnet 재시도가 리랭킹에만 29.2초 걸린 사례가 있어 기존 30초 제한은
+ * 서버가 정상 처리 중이어도 브라우저가 먼저 포기했다.
  */
-const SEARCH_TIMEOUT_MS = 30000;
+const SEARCH_TIMEOUT_MS = 60000;
 const SEARCH_PATH = "/api/v1/search";
 /*
- * 질문 조회는 검색이 아니다 — 후보 15곡 안팎의 메타데이터만 읽는다. 검색과 같은 30초를 주면 서버가
- * 멈췄을 때 "이 중에는 없어요"가 30초 동안 먹통이 된다. 이 시간이 지나면 질문 없이 거절만 진행한다.
+ * 질문 조회는 후보 메타데이터만 읽으므로 별도 8초 제한을 유지한다.
+ * 이 시간이 지나면 질문 없이 거절만 진행한다.
  */
 const CLARIFY_PATH = "/api/v1/search/clarify";
 const CLARIFY_TIMEOUT_MS = 8000;
@@ -713,6 +713,44 @@ async function requestSearch(body, path = SEARCH_PATH, timeoutMs = SEARCH_TIMEOU
   }
   return res.json();
 }
+
+const modelProvider = document.getElementById("modelProvider");
+const modelHint = document.getElementById("modelHint");
+const MODEL_KEY = "vf.modelProvider";
+
+async function loadSearchModels() {
+  if (!modelProvider) return;
+  try {
+    const res = await fetch(`${SEARCH_PATH}/models`, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) throw new Error("models unavailable");
+    const info = await res.json();
+    let saved = "";
+    try { saved = localStorage.getItem(MODEL_KEY) || ""; } catch { /* 탭 안에서만 유지 */ }
+    modelProvider.replaceChildren();
+    for (const model of info.models) {
+      const option = document.createElement("option");
+      option.value = model.provider;
+      option.textContent = `${model.label} · ${model.model}${model.available ? "" : " (사용 불가)"}`;
+      option.disabled = !model.available;
+      modelProvider.append(option);
+    }
+    // 저장한 선택 → 서버 기본값 → 첫 사용 가능 모델. **사용 가능한 것만 고른다** — 서버가 "사용 불가"라고 한
+    // 기본값을 그대로 고르면 사용자가 손으로 바꿀 때까지 모든 검색이 503이다.
+    const available = info.models.filter((m) => m.available).map((m) => m.provider);
+    const pick = [saved, info.default, ...available].find((p) => available.includes(p)) || "";
+    modelProvider.value = pick;
+    if (modelHint) {
+      modelHint.textContent = pick
+        ? "모델 변경은 다음 새 검색부터 적용됩니다."
+        : "사용 가능한 검색 모델이 없습니다 — 서버의 API 키 설정을 확인하세요.";
+    }
+  } catch {
+    if (modelHint) modelHint.textContent = "모델 목록을 불러오지 못했습니다. 서버 기본값으로 검색합니다.";
+  }
+}
+if (modelProvider) modelProvider.addEventListener("change", () => {
+  try { localStorage.setItem(MODEL_KEY, modelProvider.value); } catch { /* 저장 실패 허용 */ }
+});
 
 /*
  * 왜 의미 검색을 못 했는가. **원인마다 다른 말을 해야 한다.**
@@ -786,6 +824,7 @@ function startConvo(query, data) {
 
 function applyResponse(data) {
   if (typeof VagueFeedback !== "undefined") VagueFeedback.reset(data);
+  convo.modelProvider = data.model_provider || convo.modelProvider || null;
   convo.analysis = data.analysis || null;
   convo.askedSlots = data.asked_slots || [];
   // 최초 질의에서 이미 말한 성별·장르 — 질문 조회가 다시 묻지 않게 그대로 보낸다. 응답 값으로 **교체**한다(이전 검색 값과
@@ -909,7 +948,7 @@ async function answerBirthYear(value) {
   current.birthYearSkipped = true; // 성공하든 실패하든 이 검색에서 다시 묻지 않는다
   panelMode = "loading";
   renderPanel();
-  const body = { query: current.query, top_k: TOP_K, candidate_k: CANDIDATE_K, explain: true, birth_year: year, turn: current.turn, defer_clarify: true };
+  const body = { query: current.query, model_provider: current.modelProvider, top_k: TOP_K, candidate_k: CANDIDATE_K, explain: true, birth_year: year, turn: current.turn, defer_clarify: true };
   if (current.analysis) body.prior_analysis = current.analysis; // 재분석(Gemini 호출) 없이 창만 넣어 다시 찾는다
   try {
     const data = await requestSearch(body);
@@ -1650,6 +1689,7 @@ async function submitTurn(answer, note = "") {
 
   const body = {
     query: convo.query,
+    model_provider: convo.modelProvider,
     top_k: TOP_K,
     candidate_k: CANDIDATE_K,
     prior_analysis: convo.analysis,
@@ -1713,7 +1753,7 @@ async function runSearch(q) {
   clearBtn.hidden = false;
   showStatus("검색 중…");
   try {
-    const data = await requestSearch({ query: q, top_k: TOP_K, candidate_k: CANDIDATE_K, explain: true, birth_year: loadBirthYear(), defer_clarify: true });
+    const data = await requestSearch({ query: q, model_provider: modelProvider?.value || null, top_k: TOP_K, candidate_k: CANDIDATE_K, explain: true, birth_year: loadBirthYear(), defer_clarify: true });
     if (seq !== searchSeq) return;
     showStatus("");
     startConvo(q, data);
@@ -1771,6 +1811,8 @@ window.addEventListener("resize", () => {
     if (cardId && !card.hidden) openCard(cardId); // 카드 위치도 다시 잡는다
   }, 150);
 });
+
+loadSearchModels();
 
 // 데이터를 못 받아도 인트로가 검정에 갇히지 않게 한다 (intro.js 에 maxWaitMs 안전장치도 있다)
 init().catch((err) => {

@@ -1,6 +1,6 @@
 """
 [Retrieval] Query Analyzer
-설명: 한국어 자연어 질의를 Gemini로 분석하여 의도 분류, 한국어 태그 추출,
+설명: 한국어 자연어 질의를 선택한 Claude/Gemini 모델로 분석하여 의도 분류, 한국어 태그 추출,
       CLAP/SigLIP2 전용 영어 질의, 모달리티 가중치를 한 번에 생성합니다.
 작성자: 황찬혁 (Full)
 생성일: 2026-05-23
@@ -18,6 +18,10 @@ from dotenv import load_dotenv
 from google import genai
 
 from src.common.gemini_client import RETRIEVAL, gemini_configured, make_genai_client
+from src.common.search_models import ModelProvider, default_provider, model_name
+from src.common.claude_client import (
+    ClaudeAPIError, ClaudeBudgetExceeded, claude_configured, make_claude_genai_client, strip_code_fence,
+)
 from src.retrieval import timing
 from src.backend.schemas.query import (
     QueryAnalysis,
@@ -612,7 +616,7 @@ class _Salvage:
 
 class QueryAnalyzer:
     """
-    Gemini를 호출해 QueryAnalysis를 반환한다.
+    선택한 모델을 호출해 QueryAnalysis를 반환한다.
     API 키 미설정 또는 3회 연속 실패 시 confidence=0.0 fallback을 반환하며
     전용 영어 질의를 규칙 기반으로 안전하게 분리한다. 인식할 수 없는 단서는
     공용 원문으로 두 모델을 오염시키지 않고 text-only로 폴백한다.
@@ -621,12 +625,19 @@ class QueryAnalyzer:
     응답에서 그 모달리티만 내려놓고(`degraded_modalities`) 나머지는 그대로 쓴다.
     """
 
-    def __init__(self, api_key: Optional[str] = None):
-        # 직접 넘긴 키만 담는다. 없으면 환경(GCP_PROJECT_ID → Vertex, GEMINI_API_KEY → AI Studio)을 따르고,
-        # GEMINI_RETRIEVAL_BACKEND가 있으면 그 경로로 고정한다(검색 용도 — 리랭커와 같은 경로).
+    def __init__(self, api_key: Optional[str] = None, *, provider: Optional[ModelProvider] = None):
+        # 키를 직접 넘기면(테스트·예비 키) 그 키로 Gemini를 부른다. **빈 문자열은 "키 없음"이다** — 환경의 키를 보지 않고
+        # 규칙 폴백으로만 동작한다(테스트의 폴백 경로. 환경 키를 따르면 .env에 Claude 키가 있는 PC에서 실제 호출이 나간다).
+        # None이면 선택한 모델의 환경 키(CLAUDE_API·ANTHROPIC_API_KEY / GEMINI_API_KEY)를 따른다.
+        self.provider: ModelProvider = provider or ("gemini" if api_key else default_provider())
         self._api_key = api_key or ""
-        self._configured = gemini_configured(self._api_key, purpose=RETRIEVAL)
-        self._model_name = os.getenv("GEMINI_MODEL_NAME", "gemini-3.1-flash-lite")
+        if api_key is not None and not api_key:
+            self._configured = False
+        elif self.provider == "claude":
+            self._configured = bool(self._api_key or claude_configured())
+        else:
+            self._configured = gemini_configured(self._api_key, purpose=RETRIEVAL)
+        self._model_name = model_name(self.provider)
         # **분석 전체에 쓸 수 있는 시간.** 한 번의 호출이 아니라 재시도와 대기까지
         # 합친 값이다. 제한이 없으면 Gemini가 응답하지 않을 때 요청이 끝나지 않고,
         # 화면은 "검색 중…"에서 영원히 멈춘다(2026-09-24 실패 경로 확인).
@@ -637,17 +648,17 @@ class QueryAnalyzer:
         self._budget_seconds = float(
             os.getenv("QUERY_ANALYSIS_TIMEOUT_SECONDS", "20")
         )
-        self._client: Optional[genai.Client] = None
+        self._client: Any = None
         # analyze()가 스레드에서 돌기 시작하면 이 지연 생성이 겹칠 수 있다.
         # 잠그지 않으면 두 스레드가 모두 None을 보고 클라이언트를 두 벌 만든다.
         self._client_lock = threading.Lock()
         if not self._configured:
             logger.warning(
-                "[QueryAnalyzer] Gemini 설정 없음(GCP_PROJECT_ID·GEMINI_API_KEY, GEMINI_RETRIEVAL_BACKEND) — fallback 모드로 동작합니다."
+                "[QueryAnalyzer] 선택한 모델의 API 키 없음 — fallback 모드로 동작합니다."
             )
 
     @property
-    def _gemini(self) -> genai.Client:
+    def _gemini(self) -> Any:
         """첫 호출에서 한 번만 만든다.
 
         이중 확인: 잠금 밖에서 먼저 보고, 없을 때만 잠근다. 만들어진 뒤에는
@@ -656,7 +667,9 @@ class QueryAnalyzer:
         if self._client is None:
             with self._client_lock:
                 if self._client is None:
-                    self._client = make_genai_client(api_key=self._api_key or None, purpose=RETRIEVAL)
+                    self._client = (make_claude_genai_client(api_key=self._api_key or None, tag="analysis", timeout_seconds=self._budget_seconds)
+                                    if self.provider == "claude" else
+                                    make_genai_client(api_key=self._api_key or None, purpose=RETRIEVAL))
         return self._client
 
     @property
@@ -698,7 +711,8 @@ class QueryAnalyzer:
         response: Any,
         salvage: Optional[_Salvage] = None,
     ) -> QueryAnalysis:
-        raw: dict = json.loads(response.text)
+        text = strip_code_fence(response.text) if self.provider == "claude" else response.text
+        raw: dict = json.loads(text)
         raw = _apply_lyric_safeguards(query, raw)
         raw = _apply_metadata_safeguards(query, raw)
         raw = apply_context_query_safeguards(query, raw)
@@ -726,7 +740,7 @@ class QueryAnalyzer:
             analysis.audio_english_query,
         )
         logger.info(
-            "[QueryAnalyzer] Gemini 분석 성공 model=%s confidence=%.2f",
+            "[QueryAnalyzer] 분석 성공 model=%s confidence=%.2f",
             self._model_name,
             analysis.confidence,
         )
@@ -762,7 +776,7 @@ class QueryAnalyzer:
             )
         else:
             logger.warning(
-                "[QueryAnalyzer] Gemini 호출 실패 (시도 %d/3): %s", attempt + 1, exc
+                "[QueryAnalyzer] 모델 호출 실패 (시도 %d/3): %s", attempt + 1, exc
             )
         return ""
 
@@ -838,7 +852,7 @@ class QueryAnalyzer:
             try:
                 # 시도마다 따로 남긴다. 성공 요청과 재시도 요청의 시간이 한 칸에
                 # 섞이면 "분석이 느리다"와 "분석이 한 번 실패했다"를 구분할 수 없다.
-                with timing.step("analysis.gemini", attempt=attempt + 1):
+                with timing.step(f"analysis.{self.provider}", attempt=attempt + 1):
                     response = self._gemini.models.generate_content(
                         model=self._model_name,
                         contents=prompt + correction,
@@ -849,6 +863,12 @@ class QueryAnalyzer:
                 # **새 지시가 있을 때만 바꾼다.** 통신·JSON 오류로 앞서 만든 정정을
                 # 지우면 마지막 시도가 최초 프롬프트로 돌아가 같은 모달리티 오류를
                 # 그대로 되풀이한다(정정 포함 여부가 False→True→False가 됐다).
+                if self.provider == "claude" and (
+                    isinstance(exc, ClaudeBudgetExceeded)
+                    or isinstance(exc, ClaudeAPIError) and exc.status in {400, 401, 402, 403, 404}
+                ):
+                    logger.warning("[QueryAnalyzer] Claude 설정/예산 오류 — 재시도 없이 규칙 폴백")
+                    return self._give_up(query, attempts, False, salvage)
                 correction = self._correction_for(exc, attempt) or correction
 
             if attempt < 2:
@@ -879,7 +899,7 @@ class QueryAnalyzer:
                 return self._give_up(query, attempts, True, salvage)
             attempts += 1
             try:
-                with timing.step("analysis.gemini", attempt=attempt + 1):
+                with timing.step(f"analysis.{self.provider}", attempt=attempt + 1):
                     response = await self._gemini.aio.models.generate_content(
                         model=self._model_name,
                         contents=prompt + correction,
@@ -888,6 +908,12 @@ class QueryAnalyzer:
                 return self._parse(query, response, salvage)
             except Exception as exc:
                 # 동기판과 같은 이유로 **유지**한다(위 주석 참고).
+                if self.provider == "claude" and (
+                    isinstance(exc, ClaudeBudgetExceeded)
+                    or isinstance(exc, ClaudeAPIError) and exc.status in {400, 401, 402, 403, 404}
+                ):
+                    logger.warning("[QueryAnalyzer] Claude 설정/예산 오류 — 재시도 없이 규칙 폴백")
+                    return self._give_up(query, attempts, False, salvage)
                 correction = self._correction_for(exc, attempt) or correction
 
             if attempt < 2:

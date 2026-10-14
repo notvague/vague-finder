@@ -157,9 +157,8 @@ def installed_cases(cases_arg: str, synthetic: bool) -> Iterator[Optional[FileRe
 
 
 def _drop_cached_router(dependencies: Any) -> None:
-    """캐시된 검색 라우터를 내려놓는다. 스레드풀을 세우고(돌던 조회가 끝난 뒤) 캐시를 비운다."""
-    router = dependencies.get_search_router.peek()
-    if router is not None:
+    """캐시된 검색 라우터를 **모두** 내려놓는다(모델별로 여럿일 수 있다). 스레드풀을 세우고(돌던 조회가 끝난 뒤) 캐시를 비운다."""
+    for router in dependencies.get_search_router.values():
         router.shutdown()
     dependencies.get_search_router.cache_clear()
 

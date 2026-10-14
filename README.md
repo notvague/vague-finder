@@ -119,7 +119,7 @@ Gemini listwise는 두 줄이다. 전환 근거가 된 측정(v32~v34)은 드라
 
 ## 시작하기
 
-**필요한 것**: Python 3.11 이상, ffmpeg (오디오 디코딩), Gemini API 키, 위의 데이터.
+**필요한 것**: Python 3.11 이상, ffmpeg (오디오 디코딩), Claude 또는 Gemini API 키, 위의 데이터.
 Node.js는 수집 파이프라인(yt-dlp)을 돌릴 때만 필요하다.
 
 ```bash
@@ -127,10 +127,9 @@ Node.js는 수집 파이프라인(yt-dlp)을 돌릴 때만 필요하다.
 python3 -m venv venv
 venv/bin/pip install -r requirements.txt
 
-# 2. 환경 변수 — Gemini는 Vertex AI(GCP_PROJECT_ID + 로컬 ADC) 또는 GEMINI_API_KEY 중 하나
-#    검색(질의 분석·리랭커)만 경로를 고정하려면 GEMINI_RETRIEVAL_BACKEND=api_key|vertex (.env.example 3-c)
+# 2. 환경 변수 — 기본 Claude(Sonnet). ANTHROPIC_API_KEY를 설정한다.
+#    Gemini도 선택하려면 GEMINI_API_KEY를 함께 설정한다(.env.example 참고).
 cp .env.example .env
-gcloud auth application-default login   # Vertex를 쓸 때 한 번
 
 # 3. 벡터 DB 적재 (data/all_songs.jsonl과 artifacts/embeddings/가 있어야 한다)
 venv/bin/python -m src.vector_db.cli.qdrant_load --recreate
@@ -138,6 +137,12 @@ venv/bin/python -m src.vector_db.cli.qdrant_load --recreate
 # 4. 서버 실행
 venv/bin/uvicorn src.backend.main:app --reload
 ```
+
+검색창 아래에서 Claude / Gemini를 선택한다. 선택은 다음 새 검색부터 적용되고 재질문에는 같은 모델을 유지한다.
+`SEARCH_MODEL_PROVIDER=claude|gemini`로 서버 기본값을 바꾸고(기본 모델의 키가 없으면 서버가 뜨지 않는다),
+`CLAUDE_MODEL_NAME` / `GEMINI_MODEL_NAME`으로 각 모델 ID를 지정한다(변경 후 재시작). 두 모델 모두 질의 분석과 리랭킹에 적용된다. Vertex AI는 지원하지 않는다.
+API는 `GET /api/v1/search/models`로 선택지를 받고, 검색 본문에 `model_provider: "claude"` 또는 `"gemini"`를 보낸다.
+세부 설정과 평가 시 주의사항은 [검색 모델 설정](docs/search_models.md)을 참고한다.
 
 | 주소 | 내용 |
 | --- | --- |

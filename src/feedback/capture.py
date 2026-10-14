@@ -11,6 +11,7 @@ from pathlib import Path
 
 from typing import Optional
 
+from src.common.search_models import ModelProvider, default_provider
 from src.feedback.settings import EMBEDDING_VERSION
 from src.feedback.store import collection_enabled, get_feedback_store
 from src.retrieval import timing
@@ -34,15 +35,15 @@ def source_version():
     return digest.hexdigest()[:16]
 
 
-@lru_cache(maxsize=1)
-def _analyzer_fingerprint():
+@lru_cache(maxsize=2)
+def _analyzer_fingerprint(provider: Optional[ModelProvider] = None):
     """서버가 떠 있는 동안 분석기 소스와 설정은 바뀌지 않는다. 검색마다 소스 두 개를 다시 읽지 않는다.
 
     `analyzer_fingerprint()` 자체는 캐시하지 않는다 — 측정 도구는 환경 변수가 바뀐 것을 봐야 한다.
     """
     from src.retrieval.analysis_cache import analyzer_fingerprint
 
-    return analyzer_fingerprint()
+    return analyzer_fingerprint(provider)
 
 
 def _plain(value):
@@ -77,6 +78,7 @@ def _capture_search(request, analysis, results, candidate_ids, turn, search_rout
     effective = apply_birth_year_answers(analysis, request.answers)
     reranker = getattr(search_router, "_reranker", None)
     config = getattr(reranker, "config", None)
+    provider = getattr(request, "model_provider", None) or default_provider()
     snapshot = {
         "query": request.query, "analysis": effective.model_dump(mode="json"),
         "answers": [a.model_dump(mode="json") for a in request.answers if a.slot != "birth_year"],
@@ -86,12 +88,13 @@ def _capture_search(request, analysis, results, candidate_ids, turn, search_rout
                   for rank, t in enumerate(results, 1)],
         "candidate_ids": list(candidate_ids),
         "versions": {
-            "source_sha": source_version(), "analyzer": dict(_analyzer_fingerprint()),
+            "source_sha": source_version(), "analyzer": dict(_analyzer_fingerprint(provider)),
             "corpus": os.getenv("FEEDBACK_CORPUS_VERSION", "unknown"),
             "reranker": type(reranker).__name__ if reranker else None,
             "reranker_model": getattr(config, "model_name", None),
             "reranker_config": _plain(asdict(config)) if is_dataclass(config) else None,
-            "retrieval_backend": os.getenv("GEMINI_RETRIEVAL_BACKEND", "auto"),
+            "model_provider": provider,
+            "retrieval_backend": "anthropic" if provider == "claude" else "api_key",
             # 피드백 후보 보충을 조회한 검색에만 값이 있다(사례 벡터의 판). 꺼져 있었으면 None이다.
             "feedback_index": EMBEDDING_VERSION if feedback_record is not None else None,
         },

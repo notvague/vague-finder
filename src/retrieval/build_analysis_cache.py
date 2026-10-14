@@ -25,6 +25,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.backend.api.dependencies import get_query_analyzer
+from src.common.search_models import PROVIDERS
 from src.retrieval.analysis_cache import (
     AnalysisCacheError,
     analyzer_fingerprint,
@@ -66,7 +67,10 @@ def build(args: argparse.Namespace) -> int:
             print("오류: --query-ids에 해당하는 질의가 없습니다.", file=sys.stderr)
             return 2
 
-    cache = new_cache(source=str(input_path), split=args.split)
+    # 새 캐시의 모델: --model-provider, 없으면 서버 기본(SEARCH_MODEL_PROVIDER). 기존 캐시를 이어 채우면 **그 캐시의 모델**이다 —
+    # 한 캐시에 두 모델의 분석을 섞지 않는다(기본이 Claude로 바뀐 뒤에도 Gemini 캐시의 빈 항목은 Gemini로 채운다).
+    requested = (getattr(args, "model_provider", "") or "").strip().lower() or None
+    cache = new_cache(source=str(input_path), split=args.split, provider=requested)
     reused = 0
     if output_path.exists() and not args.force:
         try:
@@ -83,7 +87,16 @@ def build(args: argparse.Namespace) -> int:
                 "--reuse-despite-drift로 유지할 수 있습니다.",
                 flush=True,
             )
+            if existing.provider != cache.provider:
+                print(f"  모델도 다릅니다: 기존 캐시 {existing.provider} → 새 분석 {cache.provider}", flush=True)
         else:
+            if requested and requested != existing.provider:
+                print(
+                    f"오류: 기존 캐시는 {existing.provider} 분석인데 --model-provider={requested}입니다. "
+                    "한 캐시에 두 모델의 분석을 섞지 않습니다 — --force로 새로 만들거나 캐시의 모델에 맞추세요.",
+                    file=sys.stderr,
+                )
+                return 2
             cache.meta = existing.meta
             cache.entries = dict(existing.entries)
             reused = len(cache.entries)
@@ -100,11 +113,11 @@ def build(args: argparse.Namespace) -> int:
                     "at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
                     "drifted": drift,
                     "kept_entries": len(existing.entries),
-                    "analyzer_now": analyzer_fingerprint(),
+                    "analyzer_now": analyzer_fingerprint(cache.provider),
                     # 이 지문으로 만들어진 항목은 entries의 analyzer_sha로 찾는다.
                     # 목록을 여기 따로 적지 않는다 — 작업이 끝나야 쓰는 기록은
                     # 중간에 끊기면 사라진다.
-                    "analyzer_sha_now": analyzer_sha(),
+                    "analyzer_sha_now": analyzer_sha(cache.provider),
                     "reason": args.drift_reason,
                 })
 
@@ -129,7 +142,7 @@ def build(args: argparse.Namespace) -> int:
         and row["query_id"].strip() not in todo_ids
     )
     print(
-        f"질의 {len(rows)}건 | 재사용 {kept}건 | 새로 분석 {len(todo)}건",
+        f"질의 {len(rows)}건 | 재사용 {kept}건 | 새로 분석 {len(todo)}건 | 분석 모델 {cache.provider}",
         flush=True,
     )
     if not todo:
@@ -137,7 +150,7 @@ def build(args: argparse.Namespace) -> int:
         print(f"캐시: {output_path}")
         return 0
 
-    analyzer = get_query_analyzer()
+    analyzer = get_query_analyzer.for_provider(cache.provider)
     fallbacks = []
     for index, (query_id, query) in enumerate(todo, start=1):
         print(f"[{index}/{len(todo)}] {query_id}: {query}", flush=True)
@@ -145,7 +158,7 @@ def build(args: argparse.Namespace) -> int:
         cache.put(query_id, query, analysis)
         if looks_like_fallback(analysis):
             fallbacks.append(query_id)
-            print("  경고: 규칙 폴백이 반환됐습니다(Gemini 실패).", flush=True)
+            print("  경고: 규칙 폴백이 반환됐습니다(모델 호출 실패).", flush=True)
         # 한 건씩 저장한다 — 중간에 끊겨도 쓴 만큼은 남아야 다시 부르지 않는다.
         cache.save(output_path)
 
@@ -190,9 +203,18 @@ def build_parser() -> argparse.ArgumentParser:
         "--query-ids", default="", help="쉼표로 구분한 query_id만 분석"
     )
     parser.add_argument(
+        "--model-provider",
+        choices=list(PROVIDERS),
+        default="",
+        help=(
+            "캐시를 채울 분석 모델. 새 캐시의 기본은 SEARCH_MODEL_PROVIDER. 기존 캐시를 이어 채울 때는 "
+            "그 캐시의 모델을 따르고, 다른 값을 주면 멈춘다"
+        ),
+    )
+    parser.add_argument(
         "--force",
         action="store_true",
-        help="기존 캐시를 무시하고 전부 다시 분석한다(Gemini 호출이 늘어난다)",
+        help="기존 캐시를 무시하고 전부 다시 분석한다(모델 호출이 늘어난다)",
     )
     parser.add_argument(
         "--keep-fallback",

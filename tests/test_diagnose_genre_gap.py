@@ -162,7 +162,7 @@ def test_analyze_adds_missing_queries_and_never_rewrites_existing_ones(tmp_path,
     assert tool.main(["analyze", "--input", str(queries), *args]) == 2, "원문이 바뀐 질의를 옛 분석과 섞지 않는다"
     assert json.loads(cache.read_text(encoding="utf-8"))["entries"] == second
 
-    monkeypatch.setattr("src.retrieval.analysis_cache.analyzer_fingerprint", lambda: {"prompt_sha": "다른 프롬프트"})
+    monkeypatch.setattr("src.retrieval.analysis_cache.analyzer_fingerprint", lambda provider=None: {"prompt_sha": "다른 프롬프트"})
     _query_file(queries, {"a": "첫 질의", "b": "둘째 질의", "c": "나중에 더한 질의", "d": "조건이 바뀐 뒤의 질의"})
     assert tool.main(["analyze", "--input", str(queries), *args]) == 2, "분석 조건이 달라졌으면 섞지 않는다"
     assert len(calls) == 3

@@ -1158,3 +1158,8 @@ body.listmode .sitefooter { min-width: 0; }
   word-break: keep-all;
 }
 .runnote.warn { color: #856f1d; }
+
+/* 검색 모델 선택: 좁은 레일에서도 라벨과 선택창이 줄바꿈된다. */
+.modelpicker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; }
+.modelpicker select { max-width: 100%; min-width: 0; padding: 6px 8px; border: 1px solid #bbb; border-radius: 4px; background: white; color: #222; font: inherit; }
+.modelhint { display: block; margin-top: 4px; font-size: 11px; color: #666; }
