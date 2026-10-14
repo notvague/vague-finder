@@ -28,9 +28,11 @@ from src.backend.schemas.search import (
     ClarifyResponse,
     MatchingTrack,
     SearchNotice,
+    SearchModelOptions,
     SearchRequest,
     SearchResponse,
 )
+from src.common.search_models import default_provider, model_name, model_options
 from src.retrieval import timing
 from src.retrieval.analysis_cache import looks_like_fallback
 from src.retrieval.clarify import (
@@ -67,6 +69,12 @@ from src.vector_db.settings import TEXT_HYBRID_INDEX_NAME
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/search", tags=["Search"])
+
+@router.get("/models", response_model=SearchModelOptions)
+def available_models() -> SearchModelOptions:
+    """사용 가능한 검색 모델 목록. 키·조직·잔액은 노출하지 않는다."""
+    return SearchModelOptions(**model_options())
+
 
 def _attach_context_evidence(
     track: MatchingTrack, context_by_id: dict[str, ContextRouteHit],
@@ -514,6 +522,8 @@ async def search(
                 clarify = pick_question(analysis_for_search, remaining, asked_slots)
 
         return SearchResponse(
+            model_provider=request.model_provider or default_provider(),
+            model_name=model_name(request.model_provider or default_provider()),
             feedback=await capture_search(
                 request, analysis_for_search, results, candidate_ids, turn, search_router,
                 feedback_runs[0] if feedback_runs else None,

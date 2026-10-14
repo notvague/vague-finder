@@ -55,6 +55,7 @@ function reply(extra = {}) {
 function screen(first = reply()) {
   const storage = new Map();
   const ctx = {
+    modelProvider: { value: "claude" },
     localStorage: {
       getItem: key => (storage.has(key) ? storage.get(key) : null),
       setItem: (key, value) => storage.set(key, value),
@@ -443,4 +444,14 @@ test('한 쪽 15곡을 두 번 거절하면 한도에 닿는다', async () => {
   await s.ev('onReject()');
   assert.equal(s.state().rejected.length, 30);
   assert.equal(s.ev('canRejectMore()'), false, '세 번째는 한도(MAX_REJECTED)를 넘는다');
+});
+
+test('모델 선택은 새 검색에 적용하고 재질문에는 이전 모델을 유지한다', async () => {
+  const s = screen(reply({ model_provider: 'claude' }));
+  s.ctx.modelProvider.value = 'gemini';
+  s.serve(body => reply({ model_provider: body.model_provider }));
+  await s.ev('submitTurn(null)');
+  assert.equal(s.ctx.requests.at(-1).body.model_provider, 'claude');
+  await s.ev('runSearch("새 노래")');
+  assert.equal(s.ctx.requests.at(-1).body.model_provider, 'gemini');
 });

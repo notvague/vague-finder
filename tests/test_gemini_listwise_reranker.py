@@ -578,6 +578,7 @@ def test_get_reranker_defaults_to_listwise_and_falls_back_without_key(monkeypatc
     from src.backend.api import dependencies as deps
     from src.retrieval.reranker import MusicReranker
 
+    monkeypatch.setenv("SEARCH_MODEL_PROVIDER", "gemini")
     monkeypatch.delenv("RERANKER_BACKEND", raising=False)
     monkeypatch.delenv("GCP_PROJECT_ID", raising=False)
     monkeypatch.delenv("GEMINI_RETRIEVAL_BACKEND", raising=False)  # 개발자 .env의 검색 경로 고정과 무관하게
@@ -589,10 +590,10 @@ def test_get_reranker_defaults_to_listwise_and_falls_back_without_key(monkeypatc
     deps.get_reranker.cache_clear()
     assert isinstance(deps.get_reranker(), MusicReranker), "키가 없으면 CE로 내려가야 한다"
 
-    # Vertex 설정만 있어도 listwise다 — 키를 주석 처리하고 Vertex로 옮긴 뒤 CE로 조용히 내려가면 안 된다
+    # GCP 프로젝트가 남아 있어도 Vertex를 사용하지 않는다
     monkeypatch.setenv("GCP_PROJECT_ID", "시험-프로젝트")
     deps.get_reranker.cache_clear()
-    assert isinstance(deps.get_reranker(), GeminiListwiseReranker)
+    assert isinstance(deps.get_reranker(), MusicReranker)
     # 검색을 AI Studio로 고정했는데 키가 없으면 Vertex로 바꿔 타지 않고 CE로 내려간다(로그에 남는다)
     monkeypatch.setenv("GEMINI_RETRIEVAL_BACKEND", "api_key")
     deps.get_reranker.cache_clear()
@@ -624,7 +625,8 @@ def test_client_is_built_with_http_timeout(monkeypatch):
     import google.genai as genai_mod
     captured = {}
 
-    def fake_client(api_key, http_options=None):
+    def fake_client(api_key, http_options=None, vertexai=False):
+        assert vertexai is False
         captured["timeout_ms"] = getattr(http_options, "timeout", None)
         return object()
 

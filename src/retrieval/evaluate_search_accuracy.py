@@ -21,9 +21,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.common.search_models import default_provider
+from src.common.claude_client import claude_request_settings
 from src.backend.api.dependencies import (
     get_query_analyzer,
-    DEFAULT_RERANKER_BACKEND,
     get_reranker,
     get_search_router,
 )
@@ -44,7 +45,7 @@ from src.retrieval.explain import (
     ExplainRecorder,
     render_ko,
 )
-from src.common.gemini_client import RETRIEVAL, gemini_route_info
+from src.common.gemini_client import RETRIEVAL, backend_setting, gemini_route_info
 from src.retrieval import search_router as _search_router
 from src.retrieval.clarify import reranker_corrections_mode, reranker_input_order_mode
 from src.retrieval.gemini_listwise_reranker import type_slot_label
@@ -62,7 +63,20 @@ from src.retrieval.search_router import (
 def _actual_backend(reranker: Any) -> str:
     """실제로 만들어진 리랭커의 백엔드 이름. 환경변수가 아니라 객체에서 읽는다."""
     name = type(reranker).__name__
-    return {"GeminiListwiseReranker": "gemini_listwise", "MusicReranker": "cross_encoder"}.get(name, name)
+    return {"ClaudeListwiseReranker": "claude_listwise", "GeminiListwiseReranker": "gemini_listwise", "MusicReranker": "cross_encoder"}.get(name, name)
+
+def describe_reranker(reranker: Any) -> str:
+    """측정 시작 때 찍는 한 줄 — 어느 리랭커로, 무엇 때문에 재는지.
+
+    `RERANKER_BACKEND`를 비우면 CLI 리랭커도 `SEARCH_MODEL_PROVIDER`(기본 claude)를 따르게 되면서(#63) 예전 재현 명령을
+    그대로 돌리면 Gemini 기준선과 다른 리랭커(Sonnet, 질의마다 비용)로 재게 된다. runinfo에도 남지만 시작할 때 보여야 멈출 수 있다.
+    """
+    backend = _actual_backend(reranker)
+    requested = os.getenv("RERANKER_BACKEND", "").strip()
+    source = f"RERANKER_BACKEND={requested}" if requested else f"SEARCH_MODEL_PROVIDER 기본값 {default_provider()}"
+    hint = " — Gemini 기준선(v32~v35) 재현은 RERANKER_BACKEND=gemini_listwise" if backend == "claude_listwise" else ""
+    return f"리랭커: {backend} ({source}){hint}"
+
 
 def parse_relevant_ids(raw: str) -> set[str]:
     """여러 정답 ID는 | 로 구분한다."""
@@ -417,9 +431,15 @@ def collect_run_info(args, *, reranker, analysis_source: dict) -> dict:
             if not key.startswith("_")
         } or dataclasses.asdict(config)
 
+    provider = default_provider()
+    # Gemini를 실제로 불렀는가 — 실시간 분석이 Gemini이거나 리랭커가 Gemini listwise일 때만. 캐시 분석은 호출이 아니다.
+    uses_gemini = (analysis_source.get("mode") == "live" and provider == "gemini") \
+        or _actual_backend(reranker) == "gemini_listwise"
     info = {
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "args": {k: v for k, v in vars(args).items()},
+        # 이 실행의 기본 모델 — 실시간 분석과 기본 리랭커가 쓴 것. 캐시에서 읽은 분석의 모델은 analysis.meta.analyzer.provider다.
+        "model_provider": provider,
         "analysis": analysis_source,
         "corpus": {
             "vector_backend": "qdrant",
@@ -440,14 +460,18 @@ def collect_run_info(args, *, reranker, analysis_source: dict) -> dict:
             # 요청(환경변수)과 실제 선택을 구분해 적는다 — 키가 없어 CE로 내려가거나
             # 기본값이 바뀌면 환경변수만으로는 무엇이 돌았는지 알 수 없다 (PR 리뷰 P2).
             "backend": _actual_backend(reranker),
-            "requested_backend": os.getenv("RERANKER_BACKEND", DEFAULT_RERANKER_BACKEND),
+            "claude": claude_request_settings() if _actual_backend(reranker) == "claude_listwise" else None,
+            "requested_backend": os.getenv("RERANKER_BACKEND", "").strip() or f"{default_provider()}_listwise",
             "class": type(reranker).__name__,
             "enabled": bool(getattr(reranker, "enabled", False)),
             "config": reranker_config,
         },
-        # 검색(질의 분석·리랭커)이 Gemini를 어느 경로로 불렀는지(vertex·api_key)와 용도 설정(GEMINI_RETRIEVAL_BACKEND).
+        # 검색(질의 분석·리랭커)이 Gemini를 어느 경로로 불렀는지(api_key)와 용도 설정(GEMINI_RETRIEVAL_BACKEND).
         # 같은 모델이어도 경로가 바뀌면 출력이 달라진다(results_clarify_v11_prebonus) — 경로가 다른 실행끼리는 비교하지 않는다.
-        "gemini": gemini_route_info(RETRIEVAL),
+        # Gemini를 부르지 않은 실행(Claude 분석·리랭킹)은 unused다 — api_key로 적으면 Claude 실행과 Gemini 기준선이
+        # 같은 경로로 보여 비교 규칙(gemini.backend·setting 확인)이 무력해진다.
+        "gemini": gemini_route_info(RETRIEVAL) if uses_gemini
+        else {"backend": "unused", "setting": backend_setting(RETRIEVAL)},
         # 실험 스위치. **실제로 적용된 값을 코드에서 읽는다** — 환경변수를 다시
         # 읽으면 기록과 적용이 갈릴 수 있고, 폴더명과 수기 문서에만 의존하면
         # 나중에 어느 조건의 결과인지 알 수 없다.
@@ -793,6 +817,7 @@ async def evaluate(args: argparse.Namespace) -> None:
 
     router = get_search_router()
     reranker = get_reranker()
+    print(describe_reranker(reranker), flush=True)
 
     if cache is not None:
         analysis_source = {

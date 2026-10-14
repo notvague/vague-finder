@@ -44,7 +44,8 @@ def _analysis(query: str = "비 오는 날 발라드", **kwargs) -> QueryAnalysi
 # 캐시 자체
 # ---------------------------------------------------------------------------
 
-def test_cache_roundtrip_preserves_the_analysis(tmp_path):
+def test_cache_roundtrip_preserves_the_analysis(tmp_path, monkeypatch):
+    monkeypatch.setenv("SEARCH_MODEL_PROVIDER", "gemini")
     cache = new_cache(source="queries.csv", split="dev")
     cache.put("q1", "비 오는 날 발라드", _analysis(korean_tags=["비", "발라드"]))
     path = tmp_path / "cache.json"
@@ -340,9 +341,15 @@ def test_default_input_is_the_reference_set():
 # ---------------------------------------------------------------------------
 
 import argparse
+from types import SimpleNamespace
 
 from src.retrieval import build_analysis_cache as bc
-from src.retrieval.analysis_cache import fingerprint_sha, load_cache, new_cache
+from src.retrieval.analysis_cache import analyzer_fingerprint, fingerprint_sha, load_cache, new_cache
+
+
+def _analyzer_factory(**kwargs):
+    """`dependencies.get_query_analyzer` 자리 — 캐시 생성기는 `for_provider(모델)`로 분석기를 받는다."""
+    return SimpleNamespace(for_provider=lambda provider: _CountingAnalyzer(**kwargs))
 
 
 class _Interrupted(Exception):
@@ -374,7 +381,7 @@ def _build_args(csv_path, cache_path):
     return argparse.Namespace(
         input=str(csv_path), output=str(cache_path), split="dev", query_ids="",
         force=False, keep_fallback=False, allow_floating_year=True,
-        reuse_despite_drift=True, drift_reason="시험",
+        reuse_despite_drift=True, drift_reason="시험", model_provider="",
     )
 
 
@@ -382,7 +389,7 @@ def test_every_new_entry_records_which_analyzer_made_it(tmp_path, monkeypatch):
     csv_path, cache_path = tmp_path / "q.csv", tmp_path / "c.json"
     _queries_csv(csv_path, [("q1", "질의 하나"), ("q2", "질의 둘")])
     _drifted_cache(cache_path, csv_path)
-    monkeypatch.setattr(bc, "get_query_analyzer", lambda: _CountingAnalyzer())
+    monkeypatch.setattr(bc, "get_query_analyzer", _analyzer_factory())
 
     bc.build(_build_args(csv_path, cache_path))
 
@@ -400,12 +407,12 @@ def test_provenance_survives_an_interrupted_build(tmp_path, monkeypatch):
     _drifted_cache(cache_path, csv_path)
     args = _build_args(csv_path, cache_path)
 
-    monkeypatch.setattr(bc, "get_query_analyzer", lambda: _CountingAnalyzer(die_on=2))
+    monkeypatch.setattr(bc, "get_query_analyzer", _analyzer_factory(die_on=2))
     with pytest.raises(_Interrupted):
         bc.build(args)
     assert "q1" in load_cache(cache_path).entries, "한 건씩 저장하지 않았다"
 
-    monkeypatch.setattr(bc, "get_query_analyzer", lambda: _CountingAnalyzer())
+    monkeypatch.setattr(bc, "get_query_analyzer", _analyzer_factory())
     bc.build(args)
 
     cache = load_cache(cache_path)
@@ -414,6 +421,49 @@ def test_provenance_survives_an_interrupted_build(tmp_path, monkeypatch):
     groups = cache.provenance()
     assert groups["(meta)"] == ["q0"]
     assert sorted(v for ids in groups.values() for v in ids) == ["q0", "q1", "q2"]
+
+
+def test_drift_and_refill_follow_the_caches_own_model(tmp_path, monkeypatch):
+    """서버 기본이 Claude여도 얼려 둔 Gemini 캐시는 어긋난 것이 아니고, 빈 항목은 **그 캐시의 모델**로 채운다.
+
+    기본값과 비교하면 기준선 측정 명령마다 model_name·temperature가 어긋났다고 찍히고, build_analysis_cache는
+    dev 질의 전부를 Claude로 다시 분석한다(2026-10-14 리뷰).
+    """
+    monkeypatch.setenv("SEARCH_MODEL_PROVIDER", "claude")
+    monkeypatch.setenv("SEARCH_REFERENCE_YEAR", "2026")
+    csv_path, cache_path = tmp_path / "q.csv", tmp_path / "c.json"
+    _queries_csv(csv_path, [("q1", "질의 하나"), ("q2", "질의 둘")])
+    legacy = new_cache(source=str(csv_path), split="dev", provider="gemini")
+    for key in ("provider", "claude_settings"):          # provider를 적기 전(2026-10-14 이전)의 캐시 모양
+        legacy.meta["analyzer"].pop(key)
+    legacy.put("q1", "질의 하나", _analysis("질의 하나", confidence=0.9))
+    legacy.save(cache_path)
+
+    cache = load_cache(cache_path)
+    assert cache.provider == "gemini"
+    assert cache.fingerprint_drift() == [], "기본 모델이 바뀐 것은 이 캐시의 조건이 바뀐 것이 아니다"
+
+    asked = []
+    monkeypatch.setattr(bc, "get_query_analyzer", SimpleNamespace(
+        for_provider=lambda provider: asked.append(provider) or _CountingAnalyzer()))
+    args = _build_args(csv_path, cache_path)
+    assert bc.build(args) == 0
+    assert asked == ["gemini"], "빈 항목은 캐시의 모델(Gemini)로 채운다 — 기본 모델이 아니다"
+    cache = load_cache(cache_path)
+    assert cache.provider == "gemini"
+    assert cache.entries["q2"]["analyzer_sha"] == fingerprint_sha(analyzer_fingerprint("gemini"))
+
+    # 다른 모델을 지정하면 한 캐시에 섞지 않고 멈춘다
+    _queries_csv(csv_path, [("q1", "질의 하나"), ("q2", "질의 둘"), ("q3", "질의 셋")])
+    args.model_provider = "claude"
+    assert bc.build(args) == 2
+    assert "q3" not in load_cache(cache_path).entries
+
+    # 새 캐시는 서버 기본 모델로 시작한다
+    asked.clear()
+    fresh = _build_args(csv_path, tmp_path / "new.json")
+    assert bc.build(fresh) == 0
+    assert asked == ["claude"] and load_cache(tmp_path / "new.json").provider == "claude"
 
 
 def test_provenance_groups_entries_by_analyzer():

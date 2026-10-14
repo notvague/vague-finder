@@ -321,15 +321,20 @@ class GeminiListwiseReranker:
         client: Any = None,
     ):
         self.config = config or GeminiListwiseRerankerConfig.from_env()
-        # 직접 넘긴 키만 담는다. 없으면 환경(GCP_PROJECT_ID → Vertex, GEMINI_API_KEY → AI Studio)을 따르고,
+        # 직접 넘긴 키만 담는다. 없으면 환경(GEMINI_API_KEY → AI Studio)을 따르고,
         # GEMINI_RETRIEVAL_BACKEND가 있으면 그 경로로 고정한다(검색 용도 — 질의 분석과 같은 경로).
         self._api_key = api_key or ""
-        self._configured = gemini_configured(self._api_key, purpose=RETRIEVAL)
+        self._configured = client is not None or self._env_configured()
         self._client = client
-        if not self._configured and client is None:
-            logger.warning(
-                "[GeminiListwiseReranker] Gemini 설정 없음(GCP_PROJECT_ID·GEMINI_API_KEY, GEMINI_RETRIEVAL_BACKEND) — retrieval 순서를 유지합니다."
-            )
+        if not self._configured:
+            logger.warning("[%s] %s — retrieval 순서를 유지합니다.", type(self).__name__, self._missing_config_message())
+
+    def _env_configured(self) -> bool:
+        """환경에 이 백엔드의 설정이 있는가. Claude 백엔드가 덮어쓴다."""
+        return gemini_configured(self._api_key, purpose=RETRIEVAL)
+
+    def _missing_config_message(self) -> str:
+        return "Gemini 설정 없음(GEMINI_API_KEY, GEMINI_RETRIEVAL_BACKEND)"
 
     @property
     def enabled(self) -> bool:

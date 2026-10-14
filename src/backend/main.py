@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from src.backend.api.dependencies import close_vector_client, get_vector_client
 from src.common.gemini_client import RETRIEVAL, backend_setting
+from src.common.search_models import require_default_provider
 from src.backend.api.routes import search
 from src.backend.api.routes import feedback
 from src.feedback import worker as feedback_worker
@@ -41,9 +42,11 @@ async def lifespan(app: FastAPI):
     세운다. 이 프로세스의 Qdrant 클라이언트로 승인 사례를 쓰는 스레드라, 돌고 있는 묶음이 끝난 뒤에
     클라이언트를 닫아야 한다. Mongo는 그 작업과 색인 준비가 모두 끝난 뒤 마지막에 닫는다.
     """
-    # 검색 Gemini 경로 설정(GEMINI_RETRIEVAL_BACKEND)의 오타는 **기동에서** 실패시킨다. 분석기는 첫 요청에서 만들어지고
-    # 예열은 리랭커 예외를 로그로만 남겨, 그대로 두면 서버가 정상으로 떠 있다가 첫 검색이 500으로 떨어진다(PR #31 리뷰).
+    # 모델 설정 오류는 **기동에서** 실패시킨다 — 기본 모델(SEARCH_MODEL_PROVIDER)의 철자와 그 모델의 키, 검색 Gemini
+    # 경로 설정(GEMINI_RETRIEVAL_BACKEND)의 오타. 분석기는 첫 요청에서 만들어지고 예열은 리랭커 예외를 로그로만 남겨,
+    # 그대로 두면 서버가 정상으로 떠 있다가 첫 검색이 500·503으로 떨어진다(PR #31 리뷰).
     # 벡터 DB 실패와 달리 다시 시도해도 낫지 않는 설정 오류라 서버를 띄우지 않는다.
+    require_default_provider()
     backend_setting(RETRIEVAL)
 
     try:
