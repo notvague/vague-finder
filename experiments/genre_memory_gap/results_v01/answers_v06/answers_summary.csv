@@ -1,0 +1,9 @@
+variant,answer_kind,genre_answer_scale,n,in_pool,in_top_k,answer_offered
+all,reject_only,,22,10,6,0
+all,genre_oracle,1.0,22,10,6,7
+all,genre_oracle,0.5,22,10,6,7
+all,genre_oracle,0.0,22,10,6,7
+(전체),reject_only,,22,10,6,0
+(전체),genre_oracle,1.0,22,10,6,7
+(전체),genre_oracle,0.5,22,10,6,7
+(전체),genre_oracle,0.0,22,10,6,7

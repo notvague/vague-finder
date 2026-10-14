@@ -154,3 +154,27 @@ experiments/reranking/results_v43_audio_path_weight/analysis_cache_*.json
 # 소리 표현 타진(results_v45) — 질의별 순위표. 표본 곡 목록은 곡 목록이라 올리지 않는다(pick_sample.py로 다시 만든다)
 !experiments/reranking/results_v45_audio_segment_probe/*.csv
 experiments/reranking/results_v45_audio_segment_probe/sample_ids.txt
+
+# 등록 장르·체감 장르 간격 진단(experiments/genre_memory_gap) — 작성한 비교 질의와 곡 ID·순위만 든 집계를 커밋한다.
+# 질의별 추적표(diagnosis.csv)는 후보 30곡의 ID 목록이 들어 커서 제외하고, 평가기 detail도 관례대로 제외한다.
+!experiments/genre_memory_gap/queries_dev.csv
+!experiments/genre_memory_gap/results_*/*/sweep_summary.csv
+!experiments/genre_memory_gap/results_*/*/pair_summary.csv
+!experiments/genre_memory_gap/results_*/*/stage_summary.csv
+!experiments/genre_memory_gap/results_*/*/broad_fit.csv
+!experiments/genre_memory_gap/results_*/*/answers_summary.csv
+!experiments/genre_memory_gap/results_*/*/rerank_summary.csv
+!experiments/genre_memory_gap/results_*/*/rerank_ranks.csv
+!experiments/genre_memory_gap/results_*/genre_word_decomposition.csv
+!experiments/genre_memory_gap/results_*/clarify_compare.csv
+!experiments/genre_memory_gap/results_*/clarify_*/clarify_summary*.csv
+!experiments/genre_memory_gap/results_*/identity_terms/*.csv
+!experiments/genre_memory_gap/results_*/*/search_eval_*_summary.csv
+!experiments/genre_memory_gap/results_*/*/search_eval_*_top10.csv
+!experiments/genre_memory_gap/results_*/*/*/search_eval_*_summary.csv
+!experiments/genre_memory_gap/results_*/*/*/search_eval_*_top10.csv
+experiments/genre_memory_gap/**/*_explain.jsonl
+experiments/genre_memory_gap/**/*.log
+experiments/genre_memory_gap/**/progress.txt
+# 실패가 섞여 비교에서 뺀 실행(폴더 이름 끝에 .excluded)은 올리지 않는다
+experiments/genre_memory_gap/results_*/*.excluded/
