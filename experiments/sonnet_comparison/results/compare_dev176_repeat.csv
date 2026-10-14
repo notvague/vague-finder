@@ -1,0 +1,4 @@
+﻿runs,same_answer_rank,top1_split,top10_split,identical_top10_list
+gemini_stored_rep1 · gemini_stored_rep2,176/176,없음,없음,175/176
+haiku_dev176_rep1 · haiku_dev176_rep2,154/176,v06:c601 v09:n051 v10:t041 v10:t044 v10:t084,v06:c707 v06:q205 v09:n010,24/176
+sonnet:dev176_sonnet_structured · sonnet:dev176_sonnet_structured_rep2,168/176,v10:t039,없음,24/176

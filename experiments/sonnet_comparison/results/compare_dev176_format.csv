@@ -1,0 +1,5 @@
+﻿run,responses,json_as_is,json_after_fence_strip,fenced,complete,missing_candidates,extra_or_duplicate_ids,not_json,responses_with_invented_id,invented_id_only_after_all_candidates,responses_with_duplicate_id,candidates_unknown,used_responses,used_complete,used_parser_filled,used_parser_filled_songs,used_extra_or_duplicate_dropped,raw_records_not_matched_to_query
+haiku_dev176_rep1,163,59/163,161/163,104/163,128,14,19,2,26,18,7,0,153,122,12,합 125 · 최대 26,19,0
+haiku_dev176_rep2,161,52/161,161/161,109/161,130,22,9,0,21,18,5,0,153,123,22,합 168 · 최대 30,8,0
+sonnet:dev176_sonnet_structured,161,161/161,161/161,0/161,143,2,16,0,18,0,1,0,153,135,2,합 2 · 최대 1,16,0
+sonnet:dev176_sonnet_structured_rep2,161,161/161,161/161,0/161,149,2,10,0,12,0,3,0,153,142,2,합 2 · 최대 1,9,0
