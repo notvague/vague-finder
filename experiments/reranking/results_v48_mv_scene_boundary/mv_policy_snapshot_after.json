@@ -1,0 +1,2395 @@
+{
+ "false_positives": {
+  "뮤비에서 춤추는 아이돌 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 아이유 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 아이브 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 웃는 아이린이 예뻤던 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 소녀시대 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 방탄소년단 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 소녀감성 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 아이스크림 먹는 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 남자 아이돌 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 여자 아이돌 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 아이돌노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 아이돌의 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 아이돌, 제목은 몰라": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 아이돌이 부른 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 아이돌그룹 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 여자 목소리 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 남자 보컬 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 우는 여자 음색이 좋은 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 여자목소리 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 남자보컬 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 여자 목소리, 발라드야": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 여자 목소리였어": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 걷는 남자 목소리가 좋은 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 여자의 목소리가 좋은 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 춤추는 여자들 목소리 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 우는 남자의 음색이 좋은 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  }
+ },
+ "true_scenes": {
+  "뮤비에서 벚꽃이 흩날리는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 벚꽃이 흩날리는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 벚꽃이 흩날리는"
+   ]
+  },
+  "뮤비에서 벚꽃 흩날리는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 벚꽃 흩날리는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 벚꽃 흩날리는"
+   ]
+  },
+  "뮤비에서 흩날리는 벚꽃 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 흩날리는 벚꽃 노래"
+   ],
+   "phrases": [
+    "뮤비에서 흩날리는 벚꽃"
+   ]
+  },
+  "뮤비에서 날아다니는 종이비행기 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 날아다니는 종이비행기 노래"
+   ],
+   "phrases": [
+    "뮤비에서 날아다니는 종이비행기"
+   ]
+  },
+  "뮤비에서 춤추는 어린아이 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 어린아이 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 어린아이"
+   ]
+  },
+  "뮤비에 밤하늘이 나와": {
+   "target": true,
+   "spans": [
+    "뮤비에 밤하늘이 나와"
+   ],
+   "phrases": [
+    "뮤비에 밤하늘이 나와"
+   ]
+  },
+  "뮤비에서 어린아이가 춤추는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 어린아이가 춤추는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 어린아이가 춤추는"
+   ]
+  },
+  "뮤비에서 고등학교에서 춤추는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 고등학교에서 춤추는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 고등학교에서 춤추는"
+   ]
+  },
+  "뮤비에서 청소년들이 옥상에서 춤추는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 청소년들이 옥상에서 춤추는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 청소년들이 옥상에서 춤추는"
+   ]
+  },
+  "뮤비에서 구급차가 달려": {
+   "target": true,
+   "spans": [
+    "뮤비에서 구급차가 달려"
+   ],
+   "phrases": [
+    "뮤비에서 구급차가 달려"
+   ]
+  },
+  "뮤비에서 손거울을 들고 걷는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 손거울을 들고 걷는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 손거울을 들고 걷는"
+   ]
+  },
+  "뮤비에서 춤추는 소녀였어": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 소녀였어"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 소녀였어"
+   ]
+  },
+  "뮤비에서 춤추는 아이야": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 아이야"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 아이야"
+   ]
+  },
+  "뮤비에서 춤추는 소년인데 제목을 몰라": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 소년인데"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 소년인데"
+   ]
+  },
+  "뮤비에서 우는 아이들이었어": {
+   "target": true,
+   "spans": [
+    "뮤비에서 우는 아이들이었어"
+   ],
+   "phrases": [
+    "뮤비에서 우는 아이들이었어"
+   ]
+  },
+  "뮤비에서 춤추는 소녀예요": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 소녀예요"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 소녀예요"
+   ]
+  },
+  "뮤비에서 웃고 있는 소년이다": {
+   "target": true,
+   "spans": [
+    "뮤비에서 웃고 있는 소년이다"
+   ],
+   "phrases": [
+    "뮤비에서 웃고 있는 소년이다"
+   ]
+  },
+  "뮤비에서 춤추는 아이거든": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 아이거든"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 아이거든"
+   ]
+  },
+  "뮤비에서 웃는 아이죠": {
+   "target": true,
+   "spans": [
+    "뮤비에서 웃는 아이죠"
+   ],
+   "phrases": [
+    "뮤비에서 웃는 아이죠"
+   ]
+  },
+  "뮤비에서 춤추는 소년이네요": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 소년이네요"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 소년이네요"
+   ]
+  },
+  "뮤비에서 춤추는 아이더라": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 아이더라"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 아이더라"
+   ]
+  },
+  "뮤비에서 우는 소녀일까": {
+   "target": true,
+   "spans": [
+    "뮤비에서 우는 소녀일까"
+   ],
+   "phrases": [
+    "뮤비에서 우는 소녀일까"
+   ]
+  },
+  "뮤비에서 춤추는 아이잖아": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 아이잖아"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 아이잖아"
+   ]
+  },
+  "뮤비에서 아이가춤추는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 아이가춤추는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 아이가춤추는"
+   ]
+  },
+  "뮤비에서 소녀가울고 있어": {
+   "target": true,
+   "spans": [
+    "뮤비에서 소녀가울고 있어"
+   ],
+   "phrases": [
+    "뮤비에서 소녀가울고 있어"
+   ]
+  },
+  "뮤비에서 아이들이랑춤추는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 아이들이랑춤추는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 아이들이랑춤추는"
+   ]
+  },
+  "뮤비에서 소년이나오는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 소년이나오는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 소년이나오는"
+   ]
+  },
+  "뮤비에서 춤추는 아이요": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 아이요"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 아이요"
+   ]
+  },
+  "뮤비에서 울던 소녀요": {
+   "target": true,
+   "spans": [
+    "뮤비에서 울던 소녀요"
+   ],
+   "phrases": [
+    "뮤비에서 울던 소녀요"
+   ]
+  },
+  "뮤비에서 소년에게서 빛이 나와": {
+   "target": true,
+   "spans": [
+    "뮤비에서 소년에게서 빛이 나와"
+   ],
+   "phrases": [
+    "뮤비에서 소년에게서 빛이 나와"
+   ]
+  },
+  "뮤비에서 춤추는 아이도요": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 아이도요"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 아이도요"
+   ]
+  },
+  "뮤비에서 소녀께서 춤추는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 소녀께서 춤추는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 소녀께서 춤추는"
+   ]
+  },
+  "뮤비에서 소년들에게서는 빛이 나와": {
+   "target": true,
+   "spans": [
+    "뮤비에서 소년들에게서는 빛이 나와"
+   ],
+   "phrases": [
+    "뮤비에서 소년들에게서는 빛이 나와"
+   ]
+  },
+  "뮤비에서 춤추는 아이들한테서도요": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 아이들한테서도요"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 아이들한테서도요"
+   ]
+  },
+  "뮤비에서 아이가 춤추는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 아이가 춤추는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 아이가 춤추는"
+   ]
+  },
+  "뮤비에 소녀가 울고 있는 장면이 있어": {
+   "target": true,
+   "spans": [
+    "뮤비에 소녀가 울고 있는 장면이 있어"
+   ],
+   "phrases": [
+    "뮤비에 소녀가 울고 있는 장면이 있어"
+   ]
+  },
+  "뮤비에서 아이들이랑 춤추는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 아이들이랑 춤추는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 아이들이랑 춤추는"
+   ]
+  },
+  "뮤비에서 아이들이 풍선 들고 뛰어다녀": {
+   "target": true,
+   "spans": [
+    "뮤비에서 아이들이 풍선 들고 뛰어다녀"
+   ],
+   "phrases": [
+    "뮤비에서 아이들이 풍선 들고 뛰어다녀"
+   ]
+  },
+  "뮤비에서 소년이 달리는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 소년이 달리는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 소년이 달리는"
+   ]
+  },
+  "뮤비에서 소년과 소녀가 걷는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 소년과 소녀가 걷는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 소년과 소녀가 걷는"
+   ]
+  },
+  "뮤비에서 아이 혼자 걷는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 아이 혼자 걷는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 아이 혼자 걷는"
+   ]
+  },
+  "뮤비에서 아이가 춤추는 노래, 제목은 몰라": {
+   "target": true,
+   "spans": [
+    "뮤비에서 아이가 춤추는 노래,"
+   ],
+   "phrases": [
+    "뮤비에서 아이가 춤추는"
+   ]
+  },
+  "뮤비에서 아이가 춤춰": {
+   "target": true,
+   "spans": [
+    "뮤비에서 아이가 춤춰"
+   ],
+   "phrases": [
+    "뮤비에서 아이가 춤춰"
+   ]
+  },
+  "뮤비에서 춤추는 아이가 나와": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 아이가 나와"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 아이가 나와"
+   ]
+  },
+  "뮤비에서 아이들 뛰어다니는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 아이들 뛰어다니는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 아이들 뛰어다니는"
+   ]
+  },
+  "뮤비에서 소녀 혼자 우는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 소녀 혼자 우는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 소녀 혼자 우는"
+   ]
+  },
+  "뮤비에서 아이한테 풍선 주는 노래": {
+   "target": false,
+   "spans": [],
+   "phrases": []
+  },
+  "뮤비에서 아이처럼 뛰어다니는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 아이처럼 뛰어다니는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 아이처럼 뛰어다니는"
+   ]
+  },
+  "뮤비에서 여자가 춤추는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 여자가 춤추는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 여자가 춤추는"
+   ]
+  },
+  "뮤비에서 의자를 던져, 목소리는 여자였어": {
+   "target": true,
+   "spans": [
+    "뮤비에서 의자를 던져,"
+   ],
+   "phrases": [
+    "뮤비에서 의자를 던져"
+   ]
+  },
+  "뮤비에서 여자가 울고 있어 목소리는 남자였어": {
+   "target": true,
+   "spans": [
+    "뮤비에서 여자가 울고 있어"
+   ],
+   "phrases": [
+    "뮤비에서 여자가 울고 있어"
+   ]
+  },
+  "뮤비에서 여자가 춤추는데 보컬은 남자야": {
+   "target": true,
+   "spans": [
+    "뮤비에서 여자가 춤추는데"
+   ],
+   "phrases": [
+    "뮤비에서 여자가 춤추는데"
+   ]
+  },
+  "뮤비에서 춤추는 사람은 여자였어": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 사람은 여자였어"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 사람은 여자였어"
+   ]
+  },
+  "뮤비에서 남자가 달리고 여자가 울어": {
+   "target": true,
+   "spans": [
+    "뮤비에서 남자가 달리고 여자가 울어"
+   ],
+   "phrases": [
+    "뮤비에서 남자가 달리고 여자가 울어"
+   ]
+  },
+  "뮤비에서 춤추는 여자가 나와": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 여자가 나와"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 여자가 나와"
+   ]
+  },
+  "뮤비에서 바다가 나오는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 바다가 나오는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 바다가 나오는"
+   ]
+  },
+  "뮤비에 꽃나무가 가득해": {
+   "target": true,
+   "spans": [
+    "뮤비에 꽃나무가 가득해"
+   ],
+   "phrases": [
+    "뮤비에 꽃나무가 가득해"
+   ]
+  },
+  "뮤비에서 교복입고 춤추는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 교복입고 춤추는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 교복입고 춤추는"
+   ]
+  },
+  "뮤비에서 눈밭을 달리는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 눈밭을 달리는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 눈밭을 달리는"
+   ]
+  },
+  "뮤비에서 나비가 날아다니는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 나비가 날아다니는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 나비가 날아다니는"
+   ]
+  },
+  "뮤비에서 버스 타고 어디 가": {
+   "target": true,
+   "spans": [
+    "뮤비에서 버스 타고 어디 가"
+   ],
+   "phrases": [
+    "뮤비에서 버스 타고"
+   ]
+  },
+  "뮤비에서 상자를 던지는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 상자를 던지는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 상자를 던지는"
+   ]
+  },
+  "뮤비에서 별이 쏟아지는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 별이 쏟아지는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 별이 쏟아지는"
+   ]
+  },
+  "뮤비에서 태양이 떠오르는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 태양이 떠오르는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 태양이 떠오르는"
+   ]
+  },
+  "뮤비에서 유리 상자 안에 갇혀 있어": {
+   "target": true,
+   "spans": [
+    "뮤비에서 유리 상자 안에 갇혀 있어"
+   ],
+   "phrases": [
+    "뮤비에서 유리 상자 안에 갇혀 있어"
+   ]
+  },
+  "뮤비에서 의자가 하늘에 떠 있어 여자 목소리였어": {
+   "target": true,
+   "spans": [
+    "뮤비에서 의자가 하늘에 떠 있어"
+   ],
+   "phrases": [
+    "뮤비에서 의자가 하늘에 떠 있어"
+   ]
+  },
+  "뮤비에서 의자가 하늘에 떠 있는 춤추는 여자 목소리 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 의자가 하늘에 떠 있는 춤추는"
+   ],
+   "phrases": [
+    "뮤비에서 의자가 하늘에 떠 있는"
+   ]
+  }
+ },
+ "out_of_scope": {
+  "뮤비에서 춤추는 잔나비 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 잔나비 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 잔나비"
+   ]
+  },
+  "뮤비에서 춤추는 유리상자 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 유리상자 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 유리상자"
+   ]
+  },
+  "뮤비에서 춤추는 임한별 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 임한별 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 임한별"
+   ]
+  },
+  "뮤비에서 춤추는 잠골버스 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 잠골버스 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 잠골버스"
+   ]
+  },
+  "뮤비에서 춤추는 서울달 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 서울달 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 서울달"
+   ]
+  },
+  "뮤비에서 춤추는 새별 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 새별 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 새별"
+   ]
+  },
+  "뮤비에서 춤추는 잔나비노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 잔나비노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 잔나비노래"
+   ]
+  },
+  "뮤비에서 춤추는 잔나비의 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 잔나비의 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 잔나비의"
+   ]
+  },
+  "뮤비에서 잔나비 노래 부르는 곡": {
+   "target": true,
+   "spans": [
+    "뮤비에서 잔나비 노래 부르는 곡"
+   ],
+   "phrases": [
+    "뮤비에서 잔나비 노래 부르는"
+   ]
+  },
+  "뮤비에서 춤추는 잔나비 곡이야": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 잔나비"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 잔나비"
+   ]
+  },
+  "뮤비에서 춤추는 아이오아이 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 아이오아이 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 아이오아이"
+   ]
+  },
+  "뮤비에서 잔나비가 춤추는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 잔나비가 춤추는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 잔나비가 춤추는"
+   ]
+  },
+  "뮤비에서 유리상자가 노래 부르는 곡": {
+   "target": true,
+   "spans": [
+    "뮤비에서 유리상자가 노래 부르는 곡"
+   ],
+   "phrases": [
+    "뮤비에서 유리상자가 노래 부르는"
+   ]
+  },
+  "뮤비에서 임한별이 우는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 임한별이 우는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 임한별이 우는"
+   ]
+  },
+  "뮤비에서 아이오아이가 춤추는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 아이오아이가 춤추는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 아이오아이가 춤추는"
+   ]
+  },
+  "뮤비에서 춤추는 잔나비, 제목은 몰라": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 잔나비,"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 잔나비"
+   ]
+  },
+  "뮤비에서 춤추는 잔나비": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 잔나비"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 잔나비"
+   ]
+  },
+  "뮤비에서 춤추는 태양 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 태양 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 태양"
+   ]
+  },
+  "뮤비에서 춤추는 별 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 별 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 별"
+   ]
+  },
+  "뮤비에서 태양이 춤추는 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 태양이 춤추는 노래"
+   ],
+   "phrases": [
+    "뮤비에서 태양이 춤추는"
+   ]
+  },
+  "뮤비에서 바다가 노래 부르는 곡": {
+   "target": true,
+   "spans": [
+    "뮤비에서 바다가 노래 부르는 곡"
+   ],
+   "phrases": [
+    "뮤비에서 바다가 노래 부르는"
+   ]
+  },
+  "뮤비에서 춤추는 버스커 버스커 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 버스커 버스커 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 버스커"
+   ]
+  },
+  "뮤비에서 춤추는 여자친구 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 여자친구 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 여자친구"
+   ]
+  },
+  "뮤비에서 춤추는 칼라파워 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 칼라파워 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 칼라파워"
+   ]
+  },
+  "뮤비에서 춤추는 아이들 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 아이들 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 아이들"
+   ]
+  },
+  "뮤비에서 춤추는 여자아이들 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 여자아이들 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 여자아이들"
+   ]
+  },
+  "뮤비에서 춤추는 노르웨이 숲 노래": {
+   "target": true,
+   "spans": [
+    "뮤비에서 춤추는 노르웨이 숲 노래"
+   ],
+   "phrases": [
+    "뮤비에서 춤추는 노르웨이 숲"
+   ]
+  }
+ },
+ "dev": {
+  "q101": {
+   "query": "2000년대 후반에 싸이월드 배경음악으로 엄청 유행했던 곡인데, 여자애들 여러 명이 부르는 빠른 댄스곡이었어. 제목이 알파벳 세 글자였던 것 같은데",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q103": {
+   "query": "목소리가 되게 독특한 남자 알앤비 가수 노랜데, 걱정 말고 그냥 지나가면 된다는 식으로 위로하는 가사였어. 제목도 짧았던 것 같은데",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q104": {
+   "query": "2000년대 초반 여자 알앤비 가수였는데 기교랑 바이브레이션이 진짜 심했어. 제목은 영어 단어 하나였고 눈물이랑 지워지지 않는 기억 얘기가 나왔던 것 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q105": {
+   "query": "여자 솔로가 부르는 센 느낌의 댄스곡인데, 자기가 영화 주인공이라는 식의 가사가 있었어. 신스 소리가 웅장했고",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q106": {
+   "query": "밴드가 부르는 노랜데 후렴에서 같은 단어를 세 번씩 반복했어. 기타 소리 강하고 남자 보컬이 좀 허스키했던 것 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q107": {
+   "query": "인디밴드 노랜데 좋아하면 좋아할수록 상처받는다는 가사가 있었어. 기타 소리가 옛날 아날로그 느낌이었고 2000년대 초반 곡인 것 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q108": {
+   "query": "남자 아이돌 그룹 노랜데 힙합인데도 피아노가 계속 깔렸어. 후렴이 엄청 따라부르기 쉬워서 다들 알던 곡이었는데",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q110": {
+   "query": "여자 그룹인데 되게 독특하고 인도 음악 같은 이국적인 느낌이 났어. 제목이 외국 사람 이름 같았던 것 같은데",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q112": {
+   "query": "힙합 그룹 노랜데 팬한테 말하는 것 같은 내용이었고 스트링 반주가 깔렸어. 2000년대 중후반쯤이었던 것 같은데",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q113": {
+   "query": "여자 솔로 댄스곡인데 클래식 곡을 샘플링한 것 같았어. 제목에 클래식 용어가 들어갔던 것 같은데",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q114": {
+   "query": "남자 두 명이 부르는 힙합인데 제목이 같은 단어를 두 번 반복하는 형태였어. 일렉트로닉 비트가 되게 강했고",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q115": {
+   "query": "반주가 거의 피아노 하나뿐인데 남자가 호소하듯이 부르는 발라드였어. 오케스트라 같은 게 뒤에서 조금씩 깔렸던 것 같고 최근 곡이야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q117": {
+   "query": "앨범 커버에 사진 없이 글씨만 크게 박혀 있었어. 되게 심플했는데",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q202": {
+   "query": "최근에 골반 안무랑 유행어로 인스타 릴스 챌린지 때문에 역주행한 곡이야. 여자아이돌 곡이라고 들었고, 도입부가 딴딴, 딴딴 이렇게 두 음씩 끊어지면서 중독성 있게 시작해.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q203": {
+   "query": "무슨 밴드 노래인데, 옛날에 짱구 애니메이션에서 누가 이별하는 되게 감성적인 장면에 OST로 삽입되어서 화제가 됐던 곡이야. 남자 목소리였던 것 같고 나머지는 기억이 안 나네.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q204": {
+   "query": "노래에 대한 건 하나도 기억 안 나고 앨범 커버가 강렬해서 기억에 남아. 다섯 명의 여자가 서로 다른 동물 탈을 쓰고 있는 하얀색 배경의 그림이었어.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q205": {
+   "query": "남성 솔로 발라드 곡인데, 앨범 커버가 알록달록한 책이 엄청 많이 쌓여있는 이미지였어.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q206": {
+   "query": "2010년대 후반 정도에 나온 곡인 것 같아. 남성 솔로 곡인데 목소리가 되게 미성이었고 가창력이 돋보이는 곡이야. 이별 노래였던 것 같고 멜로디가 정통적인 발라드 느낌? 앨범 커버는 남자 모습을 펜으로 날려그린 듯한 이미지야.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q207": {
+   "query": "남녀 듀엣곡이고 앨범 커버도 부른 가수 두 명이 같이 찍은 사진이었어. 반복적으로 나오는 휘파람 소리가 되게 중독적이었던 것 같아. 당시 되게 유명한 아이돌 멤버들이 혼성으로 파격적인 퍼포먼스를 보여서 화제가 됐었어.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q208": {
+   "query": "휘성이 부른 노래야. 팝송으로 원곡이 있다는 것만 기억나.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q209": {
+   "query": "여성 솔로 노래인데 노래 부르는 목소리가 되게 공기반 소리반이었어. 가성이 돋보인다고 해야 하나? 되게 유명한 노래의 ost인데.. \"나의 운명인 사랑\" 이라는 가사가 있었던 것 같아.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q210": {
+   "query": "남자 아이돌그룹 노래야. 비가 오면 가장 먼저 생각날 정도로 유명한 노래인 것 같은데.. 앨범 커버가 검은색 베이스였어.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q211": {
+   "query": "위험하다는 가사가 반복적으로 나오는 노래였던 것 같아. 여러 명의 여자가 같이 부르는? 중간에 짧게 랩 파트도 있었던 것 같아. 파워풀한 보컬이 돋보이는 노래였어.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q213": {
+   "query": "꽤 옛날 노래인데 가사에 \"너를 사랑해도 되겠니\" 라는 말이 있었어. 남성 솔로 노래인데 목소리가 되게 얇은 느낌에 가사 분위기랑 다르게 멜로디는 신나는 느낌이었던 것 같아.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q215": {
+   "query": "비 오는 밤에 혼자 드라이브 하면서 듣기 좋은 노래 같아. 이별 노래인데 생각나는 이미지가 검은색? 회색? 빛 배경에 어둡고 축축한 느낌이 생각난다. 사운드는 어쿠스틱 베이스?",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q218": {
+   "query": "민경훈 노래인데 남자들이 노래방 가면 많이 부렀던 노래. 일렉 기타 소리가 돋보이는 도입부에 띠리리리? 하는 전주가 유명해.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q219": {
+   "query": "남녀 듀엣 곡인데 남자는 랩을 하고 여자는 노래를 불러. 아파운더웨이~ 하는 가사로 여자가 도입부를 시작해. 가사 내용이 남자가 되게 집착하는 듯한 내용이었고, 남자 목소리는 허스키하고 여자 목소리는 되게 몽환적이야. 끝으로는 남자가 나레이션 하면서 노래가 끝나.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q304": {
+   "query": "앨범 커버가 초록색 바탕이었고 흰색 기하학 도형 네 개가 크게 배치돼 있었어. 글자도 도형처럼 각져 보여서 전체적으로 아주 심플한 느낌이었어.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q307": {
+   "query": "회색빛 커버였는데 사선으로 화면이 나뉘어 있었고, 남자 네 명이 아주 작게 흩어져 서 있었어. 전체적으로 차갑고 미니멀한 느낌이 강했어.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q308": {
+   "query": "2000년대 후반 힙합 노래인데 남자들이 랩하고 여자 가수가 후렴을 불렀어. 비 오는 날 헤어진 사람을 생각하는 내용이고, 가사에 자신을 한쪽 다리가 짧은 의자에 비유했던 게 기억나.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q310": {
+   "query": "2010년대 중반 여자 아이돌 노래인데 첫사랑 때문에 마음대로 안 돼서 울상 짓는 내용이었어. 제목이 우는 얼굴 이모티콘처럼 보이는 같은 영어 알파벳 두 글자였던 것 같아.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q311": {
+   "query": "2009년쯤 남자 아이돌 노래였는데 타악기랑 전자 신스가 엄청 강했고 후렴이 거의 주문처럼 같은 영어 소리를 계속 반복했어. 사랑에 빠지니까 머릿속에서 종이 울린다는 느낌의 가사였던 것 같아.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q312": {
+   "query": "손으로 그린 것 같은 커다란 꽃 그림이 검은 선으로 들어가 있었고, 배경은 종이 질감처럼 거칠고 차분했어. 제목도 손글씨처럼 적혀 있던 남자 보컬 노래였어.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q313": {
+   "query": "여성 보컬이 중심인 인디 노래였어. 답답한 일상에서 벗어나 공항으로 떠나고 싶다는 내용이고, 여름 드라이브에 잘 어울리는 트로피컬 하우스랑 팝 록 느낌이 섞여 있었어.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q314": {
+   "query": "남자 발라드 가수가 부른 편안한 여행 노래였는데 바닷가 카페에서 듣는 것처럼 담백한 라운지 느낌이었어. 도시를 훌훌 떠나서 사랑하는 사람이랑 섬의 밤바다로 가자는 내용이 기억나.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q315": {
+   "query": "분홍빛이 도는 연한 배경에 흑백으로 찍은 여자 얼굴 사진이 있었고, 꽃 그림자나 꽃잎 같은 게 겹쳐 보였어. 왼쪽에는 영어 대문자 한 글자가 크게 찍혀 있었던 앨범이야.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q316": {
+   "query": "남자 아이돌 멤버가 처음 솔로로 낸 노래였던 것 같아. 기타랑 드럼이 시원하게 나오고 래퍼 피처링도 있었어. 힘든 시간을 지나 다시 날아가겠다는 내용이고 제목은 영어 한 글자였어.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "q318": {
+   "query": "윤하 비밀번호 486",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "m102": {
+   "query": "무한도전 가요제 곡 중에 유재석이 참여한 노래였어. 랩이 들어가고 리듬감이 있었던 걸로 기억해",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "m103": {
+   "query": "2000년대 초반 겨울 드라마 OST였는데, 현악기가 깔리고 남자가 호소하듯 부르는 발라드야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "m104": {
+   "query": "도깨비 드라마에 나온 노래인데 피아노 반주에 남자 보컬이 감성적으로 불렀어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "m201": {
+   "query": "반주가 어쿠스틱 기타 위주이고 남녀가 같이 부르는데 목소리가 맑고 청아했어. 리듬감이 있는 곡이야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "m202": {
+   "query": "신디사이저랑 일렉트로닉 사운드가 강한 힙합풍 곡인데 남녀 목소리가 섞여 나와",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "m203": {
+   "query": "샘플링이랑 비트가 강조된 일렉트로닉 곡이고 남자들이 여러 명 부르는 느낌이었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "m302": {
+   "query": "표지에 사람 얼굴이 크게 클로즈업되어 있던 곡이야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "m303": {
+   "query": "앨범 자켓이 흑백 사진이었고 글자가 거의 없었던 것 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "m402": {
+   "query": "커버가 어둡고 차가운 느낌이었는데, 노래는 현악기 깔린 남자 발라드였어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "m403": {
+   "query": "표지가 알록달록하고 시끌벅적한 느낌인데 정작 곡은 잔잔한 피아노 발라드였어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "c601": {
+   "query": "전 세계에서 사람들이 따라 추는 춤이 유행했던 곡이야. 뮤직비디오가 코미디처럼 웃겼고 남자가 불렀어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "c602": {
+   "query": "힙합 경연 프로그램에서 우승한 사람이 그 프로그램 안에서 발표한 곡이야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "c603": {
+   "query": "경연 프로그램에 나온 남자가 불러서 화제가 된 곡인데, 원래 다른 가수 곡을 다시 부른 거였어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "c605": {
+   "query": "배우가 주인공으로 나온 작품에서 본인이 직접 부른 곡이야. 무대에서 노래하는 장면에 나왔어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "c607": {
+   "query": "옛 동네 골목을 배경으로 한 추억 드라마에 삽입된 곡인데, 원래는 오래된 밴드가 부르던 노래를 다시 불렀어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "c701": {
+   "query": "외계인이 나오는 드라마에 쓰인 곡인데 남자가 부르는 발라드였어. 눈 내리는 겨울에 사랑하는 사람을 떠나보내는 내용이야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "c705": {
+   "query": "클래식 연주자들이 나오는 드라마에 쓰인 곡인데 남자가 부르는 잔잔한 발라드였어. 좋아하는 사람 주변만 맴돌면서 말 못 하는 내용이야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "c706": {
+   "query": "여자 둘이 부르는 곡인데 한 명은 랩을 하고 한 명은 노래를 했어. 우는 내용이었던 것 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "c707": {
+   "query": "특별한 후각을 가진 주인공이 나오는 드라마 삽입곡인데 여자 혼자 부르는 곡이었어. 봄에 설레는 마음을 담았고 중간에 랩 파트가 섞여 있었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v06"
+  },
+  "n002": {
+   "query": "90년대 초반 록밴드 노래인데, 원래 보컬이 앨범 준비하다가 사고로 세상을 떠나서 그 동생이 대신 불렀다는 사연이 있었어.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n006": {
+   "query": "통기타 치면서 가볍게 부르는 남자 노래인데 꽃 피는 철에 맞춰 나왔던 거. 2013년쯤이었고 표절 얘기가 좀 돌았던 걸로 기억해",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n007": {
+   "query": "술 마시고 헤어진 사람한테 전화 거는 내용인데 마지막에 '여보세요 뭐뭐' 하면서 끝나는 남자 발라드. 회식 끝나고 노래방 가면 꼭 누가 불렀어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n009": {
+   "query": "'네 방 침대가 되고 싶다' 비슷한 가사 나오는 노래 찾아. 남자 아이돌이 화음 쌓아서 부른 데뷔곡이었던 거 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n010": {
+   "query": "싸이월드 미니홈피 배경음악으로 한번쯤은 걸어놨던 힙합 발라드. 남자가 랩하고 여자가 노래 불러.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n011": {
+   "query": "데뷔 무대부터 덤블링이랑 공중제비 막 하던 남자 아이돌 데뷔곡 있잖아. 2008년쯤이었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n013": {
+   "query": "'내꺼인 듯 내꺼 아닌' 이 가사 나오는 남녀 듀엣 뭐였더라. 여자는 걸그룹 멤버였고 남자는 래퍼였나 R&B 가수였나 그랬던 것 같아.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n014": {
+   "query": "수능 금지곡 얘기 나오면 꼭 끼는 노래, 고양이 발처럼 손 오므리고 추는 안무였어. 여자 그룹이고 2000년도 초에 나왔을걸",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n016": {
+   "query": "삼단 고음으로 유명한 발라드. 그때 십대였던 여자 솔로 가수였고 2010년쯤 엄청 유명했어.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n017": {
+   "query": "옛날 노래인데, '우연이 아니야' 하는 가사. 여자 가수가 굵고 힘 있는 목소리로 불렀어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n018": {
+   "query": "인트로에 물흐르는 소리가 나오는 옛날 민요풍 트로트?",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n019": {
+   "query": "헤어진 사람이랑 맨날 같이 가던 동네를 이제 못 가겠다는 남자 발라드. 동네 이름이 나왔던 것 같은데 기억이 안 나",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n020": {
+   "query": "남자친구가 딴 여자 만나는 것 같다고 의심하는 가사였던 걸그룹 노래, 그룹이 밝은 콘셉트 하다가 처음으로 확 섹시하게 바꿨던 때였어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n021": {
+   "query": "꽃 피고 커플들 쏟아져 나오는 계절이 싫다고 대놓고 투덜대는 노래. 남자 둘 인디 듀오였고 목소리가 높고 좀 얇은 느낌이었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n025": {
+   "query": "술자리 게임 이름을 그대로 후렴에서 반복하는 노래, 걸그룹 멤버가 외국 남자 팝스타랑 같이 불렀어. 진짜 어딜 가나 나왔던 것 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n029": {
+   "query": "지친 사람 다독여주는 노래. 여자 가수가 낮고 허스키하게 불렀고, 가사는 다른 그룹 남자 아이돌이 써줬다고 들었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n030": {
+   "query": "아이돌인데 직접 악기 치는 남자 밴드 노래, 2019년 초에 음원 1위까지 갔던 거. 데뷔하고 몇 년 만에 처음 크게 뜬 곡이라 화제였어, 신나고 좋아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n031": {
+   "query": "드라마 천국의 계단 보면 계속 깔리던 남자 발라드, 목소리가 엄청 애절하고 고음이 길게 뻗었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n033": {
+   "query": "재벌집 딸이랑 시골 출신 남편 나오는 드라마, 2024년 봄에 한 거 있잖아. 거기 OST로 남자 R&B 가수가 부른 노래가 계속 나왔어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n034": {
+   "query": "명성황후 드라마 주제가였던 노래. 성악 하는 여자 소프라노가 불렀는데 웅장하고 비장했어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n035": {
+   "query": "김삼순 드라마에서 나오던 노래 중에 일렉트로닉 느낌 나는 거. 남녀 보컬이 같이 나오고 세련된 라운지 음악 같았어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n038": {
+   "query": "군인이랑 의사 나오는 드라마 OST였는데, 랩 잘하는 여자 가수가 이번엔 랩 없이 노래만 했던 거. 2016년 초에 엄청 들었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n039": {
+   "query": "무한도전에서 MC랑 가수가 팀 짜서 진지하게 불렀던 노래. '나 스무 살 적에' 이런 가사로 시작했던 것 같은데 피아노 반주였나",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n040": {
+   "query": "남자 가수 이별 노래가 크게 뜨고 나서 그 노래 답가로 나온 여자 버전 노래 있잖아. 2017년 겨울쯤",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n042": {
+   "query": "2020년 초에 연예인들이 춤 영상 찍어 올리던 챌린지 노래. 남자 래퍼 솔로 곡이었고 리듬이 가볍고 흥겨웠어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n043": {
+   "query": "의사 다섯 명이 밴드 하는 드라마에서 배우가 기타 치면서 부른 노래. 원래는 2000년대 초 혼성 그룹 노래였대, 2020년에 다시 부른 걸로 찾고 싶어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n044": {
+   "query": "분노의 질주 스핀오프 영화에 나온 노래를 걸그룹이 리메이크한 거 중간에 곡 분위기가 확 바뀌어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n045": {
+   "query": "펜싱 선수 나오는 청춘 드라마 제목이랑 노래 제목이 똑같았던 거. 노래가 드라마보다 훨씬 먼저 나왔고 여자 보컬 밴드 곡이었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n046": {
+   "query": "기타가 엄청 무겁게 긁히고 남자가 거의 소리 지르듯이 랩이랑 노래를 섞는 곡. 중간에 턴테이블 긁는 소리 같은 것도 들어갔던 거 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n048": {
+   "query": "여자 R&B 발라드인데 노래가 엄청 길었어. 중간에 노래를 멈추고 혼잣말처럼 대사를 하는 부분이 있었고, 현악이랑 피아노가 잔잔하게 깔려",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n051": {
+   "query": "도입부터 행진하는 마칭 드럼이 두두두 쏟아지는 걸그룹 댄스곡. 호루라기 소리 같은 것도 들렸던 것 같고 엄청 파워풀했어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n054": {
+   "query": "디스코처럼 베이스가 통통 튀고 브라스가 빵빵 터지는 신나는 곡, 유명한 남자 아이돌이 영어로 불렀어. 손뼉 소리랑 밝은 코러스가 계속 나와",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n055": {
+   "query": "남자 목소리가 쇳소리 섞여서 거칠게 갈라지는데 그걸로 끝까지 절규하듯 내지르는 발라드. 오케스트라가 뒤에서 점점 커지다가 마지막에 폭발해",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n057": {
+   "query": "부드러운 남자 목소리로 시작해서 후렴에 노래 대신 신스 멜로디가 터지는 EDM. 잘게 자른 목소리 샘플이 반복되고 아련한 느낌이었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n058": {
+   "query": "옛날 80년대 노래처럼 베이스가 통통 튀고 뿅뿅거리는 전자음이 깔리는 곡. 남자 보컬이 부드럽게 부르다가 중간에 다른 남자가 랩으로 들어와",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n061": {
+   "query": "라틴 타악기 같은 둥둥 리듬에 베이스가 낮게 깔리는 걸그룹 곡. 후렴에서 단어를 잘게 끊어서 따다다다 반복하는 부분이 중독적이었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n062": {
+   "query": "중국 노래 같은 멜로디가 깔리는 뽕짝 느낌 댄스곡. 여자들이 일부러 콧소리 내면서 귀엽게 불렀어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n064": {
+   "query": "펑크록처럼 일렉기타가 거칠게 긁히는 걸그룹 곡. 후렴 끝에 '라라라' 하는 떼창 같은 부분이 나오고 보컬이 좀 건방지게 툭툭 던져",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n065": {
+   "query": "걸그룹 노래인데 밴드처럼 전기기타가 시원하게 달리는 록 느낌이었어. 보컬들이 힘 있게 쭉 내질러",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n066": {
+   "query": "새빨간 배경에 사람 눈 하나만 엄청 크게 클로즈업된 앨범 표지였어. 눈동자가 초록빛이었던 것 같고 속눈썹이 길게 뻗어 있었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n068": {
+   "query": "활주로 같은 데에 옛날 프로펠러 비행기가 서 있고, 여자 한 명이 가운데, 남자 둘이 양쪽에 멀찍이 서 있는 사진 표지. 하늘이 맑았어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n071": {
+   "query": "하얀 바탕에 먹으로 그린 것 같은 검은 용 한 마리가 세로로 꿈틀대는 표지. 옆에 빨간 한자가 하나 들어가 있었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n072": {
+   "query": "우주랑 행성이 나오는 앨범 표지 찾아줘. 어두운 남색 배경이었던 것 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n073": {
+   "query": "바닷가에 낡은 버스 정류장 하나만 덩그러니 있는 사진 표지. 하늘이 희뿌옜어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n074": {
+   "query": "빨간 하늘에 커다란 오렌지 단면이 해처럼 떠 있고, 파란 파인애플이랑 과일이 잔뜩 있는 들판 표지",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n075": {
+   "query": "샛노란 배경에 남자애 얼굴을 파란색으로 유화처럼 거칠게 그린 표지. 표정이 좀 시무룩했어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n076": {
+   "query": "별이 쏟아지는 밤하늘 사진 표지였는데, 다른 건 기억이 잘 안 나",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n077": {
+   "query": "위에서 내려다본 구도로 여자애들이 아스팔트 위에서 손잡고 동그랗게 원을 만든 표지.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n081": {
+   "query": "갈색 느낌의 옷을 입은남자 셋이 크게 나오고 가운데 사람이 두 손을 모은 표지였어. 노래는 90년대 R&B인데 그루브가 통통 튀고 셋이 화음을 쌓았어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n082": {
+   "query": "분홍색 바탕에 하얀 동그라미 선이 얇게 겹쳐 그려진 표지였어. 노래는 여자 보컬이 독특하게 내지르는 경쾌한 록이었고 기타가 신나게 달렸어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n086": {
+   "query": "하늘색 구름 배경에 분홍색 종이접기 같은 게 떠 있고 별이 흩뿌려진 표지. 노래는 여자들이 직접 악기 치는 밴드 사운드로 빠르고 청량했어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n088": {
+   "query": "검은 드레스 등이 깊게 파여서 진주 목걸이가 등 뒤로 늘어진 여자 뒷모습 표지. 노래는 의자에 앉았다 일어났다 하는 안무로 엄청 유행했던 여자 솔로 댄스곡이야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n089": {
+   "query": "초록색 바탕 가운데에 동그랗게 파란 하늘이랑 구름이 뚫려 있는 표지였어. 노래는 남매 듀오 목소리에 여자 솔로 가수가 같이 들어와서 셋이 주고받는 밝은 곡",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n090": {
+   "query": "짙은 초록 격자무늬 배경에 알록달록한 영어 글씨가 크게 박힌 표지. 노래는 남자 밴드가 시원하게 달리는 곡인데, 몇 년 지나서 대학 축제 영상 때문에 다시 떴어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n091": {
+   "query": "바닷가에서 긴 머리가 바람에 날려서 얼굴을 반쯤 덮은 남자 사진 표지였어. 회색 니트 입고 있었고 옆에 세로로 영어 이름이 길게 써 있었던 것 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n093": {
+   "query": "작은 기획사 신인 보이그룹이 빌보드 차트에 오래 붙어 있어서 뉴스까지 났던 노래, 2023년이야. 틱톡에서 영어 버전이 먼저 터졌고 노래는 가볍고 달달했어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n095": {
+   "query": "남자 둘이 하는 팀인데 한 명은 통기타만 치고 한 명은 노래하는 구성이었어. 맑고 높은 남자 목소리가 통통 튀는 반주 위에서 밝게 고백하듯 불러",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n096": {
+   "query": "'라면 먹을래요?' 대사로 유명한 그 영화 주제가, 90년대 후반 영화였던 걸로 기억해. 록밴드 여자 보컬이 솔로로 불렀고 쓸쓸한 노래였어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "n097": {
+   "query": "노래방에서 고음 도전할 때 꼭 고르는 2000년 노래, 여자 록밴드 보컬이 부른 거였던 것 같은데. 빠른 댄스 비트에 후렴 고음이 진짜 미친 듯이 높아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v09"
+  },
+  "t001": {
+   "query": "콘서트에서 압정밟은 것 처럼 뛰어다니고 닭소리 처럼 노래 부르는 걸로 유명한 남자 가수 있잖아, 그 사람 90년대 후반 발라드 중에 피아노 반주로 엄청 애절하게 지르는 거 뭐였더라",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t003": {
+   "query": "허스키한 남자가 '어찌합니까' 하고 절규하는 노래, 남자들이 노래방에서 자주 부르는데 노래방 금지곡으로 뽑혔던 적이 있었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t004": {
+   "query": "그 사람 옆자리가 내 자리였으면 좋겠다는 짝사랑 발라드, 2000년대 중반 남자 솔로였고 후렴이 너무 높아서 노래방에서 다들 키 낮춰 불렀어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t007": {
+   "query": "대중교통에서 마주친 사람한테 첫눈에 반하는 내용의 댄스곡, 90년대 중후반 남녀 섞인 그룹이었고 엄청 발랄했던 거 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t008": {
+   "query": "헤어지고 취해서 혼자 우는 내용의 R&B 발라드, 남자 둘이 하는 그룹이었는데 2000년대 중반에 회식 끝나고 노래방 가면 꼭 누가 불렀어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t009": {
+   "query": "작곡가가 곡마다 객원 보컬 데려와서 앨범 내는 프로젝트 있잖아, 거기서 남자 보컬이 부른 건데 이별 노래인데도 템포가 밝고 경쾌했어. 2000년대 후반",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t010": {
+   "query": "2005년쯤 연말에 남자 아이돌 다섯 명이 낸 겨울 발라드, 제목이 영어 두 단어였던 거 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t011": {
+   "query": "남자 힙합 듀오 노래인데 후렴은 R&B 하는 남자 가수가 미성으로 불러줬고, 제목이 줄임말이었어. 2007년쯤",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t016": {
+   "query": "동요 '떴다 떴다' 가사를 후렴에 넣은 신나는 댄스곡, 남자 셋이 하던 그룹이었고 2000년대 중반 운동회마다 틀었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t018": {
+   "query": "술 마시고 다 같이 떼창하던 펑크밴드 노래, '방황하며 춤을 추는' 뭐 이런 가사였고 2000년 전후에 나왔어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t024": {
+   "query": "오디션 출신 밴드 노래인데, 제목에 지명이 들어갔고 바다가 생각나는 노래야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t025": {
+   "query": "남녀 듀엣노랜데 연인이 언제 만날지 기다리는 마음을 담은 노래야. 노래 중간에 mind control! 하는 부분이 있는데 그게 킥이야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t026": {
+   "query": "매일 똑같은 하루를 죽은 사람처럼 걸어 다닌다는 가사, 남자 아이돌 힙합 곡이었던 거 같아. 2020년쯤 직장인들이 공감한다고 많이 들었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t029": {
+   "query": "교과서 예시에 나오는 흔한 남자 이름이 제목에 들어간 노래, 평범한 사람이 하루하루 버티는 얘기를 남자 가수가 담담하게 불렀어. 릴스 배경 노래로 한창 나왔던 것 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t031": {
+   "query": "아이유 노랜데 되게 핑크핑크한 분위기에 밝은 노래였어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t032": {
+   "query": "도입부가 EDM 처럼 신나는 남자 노랜데 가사에 \"노랑 브릿지~\"가 있었던 것 같고 중독적인 노래야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t033": {
+   "query": "노래방에서 자주 부르는 혼성 노랜데 드라마에서 나왔고 제목이 영어였던 것 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t036": {
+   "query": "드라마 OST인데 여자가 불렀고 되게 고단한 현실을 살아가는 사람들을 생각하게 하는 슬픈 노래야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t037": {
+   "query": "노비 쫓는 사극 OST였는데 허스키한 남자가 처절하게 부르던 노래.",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t038": {
+   "query": "오디션 프로에서 남자 둘이 듀엣으로 부른 옛날 록 명곡 리메이크, 나중에 드라마 OST로 나오기도했어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t039": {
+   "query": "무협 영화 주제가였던 남자 발라드, 마지막에 말도 안 되게 높은 음을 길게 뽑아. 노래방에서도 자주 들려",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t040": {
+   "query": "우리나라 첫 여자 비행사 얘기 다룬 영화 주제가였던 잔잔한 발라드, 나중에 오디션 프로에서 어떤 그룹이 리메이크해서 다시 떴어. 원곡 말하는 거야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t041": {
+   "query": "만화 엔딩곡을 한국어로 부른 버전 있잖아, 중간에 랩도 있었던 것 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t042": {
+   "query": "군대 가 있는 동안 역주행해서 차트 1위까지 한 남자 솔로 노래, 마지막에 터지듯 내지르는 록발라드야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t043": {
+   "query": "넷플릭스 애니 노랜데, 거기서 제일 유명한 노래. 고음이 엄청 높고 영어 가사",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t044": {
+   "query": "무한도전에서 나온 노랜데 미국 서부 느낌이 나는 신나는 노래야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t046": {
+   "query": "트로트 오디션 경연에서 남자 참가자가 불러서 다들 울었던 노래, 늙은 부부 이야기를 담은 포크 리메이크였어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t053": {
+   "query": "보잘것없는 애벌레가 결국 날개 펴고 날아오른다는 밴드 록, 수능 응원이나 운동회 때 많이 틀었어. 2000년대 중반",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t058": {
+   "query": "레게 리듬에 기타가 엇박으로 짱짱 끊어 치고, 남자 목소리가 살짝 콧소리 섞어서 능청스럽게 부르는 노래. 베이스가 통통 튀었던 거 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t060": {
+   "query": "디스코 느낌의 엄청 신나는 노랜데 가사에 \"에헤레이아~\" 하는 부분이 있고 안무가 티아라의 롤리폴리랑 비슷했던 것 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t062": {
+   "query": "노래분위기가 갑자기 툭 바뀌는 걸그룹 노래, 한 곡에 다른 노래 두 개 붙여 놓은 것 같았어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t063": {
+   "query": "피아노로 조용히 시작하다가 일렉기타랑 드럼이 터지면서 남자 보컬이 끝도 없이 올라가는 록발라드, \"널 사랑해\"를 반복했어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t068": {
+   "query": "박재범 노랜데 중간에 여자 보컬이랑 남자 래퍼가 한 파트씩 이어받는 밝은 곡",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t070": {
+   "query": "엄청 빠른 템포 댄스곡인데 남자 보컬이 숨도 안 쉬고 가사를 쏟아내듯 부르고, 노래방에서 자주 나오는 것 같아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t071": {
+   "query": "FIFA 07 축구게임에서 한국어 곡 최초로 수록된 노래",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t073": {
+   "query": "얇고 콧소리 섞인 남자 목소리가 피아노 반주에 담담하게 부르다가 후렴에서 짧은 말을 계속 반복해, 악기가 거의 없어서 엄청 조용해",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t075": {
+   "query": "피아노랑 현악기만으로 잔잔하게 흐르고, 중저음 남자 목소리가 낮게 깔리듯 부르는 발라드",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t077": {
+   "query": "혼성 아이돌인데 베이스가 묵직하고 이 노래를 들으면 뭔가 걸어갈 때도 자신감이 생기는 신나는 노래야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t078": {
+   "query": "드럼이랑 피아노가 질주하듯 빠르게 몰아치는 록, 남자 보컬이 시원하게 뻗어 나가다가 후렴에서 확 터져",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t079": {
+   "query": "남자가 가성 하나도 안 쓰고 생목으로 쭉 올라가는 고음 발라드, 피아노랑 현악기 반주에 후렴이 진짜 높아",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t080": {
+   "query": "가볍게 통통 튀는 기타 리프에 남자가 랩하고, 후렴은 여자 목소리가 달달하게 받아주는 살랑거리는 곡",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t082": {
+   "query": "앨범 표지가 거의 까만데 가운데 누런 빛바랜 사진이 있고, 도로에 남자 실루엣이 있었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t083": {
+   "query": "연노랑 테두리 안에 노란 꽃 한 송이 찍은 사진 표지",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t084": {
+   "query": "제목이 뭐랑 뭐랑 뭐랑 뭐 이런 느낌이었는데 잔나비 노래야",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t085": {
+   "query": "해 지는 역광 받으면서 단발머리 여자가 흰 티셔츠 입고 서 있는 사진이었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t086": {
+   "query": "초록색 물감을 붓으로 마구 덧칠한 초록 숲 이미지",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t092": {
+   "query": "흑백 사진에 남자 여러명이 V자로 서있었고 위에 빨간 붓글씨 제목이 있었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t096": {
+   "query": "복고풍 아저씨 둘이 오래된 상가 골목에서 걸어오는 표지, 아래에 형광색 글씨 큼지막하게",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t097": {
+   "query": "공원 큰 나무 밑에 자전거 세워져 있고, 위에 주황색 문자가 크게 박힌 표지",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t098": {
+   "query": "만화 그림인데 컬러풀한 남녀 이미지가 있었던 것 같아. 하단에는 뭐라고 적혀있었어",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t099": {
+   "query": "쨍한 빨간 드레스 입은 여자가 초록 풀밭에 엎드려 턱 괴고 있는 이미지",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t100": {
+   "query": "털모자 쓴 여자가 고개 돌린 사진 표지였고, 노래는 허스키한 여자 R&B 보컬이 비 오는 날처럼 축 처지게 부르는 거",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t101": {
+   "query": "초록 나무 아래 흰 셔츠 입은 남자 사진이고 노래는 통기타로 경쾌하게 튕기는 밝은 곡",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t103": {
+   "query": "누런 배경에 크레파스로 뭔가 써져있는표지였고, 노래는 호구 노래로 유명해",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t104": {
+   "query": "보라 핑크 조명 아래 여자가 누워 있는 표지였는데, 그 앨범에서 통기타 하나로 잔잔하게 부르는 영어 이별 노래",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t105": {
+   "query": "모카크림색 바탕에 선글라스 낀 남자가 철조망 옆에 기대 있는 옛날 베스트 앨범 표지, 그 안에 '눈부신 아침 햇살' 어쩌구 하는 계절 노래",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t107": {
+   "query": "빨간 표지에 흰 원피스 입은 여자 둘이 리본 끈을 잡고 있는 사진이었는데, 노래는 통통 튀는 기타에 귀엽고 간질간질한 여자 목소리",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t108": {
+   "query": "머스타드 배경에 중앙에 하늘색 동글동글한 뭔가 아이콘 처럼 그려져있었어. 인터넷 방송인들이 모여서 만든 걸밴드 노래",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t110": {
+   "query": "앨범표지가 핑크 보라 배경에 중앙에 초록 뭔가 있었어, 여자 아이돌 노랜데 따따따따따따를 반복해",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  },
+  "t111": {
+   "query": "도입부에 무슨 사이렌 소리가 나서 밖에서 듣거나 처음 들으면 깜짝 놀라는 노래",
+   "target": false,
+   "spans": [],
+   "phrases": [],
+   "cache_query_matches": true,
+   "set": "v10"
+  }
+ },
+ "dev_summary": {
+  "count": 176,
+  "targets": [],
+  "cache_query_mismatch": []
+ }
+}
