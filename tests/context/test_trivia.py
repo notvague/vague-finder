@@ -381,6 +381,134 @@ class PageIdentityTests(unittest.TestCase):
         self.assertFalse(decision.verified)
         self.assertEqual(decision.reason, "page_title_mismatch")
 
+    def test_album_artist_page_binds_track_under_tracklist_without_music_words(self):
+        # 음반 문서의 곡 항목은 크레딧과 가사뿐인 경우가 많다.
+        document = self.parse(
+            "bomb(ILLIT)",
+            "<h2>1. 개요</h2><p>ILLIT의 미니 3집이다.</p>"
+            "<h2>2. 수록곡</h2>"
+            "<h3>2.1. 밤소풍</h3><p>작사 홍길동</p>"
+            "<h4>2.1.1. 여담</h4><p>예능 프로그램의 배경음악으로 사용되었다.</p>"
+            "<h3>2.2. oops!</h3><p>작사 김철수</p>"
+            "<h4>2.2.1. 여담</h4><p>인터넷 밈으로 유행했다.</p>",
+        )
+        decision = decide_song_page("밤소풍", ["아일릿(ILLIT)"], document, album="bomb")
+        self.assertTrue(decision.verified)
+        self.assertEqual(decision.reason, "album_tracklist_section_match")
+        self.assertIn("tracklist_section", decision.evidence)
+
+        facts, found = extract_trivia_facts(
+            document,
+            scope_section_id=decision.scope_section_id,
+        )
+        self.assertTrue(found)
+        self.assertEqual(len(facts), 1)
+        self.assertIn("배경음악", facts[0]["text"])
+
+    def test_album_medium_page_binds_track_heading_with_trailing_gloss(self):
+        document = self.parse(
+            "전설(음반)",
+            "<h2>1. 개요</h2><p>잔나비의 정규 2집이다.</p>"
+            "<h2>2. 수록곡</h2>"
+            "<h3>2.1. 꿈과 책과 힘과 벽 (dreams, books, power and walls)</h3>"
+            "<p>작사 최정훈</p>",
+        )
+        decision = decide_song_page(
+            "꿈과 책과 힘과 벽", ["잔나비"], document, album="전설",
+        )
+        self.assertTrue(decision.verified)
+        self.assertEqual(decision.reason, "album_tracklist_section_match")
+        self.assertIn("section_title_before_parenthesis", decision.evidence)
+
+    def test_instrumental_track_is_not_a_second_candidate(self):
+        document = self.parse(
+            "bomb(ILLIT)",
+            "<h2>1. 개요</h2><p>ILLIT의 미니 3집이다.</p>"
+            "<h2>2. 수록곡</h2>"
+            "<h3>2.1. 밤소풍</h3><p>ILLIT의 수록곡이다.</p>"
+            "<h3>2.2. 밤소풍 (Inst.)</h3><p>반주 음원</p>",
+        )
+        decision = decide_song_page("밤소풍", ["아일릿(ILLIT)"], document, album="bomb")
+        self.assertTrue(decision.verified)
+        self.assertEqual(len(decision.candidate_section_ids), 1)
+
+    def test_tracklist_section_wins_over_the_same_title_under_charts(self):
+        # 멜론은 음반 이름 뒤에 판 표기를 붙인다(' - The 1st Album').
+        document = self.parse(
+            "Armageddon(aespa)",
+            "<h2>1. 개요</h2><p>aespa의 정규 1집이다.</p>"
+            "<h2>2. 수록곡</h2>"
+            "<h3>2.1. Live My Life</h3><p>aespa의 수록곡이다.</p>"
+            "<h4>2.1.1. 여담</h4><p>예능 프로그램의 배경음악으로 사용되었다.</p>"
+            "<h2>3. 성적</h2><h3>3.1. 음원</h3>"
+            "<h4>3.1.1. Live My Life</h4><p>aespa의 수록곡 음원 성적이다.</p>",
+        )
+        decision = decide_song_page(
+            "Live My Life", ["aespa"], document, album="Armageddon - The 1st Album",
+        )
+        self.assertTrue(decision.verified)
+        self.assertEqual(decision.reason, "title_section_artist_match")
+        self.assertEqual(len(decision.candidate_section_ids), 2)
+        facts, found = extract_trivia_facts(
+            document,
+            scope_section_id=decision.scope_section_id,
+        )
+        self.assertTrue(found)
+        self.assertIn("배경음악", facts[0]["text"])
+
+    def test_two_tracklist_sections_with_the_same_title_stay_for_review(self):
+        document = self.parse(
+            "Armageddon(aespa)",
+            "<h2>1. 개요</h2><p>aespa의 정규 1집이다.</p>"
+            "<h2>2. 수록곡</h2><h3>2.1. Live My Life</h3><p>aespa의 수록곡이다.</p>"
+            "<h2>3. 트랙리스트</h2><h3>3.1. Live My Life</h3><p>aespa의 수록곡이다.</p>",
+        )
+        decision = decide_song_page(
+            "Live My Life", ["aespa"], document, album="Armageddon - The 1st Album",
+        )
+        self.assertFalse(decision.verified)
+        self.assertEqual(decision.reason, "multiple_equally_strong_song_sections")
+
+    def test_album_page_of_another_artist_is_rejected(self):
+        document = self.parse(
+            "bomb(음반)",
+            "<h2>1. 개요</h2><p>다른가수의 미니 음반이다.</p>"
+            "<h2>2. 수록곡</h2><h3>2.1. 밤소풍</h3><p>작사 홍길동</p>",
+        )
+        decision = decide_song_page("밤소풍", ["아일릿(ILLIT)"], document, album="bomb")
+        self.assertFalse(decision.verified)
+        self.assertEqual(decision.reason, "page_title_mismatch")
+
+    def test_parenthesized_page_must_name_the_album_medium_or_the_artist(self):
+        # 'bomb(다른가수)'는 같은 이름의 다른 음반이다. 개요에 가수가 스쳐 나와도 묶지 않는다.
+        document = self.parse(
+            "bomb(다른가수)",
+            "<h2>1. 개요</h2><p>다른가수의 음반으로, ILLIT의 동명 음반과는 다르다.</p>"
+            "<h2>2. 수록곡</h2><h3>2.1. 밤소풍</h3><p>작사 홍길동</p>",
+        )
+        decision = decide_song_page("밤소풍", ["아일릿(ILLIT)"], document, album="bomb")
+        self.assertFalse(decision.verified)
+
+    def test_single_named_after_its_title_track_is_not_album_evidence(self):
+        document = self.parse(
+            "밤소풍(음반)",
+            "<h2>1. 개요</h2><p>ILLIT의 디지털 싱글이다.</p>"
+            "<h2>2. 수록곡</h2><h3>2.1. 밤소풍</h3><p>작사 홍길동</p>",
+        )
+        decision = decide_song_page("밤소풍", ["아일릿(ILLIT)"], document, album="밤소풍")
+        self.assertFalse(decision.verified)
+
+    def test_track_title_under_lyrics_only_is_not_a_tracklist_section(self):
+        document = self.parse(
+            "Re:MONTAGE",
+            "<h2>1. 개요</h2><p>블락비의 미니 6집 리패키지이다.</p>"
+            "<h2>2. 가사</h2><h3>2.1. 떠나지마요</h3><p>떠나지마요 그대</p>",
+        )
+        decision = decide_song_page(
+            "떠나지마요", ["블락비 (Block B)"], document, album="Re:MONTAGE",
+        )
+        self.assertFalse(decision.verified)
+
 
 if __name__ == "__main__":
     unittest.main()
