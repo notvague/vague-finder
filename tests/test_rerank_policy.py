@@ -128,6 +128,51 @@ TARGETS = [
     "뮤직비디오에서 의자를 던져, 누가 불렀는지는 모르겠어",
     "뮤비에 고래가 하늘을 날아다니는데 가수가 누군지 기억이 안 나",
     "뮤비에서 남자가 비를 맞고 있는데 그 뒤는 기억 안 나",
+    # §2-29 (2026-10-14) — 낱말 경계를 준 뒤에도 **화면 속 인물·사물**은 그대로 장면이다
+    "뮤비에서 아이가 춤추는 노래",
+    "뮤비에 소녀가 울고 있는 장면이 있어",
+    "뮤비에서 아이들이랑 춤추는 노래",                              # 목록 밖이던 조사
+    "뮤비에서 아이들 뛰어다니는 노래",                              # 조사 없는 체언
+    "뮤비에서 소년과 소녀가 걷는 노래",
+    "뮤비에서 춤추는 아이가 나와",
+    "뮤비에서 여자가 춤추는 노래",
+    "뮤비에서 의자를 던져, 목소리는 여자였어",                      # 장면 뒤의 보컬 설명 — 쉼표 뒤에서 화제가 갈린다
+    "뮤비에서 여자가 울고 있어 목소리는 남자였어",
+    "뮤비에서 여자가 춤추는데 보컬은 남자야",
+    "뮤비에서 바다가 나오는 노래",
+    "뮤비에 꽃나무가 가득해",                                       # 명사 **뒤**에는 경계를 두지 않는다
+    "뮤비에서 교복입고 춤추는 노래",
+    "뮤비에서 눈밭을 달리는 노래",
+    "뮤비에서 나비가 날아다니는 노래",
+    "뮤비에서 유리 상자 안에 갇혀 있어",
+    # 리뷰 지적(10/14) — 앞에 다른 말이 붙은 **겹낱말**도 명사다(가수 이름 자리에 놓이지 않았으면)
+    "뮤비에서 벚꽃이 흩날리는 노래",
+    "뮤비에서 벚꽃 흩날리는 노래",                                  # 조사 없는 겹낱말
+    "뮤비에 밤하늘이 나와",
+    "뮤비에서 어린아이가 춤추는 노래",
+    "뮤비에서 고등학교에서 춤추는 노래",
+    "뮤비에서 청소년들이 옥상에서 춤추는 노래",
+    # 리뷰 지적(10/14) — 인물 낱말 뒤의 서술격 활용
+    "뮤비에서 춤추는 소녀였어",
+    "뮤비에서 춤추는 아이야",
+    "뮤비에서 춤추는 소년인데 제목을 몰라",
+    "뮤비에서 우는 아이들이었어",
+    "뮤비에서 웃고 있는 소년이다",
+    "뮤비에서 춤추는 아이거든",
+    "뮤비에서 웃는 아이죠",
+    "뮤비에서 춤추는 소년이네요",
+    # 리뷰 지적(10/14, 3차) — 명사에 바로 붙는 '요' · 복합 조사 · 결합형
+    "뮤비에서 춤추는 아이요",
+    "뮤비에서 울던 소녀요",
+    "뮤비에서 소년에게서 빛이 나와",
+    "뮤비에서 춤추는 아이도요",
+    "뮤비에서 소녀께서 춤추는 노래",
+    "뮤비에서 소년들에게서는 빛이 나와",
+    "뮤비에서 춤추는 아이들한테서도요",
+    # 리뷰 지적(10/14, 2차) — 겹낱말이 노래 바로 앞에 와도 장면이다("노래 앞"은 가수 이름의 근거가 아니다)
+    "뮤비에서 흩날리는 벚꽃 노래",
+    "뮤비에서 날아다니는 종이비행기 노래",
+    "뮤비에서 춤추는 어린아이 노래",
 ]
 
 # 다른 대상의 불확실 꼬리 — TARGETS 뒤에 붙여도 대상이어야 한다.
@@ -240,6 +285,57 @@ NON_TARGETS = [
     ("2020년 초에 연예인들이 춤 영상 찍어 올리던 챌린지 노래", "영상은 MV가 아니다(dev n042)"),
     ("무슨 밴드 노래인데, 옛날에 짱구 애니메이션에서 누가 이별하는 되게 감성적인 장면에 OST로 삽입되어서 화제가 됐던 곡이야",
      "애니 장면은 MV가 아니다(dev q203)"),
+    # §2-29 (2026-10-14) — 가수·보컬 설명이 장면으로 읽히던 오탐. 수정 전에는 모두 대상이었다
+    ("뮤비에서 춤추는 아이돌 노래", "①: 아이**돌** — 아이는 낱말이 거기서 끝날 때만 인물"),
+    ("뮤비에서 춤추는 아이유 노래", "①: 아이**유**"),
+    ("뮤비에서 춤추는 아이브 노래", "①: 아이**브**"),
+    ("뮤비에서 웃는 아이린이 예뻤던 노래", "①: 아이**린**"),
+    ("뮤비에서 춤추는 소녀시대 노래", "①: 소녀**시대**"),
+    ("뮤비에서 춤추는 방탄소년단 노래", "①: 방탄**소년**단 — 앞도 한글"),
+    ("뮤비에서 춤추는 소녀감성 노래", "①: 소녀**감성**"),
+    ("뮤비에서 아이스크림 먹는 노래", "①: 아이**스크림**"),
+    ("뮤비에서 춤추는 남자 아이돌 노래", "①: 남자는 가수 설명, 아이돌은 직업명"),
+    ("뮤비에서 춤추는 여자 목소리 노래", "②: 여자 목소리는 가수 화제 — 여자 앞에서 끊는다"),
+    ("뮤비에서 춤추는 남자 보컬 노래", "②: 남자 보컬"),
+    ("뮤비에서 우는 여자 음색이 좋은 노래", "②: 여자 음색"),
+    ("뮤비에서 춤추는 여자목소리 노래", "②: 붙여 쓴 꼴"),
+]
+
+# §2-29 ①·②의 변형 — 조사·띄어쓰기·문장부호·앞뒤 절·화제 전환을 바꿔도 가수·보컬 설명은 장면이 아니다.
+SINGER_DESCRIPTION_VARIANTS = [
+    "뮤비에서 춤추는 아이돌노래", "뮤비에서 춤추는 아이돌의 노래", "뮤비에서 춤추는 아이돌, 제목은 몰라",
+    "뮤비에서 춤추는 아이돌이 부른 노래", "뮤비에서 춤추는 아이돌그룹 노래", "뮤비에서 춤추는 아이돌!",
+    "뮤비에서 아이돌이 춤추는 노래", "뮤비에서 아이유가 우는 노래", "뮤직비디오에서 춤추는 소녀시대 노래",
+    "MV에서 춤추는 방탄소년단 노래", "뮤비 마지막에 춤추는 아이돌 노래", "뮤비를 봤는데 아이돌이 춤춰",
+    "남자 인디 노래인데 뮤비에서 춤추는 아이돌 노래", "뮤비에서 춤추는 아이돌 노래, 누가 불렀는지는 모르겠어",
+    "뮤비에서 춤추는 아이돌이었어", "뮤비에서 웃는 아이린이다", "뮤비에서 아이스크림 먹는 아이돌 노래",
+    "뮤비에서 춤추는 여자 목소리, 발라드야", "뮤비에서 춤추는 여자 목소리였어", "뮤비에서 걷는 남자 목소리가 좋은 노래",
+    "뮤비에서 춤추는 남자보컬 곡", "뮤비에서 춤추는 여자  목소리 노래", "뮤비 마지막에 우는 여자 음색이 좋은 노래",
+    "뮤비에서 춤추는 여자 목소리 노래 찾아줘", "제목은 기억 안 나는데 뮤비에서 춤추는 여자 목소리 노래",
+]
+
+# §2-29 ③·④·⑤ — **이번에 고치지 않은** 오탐. 구체 명사를 품은 가수 이름은 명사로 읽혀 대상이다.
+#   ③ 명사로 끝나는 이름(잔나비·유리상자·임한별·잠골버스·서울달·새별·아이오아이): 10/14에 '낱말 시작 경계'와 '노래 바로 앞 자리' 규칙을
+#     차례로 시도했지만 "벚꽃이 흩날리는"·"흩날리는 벚꽃 노래"·"춤추는 어린아이 노래" 같은 실제 장면을 잃어 **보류**했다 — 문형이 같아
+#     문장만으로는 가를 수 없고, 이름이라는 추가 근거(가수 이름 사전)가 있어야 한다
+#   ④ 명사로 시작하거나 품은 이름(버스커 버스커·여자친구·칼라파워·노르웨이 숲·"아이들") ⑤ 이름이 명사 그 자체인 가수(태양·별·나비·바다)
+REMAINING_SINGER_NAME_TARGETS = [
+    "뮤비에서 춤추는 잔나비 노래", "뮤비에서 춤추는 유리상자 노래", "뮤비에서 춤추는 임한별 노래", "뮤비에서 춤추는 잠골버스 노래",
+    "뮤비에서 춤추는 서울달 노래", "뮤비에서 춤추는 새별 노래", "뮤비에서 춤추는 잔나비의 노래", "뮤비에서 잔나비 노래 부르는 곡",
+    "뮤비에서 잔나비가 춤추는 노래", "뮤비에서 유리상자가 노래 부르는 곡", "뮤비에서 임한별이 우는 노래",
+    "뮤비에서 춤추는 아이오아이 노래", "뮤비에서 아이오아이가 춤추는 노래", "뮤비에서 춤추는 잔나비, 제목은 몰라",
+    "뮤비에서 춤추는 태양 노래", "뮤비에서 춤추는 별 노래", "뮤비에서 태양이 춤추는 노래", "뮤비에서 바다가 노래 부르는 곡",
+    "뮤비에서 춤추는 버스커 버스커 노래", "뮤비에서 춤추는 여자친구 노래", "뮤비에서 춤추는 칼라파워 노래",
+    "뮤비에서 춤추는 아이들 노래", "뮤비에서 춤추는 노르웨이 숲 노래",
+]
+
+# 겹낱말 장면 — 명사 앞에 꾸미는 말이 붙어도, 뒤에 노래/곡이 바로 와도 명사다(리뷰 지적 10/14 1·2차: 처음 시안들이 이들을 잃었다).
+COMPOUND_NOUN_SCENES_KEPT = [
+    "뮤비에서 벚꽃이 흩날리는 노래", "뮤비에서 벚꽃 흩날리는 노래", "뮤비에서 흩날리는 벚꽃 노래", "뮤비에서 날아다니는 종이비행기 노래",
+    "뮤비에서 춤추는 어린아이 노래", "뮤비에서 고등학교에서 춤추는 노래", "뮤비에 밤하늘이 나와", "뮤비 마지막에 걷는 겨울바다 노래",
+    "뮤비에서 소나무 아래 앉아 있어", "뮤비에서 구급차가 달려", "뮤비에서 어린아이가 춤추는 노래", "뮤비에서 청소년들이 춤추는 노래",
+    "뮤비에서 미소년이 울어", "뮤비에서 손거울을 들고 걷는 노래", "뮤비 마지막에 장미꽃이 떨어져", "뮤비에서 경찰차가 달리는 장면",
+    "뮤비에서 춤추는 종이비행기 곡이야", "뮤비에서 떨어지는 장미꽃 노래인데 제목을 몰라",
 ]
 
 
@@ -251,6 +347,110 @@ def test_specific_mv_scene_queries_are_targets(query):
 @pytest.mark.parametrize("query,why", NON_TARGETS)
 def test_non_scene_mv_mentions_are_not_targets(query, why):
     assert not is_specific_mv_scene_query(query), f"{why}: {query}"
+
+
+@pytest.mark.parametrize("query", SINGER_DESCRIPTION_VARIANTS)
+def test_singer_descriptions_stay_non_targets_across_variants(query):
+    """§2-29 ①~③: 조사·띄어쓰기·문장부호·표지 종류·여는 말·앞뒤 절을 바꿔도 가수·보컬 설명은 장면이 아니다."""
+    from src.retrieval.rerank_policy import mv_scene_phrases
+    assert not is_specific_mv_scene_query(query), query
+    assert mv_scene_phrases(query) == [], query      # 근거 패널의 MV 칸도 비어 있다 — 판정과 모순되지 않는다
+
+
+def test_person_words_are_people_only_when_the_word_ends_there():
+    """①의 성질: 아이·소년·소녀(+들)는 바로 뒤가 조사(둘까지)·공백·문장부호·문장 끝이거나 **서술격 활용**일 때만 인물이다.
+    같은 서술어 틀에서 **조사·서술격이 붙은 인물은 대상, 다른 낱말의 일부는 비대상**이어야 한다. 앞에 꾸미는 말이 붙은
+    겹낱말(어린아이·청소년·미소년)도 인물이다."""
+    # 격조사 · 보조사 · 명사에 바로 붙는 '요' · 복합 조사(에게서·한테서·로부터) · 결합형(도요·에게서는·한테서도요) — 리뷰 3차(10/14)
+    particles = ["가", "이", "는", "은", "를", "을", "도", "랑", "이랑", "하고", "한테", "에게", "께", "께서", "에서", "처럼", "만", "의", "와", "과",
+                 "끼리", "만의", "한테도", "", "요", "도요", "만요", "처럼요", "까지도", "에게서", "한테서", "에게서는", "한테서도요", "로부터",
+                 "으로부터", "보고", "더러", "이나마", "야말로", "이야말로", "이든지", "라도", "커녕", "치고", "뿐", "조차도", "마저", "밖에"]
+    for person in ("아이", "아이들", "소년", "소녀", "소년들", "소녀들", "어린아이", "청소년", "미소년", "어린소녀"):
+        for particle in particles:
+            for query in (f"뮤비에서 {person}{particle} 춤추는 노래", f"뮤비에서 춤추는 {person}{particle} 나와",
+                          f"뮤비에서 {person}{particle} 춤춰", f"뮤비에서 {person}{particle}, 춤추는 장면",
+                          f"뮤비에서 춤추는 {person}{particle}", f"뮤비에서 {person}{particle} 빛이 나와"):
+                assert is_specific_mv_scene_query(query), query
+    # 서술격 '이다'의 활용군(리뷰 지적 10/14 1·2차) — 평서·회상·존대·연결·관형·의문·양보. 이 뒤에 무엇이 와도 인물이다
+    copulas = {
+        "평서": ["다", "이다", "야", "이야", "죠", "이죠", "네", "이네", "군", "이군", "구나", "이구나", "지", "이지", "잖아", "이잖아", "거든", "이거든",
+                 "래", "이래", "랍니다", "이랍니다"],
+        "회상": ["였어", "이었어", "였다", "이었다", "였지", "였거든", "였잖아", "더라", "이더라", "던데", "이던데", "였나", "이었나"],
+        "존대": ["예요", "이에요", "입니다", "이네요", "네요", "이죠", "죠", "이군요", "였어요", "이었어요", "였습니다", "이었습니다", "입니까", "인가요", "일까요"],
+        "연결": ["인데", "이고", "이며", "이면", "이지만", "라서", "이라서", "였는데", "였고", "이니까", "이라 그런지", "라 그런지", "이자", "라도",
+                 "이라도", "라며", "이라며"],
+        "관형": ["인", "이던", "이었던", "였던", "이란", "이라는", "일"],
+        "의문": ["이니", "인가", "이냐", "냐", "일까", "인지", "이야?", "였나?", "일지"],
+    }
+    for person in ("아이", "아이들", "소년", "소녀", "어린아이", "소녀들"):
+        for group, endings in copulas.items():
+            for copula in endings:
+                for query in (f"뮤비에서 춤추는 {person}{copula}", f"뮤비에서 춤추는 {person}{copula} 제목은 몰라",
+                              f"뮤비에서 우는 사람은 {person}{copula}", f"뮤비에서 웃고 있는 {person}{copula}"):
+                    assert is_specific_mv_scene_query(query), (group, query)
+    # 다른 낱말의 일부 — 어느 자리에서도 인물이 아니다(서술격·조사가 그 뒤에 와도)
+    for word in ("아이돌", "아이유", "아이브", "아이린", "아이즈원", "아이콘", "아이스크림", "아이라인", "아이디어", "아이템", "아이러니",
+                 "소녀시대", "소녀감성", "소녀상", "방탄소년단", "소년공화국", "소년원", "아이돌그룹"):
+        for query in (f"뮤비에서 춤추는 {word} 노래", f"뮤비에서 {word}이 춤추는 노래", f"뮤비에서 {word} 춤춰",
+                      f"뮤비에서 춤추는 {word}", f"뮤비 마지막에 웃는 {word} 노래야", f"뮤비에서 춤추는 {word}였어", f"뮤비에서 춤추는 {word}이다",
+                      f"뮤비에서 춤추는 {word}요", f"뮤비에서 {word}에게서 빛이 나와"):
+            assert not is_specific_mv_scene_query(query), query
+
+
+def test_gender_plus_voice_is_a_singer_topic_but_a_comma_or_clause_keeps_the_scene_person():
+    """②의 성질: '남자/여자 + 목소리·음색·보컬'은 한 덩어리의 가수 화제라 여자 앞에서 끊는다. 사이에 쉼표·다른 어절이
+    있으면 앞의 여자는 화면 속 인물이고 뒤의 목소리에서만 끊는다."""
+    from src.retrieval.rerank_policy import mv_scene_phrases
+    for scene in ("춤추는", "우는", "걷는", "의자를 던지는"):
+        for voice in ("목소리", "음색", "보컬"):
+            for gender in ("여자", "남자"):
+                for sep in (" ", ""):
+                    for tail in (" 노래", "였어", "가 좋은 노래", ", 발라드야"):
+                        query = f"뮤비에서 {scene} {gender}{sep}{voice}{tail}"
+                        expected = scene == "의자를 던지는"      # 의자가 있으면 장면이다 — 여자 목소리만 떨어진다
+                        assert is_specific_mv_scene_query(query) is expected, query
+                        if expected:
+                            assert mv_scene_phrases(query) == ["뮤비에서 의자를 던지는"], (query, mv_scene_phrases(query))
+    for query in ("뮤비에서 의자를 던져, 목소리는 여자였어", "뮤비에서 여자가 울고 있어 목소리는 남자였어",
+                  "뮤비에서 여자가 춤추는데 보컬은 남자야", "뮤비에서 우는 여자, 보컬은 남자야",
+                  "뮤비에서 여자가 울어 음색이 좋은 노래야", "뮤비에서 춤추는 여자가 나오고 목소리는 남자야"):
+        assert is_specific_mv_scene_query(query), query
+        assert all("목소리" not in p and "보컬" not in p and "음색" not in p for p in mv_scene_phrases(query)), (query, mv_scene_phrases(query))
+
+
+def test_compound_nouns_keep_the_scene_in_every_position_and_so_do_noun_tailed_names():
+    """③ 보류의 근거: 겹낱말(벚**꽃**·밤**하늘**·종이**비행기**·어린**아이**)은 조사·서술어와 쓰이든, 노래/곡 **바로 앞**에 오든 장면이다 —
+    "노래 앞"은 가수 이름의 근거가 아니다(리뷰 2차). 같은 문형의 명사 꼬리 가수 이름(잔**나비**·유리**상자**·임한**별**)도 그래서 그대로
+    대상이다(`REMAINING_SINGER_NAME_TARGETS`). 명사 **뒤**에도 경계가 없어 "꽃나무"·"교복입고"·"눈밭"·"의자만"·"바다에서"가 장면이다."""
+    # 짧은 동음이의어(차)는 원래 조사로 좁혀 둔 명사라 "구급차가 달려"처럼 그 조사와 쓸 때만 명사다 — 목록(KEPT)에서 따로 본다
+    for word in ("벚꽃", "밤하늘", "겨울바다", "소나무", "손거울", "벽시계", "고등학교", "장미꽃", "종이비행기"):
+        for query in (f"뮤비에서 {word}이 나오는 노래", f"뮤비에서 {word} 나오는 노래", f"뮤비에 {word}가 나와",
+                      f"뮤비에서 춤추는 {word}이 보이는 장면", f"뮤비에서 {word}에서 춤추는 노래",
+                      f"뮤비에서 떨어지는 {word} 노래", f"뮤비에서 떨어지는 {word} 곡이야", f"뮤비에서 떨어지는 {word}의 노래",
+                      f"뮤비에서 떨어지는 {word} 노래인데 제목을 몰라", f"뮤비에서 떨어지는 {word}, 제목은 몰라"):
+            assert is_specific_mv_scene_query(query), query
+    for name in ("잔나비", "유리상자", "임한별", "아이오아이"):
+        assert is_specific_mv_scene_query(f"뮤비에서 춤추는 {name} 노래") == is_specific_mv_scene_query("뮤비에서 춤추는 벚꽃 노래") is True
+    for query in ("뮤비에 꽃나무가 가득해", "뮤비에서 교복입고 춤추는 노래", "뮤비에서 눈밭을 달리는 노래", "뮤비에 의자만 덩그러니 있어",
+                  "뮤비에서 바다에서 춤추는 노래", "뮤비에서 유리 상자 안에 갇혀 있어", "뮤비에서 나비가 날아다니는 노래",
+                  "뮤비에서 별이 쏟아지는 노래", "뮤비에서 버스 타고 어디 가", "뮤비에서 상자를 던지는 노래", "뮤비에서 (의자)가 떠 있어"):
+        assert is_specific_mv_scene_query(query), query
+
+
+@pytest.mark.parametrize("query", REMAINING_SINGER_NAME_TARGETS)
+def test_singer_names_that_are_or_contain_a_noun_are_still_targets_on_purpose(query):
+    """§2-29 ④·⑤는 이번에 하지 않았다 — 지금 판정은 틀리지만(가수 설명인데 대상) 낱말 경계로는 풀리지 않는 사례다.
+    고치면 이 목록과 docstring의 '한계', NEXT_WORK §2-29를 함께 옮긴다."""
+    assert is_specific_mv_scene_query(query), query
+
+
+@pytest.mark.parametrize("query", COMPOUND_NOUN_SCENES_KEPT)
+def test_compound_noun_scenes_are_kept(query):
+    """리뷰 지적(10/14): 겹낱말 장면(벚꽃이 흩날리는 · 밤하늘이 나와 · 어린아이가 춤추는)은 수정 전처럼 대상이어야 한다 —
+    근거 없는 장면 추측으로 순서를 바꾸지 않는 보호가 풀리면 안 된다. 표시 구간(MV 칸)도 그 겹낱말을 담는다."""
+    from src.retrieval.rerank_policy import mv_scene_phrases
+    assert is_specific_mv_scene_query(query), query
+    assert mv_scene_phrases(query) and all(phrase in " ".join(query.split()) for phrase in mv_scene_phrases(query)), (query, mv_scene_phrases(query))
 
 
 def _dev_queries():
@@ -318,6 +518,11 @@ def test_fallback_and_prior_analysis_share_the_same_verdict():
     gemini = GeminiListwiseReranker(config=GeminiListwiseRerankerConfig(), api_key="x")
     for analysis in (live, fallback, prior):
         assert rerank_skip_reason(gemini, analysis, []) == RERANK_SKIP_MV_SCENE_UNVERIFIABLE
+    # 비대상(가수 설명)도 세 경로에서 같다 — 분석의 artist_name 등은 판정에 쓰지 않는다
+    for query in ("뮤비에서 춤추는 아이돌 노래", "뮤비에서 춤추는 여자 목소리 노래", "뮤비에서 춤추는 남자 보컬 노래"):
+        live = _analysis(original_query=query, artist_name="아이유")
+        for analysis in (live, rule_fallback(query), live.model_copy(deep=True)):
+            assert rerank_skip_reason(gemini, analysis, []) == "", (query, analysis.artist_name)
 
 
 # ---------------------------------------------------------------------------
@@ -811,6 +1016,76 @@ def test_api_image_skip_has_no_notice_but_keeps_the_diagnostic_reason():
     assert body["explain"]["rerank_skip_reason"] == RERANK_SKIP_IMAGE_DOMINANT
     assert body["explain"]["rerank_skip_label"] == ""
     assert body["explain"]["reorder_stage"] == REORDER_POLICY_SKIPPED
+
+
+@pytest.mark.parametrize("query", [
+    "뮤비에서 춤추는 아이돌 노래",
+    "뮤비에서 춤추는 소녀시대 노래",
+    "뮤비에서 춤추는 방탄소년단 노래",
+    "뮤비에서 춤추는 여자 목소리 노래",
+    "뮤비에서 우는 여자 음색이 좋은 노래",
+])
+def test_api_singer_description_queries_are_reranked_without_a_notice(query):
+    """§2-29 ①·②의 대표 오탐 — API 경로에서 모델이 **호출되고**(정책 생략 아님) 안내 문구가 없다. 테스트용 분석기·리랭커만 쓴다.
+    근거 패널의 MV 칸도 없다 — 판정(비대상)과 표시가 모순되지 않는다."""
+    hits = [_track(f"s{i}", title=f"곡{i}") for i in range(1, 4)]
+    rr = _CallingReranker()
+    router = _router(hits, reranker=rr)
+    try:
+        with _client(router, _FakeAnalyzer(lambda q: _analysis(original_query=q))) as client:
+            body = client.post("/search", json={"query": query, "top_k": 3, "explain": True}).json()
+    finally:
+        router.shutdown()
+    assert rr.calls == 1, query
+    assert body["notice"] is None
+    assert body["explain"]["rerank_skip_reason"] == "" and body["explain"]["reorder_stage"] == REORDER_MODEL_APPLIED
+    assert body["explain"]["rerank_calls"] == 1
+    assert [t["id"] for t in body["results"]] == ["s3", "s2", "s1"], "리랭킹이 실제로 순서를 바꿨다"
+    for track in body["results"]:
+        ux = track["explain"]["user_explanation"]
+        assert ux is None or all(row["slot"] != "mv_scene" for row in ux["clue_checks"]), (query, ux)
+
+
+def test_api_scene_person_queries_still_skip_the_model_with_the_notice():
+    """같은 낱말이 **화면 속 인물**로 쓰이면 기존 보호가 그대로다 — 모델 호출 0회·고정 문구·MV 칸은 사용자의 말 그대로."""
+    cases = {
+        "뮤비에서 아이가 춤추는 노래": "뮤비에서 아이가 춤추는",
+        "뮤비에 소녀가 울고 있는 장면이 있어": "뮤비에 소녀가 울고 있는 장면이 있어",
+        "뮤비에서 여자가 춤추는 노래": "뮤비에서 여자가 춤추는",
+        "뮤비에서 의자를 던져, 목소리는 여자였어": "뮤비에서 의자를 던져",
+        "뮤비에서 바다가 나오는 노래": "뮤비에서 바다가 나오는",
+        # 리뷰 지적(10/14) — /search에서 리랭커가 불리고 안내·MV 칸이 사라졌던 겹낱말·서술격 사례
+        "뮤비에서 벚꽃이 흩날리는 노래": "뮤비에서 벚꽃이 흩날리는",
+        "뮤비에 밤하늘이 나와": "뮤비에 밤하늘이 나와",
+        "뮤비에서 어린아이가 춤추는 노래": "뮤비에서 어린아이가 춤추는",
+        "뮤비에서 춤추는 소녀였어": "뮤비에서 춤추는 소녀였어",
+        "뮤비에서 춤추는 아이야": "뮤비에서 춤추는 아이야",
+        "뮤비에서 춤추는 소년인데 제목은 몰라": "뮤비에서 춤추는 소년인데",
+        # 리뷰 2차(10/14) — 노래 바로 앞의 겹낱말 · 평서/양보 서술격
+        "뮤비에서 흩날리는 벚꽃 노래": "뮤비에서 흩날리는 벚꽃",
+        "뮤비에서 날아다니는 종이비행기 노래": "뮤비에서 날아다니는 종이비행기",
+        "뮤비에서 웃고 있는 소년이다": "뮤비에서 웃고 있는 소년이다",
+        "뮤비에서 춤추는 아이거든": "뮤비에서 춤추는 아이거든",
+        # 리뷰 3차(10/14) — 명사에 바로 붙는 '요' · 복합 조사
+        "뮤비에서 춤추는 아이요": "뮤비에서 춤추는 아이요",
+        "뮤비에서 소년에게서 빛이 나와": "뮤비에서 소년에게서 빛이 나와",
+        "뮤비에서 춤추는 아이도요": "뮤비에서 춤추는 아이도요",
+    }
+    for query, clue in cases.items():
+        hits = [_track(f"s{i}", title=f"곡{i}") for i in range(1, 4)]
+        rr = _ForbiddenReranker()
+        router = _router(hits, reranker=rr)
+        try:
+            with _client(router, _FakeAnalyzer(lambda q: _analysis(original_query=q))) as client:
+                body = client.post("/search", json={"query": query, "top_k": 3, "explain": True}).json()
+        finally:
+            router.shutdown()
+        assert rr.calls == 0, query
+        assert body["notice"]["code"] == RERANK_SKIP_MV_SCENE_UNVERIFIABLE, query
+        assert body["explain"]["reorder_stage"] == REORDER_POLICY_SKIPPED
+        assert [t["id"] for t in body["results"]] == ["s1", "s2", "s3"]
+        rows = [row for row in body["results"][0]["explain"]["user_explanation"]["clue_checks"] if row["slot"] == "mv_scene"]
+        assert len(rows) == 1 and rows[0]["clue"] == clue, (query, rows)
 
 
 def test_api_prior_analysis_turn_keeps_the_policy():
