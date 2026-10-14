@@ -65,6 +65,19 @@ def _actual_backend(reranker: Any) -> str:
     name = type(reranker).__name__
     return {"ClaudeListwiseReranker": "claude_listwise", "GeminiListwiseReranker": "gemini_listwise", "MusicReranker": "cross_encoder"}.get(name, name)
 
+def describe_reranker(reranker: Any) -> str:
+    """측정 시작 때 찍는 한 줄 — 어느 리랭커로, 무엇 때문에 재는지.
+
+    `RERANKER_BACKEND`를 비우면 CLI 리랭커도 `SEARCH_MODEL_PROVIDER`(기본 claude)를 따르게 되면서(#63) 예전 재현 명령을
+    그대로 돌리면 Gemini 기준선과 다른 리랭커(Sonnet, 질의마다 비용)로 재게 된다. runinfo에도 남지만 시작할 때 보여야 멈출 수 있다.
+    """
+    backend = _actual_backend(reranker)
+    requested = os.getenv("RERANKER_BACKEND", "").strip()
+    source = f"RERANKER_BACKEND={requested}" if requested else f"SEARCH_MODEL_PROVIDER 기본값 {default_provider()}"
+    hint = " — Gemini 기준선(v32~v35) 재현은 RERANKER_BACKEND=gemini_listwise" if backend == "claude_listwise" else ""
+    return f"리랭커: {backend} ({source}){hint}"
+
+
 def parse_relevant_ids(raw: str) -> set[str]:
     """여러 정답 ID는 | 로 구분한다."""
     return {part.strip() for part in (raw or "").split("|") if part.strip()}
@@ -804,6 +817,7 @@ async def evaluate(args: argparse.Namespace) -> None:
 
     router = get_search_router()
     reranker = get_reranker()
+    print(describe_reranker(reranker), flush=True)
 
     if cache is not None:
         analysis_source = {

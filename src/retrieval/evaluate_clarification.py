@@ -122,6 +122,7 @@ from src.retrieval.analysis_cache import (
 from src.retrieval.explain import RERANK_APPLIED, RERANK_FAILED
 from src.retrieval.evaluate_search_accuracy import (
     collect_run_info,
+    describe_reranker,
     first_relevant_rank,
     mean,
     metric_bundle,
@@ -964,6 +965,7 @@ async def evaluate(args: argparse.Namespace) -> None:
 
     analyzer = get_query_analyzer() if analyses is None else None
     router, reranker = get_search_router(), get_reranker()
+    print(describe_reranker(reranker), flush=True)
     reranker.load()
     targets = load_target_tracks([sid for q in queries for sid in q.positives])
 

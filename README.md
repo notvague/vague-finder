@@ -165,11 +165,14 @@ curl -X POST http://127.0.0.1:8000/api/v1/search \
 venv/bin/python -m pytest tests/ -q
 
 # 검색 정확도 재측정 — 질의 분석을 캐시로 고정해야 같은 측정이 같은 숫자를 낸다
-# 1단계는 캐시가 이미 있으면 빠진 질의만 채운다. 단, 분석기 코드가 바뀐 것을 감지하면
-# 전부 다시 분석해 기준선이 달라진다 (--reuse-despite-drift 등은 --help 참고)
+# 1단계는 캐시가 이미 있으면 빠진 질의만 **그 캐시의 모델**로 채운다(기존 캐시는 모두 Gemini). 단, 분석기 코드가
+# 바뀐 것을 감지하면 전부 다시 분석해 기준선이 달라진다 (--reuse-despite-drift 등은 --help 참고)
 venv/bin/python -m src.retrieval.build_analysis_cache --input experiments/reranking/eval_queries_v06.csv \
   --split dev --output experiments/reranking/analysis_cache_v06_dev.json
-venv/bin/python -m src.retrieval.evaluate_search_accuracy --input experiments/reranking/eval_queries_v06.csv \
+# 2단계의 리랭커는 RERANKER_BACKEND를 비우면 SEARCH_MODEL_PROVIDER(기본 claude)를 따른다 — 질의마다 Sonnet 비용이 든다.
+# Gemini 기준선(v32~v35)과 비교하려면 gemini_listwise를 명시한다. 시작할 때 "리랭커: …" 한 줄로 무엇으로 재는지 찍힌다
+RERANKER_BACKEND=gemini_listwise venv/bin/python -m src.retrieval.evaluate_search_accuracy \
+  --input experiments/reranking/eval_queries_v06.csv \
   --split dev --analysis-cache experiments/reranking/analysis_cache_v06_dev.json \
   --output-dir experiments/reranking/results_vNN
 ```

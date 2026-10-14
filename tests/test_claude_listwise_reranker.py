@@ -90,6 +90,24 @@ def test_search_features_are_refused(monkeypatch):
         config = GeminiListwiseRerankerConfig(**{**base.__dict__, **change})
         with pytest.raises(ValueError, match="Google Search"):
             ClaudeListwiseReranker(config=config, client=_FakeClaude([]))
+        # 꺼진 리랭커는 옵션을 쓰지 않으므로 만들어진다 — 검색 순서만 내는 재현 실행
+        off = GeminiListwiseRerankerConfig(**{**config.__dict__, "enabled": False})
+        assert not ClaudeListwiseReranker(config=off, client=_FakeClaude([])).enabled
+
+
+def test_measurement_announces_the_reranker_and_how_to_get_the_gemini_baseline(monkeypatch):
+    """RERANKER_BACKEND를 비우면 CLI 리랭커가 SEARCH_MODEL_PROVIDER(claude)를 따른다 — 예전 재현 명령이 조용히 Sonnet으로
+    재지 않게 시작 줄에 무엇으로 재는지와 Gemini 기준선 재현법을 찍는다(#63 리뷰)."""
+    from src.retrieval.evaluate_search_accuracy import describe_reranker
+
+    _clean_env(monkeypatch)
+    monkeypatch.delenv("SEARCH_MODEL_PROVIDER", raising=False)
+    monkeypatch.delenv("RERANKER_BACKEND", raising=False)
+    line = describe_reranker(ClaudeListwiseReranker(client=_FakeClaude([])))
+    assert line.startswith("리랭커: claude_listwise (SEARCH_MODEL_PROVIDER 기본값 claude)") and "gemini_listwise" in line
+    monkeypatch.setenv("RERANKER_BACKEND", "gemini_listwise")
+    gemini = describe_reranker(GeminiListwiseReranker(config=GeminiListwiseRerankerConfig(), client=_FakeClaude([])))
+    assert gemini == "리랭커: gemini_listwise (RERANKER_BACKEND=gemini_listwise)"
 
 
 def test_factory_defaults_to_claude_and_allows_explicit_override(monkeypatch):

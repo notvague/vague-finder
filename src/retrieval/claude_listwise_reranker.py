@@ -44,7 +44,9 @@ MISSING_CONFIG = "Claude 설정이 없다 — CLAUDE_API(또는 ANTHROPIC_API_KE
 class ClaudeListwiseReranker(GeminiListwiseReranker):
     def __init__(self, config: Optional[GeminiListwiseRerankerConfig] = None, client: Any = None):
         base = config or GeminiListwiseRerankerConfig.from_env()
-        if base.use_search_grounding or base.rare_fact_verification:
+        # 켜진 리랭커에만 따진다(꺼져 있으면 부르지 않는다). 같은 조건을 search_models.unavailable_reason이 미리 보므로
+        # 서비스에서는 여기까지 오지 않는다 — 기동 검사와 503이 먼저 막는다.
+        if base.enabled and (base.use_search_grounding or base.rare_fact_verification):
             raise ValueError(
                 "claude_listwise는 Google Search를 쓰는 기능과 함께 쓸 수 없다 — "
                 "GEMINI_RERANK_USE_SEARCH · GEMINI_RERANK_RARE_FACT_VERIFY를 끈다"

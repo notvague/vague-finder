@@ -8,7 +8,7 @@ from typing import Any, Callable, Optional, TypeVar
 
 from fastapi import HTTPException
 from src.backend.schemas.search import SearchModelSelection
-from src.common.search_models import ModelProvider, default_provider, provider_configured
+from src.common.search_models import ModelProvider, default_provider, unavailable_reason
 from src.common.claude_client import ClaudeGenaiClient
 from src.retrieval.claude_listwise_reranker import ClaudeListwiseReranker
 
@@ -73,7 +73,7 @@ def model_singleton(factory: Callable[..., T]) -> Callable[..., T]:
     - FastAPI: 검색 본문의 `model_provider`만 읽는다(`SearchModelSelection` — 본문 전체를 다시 검증하지 않는다).
       매개변수 이름은 라우트의 `request: SearchRequest`와 **같아야 한다.** FastAPI는 본문 필드를 이름으로 묶어서,
       이름이 다르면 본문이 `{"request": …}`로 감싸인 모양으로 바뀐다(test_search_models가 평평한 본문으로 지킨다).
-      선택한 모델에 키가 없으면 503 — 다른 모델로 바꿔 타지 않는다.
+      선택한 모델을 지금 설정으로 쓸 수 없으면(키 없음, Claude와 못 쓰는 리랭커 옵션) 503 — 다른 모델로 바꿔 타지 않는다.
     - CLI(인자 없음): 서버 기본 모델. `RERANKER_BACKEND` 같은 CLI 전용 덮어쓰기는 이 경로에만 적용된다.
     - `for_provider(provider)`: CLI에서 모델을 지정한다 — 분석 캐시를 **그 캐시의 모델**로 이어 채울 때.
     """
@@ -82,8 +82,10 @@ def model_singleton(factory: Callable[..., T]) -> Callable[..., T]:
 
     def acquire(provider: Optional[ModelProvider], *, for_request: bool) -> T:
         provider = provider or default_provider()
-        if for_request and not provider_configured(provider):
-            raise HTTPException(status_code=503, detail=f"{provider} API 키가 설정되지 않았습니다.")
+        if for_request:
+            reason = unavailable_reason(provider)
+            if reason:
+                raise HTTPException(status_code=503, detail=f"{provider}: {reason}")
         key = (provider, for_request)
         with lock:
             if key not in holder:

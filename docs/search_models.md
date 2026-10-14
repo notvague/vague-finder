@@ -49,11 +49,15 @@ Gemini 캐시(`provider`가 없는 옛 캐시는 모두 Gemini)는 어긋난 것
 측정 runinfo에는 `model_provider`(실시간 분석·기본 리랭커의 모델)가 남고, Gemini를 부르지 않은 실행은
 `gemini.backend`가 `unused`다 — 기준선과 비교하기 전에 두 값을 함께 본다.
 
-CLI는 기본적으로 `SEARCH_MODEL_PROVIDER`를 따른다. 과거 리랭커만 재현할 때는
-`RERANKER_BACKEND=gemini_listwise|claude_listwise|cross_encoder`를 명시한다.
-이 CLI 덮어쓰기는 웹 요청의 모델 선택에는 적용하지 않는다.
+CLI(`evaluate_search_accuracy` · `evaluate_clarification` · `trace_candidate_drop` · `measure_rerank_batch` 등)의 분석기와
+리랭커는 `RERANKER_BACKEND`를 비우면 `SEARCH_MODEL_PROVIDER`를 따른다 — **기본값 그대로면 Claude Sonnet이라 질의마다 비용이
+들고 Gemini 기준선과 다른 리랭커로 재게 된다.** 예전 기준선(v32~v35 · 봉인 test · 재질문 v09)을 재현하는 명령에는
+`RERANKER_BACKEND=gemini_listwise`(또는 `SEARCH_MODEL_PROVIDER=gemini`)를 명시한다. 측정이 시작될 때
+`리랭커: claude_listwise (SEARCH_MODEL_PROVIDER 기본값 claude) — …` 한 줄이 찍히므로 잘못 골랐으면 그때 멈춘다.
+`RERANKER_BACKEND=gemini_listwise|claude_listwise|cross_encoder` 덮어쓰기는 웹 요청의 모델 선택에는 적용하지 않는다.
 리랭킹 시간 제한·후보 수·가중치 등 기존 `GEMINI_RERANK_*` 옵션은 두 listwise 모델에 공통 적용된다.
-Google Search 옵션을 켠 채 Claude를 선택하면 설정 오류를 낸다.
+Google Search를 쓰는 옵션(`GEMINI_RERANK_USE_SEARCH` · `GEMINI_RERANK_RARE_FACT_VERIFY`)이 켜져 있으면 Claude는
+**사용 불가**다 — 기본 모델이면 서버가 기동에서 멈추고, 선택지에서는 `available=false`·503이다(리랭킹을 끈 실행은 해당 없다).
 
 Claude 리랭킹에는 실험에서 검증한 JSON 스키마를 기본 적용한다. 후보 ID 누락·중복 처리는 공용 파서가
 담당한다. 질의 분석은 기존 프롬프트·검증·재시도를 유지하고 응답 전체를 감싼 코드 울타리를 벗긴다.

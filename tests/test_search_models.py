@@ -14,7 +14,7 @@ from src.backend.api import dependencies as deps
 from src.backend.api.routes.search import available_models
 from src.backend.schemas.search import SearchRequest
 from src.common import claude_client as cc
-from src.common.search_models import default_provider
+from src.common.search_models import default_provider, unavailable_reason
 from src.retrieval.analysis_cache import analyzer_fingerprint
 from src.retrieval.query_analyzer import QueryAnalyzer, rule_fallback
 
@@ -70,9 +70,27 @@ def test_unavailable_choice_does_not_fall_back_to_other_provider(selection, monk
     monkeypatch.setenv('CLAUDE_API', '')
     monkeypatch.setenv('ANTHROPIC_API_KEY', '')
     for payload in ({'query': '노래'}, {'query': '노래', 'model_provider': 'claude'}):
-        assert selection.post('/probe', json=payload).status_code == 503
+        response = selection.post('/probe', json=payload)
+        assert response.status_code == 503 and 'CLAUDE_API' in response.json()['detail']
     assert selection.post('/probe', json={'query': '노래', 'model_provider': 'gemini'}).status_code == 200
     assert selection.post('/probe', json={'query': '노래', 'model_provider': 'vertex'}).status_code == 422
+
+
+def test_search_options_make_claude_unavailable_instead_of_failing_the_first_search(selection, monkeypatch):
+    """Google Search를 쓰는 리랭커 옵션은 Claude listwise와 함께 만들 수 없다. 전에는 그 ValueError가 첫 Claude 검색의
+    의존성에서 올라와 500이었다(#63 리뷰). 이제 기동 검사·503·/models가 같은 판정을 본다."""
+    for flag in ('GEMINI_RERANK_USE_SEARCH', 'GEMINI_RERANK_RARE_FACT_VERIFY'):
+        with monkeypatch.context() as m:
+            m.setenv(flag, '1')
+            assert flag in unavailable_reason('claude') and unavailable_reason('gemini') is None
+            response = selection.post('/probe', json={'query': '노래', 'model_provider': 'claude'})
+            assert response.status_code == 503 and flag in response.json()['detail']
+            assert selection.post('/probe', json={'query': '노래', 'model_provider': 'gemini'}).status_code == 200
+            options = available_models().model_dump()
+            assert [(o['provider'], o['available']) for o in options['models']] == [('claude', False), ('gemini', True)]
+            # 리랭킹을 끈 실행은 옵션을 쓰지 않는다
+            m.setenv('RERANKER_ENABLED', '0')
+            assert unavailable_reason('claude') is None
 
 
 def test_options_are_public_metadata_only(selection, monkeypatch):
@@ -131,6 +149,7 @@ def test_server_refuses_to_start_on_model_setting_errors(monkeypatch):
         ({"SEARCH_MODEL_PROVIDER": "vertex"}, "SEARCH_MODEL_PROVIDER"),
         ({"GEMINI_RETRIEVAL_BACKEND": "vertex"}, "GEMINI_RETRIEVAL_BACKEND"),
         ({"CLAUDE_API": "", "ANTHROPIC_API_KEY": ""}, "CLAUDE_API"),        # 기본 모델(claude)의 키가 없다
+        ({"GEMINI_RERANK_RARE_FACT_VERIFY": "1"}, "GEMINI_RERANK_RARE_FACT_VERIFY"),   # Claude와 못 쓰는 리랭커 옵션
     ]:
         with monkeypatch.context() as m:
             for name, value in env.items():
