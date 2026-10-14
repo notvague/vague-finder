@@ -1,0 +1,17 @@
+{
+  "installed": true,
+  "credential_envs_emptied": [
+    "GEMINI_API_KEY",
+    "GOOGLE_API_KEY",
+    "GCP_PROJECT_ID",
+    "GOOGLE_CLOUD_PROJECT",
+    "GOOGLE_APPLICATION_CREDENTIALS",
+    "GOOGLE_GENAI_USE_VERTEXAI",
+    "GOOGLE_CLOUD_LOCATION",
+    "GCP_LOCATION"
+  ],
+  "blocked_attempts": [],
+  "resolved_domains": {
+    "anthropic.com": 1
+  }
+}

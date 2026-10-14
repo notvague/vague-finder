@@ -1,0 +1,4 @@
+﻿runs,same_answer_rank,top1_split,top10_split,identical_top10_list
+gemini_stored_rep1 · gemini_stored_rep2 · gemini_metered_pilot,30/30,없음,없음,30/30
+haiku_pilot · haiku_dev176_rep1 · haiku_dev176_rep2,21/30,v09:n031 v09:n086 v10:t104,v06:q205 v09:n010,8/30
+sonnet:pilot_sonnet_adaptive_medium · sonnet:pilot_sonnet_adaptive_medium_rep2,28/30,없음,없음,9/30

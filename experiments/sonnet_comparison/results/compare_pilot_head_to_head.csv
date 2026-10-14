@@ -1,0 +1,8 @@
+﻿run,vs,better,same,worse,better_queries,worse_queries,top10_entered,top10_dropped,top1_gained,top1_lost
+sonnet:pilot_sonnet_adaptive_medium,gemini_stored_rep1,4,22,4,v06:q205 v06:q209 v06:q312 v09:n031,v09:n010 v09:n061 v09:n082 v10:t104,v06:q205,,v06:q209 v09:n031,v09:n061
+sonnet:pilot_sonnet_adaptive_medium,haiku_pilot,3,25,2,v06:q205 v06:q209 v09:n010,v06:q101 v10:t104,v06:q205,,v06:q209,
+sonnet:pilot_sonnet_adaptive_medium_rep2,gemini_stored_rep1,4,23,3,v06:q205 v06:q209 v06:q312 v09:n031,v09:n010 v09:n061 v10:t104,v06:q205,,v06:q209 v09:n031,v09:n061
+sonnet:pilot_sonnet_adaptive_medium_rep2,haiku_pilot,4,24,2,v06:q205 v06:q209 v09:n010 v09:n082,v06:q101 v10:t104,v06:q205,,v06:q209,
+sonnet:pilot_sonnet_structured,gemini_stored_rep1,6,22,2,v06:q101 v06:q205 v06:q209 v06:q312 v09:n031 v10:t104,v09:n010 v09:n061,v06:q205,,v06:q209 v09:n031 v10:t104,v09:n061
+sonnet:pilot_sonnet_structured,haiku_pilot,6,23,1,v06:q101 v06:q205 v06:q209 v09:n010 v09:n082 v10:t104,v06:q312,v06:q205,,v06:q209 v10:t104,
+haiku_pilot,gemini_stored_rep1,4,23,3,v06:q101 v06:q209 v06:q312 v09:n031,v09:n010 v09:n061 v09:n082,,,v09:n031,v09:n061
