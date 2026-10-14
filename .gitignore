@@ -178,3 +178,8 @@ experiments/genre_memory_gap/**/*.log
 experiments/genre_memory_gap/**/progress.txt
 # 실패가 섞여 비교에서 뺀 실행(폴더 이름 끝에 .excluded)은 올리지 않는다
 experiments/genre_memory_gap/results_*/*.excluded/
+
+# 5,143곡 Context 색인 후보 단계 측정(results_v47) — 질의별 후보 순위표 · 두 단계 아래 요약과 top-10
+!experiments/reranking/results_v47_context_5143/*.csv
+!experiments/reranking/results_v47_context_5143/*/*/search_eval_*_summary.csv
+!experiments/reranking/results_v47_context_5143/*/*/search_eval_*_top10.csv
