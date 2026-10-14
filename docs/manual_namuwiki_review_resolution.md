@@ -73,3 +73,25 @@ For an interrupted update, the private backup folder contains each original
 `<song_id>.meta.json` plus `review_manifest.json`. Do not retry against the
 stale unresolved list; restore originals or finish reconciling the IDs before
 rebuilding artifacts.
+
+## When the reviewed page IS the song's page
+
+`resolve_manual_not_found` records an absence. For a song whose page a person
+opened and confirmed — the automatic rules could not bind it because of a
+title spelling, a different album name or several same-title sections — use
+the counterpart, which reads the already cached snapshot and never fetches:
+
+```powershell
+docker compose run --rm --no-deps -T backend python -m experiments.namuwiki.resolve_manual_binding --decisions <private JSON>
+```
+
+Each decision names the cached request URL and one scope: `page` (the whole
+document is this song), `section` with the heading path of the one section
+that is, or `none` (the page is right but nothing in it belongs to this song
+alone, such as an artist page that only lists it). Trivia is extracted from
+that scope with the normal extractor, so an album page never lends its own
+trivia to a track. The default is a read-only preview; `--apply` additionally
+requires `--confirm-all-reviewed-pages`, writes originals and
+`review_manifest.json` under `data/context/manual_review_backups/` and then
+needs the same `--artifacts-only` rebuild as above. Keep the decisions file
+private with the other review material.

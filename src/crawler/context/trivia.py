@@ -418,6 +418,75 @@ def _independent_album_keys(album: str | None, title_keys: Iterable[str]) -> lis
     ))
 
 
+# Melon appends an edition label that NamuWiki album titles do not carry
+# (``Armageddon - The 1st Album`` vs the page ``Armageddon(aespa)``).
+_ALBUM_EDITION_SUFFIX = re.compile(
+    r"\s*[-–—]\s*the\s+\d+(?:st|nd|rd|th)\s+"
+    r"(?:(?:mini|full|single|repackage)\s+)?(?:album|ep)\s*$",
+    re.I,
+)
+# NamuWiki disambiguates an album page with the medium (``EQUAL(음반)``) or
+# with its artist (``bomb(ILLIT)``).
+_ALBUM_PAGE_QUALIFIERS = {"음반", "앨범", "정규", "미니", "싱글", "ep"}
+_TRACKLIST_HEADINGS = {"수록곡", "수록곡상세", "트랙리스트", "트랙목록", "곡목록"}
+# Whole Latin words only: ``(Forever)`` and ``(Alive)`` are glosses, not versions.
+_TRACK_VERSION_SUFFIX = re.compile(
+    r"\b(?:inst(?:rumental)?|ver(?:sion)?|remix|mix|acoustic|live|demo|edit)\b|"
+    r"반주|버전|리믹스|어쿠스틱|라이브|데모",
+    re.I,
+)
+
+
+def _album_page_match(
+    page_title: str,
+    album: str | None,
+    title_keys: Iterable[str],
+    artist_aliases: Iterable[str],
+) -> bool:
+    """Is this page the catalogue album: ``album``, ``album(음반)`` or ``album(artist)``?
+
+    A single named after its own title track gives no evidence beyond the
+    title, so an album key equal to a title key never counts.
+    """
+    value = str(album or "").strip()
+    if not value:
+        return False
+    title_key_set = set(title_keys)
+    album_forms = {
+        key
+        for key in (compact(value), compact(_ALBUM_EDITION_SUFFIX.sub("", value)))
+        if key and key not in title_key_set
+    }
+    if not album_forms:
+        return False
+
+    page = unicodedata.normalize("NFKC", str(page_title)).strip()
+    # A bare page title needs a key long enough to carry identity by itself.
+    if any(len(key) >= 3 and compact(page) == key for key in album_forms):
+        return True
+
+    match = re.fullmatch(r"(.+)\(([^()]*)\)\s*", page)
+    if not match or compact(match.group(1)) not in album_forms:
+        return False
+    qualifier = compact(match.group(2))
+    artist_keys = {compact(alias) for alias in artist_aliases if compact(alias)}
+    return qualifier in _ALBUM_PAGE_QUALIFIERS or qualifier in artist_keys
+
+
+def _under_tracklist(document: ParsedDocument, section_id: str) -> bool:
+    """Does the section sit below a track-list heading (not counting itself)?"""
+    by_id = {section.section_id: section for section in document.sections}
+    current = by_id.get(section_id)
+    current = by_id.get(current.parent_id) if current and current.parent_id else None
+    visited: set[str] = set()
+    while current is not None and current.section_id not in visited:
+        visited.add(current.section_id)
+        if _heading_key(current.heading or "") in _TRACKLIST_HEADINGS:
+            return True
+        current = by_id.get(current.parent_id) if current.parent_id else None
+    return False
+
+
 def _ancestor_heading_text(document: ParsedDocument, section_id: str) -> str:
     by_id = {section.section_id: section for section in document.sections}
     headings: list[str] = []
@@ -445,11 +514,14 @@ def _section_candidates(
     artist_aliases: list[str],
     album_keys: list[str],
     release_year: int | None,
+    album: str | None = None,
 ) -> list[dict]:
     page_key = compact(document.page_title or "")
     global_identity = _identity_text(document)
     global_artists = _matching_aliases(global_identity, artist_aliases)
-    page_is_album = any(page_key == key for key in album_keys)
+    page_is_album = any(page_key == key for key in album_keys) or _album_page_match(
+        document.page_title or "", album, title_keys, artist_aliases,
+    )
     candidates: list[dict] = []
 
     for section in document.sections:
@@ -470,8 +542,24 @@ def _section_candidates(
         artist_song_heading = bool(
             direct_heading_artists and re.search(r"노래|곡|싱글|음원", heading)
         )
-        if not (heading_title_exact or heading_title_contains or artist_song_heading):
+        # A track heading often carries a gloss or a credit after the title:
+        # ``꿈과 책과 힘과 벽 (dreams, books, power and walls)``, ``Higher (RESCENE)``.
+        # A version suffix names another track (``곡명 (Inst.)``), not this one.
+        trailing = re.search(r"\s*\(([^()]*)\)\s*$", heading)
+        heading_title_trimmed = bool(
+            not heading_title_exact
+            and trailing
+            and not _TRACK_VERSION_SUFFIX.search(trailing.group(1))
+            and compact(heading[: trailing.start()]) in title_keys
+        )
+        if not (
+            heading_title_exact
+            or heading_title_contains
+            or heading_title_trimmed
+            or artist_song_heading
+        ):
             continue
+        in_tracklist = _under_tracklist(document, section.section_id)
 
         local_text = _identity_text(document, section.section_id)
         local_artists = _matching_aliases(local_text, artist_aliases)
@@ -486,8 +574,12 @@ def _section_candidates(
         evidence: list[str] = []
         if heading_title_exact:
             evidence.append("section_title_exact")
+        elif heading_title_trimmed:
+            evidence.append("section_title_before_parenthesis")
         elif heading_title_contains:
             evidence.append("section_title_contains")
+        if in_tracklist:
+            evidence.append("tracklist_section")
         if artist_song_heading:
             evidence.append("artist_song_heading")
         if artist_matches:
@@ -516,6 +608,20 @@ def _section_candidates(
             and music_signal
         ):
             reason, score = "album_track_section_match", 90
+        elif (
+            (heading_title_exact or heading_title_trimmed)
+            and page_is_album
+            and global_artists
+            and in_tracklist
+        ):
+            # The page is the catalogue album, its intro names the artist and
+            # the heading under the track list is the title.  Such a section is
+            # often only credits and lyrics, with no music word of its own.
+            # An exact heading outranks one that only matches before a gloss.
+            reason, score = (
+                "album_tracklist_section_match",
+                90 if heading_title_exact else 88,
+            )
         elif heading_title_contains and artist_matches and music_signal:
             reason, score = "title_artist_section_match", 85
 
@@ -523,6 +629,10 @@ def _section_candidates(
             # Year agreement raises audit confidence but can never verify a
             # page by itself.  Release dates are frequently absent on NamuWiki.
             score += 2 if year_match else 0
+            # An album page repeats a track title under charts and videos
+            # (``성적 > 음원 > 곡명``).  One point only breaks what would be a
+            # tie: scores that differed before differ by at least two.
+            score += 1 if in_tracklist else 0
             candidates.append({
                 "section_id": section.section_id,
                 "reason": reason,
@@ -600,6 +710,7 @@ def decide_song_page(
         artist_aliases=artist_aliases,
         album_keys=album_keys,
         release_year=release_year,
+        album=album,
     )
     if scoped:
         top_score = scoped[0]["score"]
