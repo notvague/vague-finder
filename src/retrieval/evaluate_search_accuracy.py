@@ -541,7 +541,7 @@ def _ranking_switches(config: Any) -> dict:
         "genre_match_scale": _search_router._genre_match_scale(),
         "genre_answer_scale": _search_router._genre_answer_scale(),
         "audio_fusion_scale": _search_router._audio_fusion_scale(),
-        # 속성 조건 보조 후보(experiments/reranking/results_v51_attr_filter, 2026-10-15 채택: 가중 0.5 · era_plus). 가중 0이면 경로가 돌지 않는다(v50 B 조건)
+        # 속성 조건 보조 후보(experiments/reranking/results_v51_attr_filter — 실험 스위치, 기본 가중 0 = 경로 없음 = v50 B 조건)
         "attr_filter_weight": _search_router._attr_filter_weight(),
         "attr_filter_k": _search_router._attr_filter_k(),
         "attr_filter_gate": _search_router._attr_filter_gate(),

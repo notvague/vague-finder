@@ -72,3 +72,7 @@ dev 176에서 필터가 열리는 질의: `two_axes` 95건(시기 없는 성별+
 | `compare_ab.py` · `usage_tap.py` · `usage_summary.py` | v50과 같은 도구(복사) |
 | `cand_attr0` · `cand_attr0.5` · `cand_attr0.5_eraplus` | 후보 단계(summary·top10·runinfo·conditions 커밋, detail·explain은 git 제외) |
 | `rerank_attr0.5_eraplus_rep{1,2}` · `usage_rerank_*.jsonl` | 리랭킹 포함 2회와 호출 기록 |
+
+> **후속(2026-10-15 저녁, `results_v52_attr_filter_followup`)**: PR 전 검토에서 코드 기본값을 다시 **가중 0(꺼짐)**으로 돌렸고,
+> 재질문 답이 필터 조건에 반영되도록 고쳤다. 위 §3의 숫자는 값을 명시해 돌린 것이라 그대로다. §3의 "최대 357초 = 각 실행 첫 질의(모델 적재)"는
+> 틀렸다 — 가사 질의 3건(q209 · n007 · t003)의 Mongo 가사 판 적재였고 가중 0 실행(`cand_attr0`)에도 똑같이 있었다(후속 RUN_INFO §4).

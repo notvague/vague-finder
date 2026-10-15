@@ -1,0 +1,6 @@
+policy,n_full,n_intervention,n_conversations,n_executed,full_hit@1,full_hit@5,full_hit@10,full_mrr@10,int_hit@1,int_hit@5,int_hit@10,int_candidate_recall@30,int_found_by_turn2,int_final_relaxed,int_relaxed_seen,n_conv_out_of_candidates
+initial,59,15,15,59,0.4915,0.661,0.7458,0.5752,0.0,0.0,0.0,0.0,,0.0,,
+flow:reject,59,15,15,15,0.5085,0.6949,0.7797,0.6007,0.0667,0.1333,0.1333,0.1333,0.0,0.1333,0.1333,13
+flow:skip,59,15,15,15,0.5085,0.6949,0.7797,0.6007,0.0667,0.1333,0.1333,0.1333,0.0,0.1333,0.1333,13
+flow:oracle,59,15,15,15,0.5424,0.7119,0.7966,0.6261,0.2,0.2,0.2,0.2,0.0667,0.2,0.2,12
+flow:noisy,59,15,15,15,0.5085,0.678,0.7627,0.5922,0.0667,0.0667,0.0667,0.1333,0.0,0.0667,0.0667,13

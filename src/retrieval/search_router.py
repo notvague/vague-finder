@@ -919,15 +919,16 @@ def _attr_boost_scale() -> float:
 
 
 def _attr_filter_weight() -> float:
-    """속성 조건 보조 후보(`_build_attribute_filter`) 목록의 RRF 가중. **기본 0.5(2026-10-15 채택, v51). 0이면 경로를 돌리지 않는다.**
+    """속성 조건 보조 후보(`_build_attribute_filter`) 목록의 RRF 가중. **기본 0 — 경로를 돌리지 않는다(실험 스위치, 채택 전).**
 
-    v51(experiments/reranking/results_v51_attr_filter/RUN_INFO.md): 가중 0.5 · `era_plus`로 dev 176에서 Hit@10 117 → 123 ·
-    Hit@5 107 → 112 · MRR 0.532 → 0.542(2회 동일), Hit@1 ±0, 지연 차이 없음. 0보다 크면 분석의 시기·성별·장르·형태
-    조건에 맞는 곡만 같은 텍스트 질의로 한 번 더 검색해(`ATTR_FILTER_K`개) `weight / (RRF_K + 순위)`로 융합 점수에
-    더한다 — `performance_metadata` 경로와 같은 자리, 같은 식이다. 기존 후보를 빼지 않고 끝자리에 경쟁자를 더하는
-    것이라, 가중이 크면 텍스트 상위 곡까지 밀어낸다. 채택 전 기준선(v50 B)을 재현하려면 `ATTR_FILTER_WEIGHT=0`.
+    v51(experiments/reranking/results_v51_attr_filter/RUN_INFO.md)에서 잰 값은 0.5 · `era_plus`: dev 176에서 Hit@10 117 → 123 ·
+    Hit@5 107 → 112 · MRR 0.532 → 0.542(2회 동일), Hit@1 ±0, 지연 차이 없음. 후속 검토(results_v52_attr_filter_followup)가
+    끝나 채택이 확정되기 전까지 기본값은 0이다. 0보다 크면 분석의 시기·성별·장르·형태 조건에 맞는 곡만 같은 텍스트
+    질의로 한 번 더 검색해(`ATTR_FILTER_K`개) `weight / (RRF_K + 순위)`로 융합 점수에 더한다 — `performance_metadata`
+    경로와 같은 자리, 같은 식이다. 기존 후보를 빼지 않고 끝자리에 경쟁자를 더하는 것이라, 가중이 크면 텍스트 상위 곡까지
+    밀어낸다. 0이면 필터를 만들지도, 검색을 한 번 더 하지도 않아 v50 B 기준선과 비트 단위로 같다.
     """
-    return _env_scale("ATTR_FILTER_WEIGHT", 0.5)
+    return _env_scale("ATTR_FILTER_WEIGHT", 0.0)
 
 
 _ATTR_FILTER_GATES = ("era_plus", "two_axes")
@@ -1370,9 +1371,14 @@ class SearchRouter:
             and not disable_boost
         )
         # 속성 조건 보조 후보 — 실험 스위치. 가중 0(기본)이면 필터도 만들지 않는다.
+        # 필터 조건은 **재질문 답을 반영한 분석**(`analysis_with_answers`)에서 만든다 — 사용자가 "남성"을 "여성"으로
+        # 고쳤는데 최초 분석의 남성 조건으로 30곡을 더 불러오면 정정이 이 경로에서만 무시된다. 텍스트 질의 자체는
+        # 원래 분석 그대로다(답을 질의에 넣으면 맞는 답도 순위를 해친다 — clarify.apply_answer_bonus). 답이 없으면
+        # 같은 객체라 1턴 동작은 그대로다.
         attr_filter_weight = _attr_filter_weight()
         attribute_filter = (
-            _build_attribute_filter(analysis) if attr_filter_weight > 0 else None
+            _build_attribute_filter(analysis_with_answers(analysis, list(answers or [])))
+            if attr_filter_weight > 0 else None
         )
         use_attr_filter = bool(
             attribute_filter is not None
