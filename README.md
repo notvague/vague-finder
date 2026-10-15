@@ -119,7 +119,7 @@ Gemini listwise는 두 줄이다. 전환 근거가 된 측정(v32~v34)은 드라
 
 ## 시작하기
 
-**필요한 것**: Python 3.11 이상, ffmpeg (오디오 디코딩), Claude 또는 Gemini API 키, 위의 데이터.
+**필요한 것**: Python 3.11 이상, ffmpeg (오디오 디코딩), Vertex AI를 쓸 수 있는 GCP 프로젝트와 ADC 로그인(Gemini), 위의 데이터.
 Node.js는 수집 파이프라인(yt-dlp)을 돌릴 때만 필요하다.
 
 ```bash
@@ -127,9 +127,10 @@ Node.js는 수집 파이프라인(yt-dlp)을 돌릴 때만 필요하다.
 python3 -m venv venv
 venv/bin/pip install -r requirements.txt
 
-# 2. 환경 변수 — 기본 Claude(Sonnet). ANTHROPIC_API_KEY를 설정한다.
-#    Gemini도 선택하려면 GEMINI_API_KEY를 함께 설정한다(.env.example 참고).
+# 2. 환경 변수 — Gemini는 Vertex AI 전용: GCP_PROJECT_ID(크레딧이 연결된 프로젝트) + 로컬 ADC
+#    AI Studio 키(GEMINI_API_KEY)는 쓰지 않는다. 서버는 기동에서 설정·인증·모델을 확인한다 (.env.example 3)
 cp .env.example .env
+gcloud auth application-default login   # 크레딧이 있는 Google 계정으로 한 번
 
 # 3. 벡터 DB 적재 (data/all_songs.jsonl과 artifacts/embeddings/가 있어야 한다)
 venv/bin/python -m src.vector_db.cli.qdrant_load --recreate
@@ -137,12 +138,6 @@ venv/bin/python -m src.vector_db.cli.qdrant_load --recreate
 # 4. 서버 실행
 venv/bin/uvicorn src.backend.main:app --reload
 ```
-
-검색창 아래에서 Claude / Gemini를 선택한다. 선택은 다음 새 검색부터 적용되고 재질문에는 같은 모델을 유지한다.
-`SEARCH_MODEL_PROVIDER=claude|gemini`로 서버 기본값을 바꾸고(기본 모델의 키가 없으면 서버가 뜨지 않는다),
-`CLAUDE_MODEL_NAME` / `GEMINI_MODEL_NAME`으로 각 모델 ID를 지정한다(변경 후 재시작). 두 모델 모두 질의 분석과 리랭킹에 적용된다. Vertex AI는 지원하지 않는다.
-API는 `GET /api/v1/search/models`로 선택지를 받고, 검색 본문에 `model_provider: "claude"` 또는 `"gemini"`를 보낸다.
-세부 설정과 평가 시 주의사항은 [검색 모델 설정](docs/search_models.md)을 참고한다.
 
 | 주소 | 내용 |
 | --- | --- |
@@ -165,14 +160,11 @@ curl -X POST http://127.0.0.1:8000/api/v1/search \
 venv/bin/python -m pytest tests/ -q
 
 # 검색 정확도 재측정 — 질의 분석을 캐시로 고정해야 같은 측정이 같은 숫자를 낸다
-# 1단계는 캐시가 이미 있으면 빠진 질의만 **그 캐시의 모델**로 채운다(기존 캐시는 모두 Gemini). 단, 분석기 코드가
-# 바뀐 것을 감지하면 전부 다시 분석해 기준선이 달라진다 (--reuse-despite-drift 등은 --help 참고)
+# 1단계는 캐시가 이미 있으면 빠진 질의만 채운다. 분석기 코드·호출 경로가 바뀐 캐시는 덮어쓰지 않고 멈춘다 —
+# 새 --output으로 만들거나 --reuse-despite-drift / --force를 명시한다 (옛 AI Studio 캐시는 --force로도 안 된다, --help 참고)
 venv/bin/python -m src.retrieval.build_analysis_cache --input experiments/reranking/eval_queries_v06.csv \
   --split dev --output experiments/reranking/analysis_cache_v06_dev.json
-# 2단계의 리랭커는 RERANKER_BACKEND를 비우면 SEARCH_MODEL_PROVIDER(기본 claude)를 따른다 — 질의마다 Sonnet 비용이 든다.
-# Gemini 기준선(v32~v35)과 비교하려면 gemini_listwise를 명시한다. 시작할 때 "리랭커: …" 한 줄로 무엇으로 재는지 찍힌다
-RERANKER_BACKEND=gemini_listwise venv/bin/python -m src.retrieval.evaluate_search_accuracy \
-  --input experiments/reranking/eval_queries_v06.csv \
+venv/bin/python -m src.retrieval.evaluate_search_accuracy --input experiments/reranking/eval_queries_v06.csv \
   --split dev --analysis-cache experiments/reranking/analysis_cache_v06_dev.json \
   --output-dir experiments/reranking/results_vNN
 ```

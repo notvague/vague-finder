@@ -148,7 +148,7 @@ def test_every_call_carries_a_shrinking_timeout(monkeypatch):
     # `qa.time`은 time 모듈 자체다 — 진짜 sleep을 먼저 붙잡아야 자기 자신을 부르지 않는다
     real_sleep = time.sleep
     monkeypatch.setattr(qa.time, "sleep", lambda s: real_sleep(min(s, 0.05)))
-    analyzer = qa.QueryAnalyzer(api_key="시험용")
+    analyzer = qa.QueryAnalyzer(configured=True)
     fake = _FakeGemini()
     analyzer._client = fake
 
@@ -164,7 +164,7 @@ def test_every_call_carries_a_shrinking_timeout(monkeypatch):
 def test_a_spent_budget_stops_the_retries(monkeypatch):
     """한 번에 예산을 다 쓰면 더 시도하지 않고 규칙 폴백으로 내려온다."""
     monkeypatch.setenv("QUERY_ANALYSIS_TIMEOUT_SECONDS", "0.3")
-    analyzer = qa.QueryAnalyzer(api_key="시험용")
+    analyzer = qa.QueryAnalyzer(configured=True)
     fake = _FakeGemini(sleep=0.4)
     analyzer._client = fake
 
@@ -177,11 +177,15 @@ def test_a_spent_budget_stops_the_retries(monkeypatch):
     assert elapsed < 2.0, f"예산 0.3초인데 {elapsed:.1f}초가 걸렸다"
 
 
-def test_no_api_key_falls_back_without_calling(monkeypatch):
-    # Vertex 설정(GCP_PROJECT_ID)도 지워야 한다 — 남아 있으면 .env를 따라 실제 Vertex를 부른다
-    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+def test_no_vertex_project_falls_back_without_calling(monkeypatch):
+    # 환경을 따르는 기본 생성 — 프로젝트가 없으면 클라이언트를 만들지 않고 규칙 폴백이다.
+    # 옛 AI Studio 키가 남아 있어도 설정으로 치지 않는다.
+    monkeypatch.setenv("GEMINI_API_KEY", "AIzaSy-옛-키")
     monkeypatch.delenv("GCP_PROJECT_ID", raising=False)
-    analyzer = qa.QueryAnalyzer(api_key="")
+    monkeypatch.delenv("GEMINI_RETRIEVAL_BACKEND", raising=False)
+    monkeypatch.setattr(qa, "make_genai_client", lambda **kwargs: (_ for _ in ()).throw(AssertionError("호출하면 안 된다")))
+    analyzer = qa.QueryAnalyzer()
+    assert not analyzer._configured
     assert analyzer.analyze(QUERY).confidence == 0.0
 
 
@@ -288,7 +292,7 @@ def test_a_real_dripping_response_does_not_outlast_the_budget(monkeypatch):
 
         # 키는 **아스키여야 한다.** 한글 키는 HTTP 헤더 인코딩에서 먼저 터져
         # 드립 서버에 닿지도 못한다 — 그러면 이 시험은 엉뚱한 이유로 통과한다.
-        analyzer = qa.QueryAnalyzer(api_key="drip-test-key")
+        analyzer = qa.QueryAnalyzer(configured=True)
         analyzer._budget_seconds = 0.3
         analyzer._client = qa.genai.Client(
             api_key="drip-test-key",
@@ -341,7 +345,7 @@ class _CorrectionSequence:
 def _analyzer_with(fake, monkeypatch) -> qa.QueryAnalyzer:
     real_sleep = time.sleep
     monkeypatch.setattr(qa.time, "sleep", lambda s: real_sleep(0))
-    analyzer = qa.QueryAnalyzer(api_key="시험용")
+    analyzer = qa.QueryAnalyzer(configured=True)
     analyzer._client = fake
     return analyzer
 

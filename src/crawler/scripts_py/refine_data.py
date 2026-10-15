@@ -39,10 +39,10 @@ logger = logging.getLogger(__name__)
 # .env 로드
 load_dotenv()
 
-# Gemini 설정 — AI Studio 키(GEMINI_API_KEY)가 있으면 쓴다
+# Gemini 설정 — Vertex AI 전용(GCP_PROJECT_ID + ADC). API 키 경로는 없다
 GEMINI_CONFIGURED = gemini_configured()
 if not GEMINI_CONFIGURED:
-    logger.warning("Gemini 설정(GEMINI_API_KEY)이 없습니다.")
+    logger.warning("Gemini(Vertex AI) 설정(GCP_PROJECT_ID)이 없습니다.")
 
 
 MAX_LYRICS_CHARS = 1000
@@ -481,7 +481,7 @@ def refine_data(
 
     # === Gemini 모드 ===
     if not GEMINI_CONFIGURED:
-        logger.error("Gemini 설정 누락! .env의 GEMINI_API_KEY 확인요망")
+        logger.error("Gemini 설정 누락! .env의 GCP_PROJECT_ID(Vertex AI)와 ADC 확인요망")
         return {}
 
     # 재시도 설정 (유료 플랜이므로 안정성을 위해 3회 재시도)

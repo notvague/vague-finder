@@ -213,7 +213,7 @@ def test_real_analyzer_accepts_the_contest_on_first_attempt_without_image(async_
     async def generate_async(**kwargs):
         return generate(**kwargs)
 
-    analyzer = QueryAnalyzer(api_key="synthetic-test-key")
+    analyzer = QueryAnalyzer(configured=True)
     analyzer._client = SimpleNamespace(
         models=SimpleNamespace(generate_content=generate),
         aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate_async)),

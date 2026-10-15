@@ -41,13 +41,16 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 from src.backend.schemas.query import QueryAnalysis
-from src.common.claude_client import claude_request_settings
-from src.common.search_models import ModelProvider, default_provider, model_name
+from src.common.gemini_client import RETRIEVAL, GeminiConfigError, gemini_route_info, retrieval_model_name
 from src.retrieval import query_analyzer as qa
 
 CACHE_FORMAT = 1
-# 지문에 `provider`를 적기 전(2026-10-14)의 캐시는 모두 Gemini 분석이다.
-LEGACY_PROVIDER: ModelProvider = "gemini"
+# 지문에 호출 경로를 적기 전(2026-10-15 이전)의 캐시가 만들어진 경로. 기준선 캐시(v06·v09·v10 dev, v46 *_ctx)는
+# 모두 AI Studio(`api_key`)에서 만들었다. 같은 모델 이름이라도 Vertex는 출력이 달라, 옛 캐시의 빈 항목을 Vertex로
+# 채우면 한 캐시에 두 경로의 분석이 섞인다 — 그래서 빠진 키는 이 값으로 보고 drift로 잡는다.
+LEGACY_ROUTE: Dict[str, Any] = {"gemini_backend": "api_key", "gemini_location": None}
+# 지문 중 호출 경로를 나타내는 키. 이 키가 어긋난 캐시(옛 AI Studio 캐시)는 build_analysis_cache가 어떤 플래그로도 덮어쓰지 않는다.
+ROUTE_KEYS = tuple(LEGACY_ROUTE)
 
 
 class AnalysisCacheError(RuntimeError):
@@ -58,8 +61,8 @@ def _sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]
 
 
-def analyzer_fingerprint(provider: Optional[ModelProvider] = None) -> Dict[str, Any]:
-    """이 분석을 만든 조건. 나중에 "무엇으로 만든 캐시인가"를 답할 수 있어야 한다. `provider`를 비우면 서버 기본 모델.
+def analyzer_fingerprint() -> Dict[str, Any]:
+    """이 분석을 만든 조건. 나중에 "무엇으로 만든 캐시인가"를 답할 수 있어야 한다.
 
     프롬프트와 후처리를 따로 해시하는 이유: 프롬프트만 고쳐도 분석이 달라지고,
     후처리(`_apply_*_safeguards`)만 고쳐도 최종 `QueryAnalysis`가 달라진다.
@@ -74,14 +77,18 @@ def analyzer_fingerprint(provider: Optional[ModelProvider] = None) -> Dict[str, 
     context_src = Path(qa.__file__).with_name("context_query.py").read_text(
         encoding="utf-8"
     )
-    provider = provider or default_provider()
+    try:
+        route = gemini_route_info(RETRIEVAL)
+    except GeminiConfigError:
+        route = {"backend": "invalid-setting"}
     return {
-        "provider": provider,
-        "model_name": model_name(provider),
-        "claude_settings": claude_request_settings() if provider == "claude" else None,
+        "model_name": retrieval_model_name(),
+        # 호출 경로(vertex / 옛 api_key)와 위치. 같은 모델 이름이라도 경로가 다르면 분석이 다르다 — "무엇으로 만든 캐시인가"의 일부다.
+        "gemini_backend": route.get("backend"),
+        "gemini_location": route.get("location"),
         # query_analyzer.py가 직접 넣는 값. 여기서 바꿀 수 있는 설정이 아니다.
-        "temperature": 0.0 if provider == "gemini" else None,
-        "top_p": 1.0 if provider == "gemini" else None,
+        "temperature": 0.0,
+        "top_p": 1.0,
         "reference_year": qa._reference_year(),
         "reference_year_env": os.getenv("SEARCH_REFERENCE_YEAR", "").strip(),
         "prompt_sha": _sha(qa._PROMPT_TEMPLATE),
@@ -94,7 +101,7 @@ def fingerprint_sha(fingerprint: Dict[str, Any]) -> str:
     return _sha(json.dumps(fingerprint, sort_keys=True, ensure_ascii=False))
 
 
-def analyzer_sha(provider: Optional[ModelProvider] = None) -> str:
+def analyzer_sha() -> str:
     """지금 분석기 조건의 짧은 지문. **항목마다 붙인다.**
 
     캐시 meta의 지문은 "이 캐시를 시작한 조건"이고, 항목별 지문은 "이 항목을
@@ -104,7 +111,7 @@ def analyzer_sha(provider: Optional[ModelProvider] = None) -> str:
     매번 계산한다. 분석 코드 세 파일을 읽지만 Gemini 호출 한 번의 수천 분의 일이고,
     캐싱하면 **환경 변수가 바뀐 것을 놓친다**(기준 연도·모델 이름이 지문에 들어간다).
     """
-    return fingerprint_sha(analyzer_fingerprint(provider))
+    return fingerprint_sha(analyzer_fingerprint())
 
 
 def looks_like_fallback(analysis: QueryAnalysis) -> bool:
@@ -123,11 +130,6 @@ def looks_like_fallback(analysis: QueryAnalysis) -> bool:
 class AnalysisCache:
     meta: Dict[str, Any] = field(default_factory=dict)
     entries: Dict[str, Dict[str, Any]] = field(default_factory=dict)
-
-    @property
-    def provider(self) -> ModelProvider:
-        """이 캐시의 분석을 만든 모델. 적혀 있지 않으면 옛 캐시 — 모두 Gemini다."""
-        return self.meta.get("analyzer", {}).get("provider") or LEGACY_PROVIDER
 
     # ---- 읽기 ----
     def get(self, query_id: str, query: str) -> QueryAnalysis:
@@ -155,19 +157,21 @@ class AnalysisCache:
             if qid in wanted and entry.get("fallback")
         )
 
+    def route(self) -> Dict[str, Any]:
+        """이 캐시를 만든 호출 경로(backend·location). 경로 키가 없는 옛 캐시는 AI Studio(LEGACY_ROUTE)다."""
+        stored = self.meta.get("analyzer", {})
+        return {key: stored.get(key, default) for key, default in LEGACY_ROUTE.items()}
+
     def fingerprint_drift(self) -> List[str]:
         """캐시를 만든 조건과 지금 조건이 다른 항목. 경고용이다.
 
         오류로 만들지 않는 이유: 랭킹만 바꾼 전후 비교에서는 같은 캐시를 일부러
         재사용한다. 그때 분석 조건은 바뀌지 않으므로 이 목록은 비어 있어야 하고,
         비어 있지 않다면 사람이 판단할 일이다.
-
-        서버 기본 모델이 아니라 **이 캐시의 모델** 조건과 비교한다. 기본이 Claude로 바뀌었다고(2026-10-14) 얼려 둔
-        Gemini 캐시가 어긋난 것은 아니다 — 모델을 바꾸는 것은 drift가 아니라 새 캐시다. 기본값과 비교하면 기준선
-        측정 명령마다 model_name·temperature가 어긋났다고 찍히고, build_analysis_cache는 전부 다시 분석한다.
         """
-        now = analyzer_fingerprint(self.provider)
-        stored = self.meta.get("analyzer", {})
+        now = analyzer_fingerprint()
+        # 경로 키가 없는 옛 캐시는 AI Studio에서 만든 것으로 본다(LEGACY_ROUTE) — Vertex에서 이어 채우면 drift다.
+        stored = {**LEGACY_ROUTE, **self.meta.get("analyzer", {})}
         return sorted(
             key for key in now if key in stored and now[key] != stored[key]
         )
@@ -216,7 +220,7 @@ class AnalysisCache:
             # **이 항목을 만든 조건**을 여기 붙인다. 전체 작업이 끝나야 남기는
             # 기록은 중간에 끊기면 사라진다 — 실제로 한 건을 저장한 직후 중단하니
             # 그 항목이 이력에서 빠졌다. 항목과 같은 저장에 함께 들어가야 한다.
-            "analyzer_sha": analyzer_sha(self.provider),
+            "analyzer_sha": analyzer_sha(),
             "analysis": analysis.model_dump(mode="json"),
         }
 
@@ -245,13 +249,12 @@ def load_cache(path: Path) -> AnalysisCache:
     return AnalysisCache(meta=payload.get("meta", {}), entries=payload.get("entries", {}))
 
 
-def new_cache(*, source: str, split: Optional[str], provider: Optional[ModelProvider] = None) -> AnalysisCache:
-    """새 캐시. `provider`를 비우면 서버 기본 모델의 조건으로 시작한다."""
+def new_cache(*, source: str, split: Optional[str]) -> AnalysisCache:
     return AnalysisCache(
         meta={
             "created_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
             "query_source": source,
             "split": split or "all",
-            "analyzer": analyzer_fingerprint(provider),
+            "analyzer": analyzer_fingerprint(),
         }
     )

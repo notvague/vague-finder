@@ -317,28 +317,26 @@ class GeminiListwiseReranker:
     def __init__(
         self,
         config: Optional[GeminiListwiseRerankerConfig] = None,
-        api_key: Optional[str] = None,
+        *,
+        configured: Optional[bool] = None,
         client: Any = None,
     ):
         self.config = config or GeminiListwiseRerankerConfig.from_env()
-        # 직접 넘긴 키만 담는다. 없으면 환경(GEMINI_API_KEY → AI Studio)을 따르고,
-        # GEMINI_RETRIEVAL_BACKEND가 있으면 그 경로로 고정한다(검색 용도 — 질의 분석과 같은 경로).
-        self._api_key = api_key or ""
-        self._configured = client is not None or self._env_configured()
+        # Gemini는 Vertex AI(GCP_PROJECT_ID + ADC)만 부른다 — API 키를 받는 자리는 없다(2026-10-15).
+        # `configured`를 비우면 주입된 클라이언트가 있거나 환경(GCP_PROJECT_ID · GEMINI_RETRIEVAL_BACKEND, 질의 분석과
+        # 같은 경로)에 설정이 있을 때 켜진다. 테스트는 True/False로 고정한다(환경을 따르면 실제 Vertex를 부를 수 있다).
         self._client = client
+        if configured is None:
+            configured = client is not None or gemini_configured(purpose=RETRIEVAL)
+        self._configured = bool(configured)
         if not self._configured:
-            logger.warning("[%s] %s — retrieval 순서를 유지합니다.", type(self).__name__, self._missing_config_message())
-
-    def _env_configured(self) -> bool:
-        """환경에 이 백엔드의 설정이 있는가. Claude 백엔드가 덮어쓴다."""
-        return gemini_configured(self._api_key, purpose=RETRIEVAL)
-
-    def _missing_config_message(self) -> str:
-        return "Gemini 설정 없음(GEMINI_API_KEY, GEMINI_RETRIEVAL_BACKEND)"
+            logger.warning(
+                "[GeminiListwiseReranker] Gemini(Vertex AI) 설정 없음(GCP_PROJECT_ID · GEMINI_RETRIEVAL_BACKEND) — retrieval 순서를 유지합니다."
+            )
 
     @property
     def enabled(self) -> bool:
-        return bool(self.config.enabled and (self._configured or self._client is not None))
+        return bool(self.config.enabled and self._configured)
 
     def load(self) -> "GeminiListwiseReranker":
         return self
@@ -351,7 +349,6 @@ class GeminiListwiseReranker:
             # 연결·읽기 제한. 없으면 멈춘 응답을 무기한 기다리고, 스레드에 wait_for를 씌워도
             # 진행 중인 HTTP 요청은 끝나지 않는다.
             self._client = make_genai_client(
-                api_key=self._api_key or None,
                 purpose=RETRIEVAL,
                 http_options=types.HttpOptions(
                     timeout=int(self.config.request_timeout_seconds * 1000)
@@ -390,7 +387,6 @@ class GeminiListwiseReranker:
         from google.genai import types
 
         return make_genai_client(
-            api_key=self._api_key or None,
             purpose=RETRIEVAL,
             http_options=types.HttpOptions(timeout=int(self.config.request_timeout_seconds * 1000)),
         )

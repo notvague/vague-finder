@@ -14,8 +14,7 @@ from src.retrieval.query_analyzer import QueryAnalyzer, _PROMPT_TEMPLATE, rule_f
 
 
 def _fallback(query: str) -> QueryAnalysis:
-    analyzer = QueryAnalyzer(api_key="")
-    analyzer._api_key = ""
+    analyzer = QueryAnalyzer(configured=False)
     return analyzer.analyze(query)
 
 
@@ -195,7 +194,7 @@ def test_model_cannot_add_unsupported_answer_or_create_context():
 
 
 def test_gemini_response_passes_through_context_safeguards():
-    analyzer = QueryAnalyzer(api_key="fake-key")
+    analyzer = QueryAnalyzer(configured=True)
     calls = []
 
     def generate_content(**kwargs):
@@ -340,7 +339,7 @@ def test_model_cannot_promote_temporal_adjective_to_work_title():
 
 def test_context_prompt_shrunk_and_analysis_deadline_remains_bounded(monkeypatch):
     monkeypatch.delenv("QUERY_ANALYSIS_TIMEOUT_SECONDS", raising=False)
-    analyzer = QueryAnalyzer(api_key="")
+    analyzer = QueryAnalyzer(configured=False)
     prompt = analyzer._prompt("드라마 도깨비 OST")
     assert len(prompt) < 24000
     assert analyzer.analysis_budget_seconds == 20
@@ -350,8 +349,7 @@ def test_org_public_fallback_and_async_api_keep_context_clues():
     query = "드라마 도깨비 OST로 사용됐던 곡"
     expected = rule_fallback(query)
     assert expected.has_context_clue
-    analyzer = QueryAnalyzer(api_key="")
-    analyzer._api_key = ""
+    analyzer = QueryAnalyzer(configured=False)
     assert analyzer.analysis_budget_seconds > 0
     async_result = asyncio.run(analyzer.analyze_async(query))
     assert async_result.context_clues == expected.context_clues

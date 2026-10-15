@@ -267,7 +267,7 @@ def test_capture_file_reads_and_storage_run_outside_event_loop(setup, monkeypatc
         return original_record(*args)
 
     monkeypatch.setattr(capture, "source_version", lambda: fingerprint("source", "source-version"))
-    monkeypatch.setattr(analysis_cache, "analyzer_fingerprint", lambda provider=None: fingerprint("analyzer", {"version": "test"}))
+    monkeypatch.setattr(analysis_cache, "analyzer_fingerprint", lambda: fingerprint("analyzer", {"version": "test"}))
     monkeypatch.setattr(capture, "get_feedback_store", lambda: store)
     monkeypatch.setattr(store, "record_search", record)
     request = SearchRequest(query="휘파람")
@@ -455,7 +455,7 @@ def test_the_analyzer_fingerprint_is_read_once_per_process(setup, monkeypatch):
     from src.retrieval import analysis_cache
 
     reads = []
-    monkeypatch.setattr(analysis_cache, "analyzer_fingerprint", lambda provider=None: reads.append(True) or {"version": "test"})
+    monkeypatch.setattr(analysis_cache, "analyzer_fingerprint", lambda: reads.append(True) or {"version": "test"})
     monkeypatch.setattr(capture, "get_feedback_store", lambda: store)
     args = _search_args()
     for _ in range(3):

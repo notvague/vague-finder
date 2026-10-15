@@ -126,6 +126,7 @@ from src.retrieval.evaluate_search_accuracy import (
     first_relevant_rank,
     mean,
     metric_bundle,
+    preflight_gemini,
     recall_at_k,
     rerank_preserving_exact_lyrics,
 )
@@ -966,6 +967,8 @@ async def evaluate(args: argparse.Namespace) -> None:
     analyzer = get_query_analyzer() if analyses is None else None
     router, reranker = get_search_router(), get_reranker()
     print(describe_reranker(reranker), flush=True)
+    # Gemini를 부를 측정이면 시작 전에 Vertex 설정·인증·모델을 확인한다 — 설정 오류면 여기서 멈춘다.
+    preflight_gemini(reranker, live_analysis=analyses is None)
     reranker.load()
     targets = load_target_tracks([sid for q in queries for sid in q.positives])
 

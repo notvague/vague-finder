@@ -85,7 +85,7 @@ def test_analyzer_accepts_text_only_model_output_for_external_facts(query, expec
         "modality_weights": {"text": 1.0, "image": 0.0, "audio": 0.0},
         "confidence": 0.8, "context_clues": [],
     }
-    analysis = QueryAnalyzer(api_key="placeholder")._parse(
+    analysis = QueryAnalyzer(configured=True)._parse(
         query, SimpleNamespace(text=json.dumps(model_output, ensure_ascii=False))
     )
     assert analysis.confidence == 0.8
@@ -147,7 +147,7 @@ def test_analyzer_accepts_text_only_model_output_for_context_and_lyrics(query, e
         "modality_weights": {"text": 1.0, "image": 0.0, "audio": 0.0},
         "confidence": 0.8, "context_clues": [],
     }
-    analysis = QueryAnalyzer(api_key="placeholder")._parse(
+    analysis = QueryAnalyzer(configured=True)._parse(
         query, SimpleNamespace(text=json.dumps(model_output, ensure_ascii=False))
     )
     assert analysis.confidence == 0.8
@@ -171,7 +171,7 @@ def test_analyzer_does_not_reinterpret_background_history_as_song_audio(query):
         # The model might infer a vocal role from a stage scene; discard it.
         "performance_clues": {"vocal_count": "solo", "confidence": 0.7},
     }
-    result = QueryAnalyzer(api_key="placeholder")._parse(
+    result = QueryAnalyzer(configured=True)._parse(
         query, SimpleNamespace(text=json.dumps(model_output, ensure_ascii=False))
     )
     assert result.confidence == 0.8
@@ -183,7 +183,7 @@ def test_actual_vocal_count_still_requires_audio_prompt_in_analyzer():
     from src.retrieval.query_analyzer import QueryAnalyzer
 
     with pytest.raises(ModalityQueryValidationError, match="explicit auditory clue"):
-        QueryAnalyzer(api_key="placeholder")._parse(
+        QueryAnalyzer(configured=True)._parse(
             "여자 둘이 함께 부르는 노래",
             SimpleNamespace(text=json.dumps({
                 "intent_type": "mixed", "image_english_query": "",
@@ -219,7 +219,7 @@ def test_nw016_model_output_keeps_production_context_without_inventing_duet():
         # A model may incorrectly infer a duet from the abandoned plan.
         "performance_clues": {"vocal_count": "duet", "confidence": 0.8},
     }
-    analysis = QueryAnalyzer(api_key="placeholder")._parse(
+    analysis = QueryAnalyzer(configured=True)._parse(
         NW016, SimpleNamespace(text=json.dumps(model_output, ensure_ascii=False))
     )
     assert analysis.original_query == NW016
@@ -252,7 +252,7 @@ def test_released_duet_without_planning_context_still_requires_audio_prompt():
     from src.retrieval.query_analyzer import QueryAnalyzer
 
     with pytest.raises(ModalityQueryValidationError, match="explicit auditory clue"):
-        QueryAnalyzer(api_key="placeholder")._parse(
+        QueryAnalyzer(configured=True)._parse(
             query, SimpleNamespace(text=json.dumps({
                 "intent_type": "mixed", "image_english_query": "",
                 "audio_english_query": "", "confidence": 0.8,

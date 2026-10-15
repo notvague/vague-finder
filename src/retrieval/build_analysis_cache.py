@@ -11,6 +11,12 @@
 
 기본적으로 **이미 있는 항목은 다시 분석하지 않는다.** Gemini 호출은 쿼터를 쓰므로,
 누락·폴백만 채우는 것이 기본 동작이다. 전부 다시 만들려면 `--force`.
+
+**기존 캐시는 조용히 덮어쓰지 않는다**(2026-10-15 리뷰). `--output`에 있는 캐시의 분석 조건이 지금과 다르면 멈춘다 —
+새 `--output`으로 만들거나, 같은 캐시에 이어 채우려면 `--reuse-despite-drift`(어긋난 내용이 meta에 남음), 전부 다시 만들려면
+`--force`. 호출 경로(`gemini_backend`·`gemini_location`)가 다른 캐시(옛 AI Studio 캐시)는 **어떤 플래그로도** 덮어쓰거나 이어
+채우지 않고 다른 경로를 요구한다. `--force`는 `--query-ids`와 함께 쓸 수 없다(지정하지 않은 항목이 사라진다).
+기존 캐시를 읽어 측정하는 것(`evaluate_search_accuracy --analysis-cache`)은 이와 무관하게 그대로 된다.
 """
 from __future__ import annotations
 
@@ -25,8 +31,10 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.backend.api.dependencies import get_query_analyzer
-from src.common.search_models import PROVIDERS
+from src.common import gemini_client as gc
+from src.common.gemini_client import RETRIEVAL, GeminiConfigError
 from src.retrieval.analysis_cache import (
+    ROUTE_KEYS,
     AnalysisCacheError,
     analyzer_fingerprint,
     analyzer_sha,
@@ -67,36 +75,52 @@ def build(args: argparse.Namespace) -> int:
             print("오류: --query-ids에 해당하는 질의가 없습니다.", file=sys.stderr)
             return 2
 
-    # 새 캐시의 모델: --model-provider, 없으면 서버 기본(SEARCH_MODEL_PROVIDER). 기존 캐시를 이어 채우면 **그 캐시의 모델**이다 —
-    # 한 캐시에 두 모델의 분석을 섞지 않는다(기본이 Claude로 바뀐 뒤에도 Gemini 캐시의 빈 항목은 Gemini로 채운다).
-    requested = (getattr(args, "model_provider", "") or "").strip().lower() or None
-    cache = new_cache(source=str(input_path), split=args.split, provider=requested)
+    cache = new_cache(source=str(input_path), split=args.split)
     reused = 0
-    if output_path.exists() and not args.force:
+    if output_path.exists():
+        existing = None
         try:
             existing = load_cache(output_path)
         except AnalysisCacheError as exc:
-            print(f"오류: 기존 캐시를 읽을 수 없습니다 — {exc}", file=sys.stderr)
-            return 2
-        drift = existing.fingerprint_drift()
-        if drift and not args.reuse_despite_drift:
+            if not args.force:
+                print(f"오류: 기존 캐시를 읽을 수 없습니다 — {exc}", file=sys.stderr)
+                return 2
+            print(f"경고: 기존 캐시를 읽을 수 없어 무시합니다(--force) — {exc}", flush=True)
+        drift = existing.fingerprint_drift() if existing is not None else []
+        route_drift = [key for key in drift if key in ROUTE_KEYS]
+        if route_drift:
+            # 옛 AI Studio 캐시 등 **다른 경로에서 만든 캐시는 어떤 플래그로도 건드리지 않는다.** 예전 흐름은 경고만 찍고 전부
+            # 다시 분석해 같은 파일에 썼다 — --query-ids로 일부만 지정하면 나머지 항목이 사라졌다(리뷰 P1). 기준선 캐시는 원본
+            # 그대로 보존하고, 새 경로의 분석은 다른 파일로 만든다.
+            now = analyzer_fingerprint()
             print(
-                "경고: 기존 캐시를 만든 조건이 지금과 다릅니다 "
-                f"({', '.join(drift)}). 재사용하지 않고 전부 다시 분석합니다.\n"
-                "  분석 결과를 정하는 코드가 그대로임을 확인했다면 "
-                "--reuse-despite-drift로 유지할 수 있습니다.",
-                flush=True,
+                "오류: 기존 캐시는 다른 호출 경로에서 만든 것입니다 — "
+                f"캐시 {existing.route()} vs 지금 {{{', '.join(f'{k!r}: {now.get(k)!r}' for k in ROUTE_KEYS)}}}.\n"
+                "  이 파일은 덮어쓰거나 이어 채우지 않습니다(--force·--reuse-despite-drift로도 안 됩니다). "
+                "다른 --output 경로로 새 캐시를 만드세요.\n"
+                "  기존 캐시를 읽어 측정하는 것(evaluate_search_accuracy --analysis-cache)은 그대로 됩니다.",
+                file=sys.stderr,
             )
-            if existing.provider != cache.provider:
-                print(f"  모델도 다릅니다: 기존 캐시 {existing.provider} → 새 분석 {cache.provider}", flush=True)
-        else:
-            if requested and requested != existing.provider:
+            return 2
+        if args.force:
+            if args.query_ids:
                 print(
-                    f"오류: 기존 캐시는 {existing.provider} 분석인데 --model-provider={requested}입니다. "
-                    "한 캐시에 두 모델의 분석을 섞지 않습니다 — --force로 새로 만들거나 캐시의 모델에 맞추세요.",
+                    "오류: --force는 캐시 전체를 다시 만듭니다 — --query-ids와 함께 쓰면 지정하지 않은 항목이 사라집니다.\n"
+                    "  전부 다시 만들려면 --query-ids 없이, 일부만 다시 분석하려면 --force 없이(누락·폴백만 채움) 실행하세요.",
                     file=sys.stderr,
                 )
                 return 2
+            print(f"기존 캐시 {len(existing.entries) if existing else 0}건을 무시하고 전부 다시 분석합니다(--force).", flush=True)
+        elif drift and not args.reuse_despite_drift:
+            print(
+                "오류: 기존 캐시를 만든 조건이 지금과 다릅니다 "
+                f"({', '.join(drift)}). 덮어쓰지 않습니다.\n"
+                "  새 --output 경로로 만들거나, 같은 캐시에 이어 채우려면 --reuse-despite-drift"
+                "(어긋난 내용이 meta에 남습니다), 전부 다시 만들려면 --force를 주세요.",
+                file=sys.stderr,
+            )
+            return 2
+        else:
             cache.meta = existing.meta
             cache.entries = dict(existing.entries)
             reused = len(cache.entries)
@@ -113,11 +137,11 @@ def build(args: argparse.Namespace) -> int:
                     "at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
                     "drifted": drift,
                     "kept_entries": len(existing.entries),
-                    "analyzer_now": analyzer_fingerprint(cache.provider),
+                    "analyzer_now": analyzer_fingerprint(),
                     # 이 지문으로 만들어진 항목은 entries의 analyzer_sha로 찾는다.
                     # 목록을 여기 따로 적지 않는다 — 작업이 끝나야 쓰는 기록은
                     # 중간에 끊기면 사라진다.
-                    "analyzer_sha_now": analyzer_sha(cache.provider),
+                    "analyzer_sha_now": analyzer_sha(),
                     "reason": args.drift_reason,
                 })
 
@@ -142,7 +166,7 @@ def build(args: argparse.Namespace) -> int:
         and row["query_id"].strip() not in todo_ids
     )
     print(
-        f"질의 {len(rows)}건 | 재사용 {kept}건 | 새로 분석 {len(todo)}건 | 분석 모델 {cache.provider}",
+        f"질의 {len(rows)}건 | 재사용 {kept}건 | 새로 분석 {len(todo)}건",
         flush=True,
     )
     if not todo:
@@ -150,7 +174,23 @@ def build(args: argparse.Namespace) -> int:
         print(f"캐시: {output_path}")
         return 0
 
-    analyzer = get_query_analyzer.for_provider(cache.provider)
+    # 분석을 시작하기 전에 Vertex 설정·인증·모델을 확인한다(무료 countTokens 1회). 설정 오류면 여기서 멈춘다 —
+    # 그대로 두면 todo 전부가 규칙 폴백으로 채워진 캐시가 남는다. 연결 문제는 경고만(질의마다 다시 시도한다).
+    try:
+        route = gc.verify_vertex_setup(RETRIEVAL)
+    except GeminiConfigError as exc:
+        print(f"오류: {exc}", file=sys.stderr)
+        return 2
+    except Exception as exc:  # noqa: BLE001 - 설정이 아니라 연결 문제
+        print(f"경고: Vertex AI 확인 실패 — 질의마다 다시 시도한다: {type(exc).__name__}: {exc}", flush=True)
+    else:
+        print(
+            f"분석 경로: {route.get('backend')} location={route.get('location')} "
+            f"model={route.get('model')} probe={route.get('probe')}",
+            flush=True,
+        )
+
+    analyzer = get_query_analyzer()
     fallbacks = []
     for index, (query_id, query) in enumerate(todo, start=1):
         print(f"[{index}/{len(todo)}] {query_id}: {query}", flush=True)
@@ -158,7 +198,7 @@ def build(args: argparse.Namespace) -> int:
         cache.put(query_id, query, analysis)
         if looks_like_fallback(analysis):
             fallbacks.append(query_id)
-            print("  경고: 규칙 폴백이 반환됐습니다(모델 호출 실패).", flush=True)
+            print("  경고: 규칙 폴백이 반환됐습니다(Gemini 실패).", flush=True)
         # 한 건씩 저장한다 — 중간에 끊겨도 쓴 만큼은 남아야 다시 부르지 않는다.
         cache.save(output_path)
 
@@ -203,18 +243,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--query-ids", default="", help="쉼표로 구분한 query_id만 분석"
     )
     parser.add_argument(
-        "--model-provider",
-        choices=list(PROVIDERS),
-        default="",
-        help=(
-            "캐시를 채울 분석 모델. 새 캐시의 기본은 SEARCH_MODEL_PROVIDER. 기존 캐시를 이어 채울 때는 "
-            "그 캐시의 모델을 따르고, 다른 값을 주면 멈춘다"
-        ),
-    )
-    parser.add_argument(
         "--force",
         action="store_true",
-        help="기존 캐시를 무시하고 전부 다시 분석한다(모델 호출이 늘어난다)",
+        help=(
+            "기존 캐시를 무시하고 전부 다시 분석한다(Gemini 호출이 늘어난다). --query-ids와 함께 쓸 수 없고, "
+            "다른 호출 경로에서 만든 캐시(옛 AI Studio 캐시)는 이것으로도 덮어쓰지 않는다"
+        ),
     )
     parser.add_argument(
         "--keep-fallback",

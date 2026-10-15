@@ -534,7 +534,7 @@ def test_fallback_and_prior_analysis_share_the_same_verdict():
     live = _analysis(original_query=USER_QUERY)
     fallback = rule_fallback(USER_QUERY)
     prior = live.model_copy(deep=True)
-    gemini = GeminiListwiseReranker(config=GeminiListwiseRerankerConfig(), api_key="x")
+    gemini = GeminiListwiseReranker(config=GeminiListwiseRerankerConfig(), configured=True)
     for analysis in (live, fallback, prior):
         assert rerank_skip_reason(gemini, analysis, []) == RERANK_SKIP_MV_SCENE_UNVERIFIABLE
     # 비대상(가수 설명)도 세 경로에서 같다 — 분석의 artist_name 등은 판정에 쓰지 않는다
@@ -569,7 +569,7 @@ def test_lyrics_imagery_cover_and_url_are_not_mv_scene_evidence():
 
 def test_model_confidence_is_not_evidence():
     """모델이 support=0.99·verified=true를 말해도 정책 입력이 아니다 — 정책은 모델 출력을 받지 않는다."""
-    gemini = GeminiListwiseReranker(config=GeminiListwiseRerankerConfig(), api_key="x")
+    gemini = GeminiListwiseReranker(config=GeminiListwiseRerankerConfig(), configured=True)
     analysis = _analysis(original_query=USER_QUERY)
     confident = _upside_down_like().model_copy(update={"rerank_score": 0.99})
     assert rerank_skip_reason(gemini, analysis, [confident]) == RERANK_SKIP_MV_SCENE_UNVERIFIABLE
@@ -581,14 +581,14 @@ def test_model_confidence_is_not_evidence():
 
 def test_policy_applies_to_gemini_listwise_only():
     analysis = _analysis(original_query=USER_QUERY)
-    gemini = GeminiListwiseReranker(config=GeminiListwiseRerankerConfig(), api_key="x")
+    gemini = GeminiListwiseReranker(config=GeminiListwiseRerankerConfig(), configured=True)
     assert rerank_skip_reason(gemini, analysis, []) == RERANK_SKIP_MV_SCENE_UNVERIFIABLE
     assert rerank_skip_reason(MusicReranker(), analysis, []) == ""
     assert rerank_skip_reason(None, analysis, []) == ""
 
 
 def test_image_policy_still_wins_and_is_reported_as_its_own_reason():
-    gemini = GeminiListwiseReranker(config=GeminiListwiseRerankerConfig(), api_key="x")
+    gemini = GeminiListwiseReranker(config=GeminiListwiseRerankerConfig(), configured=True)
     cover = _analysis(
         original_query="초록 바탕에 흰 도형이 있는 앨범 커버", has_visual_clue=True,
         image_english_query="green cover", modality_weights=ModalityWeights(text=0.1, image=0.9, audio=0.0),

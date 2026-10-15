@@ -186,7 +186,7 @@ def test_audio_visual_and_context_can_all_be_explicit_in_one_query():
     )
     raw = payload(audio="Male background vocals.", image="Album artwork with red flowers.")
     raw["modality_weights"] = {"text": 0.6, "image": 0.2, "audio": 0.2}
-    result = QueryAnalyzer(api_key="synthetic-test-key")._parse(
+    result = QueryAnalyzer(configured=True)._parse(
         query, SimpleNamespace(text=json.dumps(raw))
     )
     assert result.original_query == query
@@ -238,7 +238,7 @@ def test_real_analyzer_accepts_broadcast_and_sound_on_first_attempt(async_call):
     async def generate_async(**kwargs):
         return generate(**kwargs)
 
-    analyzer = QueryAnalyzer(api_key="synthetic-test-key")
+    analyzer = QueryAnalyzer(configured=True)
     analyzer._client = SimpleNamespace(
         models=SimpleNamespace(generate_content=generate),
         aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate_async)),
@@ -256,7 +256,7 @@ def test_recording_participant_does_not_replace_audible_chorus_with_an_image():
 
     query = "중간의 남자 코러스가 다른 가수가 즉흥적으로 녹음한 거라는 여담을 들었어."
     prompt = "A soft lead voice with male background vocals in the middle."
-    analyzer = QueryAnalyzer(api_key="synthetic-test-key")
+    analyzer = QueryAnalyzer(configured=True)
     result = analyzer._parse(query, SimpleNamespace(text=json.dumps(payload(audio=prompt))))
     assert result.original_query == query
     assert result.audio_english_query == prompt

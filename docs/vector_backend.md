@@ -40,7 +40,7 @@ artifacts/embeddings/audio/<모델>/<song_id>.npy
 **3. `.env` 설정** — `.env.example`을 복사해 채운다
 
 ```bash
-cp .env.example .env     # Gemini 설정 확인 (GCP_PROJECT_ID 또는 GEMINI_API_KEY)
+cp .env.example .env     # Gemini 설정 확인 (GCP_PROJECT_ID + ADC — Vertex AI 전용)
 ```
 
 **4. 적재**

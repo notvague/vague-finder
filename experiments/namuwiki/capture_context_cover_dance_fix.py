@@ -137,7 +137,7 @@ def inspect_boundary() -> list[dict]:
         ('dance_genre', '드럼 소리가 강하고 빠른 비트가 있는 댄스곡',
          'A fast dance track with strong drums.', '', False, True, False),
     ]
-    analyzer = QueryAnalyzer(api_key='synthetic-test-key')
+    analyzer = QueryAnalyzer(configured=True)
     rows = []
     for name, query, audio, image, want_image, want_audio, want_context in cases:
         raw = dict(intent_type='mixed', confidence=0.8, image_english_query=image,

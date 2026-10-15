@@ -44,8 +44,7 @@ def _analysis(query: str = "비 오는 날 발라드", **kwargs) -> QueryAnalysi
 # 캐시 자체
 # ---------------------------------------------------------------------------
 
-def test_cache_roundtrip_preserves_the_analysis(tmp_path, monkeypatch):
-    monkeypatch.setenv("SEARCH_MODEL_PROVIDER", "gemini")
+def test_cache_roundtrip_preserves_the_analysis(tmp_path):
     cache = new_cache(source="queries.csv", split="dev")
     cache.put("q1", "비 오는 날 발라드", _analysis(korean_tags=["비", "발라드"]))
     path = tmp_path / "cache.json"
@@ -341,15 +340,9 @@ def test_default_input_is_the_reference_set():
 # ---------------------------------------------------------------------------
 
 import argparse
-from types import SimpleNamespace
 
 from src.retrieval import build_analysis_cache as bc
-from src.retrieval.analysis_cache import analyzer_fingerprint, fingerprint_sha, load_cache, new_cache
-
-
-def _analyzer_factory(**kwargs):
-    """`dependencies.get_query_analyzer` 자리 — 캐시 생성기는 `for_provider(모델)`로 분석기를 받는다."""
-    return SimpleNamespace(for_provider=lambda provider: _CountingAnalyzer(**kwargs))
+from src.retrieval.analysis_cache import fingerprint_sha, load_cache, new_cache
 
 
 class _Interrupted(Exception):
@@ -381,7 +374,7 @@ def _build_args(csv_path, cache_path):
     return argparse.Namespace(
         input=str(csv_path), output=str(cache_path), split="dev", query_ids="",
         force=False, keep_fallback=False, allow_floating_year=True,
-        reuse_despite_drift=True, drift_reason="시험", model_provider="",
+        reuse_despite_drift=True, drift_reason="시험",
     )
 
 
@@ -389,7 +382,7 @@ def test_every_new_entry_records_which_analyzer_made_it(tmp_path, monkeypatch):
     csv_path, cache_path = tmp_path / "q.csv", tmp_path / "c.json"
     _queries_csv(csv_path, [("q1", "질의 하나"), ("q2", "질의 둘")])
     _drifted_cache(cache_path, csv_path)
-    monkeypatch.setattr(bc, "get_query_analyzer", _analyzer_factory())
+    monkeypatch.setattr(bc, "get_query_analyzer", lambda: _CountingAnalyzer())
 
     bc.build(_build_args(csv_path, cache_path))
 
@@ -407,12 +400,12 @@ def test_provenance_survives_an_interrupted_build(tmp_path, monkeypatch):
     _drifted_cache(cache_path, csv_path)
     args = _build_args(csv_path, cache_path)
 
-    monkeypatch.setattr(bc, "get_query_analyzer", _analyzer_factory(die_on=2))
+    monkeypatch.setattr(bc, "get_query_analyzer", lambda: _CountingAnalyzer(die_on=2))
     with pytest.raises(_Interrupted):
         bc.build(args)
     assert "q1" in load_cache(cache_path).entries, "한 건씩 저장하지 않았다"
 
-    monkeypatch.setattr(bc, "get_query_analyzer", _analyzer_factory())
+    monkeypatch.setattr(bc, "get_query_analyzer", lambda: _CountingAnalyzer())
     bc.build(args)
 
     cache = load_cache(cache_path)
@@ -423,47 +416,121 @@ def test_provenance_survives_an_interrupted_build(tmp_path, monkeypatch):
     assert sorted(v for ids in groups.values() for v in ids) == ["q0", "q1", "q2"]
 
 
-def test_drift_and_refill_follow_the_caches_own_model(tmp_path, monkeypatch):
-    """서버 기본이 Claude여도 얼려 둔 Gemini 캐시는 어긋난 것이 아니고, 빈 항목은 **그 캐시의 모델**로 채운다.
+def _legacy_route_cache(path, csv_path, queries):
+    """경로 키가 없는 옛(AI Studio) 캐시 — 기준선 캐시(v06·v09·v10 dev, v46 *_ctx)의 모양."""
+    cache = new_cache(source=str(csv_path), split="dev")
+    for key in ("gemini_backend", "gemini_location"):
+        cache.meta["analyzer"].pop(key)
+    for query_id, query in queries:
+        cache.put(query_id, query, _analysis(query))
+    cache.save(path)
+    return cache
 
-    기본값과 비교하면 기준선 측정 명령마다 model_name·temperature가 어긋났다고 찍히고, build_analysis_cache는
-    dev 질의 전부를 Claude로 다시 분석한다(2026-10-14 리뷰).
+
+def test_a_cache_from_another_route_is_never_overwritten(tmp_path, monkeypatch):
+    """옛 AI Studio 캐시를 --output으로 주면 어떤 플래그로도 덮어쓰거나 이어 채우지 않는다(2026-10-15 리뷰 P1).
+
+    경로 지문을 더한 뒤로 옛 캐시는 늘 drift인데, 예전 흐름은 경고만 찍고 전부 다시 분석해 같은 파일에 썼다 — --query-ids로
+    일부만 지정하면 나머지 항목이 사라졌다(기존 2건 → 새 경로 1건).
     """
-    monkeypatch.setenv("SEARCH_MODEL_PROVIDER", "claude")
-    monkeypatch.setenv("SEARCH_REFERENCE_YEAR", "2026")
+    csv_path, cache_path = tmp_path / "q.csv", tmp_path / "legacy.json"
+    queries = [("q1", "질의 하나"), ("q2", "질의 둘")]
+    _queries_csv(csv_path, queries)
+    legacy = _legacy_route_cache(cache_path, csv_path, queries)
+    assert legacy.route() == {"gemini_backend": "api_key", "gemini_location": None}
+    before = cache_path.read_bytes()
+    analyzer = _CountingAnalyzer()
+    monkeypatch.setattr(bc, "get_query_analyzer", lambda: analyzer)
+
+    for flags in ({}, {"query_ids": "q1"}, {"reuse_despite_drift": True}, {"force": True}, {"force": True, "query_ids": "q1"}):
+        args = _build_args(csv_path, cache_path)
+        args.reuse_despite_drift = False
+        for key, value in flags.items():
+            setattr(args, key, value)
+        assert bc.build(args) == 2, flags
+        assert cache_path.read_bytes() == before, f"캐시가 바뀌었다: {flags}"
+    assert analyzer.calls == 0, "멈춘 실행은 모델을 부르지 않는다"
+
+    # 다른 경로로는 만든다 — 옛 캐시는 그대로 남는다
+    args = _build_args(csv_path, tmp_path / "new_route.json")
+    args.reuse_despite_drift = False
+    assert bc.build(args) == 0 and analyzer.calls == 2
+    assert cache_path.read_bytes() == before
+    assert load_cache(tmp_path / "new_route.json").route() != legacy.route()
+
+
+def test_drift_without_flags_stops_instead_of_rebuilding(tmp_path, monkeypatch):
+    """조건이 어긋난 캐시는 --reuse-despite-drift(이어 채움)나 --force(전부 다시)를 명시해야 건드린다."""
     csv_path, cache_path = tmp_path / "q.csv", tmp_path / "c.json"
     _queries_csv(csv_path, [("q1", "질의 하나"), ("q2", "질의 둘")])
-    legacy = new_cache(source=str(csv_path), split="dev", provider="gemini")
-    for key in ("provider", "claude_settings"):          # provider를 적기 전(2026-10-14 이전)의 캐시 모양
-        legacy.meta["analyzer"].pop(key)
-    legacy.put("q1", "질의 하나", _analysis("질의 하나", confidence=0.9))
-    legacy.save(cache_path)
+    _drifted_cache(cache_path, csv_path)  # postprocess_sha만 다르다(경로는 같다)
+    before = cache_path.read_bytes()
+    analyzer = _CountingAnalyzer()
+    monkeypatch.setattr(bc, "get_query_analyzer", lambda: analyzer)
 
-    cache = load_cache(cache_path)
-    assert cache.provider == "gemini"
-    assert cache.fingerprint_drift() == [], "기본 모델이 바뀐 것은 이 캐시의 조건이 바뀐 것이 아니다"
-
-    asked = []
-    monkeypatch.setattr(bc, "get_query_analyzer", SimpleNamespace(
-        for_provider=lambda provider: asked.append(provider) or _CountingAnalyzer()))
     args = _build_args(csv_path, cache_path)
-    assert bc.build(args) == 0
-    assert asked == ["gemini"], "빈 항목은 캐시의 모델(Gemini)로 채운다 — 기본 모델이 아니다"
+    args.reuse_despite_drift = False
+    assert bc.build(args) == 2 and cache_path.read_bytes() == before and analyzer.calls == 0
+
+    args.query_ids = "q1"
+    assert bc.build(args) == 2 and cache_path.read_bytes() == before and analyzer.calls == 0
+
+    # --force는 전체를 다시 만드는 것이라 --query-ids와 함께 쓸 수 없다(지정하지 않은 항목이 사라진다)
+    args.force = True
+    assert bc.build(args) == 2 and cache_path.read_bytes() == before and analyzer.calls == 0
+
+    # --reuse-despite-drift는 옛 항목을 유지하고 빠진 것만 채운다(어긋난 내용은 meta에 남는다)
+    args.force, args.query_ids, args.reuse_despite_drift = False, "", True
+    assert bc.build(args) == 0 and analyzer.calls == 2
     cache = load_cache(cache_path)
-    assert cache.provider == "gemini"
-    assert cache.entries["q2"]["analyzer_sha"] == fingerprint_sha(analyzer_fingerprint("gemini"))
+    assert set(cache.entries) == {"q0", "q1", "q2"} and cache.meta["drift_notes"]
 
-    # 다른 모델을 지정하면 한 캐시에 섞지 않고 멈춘다
-    _queries_csv(csv_path, [("q1", "질의 하나"), ("q2", "질의 둘"), ("q3", "질의 셋")])
-    args.model_provider = "claude"
-    assert bc.build(args) == 2
-    assert "q3" not in load_cache(cache_path).entries
+    # --force(단독)는 전부 다시 만든다 — 옛 q0는 이 입력에 없으므로 사라진다(명시한 선택)
+    args.force = True
+    assert bc.build(args) == 0 and analyzer.calls == 4
+    assert set(load_cache(cache_path).entries) == {"q1", "q2"}
 
-    # 새 캐시는 서버 기본 모델로 시작한다
-    asked.clear()
-    fresh = _build_args(csv_path, tmp_path / "new.json")
-    assert bc.build(fresh) == 0
-    assert asked == ["claude"] and load_cache(tmp_path / "new.json").provider == "claude"
+
+def test_build_stops_on_a_revoked_adc_before_analyzing_and_continues_on_an_auth_outage(tmp_path, monkeypatch):
+    """캐시 생성도 실제 검사 경로(_verify_vertex_setup)로 — 철회된 ADC는 분석 전에 멈추고(캐시 파일 없음·모델 호출 0),
+    인증 서버 일시 장애는 경고만 남기고 질의마다 다시 시도한다(리뷰 P2)."""
+    import google.genai as genai_mod
+    from google.auth.exceptions import RefreshError
+    from src.common import gemini_client as gc
+
+    class _Models:
+        def __init__(self, error):
+            self.error = error
+
+        def count_tokens(self, *, model, contents):
+            raise self.error
+
+    class _Client:
+        def __init__(self, models, **kwargs):
+            self.models = models
+
+        def close(self):
+            pass
+
+    def revoked(retryable):
+        return RefreshError("invalid_grant: Token has been expired or revoked.", {"error": "invalid_grant"}, retryable=retryable)
+
+    monkeypatch.setenv("GCP_PROJECT_ID", "proj-1")
+    monkeypatch.delenv("GEMINI_RETRIEVAL_BACKEND", raising=False)
+    monkeypatch.setattr(gc, "verify_vertex_setup", gc._verify_vertex_setup)
+    models = _Models(revoked(retryable=False))
+    monkeypatch.setattr(genai_mod, "Client", lambda **kwargs: _Client(models, **kwargs))
+    csv_path, cache_path = tmp_path / "q.csv", tmp_path / "c.json"
+    _queries_csv(csv_path, [("q1", "질의 하나"), ("q2", "질의 둘")])
+    analyzer = _CountingAnalyzer()
+    monkeypatch.setattr(bc, "get_query_analyzer", lambda: analyzer)
+
+    assert bc.build(_build_args(csv_path, cache_path)) == 2
+    assert analyzer.calls == 0 and not cache_path.exists()
+
+    models.error = revoked(retryable=True)
+    assert bc.build(_build_args(csv_path, cache_path)) == 0
+    assert analyzer.calls == 2 and set(load_cache(cache_path).entries) == {"q1", "q2"}
 
 
 def test_provenance_groups_entries_by_analyzer():

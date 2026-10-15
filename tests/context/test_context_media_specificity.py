@@ -189,7 +189,7 @@ def test_real_analyzer_parse_keeps_the_boundary_between_event_audio_and_artwork(
                audio_english_query="A melodic song accompanied by a violin.",
                image_english_query="White flowers on a blue album cover.",
                has_visual_clue=True, modality_weights=dict(text=0.6, audio=0.2, image=0.2))
-    result = QueryAnalyzer(api_key="synthetic-test-key")._parse(query, SimpleNamespace(text=json.dumps(raw)))
+    result = QueryAnalyzer(configured=True)._parse(query, SimpleNamespace(text=json.dumps(raw)))
     assert result.audio_english_query == raw["audio_english_query"]
     assert result.image_english_query == raw["image_english_query"]
     assert result.confidence == 0.91

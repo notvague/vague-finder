@@ -1,68 +1,64 @@
-# 검색 모델 설정
+# 검색 모델 설정 — Gemini on Vertex AI (전용)
 
-기본 검색 모델은 Claude Sonnet이다. 화면의 선택창 또는 `POST /api/v1/search` 본문의
-`model_provider`(`claude` / `gemini`)로 **질의 분석과 리랭킹을 함께** 선택한다.
-생략하면 `SEARCH_MODEL_PROVIDER`를 사용한다. 설정 변경 뒤 서버를 재시작한다.
+2026-10-15부터 운영용 생성형 AI 호출은 **전부 Vertex AI의 Gemini**다 — 크롤링 정제·댓글 선별·Context 추출,
+질의 분석, 리랭킹. 화면의 Claude / Gemini 선택(#63)은 철회했다: API 본문에 `model_provider`가 없고
+`GET /api/v1/search/models`도 없다. 서비스는 Claude 클라이언트·Claude 리랭커를 쓰지 않는다.
+
+Claude 비교 실험의 보고서(#62, `experiments/sonnet_comparison/`)와 실험 브랜치(`experiment/haiku-5-5` ·
+`experiment/sonnet-5-5` · `experiment/haiku-structured`)는 그대로다. 재현은 그 브랜치의 커밋(`8ea9706` · `cd9cf11`)에서
+한다 — main에는 Claude 모듈이 없다. 당시 조건(AI Studio 저장본과의 비교)은 보고서에 그대로 남긴다.
+
+## 설정
 
 ```dotenv
-SEARCH_MODEL_PROVIDER=claude
-ANTHROPIC_API_KEY=...
-CLAUDE_MODEL_NAME=claude-sonnet-5-5
-VF_CLAUDE_THINKING=adaptive   # 이 둘만 VF_ 접두어 — CLAUDE_EFFORT는 Claude Code가 셸에 내보내는 이름과 겹친다
-VF_CLAUDE_EFFORT=medium
-CLAUDE_STRUCTURED_OUTPUT=json_schema
-CLAUDE_USAGE_LOG=artifacts/claude_usage.jsonl
-# CLAUDE_BUDGET_USD=50
-
-GEMINI_API_KEY=...
-GEMINI_MODEL_NAME=gemini-3.1-flash-lite
+GCP_PROJECT_ID=<크레딧이 연결된 프로젝트>
+GCP_LOCATION=global
+GEMINI_RETRIEVAL_BACKEND=vertex      # 호환용 — 비워도 같다. 옛 api_key·ai_studio·auto는 설정 오류
+GEMINI_MODEL_NAME=gemini-3.1-flash-lite        # 질의 분석·리랭킹
+GEMINI_CRAWL_MODEL_NAME=gemini-3.5-flash-lite  # 정제·댓글 선별·Context 추출
+RERANKER_BACKEND=gemini_listwise
 ```
 
-`CLAUDE_API`도 기존 실험과 호환하며 두 키 이름이 모두 있으면 이 값을 우선한다.
-키는 서버에만 둔다. `GET /api/v1/search/models`는 모델 이름, 기본 선택, 키 설정 여부만 반환한다.
-키가 없는 모델 선택은 503이다. 호출 실패 시 다른 공급자로 바꾸지 않는다.
-기본 모델(`SEARCH_MODEL_PROVIDER`)의 키가 없으면 서버가 **기동에서** 멈춘다 — 정상으로 떠 있다가
-`model_provider`를 생략한 검색마다 503이 나는 것보다 낫다. Gemini 키만 있으면 `SEARCH_MODEL_PROVIDER=gemini`로 둔다.
-기존 규칙 분석/검색 순서 폴백과 서버 시간 제한은 유지한다. 화면 검색 제한은 분석 20초 +
-리랭킹 30초 + 검색 여유를 고려해 60초로 두며, 질문 조회는 8초다.
+- `GEMINI_API_KEY`·`GOOGLE_API_KEY`는 쓰지 않는다. 남아 있으면 한 번 경고하고 무시한다 — 지운다.
+  호출부가 키를 넘겨 AI Studio로 나가는 경로도 없다(`make_genai_client`에 키 인자가 없다).
+- 인증은 ADC(Application Default Credentials)다. 크레딧이 있는 Google 계정으로
+  `gcloud auth application-default login`을 한 번 실행한다. **브라우저 로그인이나 `gcloud auth login`을 바꾼 것만으로는
+  Python 쪽 인증이 바뀌지 않는다** — `gcloud auth list`(CLI 계정)와 ADC 파일(`~/.config/gcloud/application_default_credentials.json`)은
+  별개다. ADC는 프로세스에서 한 번만 읽어 모든 클라이언트가 공유한다.
+- 프로젝트는 결제 계정(체험 크레딧)에 연결돼 있고 Vertex AI API(`aiplatform.googleapis.com`)가 켜져 있어야 하며,
+  ADC 계정이 그 프로젝트에 `roles/aiplatform.user` 이상이어야 한다. 모델 이름은 환경변수로 바꾼다 — 새 프로젝트에서
+  지원되는지는 아래 기동 검사가 확인한다.
 
-화면에서 바꾼 선택은 다음 새 검색부터 적용된다. 진행 중 대화의 추가 질문·거절·출생 연도 재검색은
-응답의 `model_provider`를 유지한다. API 클라이언트도 같은 값을 다음 검색에 보낸다.
-모델을 바꾸어 새로 비교하려면 `prior_analysis`와 답변/거절 상태를 비우고 첫 검색부터 시작한다.
-서로 다른 모델 요청은 분석기·라우터를 분리하고 임베딩 모델과 Qdrant 클라이언트는 공유한다.
+## 기동·시작 검사와 실패 시 동작
 
-Vertex AI는 제거했다. Gemini SDK에 `vertexai=False`를 명시하므로 GCP 프로젝트, ADC 또는
-`GOOGLE_GENAI_USE_VERTEXAI`가 남아 있어도 Vertex로 연결되지 않는다.
-옛 `GEMINI_RETRIEVAL_BACKEND=vertex`는 설정 오류이므로 삭제한다. 크롤링의 Gemini 호출도 AI Studio만 사용한다.
-크롤링 모델은 `GEMINI_CRAWL_MODEL_NAME`으로 별도 설정하며, 검색 화면의 선택과 무관하다.
+- **서버**(`main.lifespan`): `RERANKER_BACKEND` 값 → 경로 설정 → 프로젝트 → ADC → 모델 무료 호출(countTokens, 토큰 과금 없음)
+  순으로 확인한다. 모델은 질의 분석 모델(`GEMINI_MODEL_NAME`)과, 리랭커가 켜진 Gemini listwise면 그 모델(`GEMINI_RERANK_MODEL_NAME`이
+  다르면 한 번 더)이다 — 리랭커 모델 오타로 서버는 정상인데 리랭킹만 계속 failed로 내려가는 일을 막는다. 설정·권한 오류(`GeminiConfigError`: HTTP 400·401·403·404, 프로젝트·ADC 없음, 경로 설정 오타)면 서버가 **뜨지 않는다**.
+  ADC 파일이 있어도 토큰 갱신이 `invalid_grant`(철회·만료·계정 변경)로 거절되면 재로그인이 필요한 설정 오류로 멈춘다.
+  429(RESOURCE_EXHAUSTED)·5xx·연결 불가·인증 서버 일시 장애(google-auth가 retryable로 표시)는 설정 오류가 아니다 — 확인 호출은
+  SDK가 최대 3회(1~4초 대기) 다시 시도하고, 그래도 남으면 경고만 남기고 뜬다(요청 경로에서 다시 시도한다).
+- `RERANKER_BACKEND`는 비우거나 `gemini_listwise` / `cross_encoder`다. 비우면 `gemini_listwise`, `cross_encoder`는 명시했을 때만이고,
+  제거된 `claude_listwise`·오타는 기동·측정 시작에서 멈춘다(조용히 Cross-Encoder로 내려가지 않는다). Vertex 프로젝트가 없을 때의
+  CE 폴백은 그대로이며 로그·runinfo(`reranker.backend`)에 남는다.
+- **분석 캐시 생성·측정 CLI**(`build_analysis_cache` · `evaluate_search_accuracy` · `evaluate_clarification`): Gemini를 부를 실행이면
+  시작 전에 같은 검사를 하고, 설정 오류면 멈춘다. 시작할 때 `리랭커: …`와 `Gemini 경로: vertex location=… model=… probe=ok` 한 줄이 찍힌다.
+- **요청 중 실패**는 기존 폴백 그대로다 — 질의 분석은 재시도 뒤 규칙 폴백(`confidence=0.0`), 리랭킹은 검색 순서 유지 + `rerank_outcome=failed`.
+  다른 공급자로 바꿔 타지 않고, 실패를 정상 리랭킹으로 기록하지 않는다(`rerank_status_counts.failed`).
+- 시간 제한은 그대로다: 질의 분석 전체 20초(`QUERY_ANALYSIS_TIMEOUT_SECONDS`), 리랭킹 호출 20초·전체 예산 30초
+  (`GEMINI_RERANK_TIMEOUT_SECONDS` · `GEMINI_RERANK_BUDGET_SECONDS`), 화면 검색 60초. 서버 종료 때 분석기의 Gemini 연결 풀을 닫는다.
 
-## 평가와 비용
+## 기록과 평가
 
-Sonnet 실험의 116/176 Hit@10은 **저장된 Gemini 분석 + Sonnet 리랭킹** 결과다.
-Claude 분석까지 적용한 이번 검색 경로의 품질을 보장하는 수치가 아니다. Context 색인과 함께 dev에서
-별도의 분석 캐시와 기준선을 만들어 평가한다. 기존 Gemini 캐시는 덮어쓰지 않고 봉인 test는 열지 않는다.
-캐시 지문·피드백·평가 기록에 선택 공급자와 모델 설정을 남긴다.
-
-분석 캐시의 조건 비교(drift)는 서버 기본 모델이 아니라 **그 캐시의 모델** 기준이다 — 기본이 Claude여도 얼려 둔
-Gemini 캐시(`provider`가 없는 옛 캐시는 모두 Gemini)는 어긋난 것으로 보지 않고, `build_analysis_cache`가 빈 항목을
-채울 때도 그 캐시의 모델을 쓴다. 새 캐시의 모델은 `--model-provider`, 없으면 `SEARCH_MODEL_PROVIDER`다.
-측정 runinfo에는 `model_provider`(실시간 분석·기본 리랭커의 모델)가 남고, Gemini를 부르지 않은 실행은
-`gemini.backend`가 `unused`다 — 기준선과 비교하기 전에 두 값을 함께 본다.
-
-CLI(`evaluate_search_accuracy` · `evaluate_clarification` · `trace_candidate_drop` · `measure_rerank_batch` 등)의 분석기와
-리랭커는 `RERANKER_BACKEND`를 비우면 `SEARCH_MODEL_PROVIDER`를 따른다 — **기본값 그대로면 Claude Sonnet이라 질의마다 비용이
-들고 Gemini 기준선과 다른 리랭커로 재게 된다.** 예전 기준선(v32~v35 · 봉인 test · 재질문 v09)을 재현하는 명령에는
-`RERANKER_BACKEND=gemini_listwise`(또는 `SEARCH_MODEL_PROVIDER=gemini`)를 명시한다. 측정이 시작될 때
-`리랭커: claude_listwise (SEARCH_MODEL_PROVIDER 기본값 claude) — …` 한 줄이 찍히므로 잘못 골랐으면 그때 멈춘다.
-`RERANKER_BACKEND=gemini_listwise|claude_listwise|cross_encoder` 덮어쓰기는 웹 요청의 모델 선택에는 적용하지 않는다.
-리랭킹 시간 제한·후보 수·가중치 등 기존 `GEMINI_RERANK_*` 옵션은 두 listwise 모델에 공통 적용된다.
-Google Search를 쓰는 옵션(`GEMINI_RERANK_USE_SEARCH` · `GEMINI_RERANK_RARE_FACT_VERIFY`)이 켜져 있으면 Claude는
-**사용 불가**다 — 기본 모델이면 서버가 기동에서 멈추고, 선택지에서는 `available=false`·503이다(리랭킹을 끈 실행은 해당 없다).
-
-Claude 리랭킹에는 실험에서 검증한 JSON 스키마를 기본 적용한다. 후보 ID 누락·중복 처리는 공용 파서가
-담당한다. 질의 분석은 기존 프롬프트·검증·재시도를 유지하고 응답 전체를 감싼 코드 울타리를 벗긴다.
-자유 형식 리랭킹 재현 시 `CLAUDE_STRUCTURED_OUTPUT=off`를 사용한다.
-
-`CLAUDE_BUDGET_USD`는 사용량 로그의 누적 비용과 진행 중 요청의 예약 상한을 제한한다.
-Console 잔액이나 자동 충전 설정을 바꾸지 않으며, 응답 없는 요청은 상한 추정으로 기록한다.
-검색 전체 비용에는 분석 호출과 재시도가 포함된다. 기존 실험의 리랭킹 단가만으로 계산하지 않는다.
+- 측정 runinfo의 `gemini`에 `backend=vertex` · `location` · `setting`이 남는다. Gemini를 한 번도 부르지 않은 실행(Cross-Encoder + 분석 캐시,
+  리랭킹 끔)은 `backend=unused`다 — CE 기준선 재현이 Vertex 실행처럼 보이지 않게. 분석 캐시 지문(`meta.analyzer`)에도
+  `gemini_backend` · `gemini_location`이 들어간다. 프로젝트 ID는 어디에도 적지 않는다.
+- 2026-10-15 이전 캐시(`analysis_cache_v06/v09/v10_dev.json`, `results_v46_*/analysis_cache_*_ctx.json`)는 전부 AI Studio 분석이다.
+  경로 키가 없는 캐시는 `api_key`로 본다. `build_analysis_cache`는 `--output`의 캐시가 **다른 경로**면 `--force`·`--reuse-despite-drift`로도
+  덮어쓰거나 이어 채우지 않고 다른 경로를 요구하며, 경로가 같아도 조건이 어긋나면 플래그 없이는 멈춘다(`--force`는 `--query-ids`와 함께 못 쓴다).
+  **Vertex 질의 분석까지 포함한 평가는 새 캐시를 따로 만든다** — 옛 캐시·결과를 덮어쓰지 않는다. 옛 캐시를 읽어 측정하는 것은 그대로 된다.
+- AI Studio로 잰 옛 기준선(v32~v47 · 봉인 test v34 · 재질문 v09)과 Vertex 결과는 같은 모델 이름이라도 출력이 달라
+  (`results_clarify_v11_prebonus`) 직접 비교하지 않는다. Vertex 기준선은 `experiments/reranking/results_v49_vertex_baseline/RUN_INFO.md`
+  — 같은 분석 캐시·같은 후보에서 리랭커 경로만 바꿔도 dev 176 중 21건의 순위가 움직였다(Hit@1 72 → 75 · Hit@10 113 → 115, 두 번 동일).
+  **Vertex 전체 경로(분석·리랭킹 모두, 2026-10-15) 기준선: dev 176 후보 119 · Hit@1 80 · Hit@5 105 · Hit@10 114 · MRR 0.522, 두 번 동일,
+  리랭킹 실패 0, 리랭킹 중앙값 약 5.0초 · p95 약 7초.** Context 색인 없는 5,143곡 색인·현행 스위치 기준이며, 이후 설정 비교는 이 캐시·색인에 고정해 견준다.
+- 봉인 test(v10 42건)는 열지 않는다.
