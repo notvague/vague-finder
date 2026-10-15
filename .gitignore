@@ -197,3 +197,6 @@ experiments/genre_memory_gap/results_*/*.excluded/
 !experiments/reranking/results_v47_context_5143/*.csv
 !experiments/reranking/results_v47_context_5143/*/*/search_eval_*_summary.csv
 !experiments/reranking/results_v47_context_5143/*/*/search_eval_*_top10.csv
+
+# Vertex AI 서비스 계정 키 (팀 드라이브로만 전달, 절대 커밋·이미지에 넣지 않는다)
+secrets/

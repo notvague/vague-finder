@@ -17,17 +17,27 @@ GEMINI_RETRIEVAL_BACKEND=vertex      # 호환용 — 비워도 같다. 옛 api_k
 GEMINI_MODEL_NAME=gemini-3.1-flash-lite        # 질의 분석·리랭킹
 GEMINI_CRAWL_MODEL_NAME=gemini-3.5-flash-lite  # 정제·댓글 선별·Context 추출
 RERANKER_BACKEND=gemini_listwise
+GOOGLE_APPLICATION_CREDENTIALS=secrets/vertex-sa.json  # 서비스 계정 키(팀원·Docker). 개인 ADC를 쓰면 이 줄을 지운다
 ```
 
 - `GEMINI_API_KEY`·`GOOGLE_API_KEY`는 쓰지 않는다. 남아 있으면 한 번 경고하고 무시한다 — 지운다.
   호출부가 키를 넘겨 AI Studio로 나가는 경로도 없다(`make_genai_client`에 키 인자가 없다).
-- 인증은 ADC(Application Default Credentials)다. 크레딧이 있는 Google 계정으로
-  `gcloud auth application-default login`을 한 번 실행한다. **브라우저 로그인이나 `gcloud auth login`을 바꾼 것만으로는
-  Python 쪽 인증이 바뀌지 않는다** — `gcloud auth list`(CLI 계정)와 ADC 파일(`~/.config/gcloud/application_default_credentials.json`)은
-  별개다. ADC는 프로세스에서 한 번만 읽어 모든 클라이언트가 공유한다.
+- 인증은 google-auth의 기본 자격 증명 탐색이며 **.env의 프로젝트 값만으로는 호출되지 않는다.** 둘 중 하나가 있어야 한다.
+  - **서비스 계정 키 파일(2026-10-15, 팀원·Docker 기본)**: 프로젝트의 서비스 계정 `vague-finder-vertex`(`roles/aiplatform.user`만)
+    키 JSON을 팀 드라이브로 받아 레포의 `secrets/vertex-sa.json`에 두고 `GOOGLE_APPLICATION_CREDENTIALS=secrets/vertex-sa.json`을
+    둔다. **상대 경로는 cwd가 아니라 레포 루트 기준으로 푼다**(`credentials_file_path`) — venv(`uvicorn`을 레포 루트에서)와
+    Docker(`./:/app` 바인드 마운트, WORKDIR `/app`)가 같은 한 줄로 같은 파일을 가리킨다. 변수가 있는데 파일이 없으면 ADC로
+    넘어가지 않고 설정 오류로 멈춘다. `secrets/`는 `.gitignore`·`.dockerignore`에 있어 커밋·이미지에 들어가지 않는다.
+    팀원은 gcloud 설치도 IAM 초대도 필요 없다. 키가 새면 콘솔에서 그 키만 삭제하고 새 키를 돌린다.
+  - **개인 ADC(Application Default Credentials)**: 그 프로젝트에 `roles/aiplatform.user` 이상으로 초대된 Google 계정으로
+    `gcloud auth application-default login`을 한 번 실행하고, `.env`의 `GOOGLE_APPLICATION_CREDENTIALS` 줄은 지운다.
+    **브라우저 로그인이나 `gcloud auth login`을 바꾼 것만으로는 Python 쪽 인증이 바뀌지 않는다** — `gcloud auth list`(CLI 계정)와
+    ADC 파일(`~/.config/gcloud/application_default_credentials.json`, Windows `%APPDATA%\gcloud\…`)은 별개다.
+    Docker 컨테이너에는 호스트의 ADC 파일이 없으므로(compose는 레포만 마운트) 키 파일 방식을 쓴다.
+  - 자격 증명은 프로세스에서 한 번만 읽어 모든 클라이언트가 공유한다.
 - 프로젝트는 결제 계정(체험 크레딧)에 연결돼 있고 Vertex AI API(`aiplatform.googleapis.com`)가 켜져 있어야 하며,
-  ADC 계정이 그 프로젝트에 `roles/aiplatform.user` 이상이어야 한다. 모델 이름은 환경변수로 바꾼다 — 새 프로젝트에서
-  지원되는지는 아래 기동 검사가 확인한다.
+  인증 주체(서비스 계정 또는 ADC 계정)가 그 프로젝트에 `roles/aiplatform.user` 이상이어야 한다. 모델 이름은 환경변수로 바꾼다 —
+  새 프로젝트에서 지원되는지는 아래 기동 검사가 확인한다.
 
 ## 기동·시작 검사와 실패 시 동작
 

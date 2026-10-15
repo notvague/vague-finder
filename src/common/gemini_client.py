@@ -12,6 +12,10 @@
 - `GEMINI_RETRIEVAL_BACKEND`는 호환용이다. 비우거나 `vertex`만 받는다. 옛 `api_key`·`auto`는 설정 오류다 —
   AI Studio로 잰 기준선(v32~v47 · 봉인 test · 재질문 v09)과 같은 경로로 돌아갈 수 있다는 뜻이 되면 안 된다.
 - 호출부는 클라이언트를 직접 만들지 않고 `make_genai_client`를 부른다. "Gemini를 쓸 수 있나"는 `gemini_configured`.
+- 인증은 두 가지다. ① 개인 ADC(`gcloud auth application-default login`) ② **서비스 계정 키 파일**
+  (`GOOGLE_APPLICATION_CREDENTIALS=secrets/vertex-sa.json`, 2026-10-15) — 팀원 PC·Docker처럼 gcloud 로그인과 IAM 초대 없이
+  같은 프로젝트를 부를 때 쓴다. 상대 경로는 레포 루트 기준으로 푼다(venv의 cwd와 컨테이너 `/app`이 같은 파일을 가리키게).
+  파일을 가리키는데 없으면 설정 오류다 — google-auth가 조용히 다른 ADC로 넘어가지 않게 한다.
 - 자격 증명은 프로세스에서 한 번만 읽어(`vertex_credentials`) 모든 클라이언트가 공유한다. 리랭커는 호출마다 새
   클라이언트를 만들므로(이벤트 루프마다) 매번 ADC를 다시 읽고 토큰을 새로 받으면 호출마다 0.3초 + 왕복 하나가 붙는다.
 
@@ -23,6 +27,7 @@ from __future__ import annotations
 import logging
 import os
 import threading
+from pathlib import Path
 from typing import Any, Optional, Sequence
 
 logger = logging.getLogger(__name__)
@@ -45,6 +50,9 @@ _PURPOSE_ENV = {RETRIEVAL: "GEMINI_RETRIEVAL_BACKEND"}
 _REMOVED_SETTINGS = ("api_key", "ai_studio", "auto")
 _STALE_KEY_ENVS = ("GEMINI_API_KEY", "GOOGLE_API_KEY")
 _SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
+# 서비스 계정 키 파일 경로. google-auth의 표준 변수라 이름을 바꾸지 않는다. 상대 경로는 레포 루트 기준.
+CREDENTIALS_FILE_ENV = "GOOGLE_APPLICATION_CREDENTIALS"
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 
 _credentials_lock = threading.Lock()
 _credentials: Any = None
@@ -127,16 +135,45 @@ def require_vertex(purpose: Optional[str] = None) -> dict:
     return gemini_route_info(purpose)
 
 
+def credentials_file_path() -> Optional[Path]:
+    """`GOOGLE_APPLICATION_CREDENTIALS`가 가리키는 키 파일의 절대 경로. 비어 있으면 None(개인 ADC를 쓴다).
+
+    상대 경로는 cwd가 아니라 **레포 루트** 기준이다 — venv(`uvicorn`을 레포 루트에서)와 Docker(`/app` 바인드 마운트)가
+    `.env`의 같은 한 줄(`secrets/vertex-sa.json`)로 같은 파일을 가리킨다. 측정 CLI를 다른 폴더에서 띄워도 어긋나지 않는다.
+    """
+    raw = os.getenv(CREDENTIALS_FILE_ENV, "").strip()
+    if not raw:
+        return None
+    path = Path(raw).expanduser()
+    if not path.is_absolute():
+        path = _REPO_ROOT / path
+    return path
+
+
 def _load_default_credentials() -> Any:
-    """ADC를 읽는다(파일 읽기뿐, 토큰 요청은 첫 호출 때). 없으면 어떻게 만드는지까지 적은 GeminiConfigError."""
+    """자격 증명을 읽는다(파일 읽기뿐, 토큰 요청은 첫 호출 때). 없으면 어떻게 만드는지까지 적은 GeminiConfigError.
+
+    키 파일 변수가 있으면 그 파일이어야 한다 — 없으면 멈춘다. google-auth는 변수가 가리키는 파일이 없을 때도
+    DefaultCredentialsError를 내지만, 메시지가 ADC 안내로 뭉개져 팀원이 엉뚱한 로그인을 하게 된다.
+    """
     import google.auth
     from google.auth.exceptions import DefaultCredentialsError
 
+    key_file = credentials_file_path()
+    if key_file is not None:
+        if not key_file.is_file():
+            raise GeminiConfigError(
+                f"{CREDENTIALS_FILE_ENV}가 가리키는 서비스 계정 키 파일이 없다: {key_file} — "
+                "팀 드라이브의 vertex-sa.json을 레포의 secrets/ 폴더에 두거나 .env의 경로를 고친다"
+            )
+        # google-auth는 이 변수를 cwd 기준으로 읽는다 — 레포 루트 기준으로 푼 절대 경로를 넘긴다.
+        os.environ[CREDENTIALS_FILE_ENV] = str(key_file)
     try:
         credentials, _adc_project = google.auth.default(scopes=_SCOPES)
     except DefaultCredentialsError as exc:
         raise GeminiConfigError(
-            "Vertex AI 인증(ADC)이 없다 — 크레딧이 있는 Google 계정으로 "
+            "Vertex AI 인증이 없다 — 둘 중 하나를 한다. ① 팀 드라이브의 서비스 계정 키를 secrets/vertex-sa.json에 두고 "
+            f".env에 {CREDENTIALS_FILE_ENV}=secrets/vertex-sa.json을 적는다(팀원·Docker 권장). ② 크레딧이 있는 Google 계정으로 "
             "`gcloud auth application-default login`을 한 번 실행한다(브라우저 로그인만으로는 바뀌지 않는다). "
             f"원인: {exc}"
         ) from exc
