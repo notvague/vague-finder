@@ -348,10 +348,15 @@ def _build_attribute_filter(analysis: QueryAnalysis) -> Optional[Dict[str, Any]]
         필터(54건)는 10위 안 이득 0 · 손실 5였고, 시기만 있는 필터(1건)도 t071을 밀어냈다 — 시기가 좁힌 집합 안에서만 보조한다
       - `two_axes`(비교용): 시기 창이 있거나, 그 밖의 축이 둘 이상. 성별 하나("남자 노래")는 3,000곡이라 좁히는 힘이 없고,
         그런 목록은 텍스트 경로 상위와 거의 같아 표를 두 번 세는 셈이 된다
+
+    장르 축은 `ATTR_FILTER_USE_GENRE`(기본 1)로 뺄 수 있다(v53 실험, `_attr_filter_use_genre`). 0이면 장르는 **조건도
+    축도 아니다** — `era_plus`는 "시기 창 + 성별 또는 형태 하나 이상"이 되고, 시기+장르만 있는 질의는 경로가 닫힌다.
+    장르 가산(`genre_match`)·재질문 장르 답 가산·분석·리랭커 프롬프트는 이 스위치와 무관하게 그대로다.
     """
     conditions: List[Dict[str, Any]] = []
     axes = 0
     gate = _attr_filter_gate()
+    use_genre = _attr_filter_use_genre()
     era = analysis.release_era
     has_era = bool(
         analysis.has_release_era
@@ -372,7 +377,7 @@ def _build_attribute_filter(analysis: QueryAnalysis) -> Optional[Dict[str, Any]]
     elif want_gender == "혼성":
         conditions.append({"vocal_gender": {"$eq": "혼성"}})
         axes += 1
-    want_genre = _norm(analysis.genre or "")
+    want_genre = _norm(analysis.genre or "") if use_genre else ""
     if want_genre:
         genres = [g for g in _MELON_GENRES if want_genre in _norm(g)]
         if genres:
@@ -938,6 +943,22 @@ def _attr_filter_gate() -> str:
     """속성 조건 보조 후보를 여는 조건(`_build_attribute_filter`). `era_plus`(기본, v51 채택) 또는 `two_axes`. 모르는 값은 기본."""
     raw = os.getenv("ATTR_FILTER_GATE", "").strip().lower()
     return raw if raw in _ATTR_FILTER_GATES else _ATTR_FILTER_GATES[0]
+
+
+_ATTR_FILTER_GENRE_OFF_VALUES = ("0", "false", "no", "off")
+
+
+def _attr_filter_use_genre() -> bool:
+    """속성 조건 보조 후보의 필터에 장르 축을 넣는가(`ATTR_FILTER_USE_GENRE`). **기본 1 = 넣는다(v51·v52와 같다).**
+
+    v52 손실 분석(results_v52_attr_filter_followup §2): 보조 경로로 나빠진 5건 중 4건은 질의가 기억한 장르("힙합"·"발라드"·
+    "록")와 정답의 등록 장르(록/메탈·댄스·발라드)가 달라 정답이 보조 목록에서 빠지고, 조건이 다 맞는 30곡이 정답 위에 선 경우였다.
+    0이면 장르는 필터 조건도 게이트 축도 아니다 — 시기·성별·형태로만 좁힌다. `era_plus`에서는 시기+장르만 있는 질의의 경로가
+    닫힌다(필터 완화와 경로 비활성화를 측정에서 구분해 집계한다). 장르 **가산**은 그대로라 등록 장르가 맞는 곡의 이득은 남는다.
+    `0`·`false`·`no`·`off`만 끔이고 그 밖의 값(빈 값 포함)은 기본(켬)이다.
+    """
+    raw = os.getenv("ATTR_FILTER_USE_GENRE", "").strip().lower()
+    return raw not in _ATTR_FILTER_GENRE_OFF_VALUES
 
 
 def _attr_filter_k() -> int:
@@ -2074,11 +2095,13 @@ class SearchRouter:
             # 속성 조건 보조 후보 — performance_metadata와 같은 자리·같은 식. 후보 소환만 하고 순위는
             # 아래 시기·성별·장르·형태 가산이 다시 정한다(이 목록의 곡은 조건에 맞으므로 그 가산을 받는다).
             fused_scores = dict(fused)
+            # 장르 축을 뺀 설정(ATTR_FILTER_USE_GENRE=0)은 기록에 남긴다 — 기본(장르 포함)은 v51 기록과 글자까지 같다
+            attr_detail = f"가중치 {attr_filter_weight:.2f}" + ("" if _attr_filter_use_genre() else " · 장르 축 제외")
             for rank, track in enumerate(attr_filter_hits, start=1):
                 _fuse_add(
                     fused_scores, track.id,
                     attr_filter_weight / (_RRF_K + rank),
-                    recorder, "attr_filter", rank, f"가중치 {attr_filter_weight:.2f}",
+                    recorder, "attr_filter", rank, attr_detail,
                 )
             fused = sorted(
                 fused_scores.items(),
