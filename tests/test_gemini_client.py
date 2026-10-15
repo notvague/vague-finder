@@ -176,7 +176,6 @@ def test_missing_adc_error_names_the_key_file_option_too(monkeypatch):
     import google.auth
     from google.auth.exceptions import DefaultCredentialsError
 
-    monkeypatch.delenv(gc.CREDENTIALS_FILE_ENV, raising=False)
     monkeypatch.setattr(google.auth, "default", lambda **kwargs: (_ for _ in ()).throw(DefaultCredentialsError("no adc")))
     with pytest.raises(GeminiConfigError, match="GOOGLE_APPLICATION_CREDENTIALS=secrets/vertex-sa.json"):
         _real_load_default_credentials()

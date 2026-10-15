@@ -46,5 +46,9 @@ def _offline_vertex(monkeypatch):
     # 개발자 .env의 옛 값(GEMINI_RETRIEVAL_BACKEND=api_key)은 지금 설정 오류라 분석기·리랭커 생성에서 예외가 난다 —
     # 테스트는 .env와 무관해야 한다. 값을 시험하는 테스트는 직접 setenv한다.
     monkeypatch.delenv("GEMINI_RETRIEVAL_BACKEND", raising=False)
+    # 개발자 .env의 GOOGLE_APPLICATION_CREDENTIALS(서비스 계정 키, .env.example 기본값)도 지운다 — 키 파일이 없는 PC에서는
+    # ADC 없음 테스트가 "키 파일이 없다"로 바뀌어 실패하고, 있는 PC에서는 `_load_default_credentials`가 os.environ에 쓴
+    # 절대 경로가 뒤 테스트로 샌다(PR #67 리뷰). monkeypatch가 테스트 뒤 원래대로(없음) 되돌린다.
+    monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
     yield
     gc.reset_credentials_cache()
