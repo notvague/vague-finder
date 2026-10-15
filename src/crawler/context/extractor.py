@@ -44,11 +44,10 @@ class GeminiExtractor:
         self.model, self.max_input_tokens, self.max_output_tokens = model, max_input_tokens, max_output_tokens
         if min(max_input_tokens, max_output_tokens) < 1024:
             raise ValueError("token budgets must be >= 1024")
-        # AI Studio GEMINI_API_KEY만 사용. GOOGLE_API_KEY는 이 명령만 받던 예전 이름이라 둘 다 없을 때만 쓴다.
-        legacy_key = None if gemini_configured() else (os.getenv("GOOGLE_API_KEY", "").strip() or None)
-        if client is None and not gemini_configured(legacy_key):
-            raise ValueError("GEMINI_API_KEY (or GOOGLE_API_KEY) required for --gemini")
-        self.client = client or make_genai_client(api_key=legacy_key, http_options=types.HttpOptions(
+        # Vertex AI 전용(GCP_PROJECT_ID + ADC). 이 명령만 받던 옛 GOOGLE_API_KEY 경로는 제거했다(2026-10-15).
+        if client is None and not gemini_configured():
+            raise ValueError("GCP_PROJECT_ID (Vertex AI) required for --gemini")
+        self.client = client or make_genai_client(http_options=types.HttpOptions(
             timeout=60000, retry_options=types.HttpRetryOptions(attempts=1)))
 
     def close(self):

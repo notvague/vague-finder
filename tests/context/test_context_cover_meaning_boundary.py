@@ -29,7 +29,7 @@ def model_payload(*, audio="", image="", context=None):
 def test_crossed_context_artwork_and_heard_sound(case):
     raw = model_payload(audio=case.audio, image=case.image)
     before = deepcopy(raw)
-    result = QueryAnalyzer(api_key="synthetic-test-key")._parse(
+    result = QueryAnalyzer(configured=True)._parse(
         case.query, SimpleNamespace(text=json.dumps(raw)),
     )
     assert raw == before and result.original_query == case.query
@@ -136,7 +136,7 @@ def test_rendition_with_sound_passes_real_analyzer_first_attempt(async_call):
     async def generate_async(**kwargs):
         return generate(**kwargs)
 
-    analyzer = QueryAnalyzer(api_key="synthetic-test-key")
+    analyzer = QueryAnalyzer(configured=True)
     analyzer._client = SimpleNamespace(models=SimpleNamespace(generate_content=generate),
                                       aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate_async)))
     result = asyncio.run(analyzer.analyze_async(query)) if async_call else analyzer.analyze(query)
@@ -169,7 +169,7 @@ def test_cover_appearance_mood_keeps_the_real_image_route(appearance):
     query = appearance + ", 노래는 현악기가 깔린 남자 발라드였어."
     image = "A dark, moody cover with a cool color palette."
     audio = "A male vocal ballad with string accompaniment."
-    result = QueryAnalyzer(api_key="synthetic-test-key")._parse(
+    result = QueryAnalyzer(configured=True)._parse(
         query, SimpleNamespace(text=json.dumps(model_payload(image=image, audio=audio))),
     )
     assert result.image_english_query == image
@@ -200,7 +200,7 @@ def test_repeated_cover_senses_in_one_clause_keep_both_paths_without_art_in_cont
     query = f"{event} {art}. 오르골과 바이올린 소리가 들렸어."
     raw = model_payload(image="Cover artwork with flowers and white lettering.",
                         audio="Music box and violin accompaniment.")
-    result = QueryAnalyzer(api_key="synthetic-test-key")._parse(
+    result = QueryAnalyzer(configured=True)._parse(
         query, SimpleNamespace(text=json.dumps(raw)),
     )
     assert result.context_clues and result.image_english_query and result.audio_english_query

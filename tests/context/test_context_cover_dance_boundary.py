@@ -157,7 +157,7 @@ def test_fallback_does_not_generate_an_image_from_cover_choreography():
 def test_model_parse_retains_context_and_audible_bass_without_image():
     from src.retrieval.query_analyzer import QueryAnalyzer
 
-    analyzer = QueryAnalyzer(api_key="synthetic-test-key")
+    analyzer = QueryAnalyzer(configured=True)
     analysis = analyzer._parse(
         RADIO_QUERY,
         SimpleNamespace(text=json.dumps(model_payload(audio="Funky bass groove."))),
@@ -184,7 +184,7 @@ def test_model_analysis_accepts_the_valid_mixed_response_on_first_attempt(async_
     async def generate_async(**kwargs):
         return generate(**kwargs)
 
-    analyzer = QueryAnalyzer(api_key="synthetic-test-key")
+    analyzer = QueryAnalyzer(configured=True)
     analyzer._client = SimpleNamespace(
         models=SimpleNamespace(generate_content=generate),
         aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate_async)),
@@ -205,7 +205,7 @@ def test_real_missing_artwork_prompt_degrades_image_after_validation_retries(mon
         calls.append(kwargs)
         return SimpleNamespace(text=json.dumps(model_payload()))
 
-    analyzer = qa.QueryAnalyzer(api_key="synthetic-test-key")
+    analyzer = qa.QueryAnalyzer(configured=True)
     analyzer._client = SimpleNamespace(models=SimpleNamespace(generate_content=generate))
     monkeypatch.setattr(qa.time, "sleep", lambda _: None)
     analysis = analyzer.analyze("커버댄스한 곡인데 앨범 표지에 빨간 꽃이 그려졌어")

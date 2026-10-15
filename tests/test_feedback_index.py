@@ -495,7 +495,7 @@ def test_shutdown_stops_the_worker_before_closing_qdrant_and_mongo(monkeypatch):
     from src.backend import main
 
     order = []
-    monkeypatch.setattr(main, "backend_setting", lambda purpose: None)
+    # Vertex 기동 검사(main.gc.verify_vertex_setup)는 tests/conftest.py가 모든 테스트에서 바꿔 끼운다.
     monkeypatch.setattr(main, "get_vector_client", lambda: None)
     monkeypatch.setattr(main.warmup, "start_background", lambda: None)
     monkeypatch.setattr(main.warmup, "stop_and_wait", lambda: order.append("warmup_stopped"))

@@ -4,13 +4,7 @@ import os
 import threading
 from pathlib import Path
 
-from typing import Any, Callable, Optional, TypeVar
-
-from fastapi import HTTPException
-from src.backend.schemas.search import SearchModelSelection
-from src.common.search_models import ModelProvider, default_provider, unavailable_reason
-from src.common.claude_client import ClaudeGenaiClient
-from src.retrieval.claude_listwise_reranker import ClaudeListwiseReranker
+from typing import Any, Callable, TypeVar
 
 from src.common.gemini_client import RETRIEVAL, gemini_configured
 from src.embedding.models.audio_clap import CLAPAudioEmbedder
@@ -62,48 +56,6 @@ def singleton(factory: Callable[[], T]) -> Callable[[], T]:
     wrapper.cache_clear = holder.clear  # type: ignore[attr-defined]
     # 아직 안 만들어졌으면 만들지 않고 None을 준다. 종료 처리가 쓴다.
     wrapper.peek = lambda: holder.get("value")  # type: ignore[attr-defined]
-    # model_singleton과 같은 면 — 종료 처리가 두 종류의 팩토리를 같은 식으로 훑는다.
-    wrapper.values = lambda: tuple(holder.values())  # type: ignore[attr-defined]
-    return wrapper
-
-
-def model_singleton(factory: Callable[..., T]) -> Callable[..., T]:
-    """모델(provider)별로 한 객체만 만든다. FastAPI 의존성과 CLI 진입점을 겸한다.
-
-    - FastAPI: 검색 본문의 `model_provider`만 읽는다(`SearchModelSelection` — 본문 전체를 다시 검증하지 않는다).
-      매개변수 이름은 라우트의 `request: SearchRequest`와 **같아야 한다.** FastAPI는 본문 필드를 이름으로 묶어서,
-      이름이 다르면 본문이 `{"request": …}`로 감싸인 모양으로 바뀐다(test_search_models가 평평한 본문으로 지킨다).
-      선택한 모델을 지금 설정으로 쓸 수 없으면(키 없음, Claude와 못 쓰는 리랭커 옵션) 503 — 다른 모델로 바꿔 타지 않는다.
-    - CLI(인자 없음): 서버 기본 모델. `RERANKER_BACKEND` 같은 CLI 전용 덮어쓰기는 이 경로에만 적용된다.
-    - `for_provider(provider)`: CLI에서 모델을 지정한다 — 분석 캐시를 **그 캐시의 모델**로 이어 채울 때.
-    """
-    lock = threading.Lock()
-    holder: dict[tuple[str, bool], T] = {}
-
-    def acquire(provider: Optional[ModelProvider], *, for_request: bool) -> T:
-        provider = provider or default_provider()
-        if for_request:
-            reason = unavailable_reason(provider)
-            if reason:
-                raise HTTPException(status_code=503, detail=f"{provider}: {reason}")
-        key = (provider, for_request)
-        with lock:
-            if key not in holder:
-                holder[key] = factory(provider, for_request=for_request)
-            return holder[key]
-
-    def wrapper(request: Optional[SearchModelSelection] = None) -> T:
-        if request is None:
-            return acquire(None, for_request=False)
-        return acquire(request.model_provider, for_request=True)
-
-    wrapper.__name__ = factory.__name__
-    wrapper.__doc__ = factory.__doc__
-    wrapper.for_provider = lambda provider: acquire(provider, for_request=False)  # type: ignore[attr-defined]
-    wrapper.cache_clear = holder.clear  # type: ignore[attr-defined]
-    # CLI 기본 모델의 객체. 아직 없으면 만들지 않고 None — evaluate_feedback_reuse와 테스트가 본다.
-    wrapper.peek = lambda: holder.get((default_provider(), False))  # type: ignore[attr-defined]
-    wrapper.values = lambda: tuple(holder.values())  # type: ignore[attr-defined]
     return wrapper
 
 
@@ -144,28 +96,14 @@ def close_vector_client() -> None:
     순서가 중요하다. 스레드풀을 먼저 세운다 — 아직 도는 검색이 클라이언트를 쓰고 있을 수
     있다. 그다음 캐시를 비우고, 마지막에 클라이언트를 닫는다.
     """
-    # 모델별 라우터가 여럿일 수 있다(요청용 claude·gemini, CLI용). 전부 세운다.
-    routers = get_search_router.values()  # type: ignore[attr-defined]
-    for router in routers:
+    router = get_search_router.peek()  # type: ignore[attr-defined]
+    if router is not None:
         shutdown = getattr(router, "shutdown", None)
         if callable(shutdown):
             try:
                 shutdown()
             except Exception as exc:
                 print(f"[경고] 검색 라우터 스레드풀을 정리하는 중 오류: {exc}")
-
-    # Claude 어댑터는 요청 사이 HTTP 풀을 재사용하므로 서버가 내려갈 때 닫는다 — 분석기, 라우터의 리랭커, CLI 리랭커가 쥔다.
-    owners = [*get_query_analyzer.values(), *(getattr(r, "_reranker", None) for r in routers),  # type: ignore[attr-defined]
-              get_reranker.peek()]  # type: ignore[attr-defined]
-    clients = {id(c): c for owner in owners
-               if isinstance((c := getattr(owner, "_client", None)), ClaudeGenaiClient)}
-    for client in clients.values():
-        try:
-            client.close()
-        except Exception:
-            logger.warning("Claude 연결 풀 종료 실패", exc_info=True)
-    get_query_analyzer.cache_clear()  # type: ignore[attr-defined]
-    get_reranker.cache_clear()  # type: ignore[attr-defined]
 
     for factory in _vector_client_dependents():
         factory.cache_clear()
@@ -221,9 +159,9 @@ def get_search_service() -> SearchService:
     )
 
 
-@model_singleton
-def get_query_analyzer(provider: ModelProvider, *, for_request: bool = False) -> QueryAnalyzer:
-    return QueryAnalyzer(provider=provider)
+@singleton
+def get_query_analyzer() -> QueryAnalyzer:
+    return QueryAnalyzer()
 
 
 @singleton
@@ -258,28 +196,94 @@ def get_feedback_retriever() -> FeedbackRetriever:
     )
 
 
-def _make_reranker(backend: str) -> Any:
-    if backend in {"claude_listwise", "claude-listwise", "claude"}:
-        return ClaudeListwiseReranker()
-    if backend in {"gemini_listwise", "gemini-listwise", "gemini"}:
-        if gemini_configured(purpose=RETRIEVAL):
-            return GeminiListwiseReranker()
-        logger.warning("[reranker] GEMINI_API_KEY 없음 — 로컬 Cross-Encoder로 내려간다")
-        return MusicReranker()
-    if backend == "cross_encoder":
-        return MusicReranker()
-    raise ValueError("RERANKER_BACKEND는 claude_listwise / gemini_listwise / cross_encoder 중 하나여야 합니다.")
+DEFAULT_RERANKER_BACKEND = "gemini_listwise"
+_GEMINI_BACKENDS = frozenset({"gemini_listwise", "gemini-listwise", "gemini"})
+_CE_BACKENDS = frozenset({"cross_encoder", "cross-encoder", "ce"})
+# #63에서 들어왔다가 철회된 값. 조용히 다른 리랭커가 되면 안 되고, 무엇을 고쳐야 하는지 이름으로 알려 준다.
+_REMOVED_BACKENDS = frozenset({"claude_listwise", "claude-listwise", "claude"})
+
+
+def reranker_backend() -> str:
+    """`RERANKER_BACKEND`를 읽어 정규화한다 — `gemini_listwise` 또는 `cross_encoder`. 비우면 기본값.
+
+    모르는 값과 제거된 값(claude_listwise)은 ValueError다. 예전에는 Gemini가 아니면 전부 Cross-Encoder로 내려가서
+    빈 값·옛 설정·오타가 **조용히 CE 측정**이 됐다(리뷰 P2) — Vertex로 쟀다고 믿게 된다. 서버는 기동(`main.lifespan`)에서,
+    CLI는 리랭커를 만들 때 멈춘다. 값은 제거된 이름일 때만 메시지에 적는다.
+    """
+    raw = os.getenv("RERANKER_BACKEND", "").strip().lower()
+    if not raw:
+        return DEFAULT_RERANKER_BACKEND
+    if raw in _GEMINI_BACKENDS:
+        return "gemini_listwise"
+    if raw in _CE_BACKENDS:
+        return "cross_encoder"
+    if raw in _REMOVED_BACKENDS:
+        raise ValueError(
+            f"RERANKER_BACKEND={raw}는 제거됐다(2026-10-15, Claude 선택 철회) — 비우거나 gemini_listwise / cross_encoder로 둔다"
+        )
+    raise ValueError("RERANKER_BACKEND 값을 알 수 없다 — 비우거나 gemini_listwise / cross_encoder 중 하나여야 한다")
 
 
 @singleton
-def get_reranker() -> Any:
-    """CLI 평가 기본값. RERANKER_BACKEND는 과거 기준선 재현용 명시적 덮어쓰기다."""
-    backend = os.getenv("RERANKER_BACKEND", "").strip().lower() or f"{default_provider()}_listwise"
-    return _make_reranker(backend)
+def get_reranker():
+    """환경변수로 Gemini listwise 또는 Cross-Encoder를 선택한다. **기본은 Gemini listwise.**
+
+    2026-10-09 전환. 세 질의 세트(v06 dev 57 · v09 dev 59 · v09 봉인 test 38 = 154건)에서
+    listwise 1패스·Google Search 끔이 CE 대비 엄격 Hit@10 97 → 114(0.630 → 0.740), Hit@1 53 → 78,
+    Top-10 이탈 0건이었다(experiments/reranking/results_v32~v34). CE는 이 질의 유형에서 점수
+    폭이 0.003 수준이라 후보를 가르지 못했다(results_v27 E4). 대가는 리랭킹 중앙값 1.8초 → 4.5~5.4초.
+
+    CE로 돌리려면 RERANKER_BACKEND=cross_encoder. v22·v27~v31 기준선은 CE로 잰 것이라 재현에 필요하다.
+
+    **Gemini(Vertex AI) 설정 — `GCP_PROJECT_ID` — 이 없으면 CE로 내려간다.** 설정 없는 listwise는
+    입력 순서를 그대로 돌려주므로 리랭킹이 사실상 꺼진 채 조용히 뜨게 된다 — 그보다는 로컬 CE가 낫고,
+    로그에 남긴다(측정 runinfo의 `reranker.backend`에도 실제 백엔드가 적힌다). 서버는 그 전에 기동 검사
+    (`main.lifespan`)에서 멈춘다. 실행 중 Gemini 호출이 모두 실패하면 listwise가 검색 순서를 유지하고 상태를 failed로
+    남긴다(`GeminiListwiseReranker.rerank_run`). 그때 CE로 바꿔 타지는 않는다 — 두 모델을 함께 올리지 않는다.
+    """
+    backend = reranker_backend()  # 빈 값은 기본 gemini_listwise, 모르는 값·제거된 값은 여기서 ValueError
+    if backend == "gemini_listwise":
+        if gemini_configured(purpose=RETRIEVAL):
+            return GeminiListwiseReranker()
+        logger.warning(
+            "[reranker] 리랭커는 gemini_listwise인데 Gemini(Vertex AI) 설정(GCP_PROJECT_ID)이 없다 — Cross-Encoder로 내려간다"
+        )
+    # cross_encoder(명시) 또는 Gemini 설정 없음. 기존 모델은 첫 요청 때 지연 로딩한다.
+    return MusicReranker()
 
 
-@model_singleton
-def get_search_router(provider: ModelProvider, *, for_request: bool = False) -> SearchRouter:
+async def close_gemini_clients() -> None:
+    """분석기가 쥔 Gemini 클라이언트의 연결 풀을 닫는다(동기·비동기 둘 다). 아직 안 만들어졌으면 만들지 않는다.
+
+    서버의 이벤트 루프 안에서 부른다 — SDK의 비동기 클라이언트(`client.aio`)는 처음 쓴 루프에 묶여 있어 다른 루프나
+    스레드에서는 못 닫는다. 리랭커는 호출마다 클라이언트를 만들고 그 자리에서 닫으므로(`_generate`) 여기서 할 일이 없다.
+    닫은 뒤 분석기의 참조를 비운다 — 같은 프로세스에서 앱이 다시 뜨면(TestClient 반복) 다음 호출이 새로 만든다.
+    """
+    analyzer = get_query_analyzer.peek()  # type: ignore[attr-defined]
+    client = getattr(analyzer, "_client", None)
+    if client is None:
+        return
+    aio = getattr(client, "aio", None)
+    aclose = getattr(aio, "aclose", None)
+    if callable(aclose):
+        try:
+            await aclose()
+        except Exception:  # noqa: BLE001 - 종료 경로
+            logger.warning("Gemini 비동기 연결 풀 종료 실패", exc_info=True)
+    close = getattr(client, "close", None)
+    if callable(close):
+        try:
+            close()
+        except Exception:  # noqa: BLE001
+            logger.warning("Gemini 연결 풀 종료 실패", exc_info=True)
+    try:
+        analyzer._client = None
+    except Exception:  # noqa: BLE001 - 가짜 객체일 수 있다
+        pass
+
+
+@singleton
+def get_search_router() -> SearchRouter:
     context_settings = load_context_settings()
     return SearchRouter(
         search_service=get_search_service(),
@@ -287,8 +291,7 @@ def get_search_router(provider: ModelProvider, *, for_request: bool = False) -> 
         audio_embedder=get_audio_embedder(),
         vector_client=get_vector_client(),
         lyrics_search_service=get_lyrics_exact_search_service(),
-        reranker=(get_reranker() if not for_request
-                  else _make_reranker(f"{provider}_listwise")),
+        reranker=get_reranker(),
         context_search=ContextQdrantSearch(
             get_vector_client(), text_embedder=get_text_embedder()
         ),

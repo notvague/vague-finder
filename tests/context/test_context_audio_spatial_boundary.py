@@ -156,7 +156,7 @@ def test_real_analyzer_accepts_spatial_audio_and_context_on_first_attempt(async_
     async def generate_async(**kwargs):
         return generate(**kwargs)
 
-    analyzer = QueryAnalyzer(api_key="synthetic-test-key")
+    analyzer = QueryAnalyzer(configured=True)
     analyzer._client = SimpleNamespace(
         models=SimpleNamespace(generate_content=generate),
         aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate_async)),
@@ -179,7 +179,7 @@ def test_actual_visual_leakage_retries_and_preserves_context_when_audio_degrades
         calls.append(kwargs)
         return SimpleNamespace(text=json.dumps(payload("Male background vocals on a red album cover.")))
 
-    analyzer = qa.QueryAnalyzer(api_key="synthetic-test-key")
+    analyzer = qa.QueryAnalyzer(configured=True)
     analyzer._client = SimpleNamespace(models=SimpleNamespace(generate_content=generate))
     monkeypatch.setattr(qa.time, "sleep", lambda _: None)
     result = analyzer.analyze(MIXED_QUERY)

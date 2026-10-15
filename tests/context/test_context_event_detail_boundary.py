@@ -54,7 +54,7 @@ def test_completed_commercial_adaptation_recovered_without_model_context(event, 
                modality_weights=dict(text=0.6 if mixed else 1.0,
                                      image=0.2 if mixed else 0.0, audio=0.2 if mixed else 0.0))
     frozen = deepcopy(raw)
-    analysis = QueryAnalyzer(api_key="synthetic-test-key")._parse(query, NS(text=json.dumps(raw)))
+    analysis = QueryAnalyzer(configured=True)._parse(query, NS(text=json.dumps(raw)))
     assert raw == frozen and analysis.original_query == query and analysis.confidence == 0.9
     assert len(analysis.context_clues) == 1
     assert analysis.context_clues[0].relation in {"다른 작품에 사용", "삽입곡·배경음악"}

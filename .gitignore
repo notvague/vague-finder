@@ -80,6 +80,10 @@ reports/
 # 질의별 top-10 곡 ID 경량본 — detail 없이 relaxed_metrics(확장 지표·범주형 집계)를 다시 돌린다 (곡 ID만)
 !experiments/reranking/results_*/search_eval_*_top10.csv
 !experiments/reranking/results_*/*/search_eval_*_top10.csv
+# 실행 이름/세트 폴더 두 단계 아래(results_*/<실행>/<세트>_dev/)에 세트별로 돌린 실행(v46·v49)의 요약·top-10 경량본도 커밋한다
+!experiments/reranking/results_*/*/search_eval_*_summary.csv
+!experiments/reranking/results_*/*/*/search_eval_*_summary.csv
+!experiments/reranking/results_*/*/*/search_eval_*_top10.csv
 # 후보 밖 정답의 단계별 위치·경로 깊이별 후보 포함 기록 (곡 ID와 순위만)
 !experiments/reranking/results_*/candidate_drop_*.csv
 !experiments/reranking/results_*/candidate_depth_sweep_*.csv

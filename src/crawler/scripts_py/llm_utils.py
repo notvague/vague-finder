@@ -30,10 +30,10 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-# AI Studio 키(GEMINI_API_KEY)가 있으면 Gemini를 쓴다
+# Gemini는 Vertex AI 전용(GCP_PROJECT_ID + ADC). API 키 경로는 없다
 GEMINI_CONFIGURED = gemini_configured()
 if not GEMINI_CONFIGURED:
-    logger.warning("Gemini 설정(GEMINI_API_KEY)이 없습니다.")
+    logger.warning("Gemini(Vertex AI) 설정(GCP_PROJECT_ID)이 없습니다.")
 
 
 def build_comment_selection_prompt(

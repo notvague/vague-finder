@@ -427,7 +427,8 @@ venv/bin/python -m src.retrieval.evaluate_feedback_reuse harness --cases <사례
   사례 파일을 끼우는 것은 그 실행 동안만이다 — 끝나면(실패해도) 조회 서비스 팩토리·스위치·argv를 원래대로 돌려놓는다.
 - `compare`는 질의 하나가 끝날 때마다 detail을 쓰고, 요약·점검표까지 쓴 **뒤에** 측정 스택을 닫는다. 닫다가 난 오류는 경고로만 남는다
   (다 잰 결과를 버리지 않는다).
-- 측정은 `.env`에 `GEMINI_RETRIEVAL_BACKEND=api_key`를 두고 돌린다(기준선과 같은 경로). `rerank_failed_rows`가 0이 아니면 다시 잰다.
+- Gemini는 Vertex AI 전용이다(2026-10-15, `GEMINI_RETRIEVAL_BACKEND`는 비우거나 `vertex`). AI Studio(`api_key`)로 잰 옛 기준선과는 경로가
+  달라 직접 비교하지 않는다 — Vertex 기준선(`docs/search_models.md`)과 견준다. `rerank_failed_rows`가 0이 아니면 다시 잰다.
 
 **채택 기준**(검색 반영을 기본으로 켜기 전에 모두 충족):
 

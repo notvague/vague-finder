@@ -246,7 +246,7 @@ def test_image_dominant_skip_applies_only_to_gemini_listwise():
 
     analysis = _image_dominant_analysis()
     assert should_skip_rerank_for_image(
-        GeminiListwiseReranker(config=GeminiListwiseRerankerConfig(), api_key="x"), analysis
+        GeminiListwiseReranker(config=GeminiListwiseRerankerConfig(), configured=True), analysis
     )
     assert not should_skip_rerank_for_image(MusicReranker(), analysis)
 
@@ -259,12 +259,12 @@ def test_common_reranker_switch_also_disables_gemini(monkeypatch):
     # 기존 설정으로 리랭킹을 꺼 둔 환경이 백엔드만 바꿨다고 다시 켜지면 안 된다.
     monkeypatch.delenv("GEMINI_RERANK_ENABLED", raising=False)
     monkeypatch.setenv("RERANKER_ENABLED", "false")
-    assert not GeminiListwiseReranker(api_key="x").enabled
+    assert not GeminiListwiseReranker(configured=True).enabled
 
     monkeypatch.setenv("RERANKER_ENABLED", "true")
-    assert GeminiListwiseReranker(api_key="x").enabled
+    assert GeminiListwiseReranker(configured=True).enabled
     monkeypatch.setenv("GEMINI_RERANK_ENABLED", "false")
-    assert not GeminiListwiseReranker(api_key="x").enabled
+    assert not GeminiListwiseReranker(configured=True).enabled
 
 
 def _titled(song_id, title):
@@ -307,7 +307,7 @@ def _rare_verdict(support, clues=1):
 def test_rare_fact_margin_counts_competitors_that_failed_eligibility():
     # 회귀: 0.87 vs 0.85인데 0.85가 최소 support(0.86)에서 먼저 빠져
     # 차이가 0.87 − 0으로 계산되고 9위로 승격됐다.
-    reranker = GeminiListwiseReranker(config=GeminiListwiseRerankerConfig(), api_key="x")
+    reranker = GeminiListwiseReranker(config=GeminiListwiseRerankerConfig(), configured=True)
     tracks = [_track(str(i), f"곡{i}", 1.0) for i in range(1, 31)]
 
     def rank_of_25(verdicts):
@@ -574,37 +574,71 @@ def test_default_config_is_single_pass_without_search(monkeypatch):
     assert cfg.rerank_weight == 0.85 and cfg.max_candidates == 30
 
 
-def test_get_reranker_defaults_to_listwise_and_falls_back_without_key(monkeypatch):
+def test_get_reranker_defaults_to_listwise_and_falls_back_without_vertex_project(monkeypatch):
     from src.backend.api import dependencies as deps
+    from src.common.gemini_client import GeminiConfigError
     from src.retrieval.reranker import MusicReranker
 
-    monkeypatch.setenv("SEARCH_MODEL_PROVIDER", "gemini")
     monkeypatch.delenv("RERANKER_BACKEND", raising=False)
-    monkeypatch.delenv("GCP_PROJECT_ID", raising=False)
-    monkeypatch.delenv("GEMINI_RETRIEVAL_BACKEND", raising=False)  # 개발자 .env의 검색 경로 고정과 무관하게
-    monkeypatch.setenv("GEMINI_API_KEY", "시험용")
+    monkeypatch.delenv("GEMINI_RETRIEVAL_BACKEND", raising=False)  # 개발자 .env의 검색 경로 설정과 무관하게
+    monkeypatch.setenv("GCP_PROJECT_ID", "시험-프로젝트")
     deps.get_reranker.cache_clear()
     assert isinstance(deps.get_reranker(), GeminiListwiseReranker)
 
-    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    # 옛 AI Studio 키만 있는 것은 설정이 아니다 — Vertex 프로젝트가 없으면 CE로 내려간다(로그에 남는다)
+    monkeypatch.delenv("GCP_PROJECT_ID", raising=False)
+    monkeypatch.setenv("GEMINI_API_KEY", "시험용")
     deps.get_reranker.cache_clear()
-    assert isinstance(deps.get_reranker(), MusicReranker), "키가 없으면 CE로 내려가야 한다"
+    assert isinstance(deps.get_reranker(), MusicReranker), "프로젝트가 없으면 CE로 내려가야 한다"
 
-    # GCP 프로젝트가 남아 있어도 Vertex를 사용하지 않는다
+    # 제거된 경로 설정은 조용히 바꿔 타지 않고 설정 오류다
     monkeypatch.setenv("GCP_PROJECT_ID", "시험-프로젝트")
-    deps.get_reranker.cache_clear()
-    assert isinstance(deps.get_reranker(), MusicReranker)
-    # 검색을 AI Studio로 고정했는데 키가 없으면 Vertex로 바꿔 타지 않고 CE로 내려간다(로그에 남는다)
     monkeypatch.setenv("GEMINI_RETRIEVAL_BACKEND", "api_key")
     deps.get_reranker.cache_clear()
-    assert isinstance(deps.get_reranker(), MusicReranker)
+    with pytest.raises(GeminiConfigError):
+        deps.get_reranker()
+    monkeypatch.setenv("GEMINI_RETRIEVAL_BACKEND", "vertex")
+    deps.get_reranker.cache_clear()
+    assert isinstance(deps.get_reranker(), GeminiListwiseReranker)
     monkeypatch.delenv("GEMINI_RETRIEVAL_BACKEND", raising=False)
-    monkeypatch.delenv("GCP_PROJECT_ID", raising=False)
 
-    monkeypatch.setenv("GEMINI_API_KEY", "시험용")
     monkeypatch.setenv("RERANKER_BACKEND", "cross_encoder")
     deps.get_reranker.cache_clear()
     assert isinstance(deps.get_reranker(), MusicReranker)
+    deps.get_reranker.cache_clear()
+
+
+def test_reranker_backend_value_is_validated_not_silently_cross_encoder(monkeypatch):
+    """빈 값은 기본 gemini_listwise, cross_encoder는 명시했을 때만, 제거된 값·오타는 오류(리뷰 P2).
+
+    예전에는 Gemini가 아닌 값이 전부 Cross-Encoder로 내려가 ""·claude_listwise·오타가 조용히 CE 측정이 됐다.
+    """
+    from src.backend.api import dependencies as deps
+    from src.retrieval.reranker import MusicReranker
+
+    monkeypatch.delenv("GEMINI_RETRIEVAL_BACKEND", raising=False)
+    monkeypatch.setenv("GCP_PROJECT_ID", "시험-프로젝트")
+    for value in ("", "   ", "gemini_listwise", "GEMINI-LISTWISE", "gemini"):
+        monkeypatch.setenv("RERANKER_BACKEND", value)
+        assert deps.reranker_backend() == "gemini_listwise"
+        deps.get_reranker.cache_clear()
+        assert isinstance(deps.get_reranker(), GeminiListwiseReranker), f"RERANKER_BACKEND={value!r}"
+    for value in ("cross_encoder", "cross-encoder", "ce"):
+        monkeypatch.setenv("RERANKER_BACKEND", value)
+        assert deps.reranker_backend() == "cross_encoder"
+        deps.get_reranker.cache_clear()
+        assert isinstance(deps.get_reranker(), MusicReranker)
+    monkeypatch.setenv("RERANKER_BACKEND", "claude_listwise")
+    with pytest.raises(ValueError, match="claude_listwise.*제거"):
+        deps.reranker_backend()
+    for value in ("gemini_listwse", "cross encoder", "AIzaSy-잘못-붙인-값"):
+        monkeypatch.setenv("RERANKER_BACKEND", value)
+        with pytest.raises(ValueError, match="RERANKER_BACKEND") as err:
+            deps.reranker_backend()
+        assert value not in str(err.value), "모르는 값은 메시지에 되풀이하지 않는다(키를 잘못 붙였을 수 있다)"
+        deps.get_reranker.cache_clear()
+        with pytest.raises(ValueError, match="RERANKER_BACKEND"):
+            deps.get_reranker()
     deps.get_reranker.cache_clear()
 
 
@@ -625,14 +659,15 @@ def test_client_is_built_with_http_timeout(monkeypatch):
     import google.genai as genai_mod
     captured = {}
 
-    def fake_client(api_key, http_options=None, vertexai=False):
-        assert vertexai is False
-        captured["timeout_ms"] = getattr(http_options, "timeout", None)
+    def fake_client(**kwargs):
+        assert kwargs["vertexai"] is True and "api_key" not in kwargs
+        captured["timeout_ms"] = getattr(kwargs.get("http_options"), "timeout", None)
         return object()
 
     monkeypatch.setattr(genai_mod, "Client", fake_client)
+    monkeypatch.setenv("GCP_PROJECT_ID", "시험-프로젝트")
     reranker = GeminiListwiseReranker(
-        config=GeminiListwiseRerankerConfig(request_timeout_seconds=7.5), api_key="시험용",
+        config=GeminiListwiseRerankerConfig(request_timeout_seconds=7.5), configured=True,
     )
     reranker._gemini  # noqa: B018 — 클라이언트 생성
     assert captured["timeout_ms"] == 7500

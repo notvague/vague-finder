@@ -149,7 +149,7 @@ def test_actual_parser_keeps_the_model_lyric_beside_a_described_cover():
     raw = model(image_english_query="Album cover with blue tones.",
                 modality_weights=dict(text=0.6, image=0.4, audio=0),
                 lyric_clues=[dict(text="사랑해", kind="partial", variants=[], confidence=0.9, source="model")])
-    analysis = QueryAnalyzer(api_key="placeholder")._parse(query, SimpleNamespace(text=json.dumps(raw, ensure_ascii=False)))
+    analysis = QueryAnalyzer(configured=True)._parse(query, SimpleNamespace(text=json.dumps(raw, ensure_ascii=False)))
     assert "사랑해" in [clue.text for clue in analysis.lyric_clues]
     assert not any("표지" in clue.text for clue in analysis.lyric_clues)
     assert analysis.image_english_query and analysis.modality_weights.image > 0
@@ -209,7 +209,7 @@ def test_album_typography_quotes_still_open_image(query):
 def test_actual_parser_preserves_lyrics_and_clears_inferred_performance(fragment):
     query = f'가사에 "{fragment}"라고 나오는 가상가수 노래 찾아줘.'
     raw = model(performance_clues=dict(vocal_count="solo", vocal_roles=["남성노래"], confidence=0.8))
-    analysis = QueryAnalyzer(api_key="placeholder")._parse(query, SimpleNamespace(text=json.dumps(raw, ensure_ascii=False)))
+    analysis = QueryAnalyzer(configured=True)._parse(query, SimpleNamespace(text=json.dumps(raw, ensure_ascii=False)))
     assert analysis.confidence == 0.8 and analysis.original_query == query
     assert any(item.text == fragment for item in analysis.lyric_clues)
     assert analysis.audio_english_query == analysis.image_english_query == ""
@@ -254,7 +254,7 @@ def test_complete_analyzer_accepts_text_only_lyrics_on_first_response(monkeypatc
         return response
     async def generate_async(**kwargs):
         return generate(**kwargs)
-    analyzer = QueryAnalyzer(api_key="placeholder")
+    analyzer = QueryAnalyzer(configured=True)
     monkeypatch.setattr(analyzer, "_client", SimpleNamespace(
         models=SimpleNamespace(generate_content=generate),
         aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate_async)),

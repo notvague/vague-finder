@@ -182,7 +182,7 @@ def _analyzer(fake: _Scripted, monkeypatch) -> qa.QueryAnalyzer:
         return None
 
     monkeypatch.setattr(qa.asyncio, "sleep", no_wait)
-    analyzer = qa.QueryAnalyzer(api_key="시험용")
+    analyzer = qa.QueryAnalyzer(configured=True)
     analyzer._client = fake
     return analyzer
 
