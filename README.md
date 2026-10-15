@@ -119,7 +119,7 @@ Gemini listwise는 두 줄이다. 전환 근거가 된 측정(v32~v34)은 드라
 
 ## 시작하기
 
-**필요한 것**: Python 3.11 이상, ffmpeg (오디오 디코딩), Vertex AI를 쓸 수 있는 GCP 프로젝트와 ADC 로그인(Gemini), 위의 데이터.
+**필요한 것**: Python 3.11 이상, ffmpeg (오디오 디코딩), Vertex AI를 쓸 수 있는 GCP 프로젝트와 인증(서비스 계정 키 파일 또는 ADC 로그인, Gemini), 위의 데이터.
 Node.js는 수집 파이프라인(yt-dlp)을 돌릴 때만 필요하다.
 
 ```bash
@@ -127,10 +127,12 @@ Node.js는 수집 파이프라인(yt-dlp)을 돌릴 때만 필요하다.
 python3 -m venv venv
 venv/bin/pip install -r requirements.txt
 
-# 2. 환경 변수 — Gemini는 Vertex AI 전용: GCP_PROJECT_ID(크레딧이 연결된 프로젝트) + 로컬 ADC
+# 2. 환경 변수 — Gemini는 Vertex AI 전용: GCP_PROJECT_ID(크레딧이 연결된 프로젝트) + 인증
 #    AI Studio 키(GEMINI_API_KEY)는 쓰지 않는다. 서버는 기동에서 설정·인증·모델을 확인한다 (.env.example 3)
 cp .env.example .env
-gcloud auth application-default login   # 크레딧이 있는 Google 계정으로 한 번
+#    인증 ① 팀 공용 서비스 계정 키: 팀 드라이브의 vertex-sa.json을 secrets/ 에 두면 끝 (.env 기본값이 가리킨다. Docker도 같다)
+#    인증 ② 개인 ADC: 프로젝트에 초대된 계정으로 한 번 실행하고 .env의 GOOGLE_APPLICATION_CREDENTIALS 줄을 지운다
+gcloud auth application-default login
 
 # 3. 벡터 DB 적재 (data/all_songs.jsonl과 artifacts/embeddings/가 있어야 한다)
 venv/bin/python -m src.vector_db.cli.qdrant_load --recreate

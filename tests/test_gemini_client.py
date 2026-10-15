@@ -5,6 +5,8 @@
 """
 from types import SimpleNamespace
 
+import os
+
 import pytest
 
 from src.common import gemini_client as gc
@@ -167,6 +169,47 @@ def test_missing_adc_is_a_config_error_that_names_the_fix(monkeypatch):
 
     monkeypatch.setattr(google.auth, "default", no_adc)
     with pytest.raises(GeminiConfigError, match="application-default login"):
+        _real_load_default_credentials()
+
+
+def test_missing_adc_error_names_the_key_file_option_too(monkeypatch):
+    import google.auth
+    from google.auth.exceptions import DefaultCredentialsError
+
+    monkeypatch.setattr(google.auth, "default", lambda **kwargs: (_ for _ in ()).throw(DefaultCredentialsError("no adc")))
+    with pytest.raises(GeminiConfigError, match="GOOGLE_APPLICATION_CREDENTIALS=secrets/vertex-sa.json"):
+        _real_load_default_credentials()
+
+
+def test_relative_key_file_path_resolves_against_repo_root(monkeypatch, tmp_path):
+    """venv(레포 루트 cwd)와 Docker(/app)가 .env의 같은 한 줄로 같은 파일을 가리킨다 — cwd가 달라도."""
+    import google.auth
+
+    monkeypatch.setattr(gc, "_REPO_ROOT", tmp_path)
+    key = tmp_path / "secrets" / "vertex-sa.json"
+    key.parent.mkdir()
+    key.write_text("{}")
+    monkeypatch.setenv(gc.CREDENTIALS_FILE_ENV, "secrets/vertex-sa.json")
+    monkeypatch.chdir(tmp_path / "secrets")  # 엉뚱한 cwd
+    seen = {}
+
+    def fake_default(**kwargs):
+        seen["env"] = os.environ[gc.CREDENTIALS_FILE_ENV]
+        return object(), None
+
+    monkeypatch.setattr(google.auth, "default", fake_default)
+    assert gc.credentials_file_path() == key
+    _real_load_default_credentials()
+    assert seen["env"] == str(key), "google-auth에는 레포 루트 기준 절대 경로를 넘긴다"
+
+
+def test_missing_key_file_is_a_config_error_not_an_adc_fallback(monkeypatch, tmp_path):
+    import google.auth
+
+    monkeypatch.setattr(gc, "_REPO_ROOT", tmp_path)
+    monkeypatch.setenv(gc.CREDENTIALS_FILE_ENV, "secrets/vertex-sa.json")
+    monkeypatch.setattr(google.auth, "default", lambda **kwargs: pytest.fail("키 파일이 없으면 ADC로 넘어가지 않는다"))
+    with pytest.raises(GeminiConfigError, match="키 파일이 없다"):
         _real_load_default_credentials()
 
 

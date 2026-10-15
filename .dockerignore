@@ -19,3 +19,6 @@ Dockerfile
 
 # Data (용량이 큰 데이터는 제외)
 data/
+
+# Vertex AI 서비스 계정 키 (팀 드라이브로만 전달, 절대 커밋·이미지에 넣지 않는다)
+secrets/
