@@ -1,0 +1,18 @@
+﻿set,query_id,target_id,stage,lookup_query,media_targets,n_hits,target_rank,target_dense_rank,target_sparse_rank,top3,lost_at
+v06,q208,2063248,fused_lookup,팝송으로 원곡이 있다는 것만 기억나,,72,,,,3894276|430137|2226049,
+v06,q208,2063248,combined→filtered,,,72→72,없음→없음,,,3894276|430137|2226049,fused_lookup
+v06,m103,523274,fused_lookup,2000년대 초반 겨울 드라마 OST,,120,85,58,,623902|1907246|35198767,
+v06,m103,523274,combined→filtered,,,120→0,85→없음,,,,media_description_filter
+v06,c701,4412196,fused_lookup,외계인이 나오는 드라마에 쓰인 곡,,108,,,,2101171|34061322|2338186,
+v06,c701,4412196,combined→filtered,,,108→0,없음→없음,,,,fused_lookup
+v09,n010,531840,fused_lookup,싸이월드 미니홈피 배경음악으로 한번쯤은 걸어놨던 힙합 발라드,,136,,,,623902|2930969|1649188,
+v09,n010,531840,combined→filtered,,,136→1,없음→없음,,,623902,fused_lookup
+v09,n044,33487342,fused_lookup,분노의 질주 스핀오프 영화에 나온 노래,,96,1,1,1,33487342|5826461|524216,
+v09,n044,33487342,fused_lookup,분노의 질주 스핀오프 삽입곡,분노의 질주 스핀오프,67,15,,15,31666411|524216|837567,
+v09,n044,33487342,combined→filtered,,,139→0,1→없음,,,,media_description_filter
+v09,n045,4276080,fused_lookup,노래가 드라마보다 훨씬 먼저 나왔고 여자 보컬 밴드 곡이었어,,138,24,45,93,3900230|2338186|37390939,
+v09,n045,4276080,combined→filtered,,,138→0,24→없음,,,,media_description_filter
+v09,n088,1928044,fused_lookup,노래는 의자에 앉았다 일어났다 하는 안무로 엄청 유행했던 여자 솔로 댄스곡이야,,128,,,,36761467|2534748|837567,
+v09,n088,1928044,combined→filtered,,,128→128,없음→없음,,,36761467|2534748|837567,fused_lookup
+v10,t036,30985406,fused_lookup,드라마 OST인데 여자가 불렀고 되게 고단한 현실을 살아가는 사람들을 생각하게 하는 슬픈 노래야,,132,38,,11,1046284|32003395|2101171,
+v10,t036,30985406,combined→filtered,,,132→0,38→없음,,,,media_description_filter

@@ -87,6 +87,12 @@ reports/
 # 후보 밖 정답의 단계별 위치·경로 깊이별 후보 포함 기록 (곡 ID와 순위만)
 !experiments/reranking/results_*/candidate_drop_*.csv
 !experiments/reranking/results_*/candidate_depth_sweep_*.csv
+# v50(2026-10-15) 진단표 — 곡 ID·순위·질의 ID만(제목·가사 없음). 질의 원문은 이미 커밋된 eval_queries_*.csv의 것이다
+!experiments/reranking/results_*/trace_ctx*/candidate_drop_*.csv
+!experiments/reranking/results_v50_vertex_context/failure_diagnosis.csv
+!experiments/reranking/results_v50_vertex_context/failure_review.csv
+!experiments/reranking/results_v50_vertex_context/context_lookup.csv
+!experiments/reranking/results_v50_vertex_context/context_lookup_raw.csv
 # 표지 질의 진단 — 곡 ID·순위·점수와 질의에서 나온 문장만 (표지 이미지·주소는 남기지 않는다, 주소는 해시로만)
 !experiments/reranking/results_*/image_diag_*.csv
 # 재질문 정책 비교 산출물 — detail도 100KB 수준(analysis_json 없음)이고
