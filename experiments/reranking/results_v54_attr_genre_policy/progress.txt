@@ -1,0 +1,83 @@
+start cand_attr0_eraplus v06 20:30:11
+start cand_attr0.5_eraplus v06 20:30:13
+start cand_attr0.5_eraplus_condgenre v06 20:30:15
+done cand_attr0.5_eraplus v06 exit=0 20:38:45
+start cand_attr0.5_eraplus v09 20:38:45
+done cand_attr0.5_eraplus_condgenre v06 exit=0 20:38:47
+start cand_attr0.5_eraplus_condgenre v09 20:38:47
+done cand_attr0_eraplus v06 exit=0 20:38:49
+start cand_attr0_eraplus v09 20:38:49
+done cand_attr0.5_eraplus_condgenre v09 exit=0 20:47:16
+start cand_attr0.5_eraplus_condgenre v10 20:47:16
+done cand_attr0_eraplus v09 exit=0 20:47:16
+start cand_attr0_eraplus v10 20:47:16
+done cand_attr0.5_eraplus v09 exit=0 20:47:20
+start cand_attr0.5_eraplus v10 20:47:20
+done cand_attr0.5_eraplus v10 exit=0 20:55:52
+done cand_attr0.5_eraplus_condgenre v10 exit=0 20:55:54
+done cand_attr0_eraplus v10 exit=0 20:55:56
+pipeline start 20:57:13
+start clarify_sub_attr0.5_condgenre_norerank_rep1 v06 20:57:13
+start clarify_sub_attr0.5_norerank_rep1 v06 20:57:13
+done clarify_sub_attr0.5_norerank_rep1 v06 exit=0 20:59:16
+start clarify_sub_attr0.5_norerank_rep1 v09 20:59:16
+done clarify_sub_attr0.5_condgenre_norerank_rep1 v06 exit=0 20:59:17
+start clarify_sub_attr0.5_condgenre_norerank_rep1 v09 20:59:17
+done clarify_sub_attr0.5_condgenre_norerank_rep1 v09 exit=0 21:01:41
+done clarify_sub_attr0.5_norerank_rep1 v09 exit=0 21:01:44
+norerank clarify done 21:01:44
+start rerank_attr0.5_eraplus_rep1 v06 21:01:44
+done rerank_attr0.5_eraplus_rep1 v06 exit=0 21:14:07
+start rerank_attr0.5_eraplus_rep1 v09 21:14:07
+done rerank_attr0.5_eraplus_rep1 v09 exit=0 21:26:30
+start rerank_attr0.5_eraplus_rep1 v10 21:26:30
+done rerank_attr0.5_eraplus_rep1 v10 exit=0 21:39:14
+start rerank_attr0.5_eraplus_condgenre_rep1 v06 21:39:14
+done rerank_attr0.5_eraplus_condgenre_rep1 v06 exit=0 21:52:31
+start rerank_attr0.5_eraplus_condgenre_rep1 v09 21:52:31
+done rerank_attr0.5_eraplus_condgenre_rep1 v09 exit=0 22:07:02
+start rerank_attr0.5_eraplus_condgenre_rep1 v10 22:07:02
+done rerank_attr0.5_eraplus_condgenre_rep1 v10 exit=0 22:26:21
+start rerank_attr0.5_eraplus_rep2 v06 22:26:21
+done rerank_attr0.5_eraplus_rep2 v06 exit=0 22:39:04
+start rerank_attr0.5_eraplus_rep2 v09 22:39:04
+done rerank_attr0.5_eraplus_rep2 v09 exit=0 22:51:36
+start rerank_attr0.5_eraplus_rep2 v10 22:51:36
+done rerank_attr0.5_eraplus_rep2 v10 exit=139 22:53:13
+start rerank_attr0.5_eraplus_condgenre_rep2 v06 22:53:13
+B2 v10 exit=139 (segfault at first query, before any generate call) — moved to crashed_*, re-run queued after D2 22:53:45
+D2 v06 hung at first query for 41 min (generate 호출 0, count_tokens 1) — killed 23:35, artifacts in hung_*, redo queued after B2 v10 redo
+done rerank_attr0.5_eraplus_condgenre_rep2 v06 exit=143 23:35:02
+start rerank_attr0.5_eraplus_condgenre_rep2 v09 23:35:02
+done rerank_attr0.5_eraplus_condgenre_rep2 v09 exit=0 23:47:53
+start rerank_attr0.5_eraplus_condgenre_rep2 v10 23:47:53
+done rerank_attr0.5_eraplus_condgenre_rep2 v10 exit=0 00:00:49
+rerank chain done 00:00:49
+start rerank_attr0.5_eraplus_rep2 v10 00:01:08
+done rerank_attr0.5_eraplus_rep2 v10 exit=0 00:25:57
+B2 v10 redo done 00:25:57
+start rerank_attr0.5_eraplus_condgenre_rep2 v06 00:26:05
+B2 v10 try2: t018 2nd call ClientError(19s)+cancel → applied|failed(partial_failure, 정답 1위 그대로) — CLAUDE.md 규칙대로 비교 제외, try3 queued after D2 v06 redo 00:27:23
+done rerank_attr0.5_eraplus_condgenre_rep2 v06 exit=0 00:38:49
+D2 v06 redo done 00:38:49
+start rerank_attr0.5_eraplus_rep2 v10 00:39:04
+done rerank_attr0.5_eraplus_rep2 v10 exit=0 00:52:09
+B2 v10 try3 done 00:52:09
+start clarify_sub_attr0.5_condgenre_rep1 v06 00:52:09
+start clarify_sub_attr0.5_rep1 v06 00:52:09
+done clarify_sub_attr0.5_rep1 v06 exit=0 00:55:30
+start clarify_sub_attr0.5_rep1 v09 00:55:30
+done clarify_sub_attr0.5_condgenre_rep1 v06 exit=0 00:55:35
+start clarify_sub_attr0.5_condgenre_rep1 v09 00:55:35
+done clarify_sub_attr0.5_condgenre_rep1 v09 exit=0 01:00:29
+done clarify_sub_attr0.5_rep1 v09 exit=0 01:01:19
+clarify rep1 done 01:01:19
+start clarify_sub_attr0.5_condgenre_rep2 v06 01:02:19
+start clarify_sub_attr0.5_rep2 v06 01:02:19
+done clarify_sub_attr0.5_rep2 v06 exit=0 01:05:36
+start clarify_sub_attr0.5_rep2 v09 01:05:36
+done clarify_sub_attr0.5_condgenre_rep2 v06 exit=0 01:05:37
+start clarify_sub_attr0.5_condgenre_rep2 v09 01:05:37
+done clarify_sub_attr0.5_condgenre_rep2 v09 exit=0 01:10:35
+done clarify_sub_attr0.5_rep2 v09 exit=0 01:11:22
+clarify rep2 done 01:11:22

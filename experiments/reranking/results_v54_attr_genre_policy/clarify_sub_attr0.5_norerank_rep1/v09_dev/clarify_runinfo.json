@@ -1,0 +1,139 @@
+{
+  "created_at": "2026-10-15T20:59:20+0900",
+  "args": {
+    "queries": "docs/eval/queries.json",
+    "corpus": "data/all_songs.jsonl",
+    "output_dir": "experiments/reranking/results_v54_attr_genre_policy/clarify_sub_attr0.5_norerank_rep1/v09_dev",
+    "split": "dev",
+    "query_set": [
+      "v09"
+    ],
+    "top_k": 10,
+    "candidate_k": 30,
+    "limit": null,
+    "query_ids": "n002,n011,n014,n016,n030,n033,n040,n042,n081,n096,n097",
+    "answer_multiplier": null,
+    "analysis_cache": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v09_dev_vertex.json",
+    "allow_fallback_analysis": false,
+    "labels": "experiments/reranking/eval_queries_v09.csv",
+    "resummarize": false,
+    "policies": "flow"
+  },
+  "analysis": {
+    "mode": "cache",
+    "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v09_dev_vertex.json",
+    "meta": {
+      "created_at": "2026-10-15T01:05:13+0900",
+      "query_source": "experiments/reranking/eval_queries_v09.csv",
+      "split": "dev",
+      "analyzer": {
+        "model_name": "gemini-3.1-flash-lite",
+        "gemini_backend": "vertex",
+        "gemini_location": "global",
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "reference_year": 2026,
+        "reference_year_env": "2026",
+        "prompt_sha": "80c464515d9c",
+        "postprocess_sha": "f18778f8f94d"
+      }
+    },
+    "fallback_query_ids": [],
+    "fingerprint_drift": []
+  },
+  "corpus": {
+    "vector_backend": "qdrant",
+    "namespace": "dev",
+    "text_index": "vaguefinder-text-1024-koe5",
+    "image_index": "vaguefinder-image-768",
+    "audio_index": "vaguefinder-audio-512",
+    "qdrant_path": "artifacts/qdrant_eval_a",
+    "point_count": 5143
+  },
+  "bm25": {
+    "path": "artifacts/bm25_params.json",
+    "exists": true,
+    "sha256_12": "bf606b19ab02",
+    "bytes": 754642
+  },
+  "lyrics_source": {
+    "db": "vaguefinder",
+    "collection": "songs",
+    "document_count": 5143,
+    "full_lyrics_songs": 5143,
+    "full_lyrics_total_chars": 4076174,
+    "content_sha256_16": "e0d58f28f1f4a563"
+  },
+  "reranker": {
+    "backend": "gemini_listwise",
+    "requested_backend": "gemini_listwise",
+    "class": "GeminiListwiseReranker",
+    "enabled": false,
+    "config": {
+      "model_name": "gemini-3.1-flash-lite",
+      "enabled": false,
+      "rerank_weight": 0.85,
+      "spread_ref": 0.0,
+      "max_candidates": 30,
+      "max_retries": 3,
+      "passes": 1,
+      "low_confidence_threshold": 0.55,
+      "use_search_grounding": false,
+      "search_evidence_chars": 7000,
+      "rare_fact_verification": false,
+      "rare_fact_batch_size": 15,
+      "rare_fact_min_support": 0.86,
+      "rare_fact_min_confidence": 0.78,
+      "rare_fact_min_margin": 0.06,
+      "rare_fact_insert_rank": 9,
+      "request_timeout_seconds": 20.0,
+      "time_budget_seconds": 30.0,
+      "pass_reserve_seconds": 10.0
+    }
+  },
+  "gemini": {
+    "backend": "unused",
+    "setting": "vertex"
+  },
+  "ranking_switches": {
+    "boost_scale": 1.0,
+    "attr_boost_scale": 1.0,
+    "gender_mismatch_scale": 0.0,
+    "genre_match_scale": 1.0,
+    "genre_answer_scale": 1.0,
+    "audio_fusion_scale": 1.0,
+    "attr_filter_weight": 0.5,
+    "attr_filter_k": 30,
+    "attr_filter_gate": "era_plus",
+    "attr_filter_use_genre": true,
+    "attr_filter_genre_policy": "always",
+    "attr_filter_genre_policy_effective": "always",
+    "text_sparse_source": "tags",
+    "lyric_protect_phonetic_top1": false,
+    "lyric_protect_min_confidence": 0.8,
+    "lyric_boost_scale": 1.0,
+    "reranker_min_spread": 0.0,
+    "gemini_rerank_corrections": "all",
+    "gemini_rerank_type_slot_label": "artist type (solo/group/duo/band)",
+    "clarify_rerank_input_order": "bonus"
+  },
+  "search_reference_year_env": "2026",
+  "clarify": {
+    "policies": "flow",
+    "flow_modes": [
+      "reject",
+      "skip",
+      "oracle",
+      "noisy"
+    ],
+    "flow_target": "정답마다 따로 대화한다 — 답변·종료·성공 판정이 같은 목표 곡",
+    "max_rejected_ids": 20,
+    "targets_from_vector_db": 11,
+    "question_policy": "skip_known_slots_2026-10-11",
+    "known_slots_rules_reviewed_on": "eval_queries_v06+v09 dev 원문, queries_v10_draft (2026-10-11)",
+    "rerank_status_counts": {
+      "skipped": 53
+    },
+    "elapsed_seconds": 54.8
+  }
+}

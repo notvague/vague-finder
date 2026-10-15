@@ -547,6 +547,9 @@ def _ranking_switches(config: Any) -> dict:
         "attr_filter_gate": _search_router._attr_filter_gate(),
         # 장르를 필터 축에 넣는가(v53 실험, 기본 True = v51·v52 조건). False면 시기·성별·형태만, 시기+장르 질의는 경로가 닫힌다
         "attr_filter_use_genre": _search_router._attr_filter_use_genre(),
+        # 장르 축 요청 단위 정책(v54 실험, 기본 always). 설정값과 우선순위를 푼 실제 적용값(USE_GENRE=0이면 genre_off)을 둘 다 적는다
+        "attr_filter_genre_policy": _search_router._attr_filter_genre_policy(),
+        "attr_filter_genre_policy_effective": _search_router._attr_filter_genre_policy_effective(),
         "text_sparse_source": _search_router._text_sparse_source(),
         "lyric_protect_phonetic_top1": _search_router._protect_phonetic_top1(),
         "lyric_protect_min_confidence": _search_router._lyric_protect_min_confidence(),
@@ -745,7 +748,7 @@ def build_explain_payload(
         if song_id not in shown
     )
 
-    return {
+    row = {
         "query_id": query_id,
         "split": split,
         "query": query,
@@ -758,6 +761,10 @@ def build_explain_payload(
         "rerank_error": record.rerank_error,
         "songs": songs,
     }
+    if record.attr_filter_genre is not None:
+        # v54 실험 정책(conditional)이 필터를 만든 요청에만 있다 — 기본 경로의 기록 모양은 그대로다
+        row["attr_filter_genre"] = dict(record.attr_filter_genre)
+    return row
 
 
 async def evaluate(args: argparse.Namespace) -> None:

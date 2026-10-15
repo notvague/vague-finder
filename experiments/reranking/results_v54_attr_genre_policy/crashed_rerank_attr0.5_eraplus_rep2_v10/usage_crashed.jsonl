@@ -1,0 +1,1 @@
+{"ts": "2026-10-15T22:51:41.886+09:00", "kind": "count_tokens", "model": "gemini-3.1-flash-lite", "latency_ms": 486.0, "tag": "rerank_attr0.5_eraplus_rep2", "pid": 68376, "model_version": null, "response_id": null, "total_tokens": 1}

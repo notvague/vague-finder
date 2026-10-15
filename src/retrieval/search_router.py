@@ -330,7 +330,114 @@ _ARTIST_TYPE_PAYLOAD_VALUES = {
 }
 
 
-def _build_attribute_filter(analysis: QueryAnalysis) -> Optional[Dict[str, Any]]:
+@dataclass(frozen=True)
+class AttrGenreDecision:
+    """속성 조건 보조 필터에서 장르 축을 **이번 요청에** 넣었는가와 그 사유(v54 실험, `_attr_genre_decision`).
+
+    `policy`는 실제로 적용된 정책(`ATTR_FILTER_USE_GENRE=0`이면 `genre_off`, 아니면 `ATTR_FILTER_GENRE_POLICY`),
+    `use_genre`는 조건·게이트 축 포함 여부, `reason`은 `ATTR_GENRE_REASON_*` 중 하나다.
+    `had_genre_condition`은 장르를 넣었다면 실제로 조건이 됐을지(등록 장르에 맞는 말이 있었는지) — 제외 결정이
+    "실제 완화"인지 "뺄 것이 없었는지"를 집계에서 가른다. `answered_genre`·`gender`는 판정에 쓴 값(기록용).
+    """
+
+    policy: str
+    use_genre: bool
+    reason: str
+    had_genre_condition: bool
+    answered_genre: str = ""
+    gender: str = ""
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "policy": self.policy, "use_genre": self.use_genre, "reason": self.reason,
+            "had_genre_condition": self.had_genre_condition,
+            "answered_genre": self.answered_genre, "gender": self.gender,
+        }
+
+
+# 장르 축 판정 사유 코드(AttrGenreDecision.reason)
+ATTR_GENRE_REASON_SWITCH_OFF = "switch_off"        # ATTR_FILTER_USE_GENRE=0 — 정책과 무관하게 장르를 넣지 않는다(v53 C)
+ATTR_GENRE_REASON_ALWAYS = "always"                # 기본 정책 — 장르가 있으면 넣는다(v51·v52 B)
+ATTR_GENRE_REASON_ANSWERED = "answered_genre"      # conditional: 유효한 재질문 장르 답이 있어 넣는다
+ATTR_GENRE_REASON_GENDER = "gender_condition"      # conditional: 장르 답은 없고 유효한 성별 조건이 있어 뺀다
+ATTR_GENRE_REASON_NO_GENDER = "no_gender"          # conditional: 둘 다 아니라 기본대로 넣는다
+
+ATTR_GENRE_REASON_LABELS: Dict[str, str] = {
+    ATTR_GENRE_REASON_ANSWERED: "재질문 장르 답",
+    ATTR_GENRE_REASON_GENDER: "성별 조건 있음",
+    ATTR_GENRE_REASON_NO_GENDER: "성별 조건 없음",
+}
+
+
+def _registered_genres_for(want: str) -> List[str]:
+    """분석·답의 장르 말이 가리키는 등록 장르 표기들(`genre_match`와 같은 부분 문자열 규칙). 없으면 빈 목록 — 조건이 되지 않는다."""
+    want_genre = _norm(want or "")
+    if not want_genre:
+        return []
+    return [g for g in _MELON_GENRES if want_genre in _norm(g)]
+
+
+def _answered_genre(answers: Sequence[ClarifyAnswer]) -> str:
+    """재질문에서 사용자가 **직접 답한** 장르 — 기존 반영 규칙(`merge_answer`)과 같다: 모름(skipped)·빈 값은 정보 없음이라 건너뛰고,
+    여러 번 답했으면 마지막 답이 앞의 답을 고친다. 답이 없으면 빈 문자열. `analysis.genre` 값만 보고 출처를 추측하지 않는다."""
+    picked = ""
+    for answer in answers or ():
+        if answer.slot != "genre" or answer.skipped:
+            continue
+        value = (answer.value or "").strip()
+        if value:
+            picked = value
+    return picked
+
+
+def _attr_genre_decision(merged: QueryAnalysis, answers: Sequence[ClarifyAnswer]) -> AttrGenreDecision:
+    """이번 요청의 속성 조건 보조 필터에 장르 축을 넣을지 — 실험 정책 `ATTR_FILTER_GENRE_POLICY`(v54).
+
+    `merged`는 답을 반영한 분석(`analysis_with_answers`)이고 `answers`는 그 답 원본이다 — 최초 질의가 말한 장르와
+    사용자가 재질문에서 직접 답한 장르를 구분하려면 답의 출처가 필요하다.
+
+    우선순위: `ATTR_FILTER_USE_GENRE=0`이면 정책과 무관하게 장르를 넣지 않는다(v53 C 동작 보존). 그 밖에는
+      - `always`(기본): 장르가 있으면 넣는다 — v51·v52 B와 같다
+      - `conditional`: ① 유효한 재질문 장르 답(모름·빈 값이 아니고 등록 장르에 맞는 마지막 답)이 있으면 **넣는다**
+        ② 그런 답이 없고 필터가 실제로 쓰는 유효한 성별 조건(남성/여성/혼성 — 필터의 성별 규칙 그대로)이 있으면 **뺀다**
+        ③ 둘 다 아니면 기본대로 넣는다
+    성별·장르의 유효성은 필터가 쓰는 규칙(`_build_attribute_filter`)과 같고 새 임계값은 없다. 평가 라벨·정답·질의 ID는 보지 않는다.
+    """
+    had_genre_condition = bool(_registered_genres_for(merged.genre or ""))
+    gender = (merged.vocal_gender or "").strip()
+    gender_valid = gender in ("남성", "여성", "혼성")
+    if not _attr_filter_use_genre():
+        return AttrGenreDecision("genre_off", False, ATTR_GENRE_REASON_SWITCH_OFF, had_genre_condition, "", gender)
+    policy = _attr_filter_genre_policy()
+    if policy != "conditional":
+        return AttrGenreDecision(policy, True, ATTR_GENRE_REASON_ALWAYS, had_genre_condition, "", gender)
+    answered = _answered_genre(answers)
+    if answered and _registered_genres_for(answered):
+        return AttrGenreDecision(policy, True, ATTR_GENRE_REASON_ANSWERED, had_genre_condition, answered, gender)
+    if gender_valid:
+        return AttrGenreDecision(policy, False, ATTR_GENRE_REASON_GENDER, had_genre_condition, answered, gender)
+    return AttrGenreDecision(policy, True, ATTR_GENRE_REASON_NO_GENDER, had_genre_condition, answered, gender)
+
+
+def _build_attribute_filter_with_policy(
+    analysis: QueryAnalysis,
+    answers: Optional[Sequence[ClarifyAnswer]] = None,
+) -> Tuple[Optional[Dict[str, Any]], AttrGenreDecision]:
+    """답을 반영한 분석으로 속성 조건 보조 필터를 만들고, 장르 축 판정을 함께 돌려준다(라우터 입구용).
+
+    답이 없으면 `analysis_with_answers`는 같은 객체를 돌려주고, 기본 정책(`always`)이면 필터는
+    `_build_attribute_filter(analysis)`와 같다 — v51·v52·v53의 동작이 그대로다.
+    """
+    answers = list(answers or [])
+    merged = analysis_with_answers(analysis, answers)
+    decision = _attr_genre_decision(merged, answers)
+    return _build_attribute_filter(merged, use_genre=decision.use_genre), decision
+
+
+def _build_attribute_filter(
+    analysis: QueryAnalysis,
+    use_genre: Optional[bool] = None,
+) -> Optional[Dict[str, Any]]:
     """분석이 말한 시기·성별·장르·형태를 payload 필터로 — **속성 조건 보조 후보**(`ATTR_FILTER_WEIGHT`) 경로용.
 
     v50 진단(experiments/reranking/results_v50_vertex_context): 후보 30 밖 정답 54건 중 15건은 세 기본 경로
@@ -352,11 +459,15 @@ def _build_attribute_filter(analysis: QueryAnalysis) -> Optional[Dict[str, Any]]
     장르 축은 `ATTR_FILTER_USE_GENRE`(기본 1)로 뺄 수 있다(v53 실험, `_attr_filter_use_genre`). 0이면 장르는 **조건도
     축도 아니다** — `era_plus`는 "시기 창 + 성별 또는 형태 하나 이상"이 되고, 시기+장르만 있는 질의는 경로가 닫힌다.
     장르 가산(`genre_match`)·재질문 장르 답 가산·분석·리랭커 프롬프트는 이 스위치와 무관하게 그대로다.
+
+    `use_genre`를 주면 그 값이 스위치를 대신한다 — 요청 단위 정책(`_attr_genre_decision`, v54)이 정한 값을 라우터가 넘긴다.
+    None(기본)이면 스위치만 본다(기존 호출·테스트와 같다).
     """
     conditions: List[Dict[str, Any]] = []
     axes = 0
     gate = _attr_filter_gate()
-    use_genre = _attr_filter_use_genre()
+    if use_genre is None:
+        use_genre = _attr_filter_use_genre()
     era = analysis.release_era
     has_era = bool(
         analysis.has_release_era
@@ -961,6 +1072,31 @@ def _attr_filter_use_genre() -> bool:
     return raw not in _ATTR_FILTER_GENRE_OFF_VALUES
 
 
+_ATTR_FILTER_GENRE_POLICIES = ("always", "conditional")
+
+
+def _attr_filter_genre_policy() -> str:
+    """속성 조건 보조 필터의 장르 축 **요청 단위 정책**(`ATTR_FILTER_GENRE_POLICY`). **기본 `always` = 장르가 있으면 넣는다(v51·v52·v53과 같다).**
+
+    `conditional`(v54 실험, experiments/reranking/results_v54_attr_genre_policy): 사용자가 재질문에서 직접 답한 유효한 장르가
+    있으면 넣고, 그런 답이 없는데 유효한 성별 조건이 있으면 최초 질의의 장르를 조건·게이트 축에서 빼고, 둘 다 아니면 넣는다
+    (`_attr_genre_decision`). 근거는 v53 — 장르 제외의 1턴 손실 q112는 성별 없는 질의였고, 2턴 손실 n011은 맞는 장르 답이
+    조건이 되지 않아 생겼다. dev에서 고른 가설이라 그 사례 회복만으로 성공으로 보지 않는다.
+
+    우선순위: `ATTR_FILTER_USE_GENRE=0`이면 이 정책과 무관하게 장르를 넣지 않는다(v53 C 보존). 모르는 값·빈 값은 `always`.
+    실제 적용 정책은 runinfo `ranking_switches.attr_filter_genre_policy_effective`에 적는다.
+    """
+    raw = os.getenv("ATTR_FILTER_GENRE_POLICY", "").strip().lower()
+    return raw if raw in _ATTR_FILTER_GENRE_POLICIES else _ATTR_FILTER_GENRE_POLICIES[0]
+
+
+def _attr_filter_genre_policy_effective() -> str:
+    """스위치 우선순위를 푼 뒤 실제로 적용되는 장르 정책 — `genre_off`(ATTR_FILTER_USE_GENRE=0) · `always` · `conditional`."""
+    if not _attr_filter_use_genre():
+        return "genre_off"
+    return _attr_filter_genre_policy()
+
+
 def _attr_filter_k() -> int:
     """속성 조건 보조 후보로 받는 곡 수. 기본 30(최종 후보 수와 같다). 1~100."""
     raw = os.getenv("ATTR_FILTER_K", "").strip()
@@ -1397,15 +1533,20 @@ class SearchRouter:
         # 원래 분석 그대로다(답을 질의에 넣으면 맞는 답도 순위를 해친다 — clarify.apply_answer_bonus). 답이 없으면
         # 같은 객체라 1턴 동작은 그대로다.
         attr_filter_weight = _attr_filter_weight()
-        attribute_filter = (
-            _build_attribute_filter(analysis_with_answers(analysis, list(answers or [])))
-            if attr_filter_weight > 0 else None
-        )
+        attr_genre_decision: Optional[AttrGenreDecision] = None
+        attribute_filter = None
+        if attr_filter_weight > 0:
+            # 장르 축은 요청 단위 정책이 정한다(v54 `ATTR_FILTER_GENRE_POLICY`, 기본 always = 기존 동작). 답의 출처(최초 질의 /
+            # 재질문 답)가 판정에 필요하므로 답 원본을 함께 넘긴다.
+            attribute_filter, attr_genre_decision = _build_attribute_filter_with_policy(analysis, list(answers or []))
         use_attr_filter = bool(
             attribute_filter is not None
             and force_weights is None
             and not disable_boost
         )
+        if use_attr_filter and attr_genre_decision is not None and attr_genre_decision.policy == "conditional":
+            # 실험 정책일 때만 요청 단위 기록을 남긴다 — 기본 경로(always)·v53 스위치의 기록은 바꾸지 않는다
+            recorder.set_attr_filter_genre(attr_genre_decision.as_dict())
 
         text_pool_k = (
             min(100, max(candidates * 3, 60, pool_k))
@@ -2095,8 +2236,16 @@ class SearchRouter:
             # 속성 조건 보조 후보 — performance_metadata와 같은 자리·같은 식. 후보 소환만 하고 순위는
             # 아래 시기·성별·장르·형태 가산이 다시 정한다(이 목록의 곡은 조건에 맞으므로 그 가산을 받는다).
             fused_scores = dict(fused)
-            # 장르 축을 뺀 설정(ATTR_FILTER_USE_GENRE=0)은 기록에 남긴다 — 기본(장르 포함)은 v51 기록과 글자까지 같다
-            attr_detail = f"가중치 {attr_filter_weight:.2f}" + ("" if _attr_filter_use_genre() else " · 장르 축 제외")
+            # 장르 축을 뺀 설정(ATTR_FILTER_USE_GENRE=0)은 기록에 남긴다 — 기본(장르 포함)은 v51 기록과 글자까지 같다.
+            # 요청 단위 정책(conditional, v54)은 유지/제외와 사유를 적는다.
+            attr_detail = f"가중치 {attr_filter_weight:.2f}"
+            if attr_genre_decision is not None and attr_genre_decision.policy == "conditional":
+                attr_detail += (
+                    f" · 장르 {'유지' if attr_genre_decision.use_genre else '제외'}"
+                    f"({ATTR_GENRE_REASON_LABELS.get(attr_genre_decision.reason, attr_genre_decision.reason)})"
+                )
+            elif not _attr_filter_use_genre():
+                attr_detail += " · 장르 축 제외"
             for rank, track in enumerate(attr_filter_hits, start=1):
                 _fuse_add(
                     fused_scores, track.id,

@@ -483,3 +483,226 @@ def test_genre_boost_is_untouched_by_the_filter_switch(monkeypatch) -> None:
     _run(router, _analysis(release_era=ERA, vocal_gender="남성", genre="록"), top_k=30, use_rerank=False, recorder=rec)
     rules = {adj.rule for adj in rec.record.songs["f1"].adjustments}
     assert "genre_match" in rules
+
+
+# ---------------------------------------------------------------------------
+# v54 — 장르 축 요청 단위 정책(ATTR_FILTER_GENRE_POLICY=conditional)
+# ---------------------------------------------------------------------------
+
+def _conditional(monkeypatch) -> None:
+    monkeypatch.setenv("ATTR_FILTER_GENRE_POLICY", "conditional")
+    monkeypatch.delenv("ATTR_FILTER_USE_GENRE", raising=False)
+    monkeypatch.delenv("ATTR_FILTER_GATE", raising=False)
+
+
+ERA_COND = {"$or": [{"release_date": {"$text": str(y)}} for y in (2004, 2005, 2006)]}
+MALE_COND = {"vocal_gender": {"$in": ["남성", "혼성"]}}
+GENRE_ROCK = {"genre": {"$in": ["록/메탈"]}}
+GENRE_DANCE = {"genre": {"$in": ["댄스"]}}
+
+
+def test_genre_policy_default_is_always_and_unknown_values_fall_back(monkeypatch) -> None:
+    """환경 변수가 없거나 모르는 값이면 always(= v51·v52·v53 동작). conditional만 새 정책이다."""
+    monkeypatch.delenv("ATTR_FILTER_GENRE_POLICY", raising=False)
+    assert sr._attr_filter_genre_policy() == "always"
+    for raw in ("", "  ", "nonsense", "1", "0"):
+        monkeypatch.setenv("ATTR_FILTER_GENRE_POLICY", raw)
+        assert sr._attr_filter_genre_policy() == "always", raw
+    monkeypatch.setenv("ATTR_FILTER_GENRE_POLICY", " Conditional ")
+    assert sr._attr_filter_genre_policy() == "conditional"
+
+
+def test_genre_policy_default_path_is_unchanged(monkeypatch) -> None:
+    """정책 변수 없음 · always 명시 모두 v53의 기본(장르 포함)과 필터·호출·기록이 같다 — 답이 있어도 같다."""
+    analysis = _analysis(release_era=ERA, vocal_gender="남성", genre="록")
+    monkeypatch.delenv("ATTR_FILTER_GENRE_POLICY", raising=False)
+    monkeypatch.delenv("ATTR_FILTER_USE_GENRE", raising=False)
+    base_filter = sr._build_attribute_filter(analysis)
+    assert GENRE_ROCK in base_filter["$and"]
+    base_ids, base_calls, base_record = _search(monkeypatch, "0.5", analysis=analysis)
+    assert base_record.attr_filter_genre is None  # 기본 경로에는 요청 단위 기록이 없다
+    monkeypatch.setenv("ATTR_FILTER_GENRE_POLICY", "always")
+    built, decision = sr._build_attribute_filter_with_policy(analysis, [])
+    assert built == base_filter and decision.use_genre and decision.reason == sr.ATTR_GENRE_REASON_ALWAYS
+    ids, calls, record = _search(monkeypatch, "0.5", analysis=analysis)
+    assert ids == base_ids and calls == base_calls and record.attr_filter_genre is None
+    assert all(p.detail == "가중치 0.50" for s in record.songs.values() for p in s.paths if p.path == "attr_filter")
+    # always는 성별이 있어도 장르를 빼지 않고, 장르 답도 기존대로 조건이 된다
+    _, calls, _ = _search(monkeypatch, "0.5", analysis=_analysis(release_era=ERA, vocal_gender="남성"),
+                          answers=[ClarifyAnswer(slot="genre", value="댄스")])
+    assert GENRE_DANCE in _filtered_calls(calls)[0]["metadata_filter"]["$and"]
+
+
+def test_genre_policy_use_genre_zero_takes_precedence(monkeypatch) -> None:
+    """ATTR_FILTER_USE_GENRE=0이면 conditional이어도 장르는 없다(v53 C 보존) — 재질문 장르 답도 조건이 되지 않는다."""
+    monkeypatch.setenv("ATTR_FILTER_GENRE_POLICY", "conditional")
+    monkeypatch.setenv("ATTR_FILTER_USE_GENRE", "0")
+    assert sr._attr_filter_genre_policy_effective() == "genre_off"
+    analysis = _analysis(release_era=ERA, genre="록")  # 성별 없음 → conditional이면 장르 유지였을 질의
+    built, decision = sr._build_attribute_filter_with_policy(analysis, [ClarifyAnswer(slot="genre", value="댄스")])
+    assert built is None  # 시기+장르만 → 장르 없이는 닫힘(v53과 같다)
+    assert decision.policy == "genre_off" and not decision.use_genre and decision.reason == sr.ATTR_GENRE_REASON_SWITCH_OFF
+    _, calls, record = _search(monkeypatch, "0.5", analysis=_analysis(release_era=ERA, vocal_gender="남성", genre="록"),
+                               answers=[ClarifyAnswer(slot="genre", value="댄스")])
+    assert _filtered_calls(calls)[0]["metadata_filter"] == {"$and": [ERA_COND, MALE_COND]}
+    assert record.attr_filter_genre is None  # v53 스위치의 기록은 그대로(요청 단위 기록 없음)
+    assert {p.detail for s in record.songs.values() for p in s.paths if p.path == "attr_filter"} == {"가중치 0.50 · 장르 축 제외"}
+    monkeypatch.setenv("ATTR_FILTER_USE_GENRE", "1")
+    assert sr._attr_filter_genre_policy_effective() == "conditional"
+
+
+def test_conditional_drops_initial_genre_when_gender_condition_exists(monkeypatch) -> None:
+    """성별(남성/여성/혼성)이 유효하고 장르 답이 없으면 최초 질의의 장르를 조건에서 뺀다. 성별 조건은 그대로다."""
+    _conditional(monkeypatch)
+    for gender, cond in (("남성", MALE_COND), ("여성", {"vocal_gender": {"$in": ["여성", "혼성"]}}),
+                         ("혼성", {"vocal_gender": {"$eq": "혼성"}})):
+        built, decision = sr._build_attribute_filter_with_policy(_analysis(release_era=ERA, vocal_gender=gender, genre="록"), [])
+        assert built == {"$and": [ERA_COND, cond]}, gender
+        assert not decision.use_genre and decision.reason == sr.ATTR_GENRE_REASON_GENDER
+        assert decision.had_genre_condition and decision.gender == gender and decision.answered_genre == ""
+
+
+def test_conditional_keeps_genre_without_gender(monkeypatch) -> None:
+    """성별이 없으면(q112 유형: 시기+장르+형태) 기존대로 장르를 넣는다. 성별이 비어 있거나 모르는 값이어도 같다."""
+    _conditional(monkeypatch)
+    analysis = _analysis(release_era=ERA, genre="록", artist_type=ArtistTypeClue(values=["밴드"], confidence=0.7))
+    built, decision = sr._build_attribute_filter_with_policy(analysis, [])
+    assert built == sr._build_attribute_filter(analysis) == {"$and": [ERA_COND, GENRE_ROCK, {"type": {"$in": ["밴드", "인디밴드"]}}]}
+    assert decision.use_genre and decision.reason == sr.ATTR_GENRE_REASON_NO_GENDER
+    # 시기+장르만 → always와 같이 열린다(경로 비활성화 없음)
+    built, decision = sr._build_attribute_filter_with_policy(_analysis(release_era=ERA, genre="록"), [])
+    assert built == {"$and": [ERA_COND, GENRE_ROCK]} and decision.reason == sr.ATTR_GENRE_REASON_NO_GENDER
+    # 인식하지 못하는 성별 말은 분석 스키마(남성/여성/혼성)가 막으므로 답으로만 올 수 있다 — merge_answer가 무시해 성별 조건이 없다
+    built, decision = sr._build_attribute_filter_with_policy(
+        _analysis(release_era=ERA, genre="록"), [ClarifyAnswer(slot="vocal_gender", value="중성")])
+    assert built == {"$and": [ERA_COND, GENRE_ROCK]} and decision.reason == sr.ATTR_GENRE_REASON_NO_GENDER
+
+
+def test_conditional_gender_without_genre_is_a_noop_drop(monkeypatch) -> None:
+    """성별만 있고 장르가 없거나 등록 장르에 없는 말이면 뺄 장르가 없다 — 필터는 always와 같고 had_genre_condition=False다."""
+    _conditional(monkeypatch)
+    for genre in ("", "펑크록"):
+        analysis = _analysis(release_era=ERA, vocal_gender="남성", genre=genre)
+        built, decision = sr._build_attribute_filter_with_policy(analysis, [])
+        assert built == {"$and": [ERA_COND, MALE_COND]}
+        assert decision.reason == sr.ATTR_GENRE_REASON_GENDER and not decision.had_genre_condition
+
+
+def test_conditional_keeps_valid_answered_genre_even_with_gender(monkeypatch) -> None:
+    """n011 유형: 시기+성별 질의에 2턴 장르 답 "댄스" → 성별이 있어도 답한 장르는 조건에 들어간다(B와 같다)."""
+    _conditional(monkeypatch)
+    analysis = _analysis(release_era=ERA, vocal_gender="남성")
+    answers = [ClarifyAnswer(slot="genre", value="댄스")]
+    built, decision = sr._build_attribute_filter_with_policy(analysis, answers)
+    assert built == {"$and": [ERA_COND, MALE_COND, GENRE_DANCE]}
+    assert decision.use_genre and decision.reason == sr.ATTR_GENRE_REASON_ANSWERED and decision.answered_genre == "댄스"
+    # 최초 질의에 장르가 있어도(록) 답(댄스)이 그것을 고치고 조건이 된다 — merge_answer의 규칙 그대로
+    built, decision = sr._build_attribute_filter_with_policy(_analysis(release_era=ERA, vocal_gender="남성", genre="록"), answers)
+    assert built == {"$and": [ERA_COND, MALE_COND, GENRE_DANCE]} and decision.reason == sr.ATTR_GENRE_REASON_ANSWERED
+    # 라우터 경로에서도 같다(v52 결함 수정 경로 — 답은 필터에만, 텍스트 질의 인자는 그대로)
+    _, calls, record = _search(monkeypatch, "0.5", analysis=analysis, answers=answers)
+    assert _filtered_calls(calls)[0]["metadata_filter"] == {"$and": [ERA_COND, MALE_COND, GENRE_DANCE]}
+    assert record.attr_filter_genre == {
+        "policy": "conditional", "use_genre": True, "reason": "answered_genre",
+        "had_genre_condition": True, "answered_genre": "댄스", "gender": "남성",
+    }
+    assert {p.detail for s in record.songs.values() for p in s.paths if p.path == "attr_filter"} == {"가중치 0.50 · 장르 유지(재질문 장르 답)"}
+
+
+def test_conditional_ignores_skipped_empty_and_unregistered_genre_answers(monkeypatch) -> None:
+    """모름(skipped)·빈 값·등록 장르에 없는 답("펑크록")은 유효한 장르 답이 아니다 → 성별이 있으면 최초 장르를 뺀다."""
+    _conditional(monkeypatch)
+    analysis = _analysis(release_era=ERA, vocal_gender="남성", genre="록")
+    for answers in (
+        [ClarifyAnswer(slot="genre", skipped=True)],
+        [ClarifyAnswer(slot="genre", value="   ")],
+        [ClarifyAnswer(slot="genre", value="펑크록")],
+        [ClarifyAnswer(slot="vocal_gender", skipped=True)],
+    ):
+        built, decision = sr._build_attribute_filter_with_policy(analysis, answers)
+        assert built == {"$and": [ERA_COND, MALE_COND]}, answers
+        assert not decision.use_genre and decision.reason == sr.ATTR_GENRE_REASON_GENDER, answers
+    # 등록 장르에 없는 답은 always에서도 조건이 아니다 — 두 정책의 필터가 같다(제외와 무효 답의 차이는 사유 기록에만 있다)
+    monkeypatch.setenv("ATTR_FILTER_GENRE_POLICY", "always")
+    built, _ = sr._build_attribute_filter_with_policy(_analysis(release_era=ERA, vocal_gender="남성"), [ClarifyAnswer(slot="genre", value="펑크록")])
+    assert built == {"$and": [ERA_COND, MALE_COND]}
+
+
+def test_conditional_genre_answer_correction_and_accumulation(monkeypatch) -> None:
+    """같은 슬롯을 두 번 답하면 마지막 답이 앞의 답을 고친다(merge_answer와 같다). 뒤의 모름 답은 앞의 유효한 답을 지우지 않는다.
+    마지막 답이 무효(등록 장르 밖)면 유효한 장르 답이 없는 것이고, 성별 답은 장르와 따로 누적된다."""
+    _conditional(monkeypatch)
+    analysis = _analysis(release_era=ERA, vocal_gender="남성", genre="록")
+    built, decision = sr._build_attribute_filter_with_policy(analysis, [
+        ClarifyAnswer(slot="genre", value="발라드"), ClarifyAnswer(slot="genre", value="댄스"),
+    ])
+    assert built == {"$and": [ERA_COND, MALE_COND, GENRE_DANCE]} and decision.answered_genre == "댄스"
+    built, decision = sr._build_attribute_filter_with_policy(analysis, [
+        ClarifyAnswer(slot="genre", value="댄스"), ClarifyAnswer(slot="genre", skipped=True),
+    ])
+    assert built == {"$and": [ERA_COND, MALE_COND, GENRE_DANCE]} and decision.reason == sr.ATTR_GENRE_REASON_ANSWERED
+    built, decision = sr._build_attribute_filter_with_policy(analysis, [
+        ClarifyAnswer(slot="genre", value="댄스"), ClarifyAnswer(slot="genre", value="펑크록"),
+    ])
+    assert built == {"$and": [ERA_COND, MALE_COND]} and decision.reason == sr.ATTR_GENRE_REASON_GENDER
+    # 성별 답이 2턴에 와서 성별 조건이 생기면 그때부터 최초 장르를 뺀다(1턴은 성별 없음 → 유지)
+    era_genre = _analysis(release_era=ERA, genre="록")
+    built, decision = sr._build_attribute_filter_with_policy(era_genre, [])
+    assert built == {"$and": [ERA_COND, GENRE_ROCK]} and decision.reason == sr.ATTR_GENRE_REASON_NO_GENDER
+    built, decision = sr._build_attribute_filter_with_policy(era_genre, [ClarifyAnswer(slot="vocal_gender", value="여성")])
+    assert built == {"$and": [ERA_COND, {"vocal_gender": {"$in": ["여성", "혼성"]}}]} and decision.reason == sr.ATTR_GENRE_REASON_GENDER
+    # 성별 답 + 장르 답이 함께 누적되면 둘 다 조건이다
+    built, decision = sr._build_attribute_filter_with_policy(era_genre, [
+        ClarifyAnswer(slot="vocal_gender", value="여성"), ClarifyAnswer(slot="genre", value="댄스"),
+    ])
+    assert built == {"$and": [ERA_COND, {"vocal_gender": {"$in": ["여성", "혼성"]}}, GENRE_DANCE]}
+    assert decision.reason == sr.ATTR_GENRE_REASON_ANSWERED
+
+
+def test_conditional_does_not_change_other_axes_gate_or_boosts(monkeypatch) -> None:
+    """형태·시기 축은 그대로, era_plus 게이트는 성별이 있으니 열린 채이며, 장르 가산(genre_match)은 제외와 무관하게 남는다.
+    two_axes 게이트에서는 뺀 장르가 축으로도 세지 않는다."""
+    _conditional(monkeypatch)
+    analysis = _analysis(release_era=ERA, vocal_gender="남성", genre="록", artist_type=ArtistTypeClue(values=["밴드"], confidence=0.7))
+    built, _ = sr._build_attribute_filter_with_policy(analysis, [])
+    assert built == {"$and": [ERA_COND, MALE_COND, {"type": {"$in": ["밴드", "인디밴드"]}}]}
+    monkeypatch.setenv("ATTR_FILTER_GATE", "two_axes")
+    built, decision = sr._build_attribute_filter_with_policy(_analysis(vocal_gender="남성", genre="록"), [])
+    assert built is None and decision.reason == sr.ATTR_GENRE_REASON_GENDER  # 성별+장르 → 장르를 빼면 축 하나 → 닫힘
+    monkeypatch.delenv("ATTR_FILTER_GATE", raising=False)
+    monkeypatch.setenv("ATTR_FILTER_WEIGHT", "0.5")
+    text_hits = [_track(f"t{i}", title=f"텍스트{i}", release_date="1999.01.01") for i in range(1, 61)]
+    filtered = [_track("f1", title="조건곡", release_date="2005.05.05", genre="록/메탈", vocal_gender="남성")]
+    service = _RecordingTextService(text_hits, filtered)
+    router = _router(text_hits)
+    router._text_svc = service
+    rec = ExplainRecorder("q")
+    _run(router, _analysis(release_era=ERA, vocal_gender="남성", genre="록"), top_k=30, use_rerank=False, recorder=rec)
+    assert _filtered_calls(service.calls)[0]["metadata_filter"] == {"$and": [ERA_COND, MALE_COND]}
+    assert "genre_match" in {adj.rule for adj in rec.record.songs["f1"].adjustments}
+    assert rec.record.attr_filter_genre["reason"] == "gender_condition" and rec.record.attr_filter_genre["use_genre"] is False
+    assert {p.detail for s in rec.record.songs.values() for p in s.paths if p.path == "attr_filter"} == {"가중치 0.50 · 장르 제외(성별 조건 있음)"}
+
+
+def test_conditional_with_weight_zero_does_nothing(monkeypatch) -> None:
+    """보조 경로가 꺼져 있으면(가중 0) 정책은 아무 일도 하지 않는다 — 필터·호출·기록 없음."""
+    _conditional(monkeypatch)
+    _, calls, record = _search(monkeypatch, "0", analysis=_analysis(release_era=ERA, vocal_gender="남성", genre="록"),
+                               answers=[ClarifyAnswer(slot="genre", value="댄스")])
+    assert not _filtered_calls(calls)
+    assert record.attr_filter_genre is None
+    assert not any(p.path == "attr_filter" for s in record.songs.values() for p in s.paths)
+
+
+def test_conditional_is_recorded_in_runinfo_switches(monkeypatch) -> None:
+    from src.retrieval.evaluate_search_accuracy import _ranking_switches
+    _conditional(monkeypatch)
+    sw = _ranking_switches(None)
+    assert sw["attr_filter_genre_policy"] == "conditional" and sw["attr_filter_genre_policy_effective"] == "conditional"
+    monkeypatch.setenv("ATTR_FILTER_USE_GENRE", "0")
+    sw = _ranking_switches(None)
+    assert sw["attr_filter_genre_policy"] == "conditional" and sw["attr_filter_genre_policy_effective"] == "genre_off"
+    monkeypatch.delenv("ATTR_FILTER_GENRE_POLICY", raising=False)
+    monkeypatch.delenv("ATTR_FILTER_USE_GENRE", raising=False)
+    sw = _ranking_switches(None)
+    assert sw["attr_filter_genre_policy"] == "always" and sw["attr_filter_genre_policy_effective"] == "always"

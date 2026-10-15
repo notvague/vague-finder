@@ -455,6 +455,10 @@ class SearchExplain:
     order_rules_applied: bool = False
     # 피드백 후보 보충. 스위치가 꺼져 있었으면 None이다 — "조회했지만 없었다"와 구분한다.
     feedback: Optional[FeedbackExplain] = None
+    # 속성 조건 보조 필터의 장르 축 판정(v54 실험 정책 `ATTR_FILTER_GENRE_POLICY=conditional`일 때만).
+    # {policy, use_genre, reason, had_genre_condition, answered_genre, gender}. 기본 정책·꺼짐·v53 스위치에서는 None —
+    # 기존 기록을 바꾸지 않는다.
+    attr_filter_genre: Optional[Dict[str, Any]] = None
 
     @property
     def rerank_runs_applied(self) -> int:
@@ -545,6 +549,10 @@ class ExplainRecorder:
 
     def note_order_rules_applied(self) -> None:
         self.record.order_rules_applied = True
+
+    def set_attr_filter_genre(self, decision: Dict[str, Any]) -> None:
+        """속성 조건 보조 필터의 장르 축 판정(v54 실험 정책). 라우터는 conditional 정책이 실제로 필터를 만들었을 때만 부른다."""
+        self.record.attr_filter_genre = dict(decision)
 
     def note_rerank_run(self, status: str, judged_ids: Iterable[str]) -> None:
         """리랭커 실행 한 번을 결과와 함께 기록한다.
@@ -731,6 +739,9 @@ class _NullRecorder(ExplainRecorder):
         return
 
     def note_order_rules_applied(self) -> None:
+        return
+
+    def set_attr_filter_genre(self, decision) -> None:
         return
 
     def note_rerank_run(self, status, judged_ids) -> None:

@@ -1,0 +1,17 @@
+ATTR_FILTER_WEIGHT=0.5
+ATTR_FILTER_K=30
+ATTR_FILTER_GATE=era_plus
+ATTR_FILTER_USE_GENRE=1
+ATTR_FILTER_GENRE_POLICY=conditional
+CONTEXT_WEIGHT=0.5(default)
+POLICIES=flow
+IDS=n002,n011,n014,n016,n030,n033,n040,n042,n081,n096,n097
+QDRANT_PATH=artifacts/qdrant_eval_b
+RERANKER_ENABLED=false
+AUDIO_FUSION_SCALE=1
+git_sha=6a0d620 (+ uncommitted v54 changes)
+collection=vaguefinder-audio-512__dev
+collection=vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf
+collection=vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf
+collection=vaguefinder-image-768__dev
+collection=vaguefinder-text-1024-koe5__dev
