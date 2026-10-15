@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from src.backend.api.dependencies import close_gemini_clients, close_vector_client, get_vector_client, reranker_backend
 from src.common import gemini_client as gc
 from src.common.gemini_client import RETRIEVAL, GeminiConfigError
+from src.retrieval.gemini_listwise_reranker import GeminiListwiseRerankerConfig
 from src.backend.api.routes import search
 from src.backend.api.routes import feedback
 from src.feedback import worker as feedback_worker
@@ -18,6 +19,19 @@ from src.backend import warmup
 from src.retrieval import timing
 
 STATIC_DIR = Path(__file__).resolve().parents[1] / "frontend" / "static"
+
+
+def _gemini_reranker_models() -> list[str]:
+    """기동 검사에서 질의 분석 모델과 함께 확인할 리랭커 모델. 리랭커 백엔드 값 검증도 겸한다(오타·제거된 값은 여기서 ValueError).
+
+    리랭커는 `GEMINI_RERANK_MODEL_NAME`을 먼저 읽어 분석 모델(`GEMINI_MODEL_NAME`)과 다를 수 있다. 분석 모델만 확인하면
+    리랭커 모델 오타에도 서버가 정상으로 뜨고 모든 리랭킹이 404 → failed로 조용히 내려간다(리뷰). 리랭커가 Gemini listwise가
+    아니거나 꺼져 있으면 빈 목록이다. 조용히 CE로 내려가는 경우(프로젝트 없음)는 기동 검사가 먼저 프로젝트 없음으로 멈춘다.
+    """
+    if reranker_backend() != "gemini_listwise":
+        return []
+    config = GeminiListwiseRerankerConfig.from_env()
+    return [config.model_name] if config.enabled and config.model_name else []
 
 
 @asynccontextmanager
@@ -48,15 +62,16 @@ async def lifespan(app: FastAPI):
     # 벡터 DB 실패와 달리 다시 시도해도 낫지 않는 설정 오류라 서버를 띄우지 않는다. 연결 불가·429 같은 일시 장애는 경고만 —
     # 요청 경로에서 다시 시도한다(실패하면 규칙 폴백·검색 순서 + failed로 기록된다).
     # 리랭커 백엔드 값의 오타·제거된 값(claude_listwise)도 기동에서 멈춘다 — 조용히 Cross-Encoder로 내려가면 Vertex로 쟀다고 믿게 된다.
-    reranker_backend()
+    # try 바깥에서 — 리랭커 백엔드 값 오류(ValueError)는 연결 문제가 아니라 설정 오류라 경고로 삼키면 안 된다.
+    reranker_models = _gemini_reranker_models()
     try:
-        route = gc.verify_vertex_setup(RETRIEVAL)
+        route = gc.verify_vertex_setup(RETRIEVAL, extra_models=reranker_models)
     except GeminiConfigError:
         raise
     except Exception as exc:  # noqa: BLE001 - 설정이 아니라 연결 문제
         print(f"[경고] Vertex AI 확인 실패(첫 검색에서 다시 시도): {type(exc).__name__}: {exc}")
     else:
-        print(f"[Gemini] Vertex AI 확인: location={route.get('location')} model={route.get('model')} probe={route.get('probe')}")
+        print(f"[Gemini] Vertex AI 확인: location={route.get('location')} models={route.get('models') or [route.get('model')]} probe={route.get('probe')}")
 
     try:
         get_vector_client()

@@ -46,7 +46,7 @@ from src.retrieval.explain import (
     render_ko,
 )
 from src.common import gemini_client as gc
-from src.common.gemini_client import RETRIEVAL, GeminiConfigError, gemini_route_info
+from src.common.gemini_client import RETRIEVAL, GeminiConfigError, backend_setting, gemini_route_info
 from src.retrieval import search_router as _search_router
 from src.retrieval.clarify import reranker_corrections_mode, reranker_input_order_mode
 from src.retrieval.gemini_listwise_reranker import type_slot_label
@@ -77,19 +77,41 @@ def describe_reranker(reranker: Any) -> str:
     return f"리랭커: {backend} ({source}){note}"
 
 
-def preflight_gemini(reranker: Any, *, live_analysis: bool) -> "dict | None":
-    """Gemini를 부를 측정이면 시작 전에 Vertex 설정·인증·모델을 확인한다(무료 countTokens 1회).
+def _gemini_reranker_model(reranker: Any) -> "str | None":
+    """이 실행이 리랭킹에 Gemini를 부르면 그 모델 이름(`GEMINI_RERANK_MODEL_NAME` 반영), 아니면 None."""
+    if _actual_backend(reranker) == "gemini_listwise" and bool(getattr(reranker, "enabled", False)):
+        return getattr(getattr(reranker, "config", None), "model_name", None) or None
+    return None
 
+
+def _uses_gemini(reranker: Any, *, live_analysis: bool) -> bool:
+    """이 실행이 Gemini를 한 번이라도 부르는가 — 실시간 분석이거나 리랭커가 켜진 Gemini listwise일 때. 캐시 분석은 호출이 아니다."""
+    return live_analysis or _gemini_reranker_model(reranker) is not None
+
+
+def _gemini_route_record(reranker: Any, *, live_analysis: bool) -> dict:
+    """runinfo의 `gemini` 칸. Gemini를 부르지 않은 실행은 경로를 적지 않고 `unused`다(설정값만 남긴다)."""
+    if _uses_gemini(reranker, live_analysis=live_analysis):
+        return gemini_route_info(RETRIEVAL)
+    try:
+        setting = backend_setting(RETRIEVAL)
+    except GeminiConfigError:
+        setting = "invalid"
+    return {"backend": "unused", "setting": setting}
+
+
+def preflight_gemini(reranker: Any, *, live_analysis: bool) -> "dict | None":
+    """Gemini를 부를 측정이면 시작 전에 Vertex 설정·인증·모델을 확인한다(모델마다 무료 countTokens 1회).
+
+    질의 분석 모델과, 리랭커가 Gemini listwise면 그 모델(`GEMINI_RERANK_MODEL_NAME`이 다를 수 있다)까지 확인한다.
     설정 오류(GeminiConfigError)는 올려서 멈춘다 — 176건이 전부 폴백·failed로 채워진 뒤에 아는 것보다 낫다.
     연결 문제는 경고만 남기고 진행한다(호출마다 다시 시도하고, 실패는 failed·폴백으로 기록된다).
     """
-    uses_gemini = live_analysis or (
-        _actual_backend(reranker) == "gemini_listwise" and bool(getattr(reranker, "enabled", False))
-    )
-    if not uses_gemini:
+    if not _uses_gemini(reranker, live_analysis=live_analysis):
         return None
+    rerank_model = _gemini_reranker_model(reranker)
     try:
-        info = gc.verify_vertex_setup(RETRIEVAL)
+        info = gc.verify_vertex_setup(RETRIEVAL, extra_models=[rerank_model] if rerank_model else [])
     except GeminiConfigError:
         raise
     except Exception as exc:  # noqa: BLE001 - 설정이 아니라 연결 문제
@@ -97,7 +119,7 @@ def preflight_gemini(reranker: Any, *, live_analysis: bool) -> "dict | None":
         return None
     print(
         f"Gemini 경로: {info.get('backend')} location={info.get('location')} "
-        f"model={info.get('model')} probe={info.get('probe')}",
+        f"models={info.get('models') or [info.get('model')]} probe={info.get('probe')}",
         flush=True,
     )
     return info
@@ -485,8 +507,10 @@ def collect_run_info(args, *, reranker, analysis_source: dict) -> dict:
         },
         # 검색(질의 분석·리랭커)이 Gemini를 어느 경로·위치로 불렀는지(vertex — 2026-10-15부터 전용)와 용도 설정(GEMINI_RETRIEVAL_BACKEND).
         # 같은 모델이어도 경로가 바뀌면 출력이 달라진다(results_clarify_v11_prebonus) — AI Studio(api_key)로 잰 옛 기준선과는
-        # 직접 비교하지 않는다. 프로젝트 ID는 적지 않는다.
-        "gemini": gemini_route_info(RETRIEVAL),
+        # 직접 비교하지 않는다. 프로젝트 ID는 적지 않는다. **Gemini를 부르지 않은 실행**(CE 리랭커 + 분석 캐시, 리랭킹 끔)은
+        # `unused`다 — .env에 프로젝트가 있다고 vertex로 적으면 CE 기준선 재현이 Vertex 실행처럼 보여 "경로가 다른 실행끼리는
+        # 비교하지 않는다"는 규칙이 무너진다(리뷰). 판정은 preflight_gemini와 같은 조건이다.
+        "gemini": _gemini_route_record(reranker, live_analysis=analysis_source.get("mode") == "live"),
         # 실험 스위치. **실제로 적용된 값을 코드에서 읽는다** — 환경변수를 다시
         # 읽으면 기록과 적용이 갈릴 수 있고, 폴더명과 수기 문서에만 의존하면
         # 나중에 어느 조건의 결과인지 알 수 없다.

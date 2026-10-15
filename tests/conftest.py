@@ -31,9 +31,9 @@ class OfflineCredentials(google.auth.credentials.Credentials):
         raise RuntimeError("테스트는 Vertex AI를 부르지 않는다 — ADC 토큰 요청 차단(tests/conftest.py)")
 
 
-def _stub_verify(purpose=None, *, model=None, probe=True):
+def _stub_verify(purpose=None, *, model=None, extra_models=(), probe=True):
     return {"backend": "vertex", "location": "test", "setting": "vertex",
-            "model": model or "test-model", "probe": "skipped-in-tests"}
+            "model": model or "test-model", "models": [model or "test-model", *extra_models], "probe": "skipped-in-tests"}
 
 
 @pytest.fixture(autouse=True)

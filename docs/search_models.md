@@ -31,8 +31,9 @@ RERANKER_BACKEND=gemini_listwise
 
 ## 기동·시작 검사와 실패 시 동작
 
-- **서버**(`main.lifespan`): `RERANKER_BACKEND` 값 → 경로 설정 → 프로젝트 → ADC → 검색 모델 무료 호출(countTokens 1회, 토큰 과금 없음)
-  순으로 확인한다. 설정·권한 오류(`GeminiConfigError`: HTTP 400·401·403·404, 프로젝트·ADC 없음, 경로 설정 오타)면 서버가 **뜨지 않는다**.
+- **서버**(`main.lifespan`): `RERANKER_BACKEND` 값 → 경로 설정 → 프로젝트 → ADC → 모델 무료 호출(countTokens, 토큰 과금 없음)
+  순으로 확인한다. 모델은 질의 분석 모델(`GEMINI_MODEL_NAME`)과, 리랭커가 켜진 Gemini listwise면 그 모델(`GEMINI_RERANK_MODEL_NAME`이
+  다르면 한 번 더)이다 — 리랭커 모델 오타로 서버는 정상인데 리랭킹만 계속 failed로 내려가는 일을 막는다. 설정·권한 오류(`GeminiConfigError`: HTTP 400·401·403·404, 프로젝트·ADC 없음, 경로 설정 오타)면 서버가 **뜨지 않는다**.
   ADC 파일이 있어도 토큰 갱신이 `invalid_grant`(철회·만료·계정 변경)로 거절되면 재로그인이 필요한 설정 오류로 멈춘다.
   429(RESOURCE_EXHAUSTED)·5xx·연결 불가·인증 서버 일시 장애(google-auth가 retryable로 표시)는 설정 오류가 아니다 — 확인 호출은
   SDK가 최대 3회(1~4초 대기) 다시 시도하고, 그래도 남으면 경고만 남기고 뜬다(요청 경로에서 다시 시도한다).
@@ -48,7 +49,8 @@ RERANKER_BACKEND=gemini_listwise
 
 ## 기록과 평가
 
-- 측정 runinfo의 `gemini`에 `backend=vertex` · `location` · `setting`이 남는다. 분석 캐시 지문(`meta.analyzer`)에도
+- 측정 runinfo의 `gemini`에 `backend=vertex` · `location` · `setting`이 남는다. Gemini를 한 번도 부르지 않은 실행(Cross-Encoder + 분석 캐시,
+  리랭킹 끔)은 `backend=unused`다 — CE 기준선 재현이 Vertex 실행처럼 보이지 않게. 분석 캐시 지문(`meta.analyzer`)에도
   `gemini_backend` · `gemini_location`이 들어간다. 프로젝트 ID는 어디에도 적지 않는다.
 - 2026-10-15 이전 캐시(`analysis_cache_v06/v09/v10_dev.json`, `results_v46_*/analysis_cache_*_ctx.json`)는 전부 AI Studio 분석이다.
   경로 키가 없는 캐시는 `api_key`로 본다. `build_analysis_cache`는 `--output`의 캐시가 **다른 경로**면 `--force`·`--reuse-despite-drift`로도

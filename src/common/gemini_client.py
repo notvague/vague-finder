@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 import os
 import threading
-from typing import Any, Optional
+from typing import Any, Optional, Sequence
 
 logger = logging.getLogger(__name__)
 
@@ -234,8 +234,18 @@ def probe_model(model: str, *, purpose: Optional[str] = None) -> dict:
             "probe_tokens": getattr(counted, "total_tokens", None)}
 
 
-def _verify_vertex_setup(purpose: Optional[str] = None, *, model: Optional[str] = None, probe: bool = True) -> dict:
-    """기동·측정 시작 검사: 설정(경로·프로젝트) → ADC → (probe) 모델 무료 호출 한 번.
+def _verify_vertex_setup(
+    purpose: Optional[str] = None,
+    *,
+    model: Optional[str] = None,
+    extra_models: Sequence[str] = (),
+    probe: bool = True,
+) -> dict:
+    """기동·측정 시작 검사: 설정(경로·프로젝트) → ADC → (probe) 모델마다 무료 호출 한 번.
+
+    `model`은 이 용도의 기본 모델(검색이면 질의 분석 모델). `extra_models`는 같은 실행이 부를 다른 모델 — 리랭커가
+    `GEMINI_RERANK_MODEL_NAME`으로 분석 모델과 다른 모델을 쓰면 그것도 확인한다(리뷰: 리랭커 모델 오타면 서버는 정상으로
+    뜨고 모든 리랭킹이 404 → failed로 조용히 내려갔다). 같은 이름은 한 번만 부른다.
 
     GeminiConfigError는 다시 시도해도 낫지 않는 오류라 호출부가 멈춘다. 그 밖의 예외(연결 불가 등)는 호출부가 경고만
     남기고 진행한다 — 요청 경로의 폴백·실패 기록이 그대로 남는다.
@@ -243,17 +253,29 @@ def _verify_vertex_setup(purpose: Optional[str] = None, *, model: Optional[str] 
     info = require_vertex(purpose)
     vertex_credentials()
     model = model or (retrieval_model_name() if purpose == RETRIEVAL else crawl_model_name())
+    models = list(dict.fromkeys([model, *[m for m in extra_models if m]]))
     info["model"] = model
+    info["models"] = models
     if probe:
-        info.update(probe_model(model, purpose=purpose))
+        for name in models:
+            probed = probe_model(name, purpose=purpose)
+            if name == model:
+                info.update(probed)
+        info["probe"] = "ok"
     else:
         info["probe"] = "skipped"
     return info
 
 
-def verify_vertex_setup(purpose: Optional[str] = None, *, model: Optional[str] = None, probe: bool = True) -> dict:
+def verify_vertex_setup(
+    purpose: Optional[str] = None,
+    *,
+    model: Optional[str] = None,
+    extra_models: Sequence[str] = (),
+    probe: bool = True,
+) -> dict:
     """공개 진입점. 테스트 conftest가 통째로 바꿔 끼운다 — 테스트는 ADC도 Vertex도 건드리지 않는다."""
-    return _verify_vertex_setup(purpose, model=model, probe=probe)
+    return _verify_vertex_setup(purpose, model=model, extra_models=extra_models, probe=probe)
 
 
 def gemini_route_info(purpose: Optional[str] = None) -> dict:

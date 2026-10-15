@@ -338,7 +338,8 @@ def test_verify_vertex_setup_checks_settings_before_touching_the_network(monkeyp
     monkeypatch.delenv("GEMINI_RETRIEVAL_BACKEND")
     monkeypatch.setenv("GEMINI_MODEL_NAME", "검색-모델")
     assert _real_verify(gc.RETRIEVAL, probe=False) == {
-        "backend": "vertex", "location": "global", "setting": "vertex", "model": "검색-모델", "probe": "skipped",
+        "backend": "vertex", "location": "global", "setting": "vertex", "model": "검색-모델", "models": ["검색-모델"],
+        "probe": "skipped",
     }
     assert captured == []
     info = _real_verify(gc.RETRIEVAL)
@@ -346,6 +347,79 @@ def test_verify_vertex_setup_checks_settings_before_touching_the_network(monkeyp
     # 크롤링 용도(없음)는 크롤링 모델을 본다
     monkeypatch.setenv("GEMINI_CRAWL_MODEL_NAME", "크롤-모델")
     assert _real_verify()["model"] == "크롤-모델"
+
+
+def test_verify_probes_the_reranker_model_too_when_it_differs(monkeypatch, captured):
+    """분석 모델만 확인하면 리랭커 모델(`GEMINI_RERANK_MODEL_NAME`) 오타에도 서버가 정상으로 뜬다(리뷰). 같은 이름은 한 번만."""
+    import google.genai as genai_mod
+
+    monkeypatch.setenv("GCP_PROJECT_ID", "proj-1")
+    monkeypatch.setenv("GEMINI_MODEL_NAME", "analysis-model")
+    models = _FakeModels()
+    monkeypatch.setattr(genai_mod, "Client", lambda **kwargs: _FakeClient(models=models, **kwargs))
+
+    info = _real_verify(gc.RETRIEVAL, extra_models=["rerank-model"])
+    assert info["models"] == ["analysis-model", "rerank-model"] and info["probe"] == "ok"
+    assert [m for m, _ in models.calls] == ["analysis-model", "rerank-model"]
+
+    models.calls.clear()
+    assert _real_verify(gc.RETRIEVAL, extra_models=["analysis-model", ""])["models"] == ["analysis-model"]
+    assert [m for m, _ in models.calls] == ["analysis-model"], "같은 이름은 한 번만 부른다"
+
+
+def _probe_404_for(bad_model: str):
+    """모델 하나만 없는 Vertex를 흉내 낸다."""
+    from google.genai import errors
+
+    class _Models(_FakeModels):
+        def count_tokens(self, *, model, contents):
+            if model == bad_model:
+                self.calls.append((model, contents))  # 거절된 호출도 기록한다 — 어느 모델까지 확인했는지 본다
+                raise errors.ClientError(404, {"error": {"message": f"{model} not found", "status": "NOT_FOUND"}})
+            return super().count_tokens(model=model, contents=contents)
+
+    return _Models()
+
+
+def test_server_refuses_to_start_on_a_bad_reranker_model(monkeypatch):
+    """리랭커가 켜진 Gemini listwise면 그 모델도 기동에서 확인한다. 리랭커가 CE거나 꺼져 있으면 분석 모델만 본다."""
+    import google.genai as genai_mod
+    from fastapi.testclient import TestClient
+
+    monkeypatch.setenv("GCP_PROJECT_ID", "proj-1")
+    monkeypatch.setenv("GEMINI_MODEL_NAME", "analysis-model")
+    monkeypatch.setenv("GEMINI_RERANK_MODEL_NAME", "typo-model")
+    monkeypatch.delenv("RERANKER_BACKEND", raising=False)
+    monkeypatch.delenv("RERANKER_ENABLED", raising=False)
+    monkeypatch.delenv("GEMINI_RERANK_ENABLED", raising=False)
+    models = _probe_404_for("typo-model")
+    monkeypatch.setattr(genai_mod, "Client", lambda **kwargs: _FakeClient(models=models, **kwargs))
+    monkeypatch.setattr(gc, "verify_vertex_setup", _real_verify)
+    opened = []
+    monkeypatch.setattr(backend_main, "get_vector_client", lambda: opened.append(1))
+
+    with pytest.raises(GeminiConfigError, match="typo-model.*404"):
+        with TestClient(backend_main.app):
+            pass
+    assert opened == [] and [m for m, _ in models.calls] == ["analysis-model", "typo-model"]
+
+    # 리랭커를 끄거나 CE로 두면 리랭커 모델은 보지 않는다 — 서버가 뜬다
+    for env in ({"RERANKER_ENABLED": "0"}, {"RERANKER_BACKEND": "cross_encoder"}):
+        models.calls.clear()
+        for key, value in env.items():
+            monkeypatch.setenv(key, value)
+        with TestClient(backend_main.app) as client:
+            assert client.get("/health").status_code == 200
+        assert [m for m, _ in models.calls] == ["analysis-model"], env
+        for key in env:
+            monkeypatch.delenv(key)
+
+    # 리랭커 모델이 분석 모델과 같으면 한 번만 부른다
+    models.calls.clear()
+    monkeypatch.setenv("GEMINI_RERANK_MODEL_NAME", "analysis-model")
+    with TestClient(backend_main.app) as client:
+        assert client.get("/health").status_code == 200
+    assert [m for m, _ in models.calls] == ["analysis-model"]
 
 
 def test_crawl_and_retrieval_models_are_separate(monkeypatch):
