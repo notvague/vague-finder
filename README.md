@@ -116,6 +116,7 @@ Gemini listwise는 두 줄이다. 전환 근거가 된 측정(v32~v34)은 드라
 | 곡 폴더 (`meta.json` · `audio.m4a` · `cover.jpg`) | `VAGUEFINDER_DATA_DIR` | 팀 드라이브 (`.env.example` 참고) |
 | 곡 레코드 · 임베딩 벡터 | `data/all_songs.jsonl` · `artifacts/embeddings/` | [`docs/vector_backend.md`](docs/vector_backend.md) 절차 |
 | 지도 화면 데이터 | `src/frontend/static/map_data.json` | 팀 드라이브 `vague-finder/map_data.json`, 또는 `venv/bin/python -m src.pipelines.build_map` (곡 레코드와 임베딩 필요) |
+| Gemini(Vertex AI) 인증 키 | `secrets/vertex-sa.json` | 팀 드라이브 `vague-finder/secrets/`. 비밀번호와 같다 — 메신저·공개 저장소에 올리지 않는다 |
 
 ## 시작하기
 
@@ -129,15 +130,18 @@ venv/bin/pip install -r requirements.txt
 
 # 2. 환경 변수 — Gemini는 Vertex AI 전용: GCP_PROJECT_ID(크레딧이 연결된 프로젝트) + 인증
 #    AI Studio 키(GEMINI_API_KEY)는 쓰지 않는다. 서버는 기동에서 설정·인증·모델을 확인한다 (.env.example 3)
-cp .env.example .env
-#    인증 ① 팀 공용 서비스 계정 키: 팀 드라이브의 vertex-sa.json을 secrets/ 에 두면 끝 (.env 기본값이 가리킨다. Docker도 같다)
-#    인증 ② 개인 ADC: 프로젝트에 초대된 계정으로 한 번 실행하고 .env의 GOOGLE_APPLICATION_CREDENTIALS 줄을 지운다
-gcloud auth application-default login
+cp .env.example .env            # GCP_PROJECT_ID 값은 팀 드라이브 안내를 본다
 
-# 3. 벡터 DB 적재 (data/all_songs.jsonl과 artifacts/embeddings/가 있어야 한다)
+# 3. 인증 — 팀 공용 서비스 계정 키(기본). 팀 드라이브의 vertex-sa.json을 secrets/ 에 두면 끝이다
+#    .env 기본값 GOOGLE_APPLICATION_CREDENTIALS=secrets/vertex-sa.json 이 가리킨다 (상대 경로는 레포 루트 기준, Docker도 같다)
+mkdir -p secrets && cp ~/Downloads/vertex-sa.json secrets/vertex-sa.json
+#    대신 개인 ADC를 쓰려면: 프로젝트에 초대된 Google 계정으로 `gcloud auth application-default login`을 한 번 실행하고
+#    .env의 GOOGLE_APPLICATION_CREDENTIALS 줄을 지운다 (키 파일 방식과 함께 두면 키 파일이 우선한다)
+
+# 4. 벡터 DB 적재 (data/all_songs.jsonl과 artifacts/embeddings/가 있어야 한다)
 venv/bin/python -m src.vector_db.cli.qdrant_load --recreate
 
-# 4. 서버 실행
+# 5. 서버 실행 — Docker면 같은 .env·secrets/ 로 `docker compose up -d backend`
 venv/bin/uvicorn src.backend.main:app --reload
 ```
 
