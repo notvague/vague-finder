@@ -312,6 +312,91 @@ def _performance_clue_similarity(
     )
 
 
+# 멜론 등록 장르(5,143곡 코퍼스의 `genre` 값, 2026-10-15). 분석의 장르("록"·"힙합")는 이 표기의 부분 문자열로
+# 맞춘다 — `_apply_explicit_boosts`의 `genre_match`(`want_genre in _norm(track.genre)`)와 같은 규칙이다.
+_MELON_GENRES = (
+    "발라드", "댄스", "랩/힙합", "인디음악", "록/메탈", "R&B/Soul", "국내드라마", "포크/블루스",
+    "일렉트로니카", "애니메이션/웹툰", "성인가요/트로트", "국내영화", "재즈", "키즈", "애시드/퓨전/팝",
+    "게임", "국내뮤지컬", "보사노바", "국외영화",
+)
+# 발매 시기 창이 이보다 넓으면("2000년대" 같은 10년 단위는 들어온다) 조건으로 쓰지 않는다 — 좁히는 힘이 없다.
+_ATTR_FILTER_MAX_ERA_YEARS = 12
+# payload `type` 표기 → 분석의 솔로/그룹/듀오/밴드. `canonical_artist_types`의 별칭 표를 거꾸로 쓴 것이다.
+_ARTIST_TYPE_PAYLOAD_VALUES = {
+    "솔로": ("솔로", "싱어송라이터"),
+    "그룹": ("그룹", "걸그룹", "혼성", "프로젝트그룹", "아이돌그룹", "혼성그룹"),
+    "듀오": ("듀오", "듀엣"),
+    "밴드": ("밴드", "인디밴드"),
+}
+
+
+def _build_attribute_filter(analysis: QueryAnalysis) -> Optional[Dict[str, Any]]:
+    """분석이 말한 시기·성별·장르·형태를 payload 필터로 — **속성 조건 보조 후보**(`ATTR_FILTER_WEIGHT`) 경로용.
+
+    v50 진단(experiments/reranking/results_v50_vertex_context): 후보 30 밖 정답 54건 중 15건은 세 기본 경로
+    어디서도 30위 안이 아니지만 깊이 제한을 풀고 속성 가산을 더하면 30위 안이었다(n002 1위 · t011 2위 · q112 4위).
+    경로 깊이를 넓히면 가산이 먼 곡을 끌어올려 손실도 났으므로(v23 `--path-k 40`), 깊이는 그대로 두고
+    **속성이 맞는 곡 안에서만** 같은 텍스트 질의로 한 번 더 검색한다. 전역 hard filter가 아니다 — 기존 후보는
+    그대로 남고 이 목록은 낮은 RRF 가중으로 더해진 뒤 기존 가산이 다시 검증한다.
+
+    조건의 뜻은 가산 규칙과 같게 둔다: 성별 남성/여성은 혼성도 허용(`vocal_gender_partial`), 장르는 등록 장르
+    부분 문자열(`genre_match`), 시기는 창 안의 연도(`_release_era_similarity`의 1.0 구간만 — 발매일이 문자열이라
+    범위 대신 연도별 `$text`), 형태는 `canonical_artist_types`의 별칭.
+
+    여는 조건은 `ATTR_FILTER_GATE`로 고른다:
+      - `era_plus`(기본, v51 채택): 시기 창 **그리고** 다른 축 하나 이상. v51 후보 단계에서 시기 없는 성별+장르/형태
+        필터(54건)는 10위 안 이득 0 · 손실 5였고, 시기만 있는 필터(1건)도 t071을 밀어냈다 — 시기가 좁힌 집합 안에서만 보조한다
+      - `two_axes`(비교용): 시기 창이 있거나, 그 밖의 축이 둘 이상. 성별 하나("남자 노래")는 3,000곡이라 좁히는 힘이 없고,
+        그런 목록은 텍스트 경로 상위와 거의 같아 표를 두 번 세는 셈이 된다
+    """
+    conditions: List[Dict[str, Any]] = []
+    axes = 0
+    gate = _attr_filter_gate()
+    era = analysis.release_era
+    has_era = bool(
+        analysis.has_release_era
+        and era.start_year is not None
+        and era.end_year is not None
+        and era.end_year >= era.start_year
+        and era.end_year - era.start_year + 1 <= _ATTR_FILTER_MAX_ERA_YEARS
+    )
+    if has_era:
+        conditions.append({"$or": [
+            {"release_date": {"$text": str(year)}}
+            for year in range(era.start_year, era.end_year + 1)
+        ]})
+    want_gender = (analysis.vocal_gender or "").strip()
+    if want_gender in ("남성", "여성"):
+        conditions.append({"vocal_gender": {"$in": [want_gender, "혼성"]}})
+        axes += 1
+    elif want_gender == "혼성":
+        conditions.append({"vocal_gender": {"$eq": "혼성"}})
+        axes += 1
+    want_genre = _norm(analysis.genre or "")
+    if want_genre:
+        genres = [g for g in _MELON_GENRES if want_genre in _norm(g)]
+        if genres:
+            conditions.append({"genre": {"$in": genres}})
+            axes += 1
+    if analysis.has_artist_type_clue:
+        values = sorted({
+            value
+            for wanted in analysis.artist_type.values
+            for value in _ARTIST_TYPE_PAYLOAD_VALUES.get(str(wanted).strip(), ())
+        })
+        if values:
+            conditions.append({"type": {"$in": values}})
+            axes += 1
+    if not conditions:
+        return None
+    if gate == "era_plus":
+        if not (has_era and axes >= 1):
+            return None
+    elif not (has_era or axes >= 2):
+        return None
+    return {"$and": conditions}
+
+
 def _build_performance_metadata_filter(
     analysis: QueryAnalysis,
 ) -> Optional[Dict[str, Any]]:
@@ -833,6 +918,37 @@ def _attr_boost_scale() -> float:
     return _env_scale("ATTR_BOOST_SCALE", 1.0)
 
 
+def _attr_filter_weight() -> float:
+    """속성 조건 보조 후보(`_build_attribute_filter`) 목록의 RRF 가중. **기본 0.5(2026-10-15 채택, v51). 0이면 경로를 돌리지 않는다.**
+
+    v51(experiments/reranking/results_v51_attr_filter/RUN_INFO.md): 가중 0.5 · `era_plus`로 dev 176에서 Hit@10 117 → 123 ·
+    Hit@5 107 → 112 · MRR 0.532 → 0.542(2회 동일), Hit@1 ±0, 지연 차이 없음. 0보다 크면 분석의 시기·성별·장르·형태
+    조건에 맞는 곡만 같은 텍스트 질의로 한 번 더 검색해(`ATTR_FILTER_K`개) `weight / (RRF_K + 순위)`로 융합 점수에
+    더한다 — `performance_metadata` 경로와 같은 자리, 같은 식이다. 기존 후보를 빼지 않고 끝자리에 경쟁자를 더하는
+    것이라, 가중이 크면 텍스트 상위 곡까지 밀어낸다. 채택 전 기준선(v50 B)을 재현하려면 `ATTR_FILTER_WEIGHT=0`.
+    """
+    return _env_scale("ATTR_FILTER_WEIGHT", 0.5)
+
+
+_ATTR_FILTER_GATES = ("era_plus", "two_axes")
+
+
+def _attr_filter_gate() -> str:
+    """속성 조건 보조 후보를 여는 조건(`_build_attribute_filter`). `era_plus`(기본, v51 채택) 또는 `two_axes`. 모르는 값은 기본."""
+    raw = os.getenv("ATTR_FILTER_GATE", "").strip().lower()
+    return raw if raw in _ATTR_FILTER_GATES else _ATTR_FILTER_GATES[0]
+
+
+def _attr_filter_k() -> int:
+    """속성 조건 보조 후보로 받는 곡 수. 기본 30(최종 후보 수와 같다). 1~100."""
+    raw = os.getenv("ATTR_FILTER_K", "").strip()
+    try:
+        value = int(raw) if raw else 30
+    except ValueError:
+        return 30
+    return min(100, max(1, value))
+
+
 def _genre_match_scale() -> float:
     """최초 질의의 장르 일치 가산(`_apply_explicit_boosts`의 `genre_match`)에만 곱하는 배율. 1.0이 현행, 범위는 0~1.
 
@@ -1253,6 +1369,16 @@ class SearchRouter:
             and force_weights is None
             and not disable_boost
         )
+        # 속성 조건 보조 후보 — 실험 스위치. 가중 0(기본)이면 필터도 만들지 않는다.
+        attr_filter_weight = _attr_filter_weight()
+        attribute_filter = (
+            _build_attribute_filter(analysis) if attr_filter_weight > 0 else None
+        )
+        use_attr_filter = bool(
+            attribute_filter is not None
+            and force_weights is None
+            and not disable_boost
+        )
 
         text_pool_k = (
             min(100, max(candidates * 3, 60, pool_k))
@@ -1331,6 +1457,20 @@ class SearchRouter:
                 timer.job("path.context", self._search_context, analysis, pool_k),
             )
             if use_context_path else None
+        )
+
+        attr_filter_fut = (
+            loop.run_in_executor(
+                self._pool,
+                timer.job(
+                    "path.attr_filter",
+                    partial(self._search_text, metadata_filter=attribute_filter),
+                    analysis,
+                    _attr_filter_k(),
+                ),
+            )
+            if use_attr_filter
+            else None
         )
 
         performance_fut = (
@@ -1478,6 +1618,7 @@ class SearchRouter:
                 image_fut,
                 audio_fut,
                 context_fut,
+                attr_filter_fut,
                 performance_fut,
                 performance_metadata_fut,
                 balanced_semantic_fut,
@@ -1497,6 +1638,7 @@ class SearchRouter:
         image_res = next(_it) if use_image else []
         audio_res = next(_it) if use_audio else []
         context_res = next(_it) if use_context_path else []
+        attr_filter_res = next(_it) if use_attr_filter else []
         performance_res = next(_it) if use_performance_clue else []
         performance_metadata_res = (
             next(_it) if use_performance_metadata else []
@@ -1577,6 +1719,7 @@ class SearchRouter:
         performance_metadata_hits = _path_result(
             "performance_metadata", performance_metadata_res, recorder
         )
+        attr_filter_hits = _path_result("attr_filter", attr_filter_res, recorder)
 
         balanced_semantic_hits = _path_result(
             "balanced_semantic", balanced_semantic_res, recorder
@@ -1685,6 +1828,7 @@ class SearchRouter:
             *audio_deep,
             *performance_path_hits,
             *performance_metadata_hits,
+            *attr_filter_hits,
             *balanced_semantic_hits,
             *title_hits,
             *title_presence_hits,
@@ -1913,6 +2057,22 @@ class SearchRouter:
                     fused_scores, track.id,
                     performance_metadata_weight / (_RRF_K + rank),
                     recorder, "performance_metadata", rank,
+                )
+            fused = sorted(
+                fused_scores.items(),
+                key=lambda item: item[1],
+                reverse=True,
+            )
+
+        if attr_filter_hits:
+            # 속성 조건 보조 후보 — performance_metadata와 같은 자리·같은 식. 후보 소환만 하고 순위는
+            # 아래 시기·성별·장르·형태 가산이 다시 정한다(이 목록의 곡은 조건에 맞으므로 그 가산을 받는다).
+            fused_scores = dict(fused)
+            for rank, track in enumerate(attr_filter_hits, start=1):
+                _fuse_add(
+                    fused_scores, track.id,
+                    attr_filter_weight / (_RRF_K + rank),
+                    recorder, "attr_filter", rank, f"가중치 {attr_filter_weight:.2f}",
                 )
             fused = sorted(
                 fused_scores.items(),
@@ -2781,8 +2941,17 @@ class SearchRouter:
             and tracks[hit.song_id].title != "Unknown"
         ]
 
-    def _search_text(self, analysis: QueryAnalysis, top_k: int) -> List[MatchingTrack]:
-        """KoE5(dense) + BM25(sparse) 하이브리드 검색."""
+    def _search_text(
+        self,
+        analysis: QueryAnalysis,
+        top_k: int,
+        metadata_filter: Optional[Dict[str, Any]] = None,
+    ) -> List[MatchingTrack]:
+        """KoE5(dense) + BM25(sparse) 하이브리드 검색.
+
+        metadata_filter를 주면 같은 질의를 그 payload 조건 안에서만 검색한다(속성 조건 보조 후보 경로).
+        기본 텍스트 경로는 필터 없이 그대로다.
+        """
         # dense/sparse 비중은 modality가 아닌 전용 text_alpha 사용
         alpha = analysis.text_alpha
 
@@ -2839,6 +3008,7 @@ class SearchRouter:
             top_k=top_k,
             alpha=alpha,
             sparse_query=sparse_query,
+            **({"metadata_filter": metadata_filter} if metadata_filter else {}),
         )
 
     def _search_balanced_semantic(

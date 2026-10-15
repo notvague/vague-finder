@@ -1,0 +1,15 @@
+done cand_attr0 v06 exit=0 13:02:30
+done cand_attr0.5 v06 exit=0 13:05:38
+done cand_attr0 v09 exit=0 13:10:45
+done cand_attr0.5 v09 exit=0 13:14:07
+done cand_attr0 v10 exit=0 13:18:57
+done cand_attr0.5 v10 exit=0 13:22:26
+done cand_attr0.5_eraplus v06 exit=0 13:33:56
+done cand_attr0.5_eraplus v09 exit=0 13:42:20
+done cand_attr0.5_eraplus v10 exit=0 13:50:35
+done rerank_attr0.5_eraplus_rep1 v06 exit=0 14:04:05
+done rerank_attr0.5_eraplus_rep1 v09 exit=0 14:16:21
+done rerank_attr0.5_eraplus_rep1 v10 exit=0 14:28:30
+done rerank_attr0.5_eraplus_rep2 v06 exit=0 14:40:36
+done rerank_attr0.5_eraplus_rep2 v09 exit=0 14:52:43
+done rerank_attr0.5_eraplus_rep2 v10 exit=0 15:05:07
