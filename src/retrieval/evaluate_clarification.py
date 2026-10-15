@@ -367,10 +367,13 @@ async def evaluate_query(
     top_k: int,
     candidate_k: int,
     answer_multiplier: Optional[float] = None,
+    flow_only: bool = False,
 ) -> Tuple[Dict[str, TurnResult], Optional[str]]:
     """(정책별 결과, 규칙이 고른 슬롯)을 돌려준다.
 
     개입이 필요 없는 질의는 initial만 담고 슬롯은 None이다.
+    flow_only면 최초 검색만 하고 돌아간다 — 한 번 답변 정책(reject_only·oracle:*·noisy:*·rule:*)은 돌리지 않는다.
+    서비스 2턴 흐름(flow:*)만 잴 때 모델 호출을 절반 아래로 줄인다(`--policies flow`).
     """
     results: Dict[str, TurnResult] = {}
     initial = await run_search(
@@ -379,7 +382,7 @@ async def evaluate_query(
     )
     results["initial"] = initial
 
-    if initial.found:
+    if initial.found or flow_only:
         # 정답이 이미 보였으므로 사용자는 "이 중에는 없어요"를 누르지 않는다.
         return results, None
 
@@ -731,8 +734,12 @@ def summarize_by_scope(
 
 
 def intervention_ids_from_detail(rows: List[dict]) -> set:
-    """저장된 detail에서 개입 대상을 되찾는다 — reject_only를 실제로 실행한 질의다."""
-    return {r["query_id"] for r in rows if r["policy"] == "reject_only" and str(r["ran"]) == "1"}
+    """저장된 detail에서 개입 대상을 되찾는다 — reject_only(또는 `--policies flow` 실행에서는 flow:reject)를
+    실제로 실행한 질의다. 둘 다 최초 검색에서 정답이 안 보인 질의에서만 돈다."""
+    return {
+        r["query_id"] for r in rows
+        if r["policy"] in ("reject_only", "flow:reject") and str(r["ran"]) == "1"
+    }
 
 
 def write_csv(path: Path, rows: List[dict]) -> None:
@@ -977,7 +984,10 @@ async def evaluate(args: argparse.Namespace) -> None:
         **{k: (str(v) if isinstance(v, Path) else v) for k, v in vars(args).items()}
     )
     run_info = collect_run_info(plain_args, reranker=reranker, analysis_source=analysis_source)
+    flow_only = args.policies == "flow"
     run_info["clarify"] = {
+        # all: 한 번 답변 정책 + flow:*. flow: 최초 검색 + 서비스 2턴 흐름(flow:*)만 — 한 번 답변 정책 행은 없다
+        "policies": args.policies,
         "flow_modes": list(FLOW_MODES),
         "flow_target": "정답마다 따로 대화한다 — 답변·종료·성공 판정이 같은 목표 곡",
         "max_rejected_ids": flow_reject_limit(args.top_k),
@@ -1009,15 +1019,20 @@ async def evaluate(args: argparse.Namespace) -> None:
             router, reranker, analysis, song, relevant,
             top_k=args.top_k, candidate_k=args.candidate_k,
             answer_multiplier=args.answer_multiplier,
+            flow_only=flow_only,
         )
         add_oracle_best(results)
-        intervened = "reject_only" in results
+        # 개입 대상 = 최초 검색에서 정답이 안 보인 질의. (all에서는 reject_only가 돈 질의와 같다)
+        intervened = not results["initial"].found
         if intervened:
             intervention_ids.add(q.query_id)
-        executed = fill_missing_policies(results, LEGACY_ORDER)
-
-        for policy in LEGACY_ORDER:
-            detail.append(_row(q, policy, policy in executed, picked_slot, results[policy], relaxed_ids))
+        if flow_only:
+            # 돌리지 않은 정책의 행을 채우지 않는다 — 채우면 "잰 것"처럼 보인다.
+            detail.append(_row(q, "initial", True, picked_slot, results["initial"], relaxed_ids))
+        else:
+            executed = fill_missing_policies(results, LEGACY_ORDER)
+            for policy in LEGACY_ORDER:
+                detail.append(_row(q, policy, policy in executed, picked_slot, results[policy], relaxed_ids))
 
         # flow:* — 사용자는 곡 하나를 찾는다. 정답이 여럿이면 목표 곡마다 따로 대화하고,
         # 답변·종료·성공을 모두 그 곡으로 판정한다.
@@ -1170,6 +1185,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--resummarize", action="store_true",
         help="측정하지 않고 --output-dir의 clarify_detail.csv로 요약(전체·범주형)만 다시 쓴다",
+    )
+    p.add_argument(
+        "--policies", choices=["all", "flow"], default="all",
+        help="all: 한 번 답변 정책(reject_only·oracle:*·noisy:*·rule:*)과 서비스 2턴 흐름(flow:*) 모두. "
+             "flow: 최초 검색 + flow:*만 — 서비스 경로만 볼 때 모델 호출을 줄인다. 한 번 답변 정책 행은 쓰지 않는다",
     )
     return p
 

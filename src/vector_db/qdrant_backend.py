@@ -120,6 +120,14 @@ def _field_conditions(key: str, value: Any) -> List[models.Condition]:
             )
         elif op in _RANGE_OPS:
             range_kwargs[_RANGE_OPS[op]] = operand
+        elif op == "$text":
+            # 전문 일치(MatchText). 텍스트 색인이 없는 필드에서는 서버·로컬 모두 양쪽을 기본 토크나이저로
+            # 나눠 질의 토큰이 **문서 토큰과 통째로** 일치해야 한다 — `release_date "2004.03.12"`는
+            # `"2004"`에 맞고 `"2020.04.01"`에는 맞지 않는다. 속성 조건 보조 후보(`ATTR_FILTER_WEIGHT`)의
+            # 발매 연도 조건이 이것을 쓴다(발매일이 문자열이라 범위 조건을 못 쓴다).
+            conditions.append(
+                models.FieldCondition(key=key, match=models.MatchText(text=str(operand)))
+            )
         else:
             raise ValueError(f"지원하지 않는 필터 조건입니다: {key}={{{op!r}: ...}}")
 

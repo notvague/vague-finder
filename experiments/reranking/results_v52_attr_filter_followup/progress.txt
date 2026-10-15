@@ -1,0 +1,10 @@
+done smoke_clarify_attr0 v06 exit=0 15:53:04
+done smoke_clarify_attr0.5 v06 exit=0 15:53:08
+done clarify_attr0.5_rep1 v06 exit=0 16:23:10
+done clarify_attr0_rep1 v06 exit=0 16:23:43
+done clarify_attr0.5_rep1 v09 exit=0 16:53:38
+done clarify_attr0_rep1 v09 exit=0 16:55:24
+driver rep1 done 16:55:24
+done clarify_attr0.5_rep2 v09 exit=0 17:35:51
+done clarify_attr0_rep2 v09 exit=0 17:37:11
+driver rep2 done 17:37:11

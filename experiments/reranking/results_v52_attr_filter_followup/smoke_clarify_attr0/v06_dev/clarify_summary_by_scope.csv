@@ -1,0 +1,11 @@
+scope,policy,n_full,n_intervention,n_conversations,n_executed,full_hit@1,full_hit@5,full_hit@10,full_mrr@10,int_hit@1,int_hit@5,int_hit@10,int_candidate_recall@30,int_found_by_turn2,int_final_relaxed,int_relaxed_seen,n_conv_out_of_candidates
+all,initial,2,2,2,2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.5,,0.0,,
+all,flow:reject,2,2,2,2,0.0,0.0,0.5,0.0714,0.0,0.0,0.5,0.5,0.5,0.5,0.5,1
+all,flow:skip,2,2,2,2,0.0,0.0,0.5,0.0714,0.0,0.0,0.5,0.5,0.5,0.5,0.5,1
+all,flow:oracle,2,2,2,2,0.0,0.0,0.5,0.0714,0.0,0.0,0.5,0.5,0.5,0.5,0.5,1
+all,flow:noisy,2,2,2,2,0.0,0.0,0.5,0.0714,0.0,0.0,0.5,0.5,0.5,0.5,0.5,1
+specific,initial,2,2,2,2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.5,,0.0,,
+specific,flow:reject,2,2,2,2,0.0,0.0,0.5,0.0714,0.0,0.0,0.5,0.5,0.5,0.5,0.5,1
+specific,flow:skip,2,2,2,2,0.0,0.0,0.5,0.0714,0.0,0.0,0.5,0.5,0.5,0.5,0.5,1
+specific,flow:oracle,2,2,2,2,0.0,0.0,0.5,0.0714,0.0,0.0,0.5,0.5,0.5,0.5,0.5,1
+specific,flow:noisy,2,2,2,2,0.0,0.0,0.5,0.0714,0.0,0.0,0.5,0.5,0.5,0.5,0.5,1

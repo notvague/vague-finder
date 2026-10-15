@@ -47,6 +47,8 @@ PATH_LABELS: Dict[str, str] = {
     "balanced_semantic": "의미 균형 보조",
     "performance": "보컬·편성 단서",
     "performance_metadata": "편성 메타데이터",
+    # 분석이 말한 시기·성별·장르·형태 조건에 맞는 곡만 다시 검색한 보조 후보(실험 스위치 ATTR_FILTER_WEIGHT)
+    "attr_filter": "속성 조건 보조",
     "metadata": "메타데이터 단서",
     # 승인된 피드백 사례가 이 곡을 후보로 보충했다. **출처만 말한다** — 제보 내용이 사실이라는 뜻도,
     # 이 곡이 정답이라는 뜻도 아니다. 최종 순위는 리랭커가 곡 정보로 정한다.
