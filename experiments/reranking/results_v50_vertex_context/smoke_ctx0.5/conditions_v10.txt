@@ -1,0 +1,11 @@
+CONTEXT_WEIGHT=0.5
+QDRANT_PATH=artifacts/qdrant_eval_c
+AUDIO_FUSION_SCALE=1
+RERANKER_ENABLED=
+git_sha=952fe75
+collection=vaguefinder-audio-512__dev
+collection=vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf
+collection=vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf
+collection=vaguefinder-image-768__dev
+collection=vaguefinder-text-1024-koe5__dev
+context_build_id=f6424b94621a28cf
