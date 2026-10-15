@@ -545,6 +545,8 @@ def _ranking_switches(config: Any) -> dict:
         "attr_filter_weight": _search_router._attr_filter_weight(),
         "attr_filter_k": _search_router._attr_filter_k(),
         "attr_filter_gate": _search_router._attr_filter_gate(),
+        # 장르를 필터 축에 넣는가(v53 실험, 기본 True = v51·v52 조건). False면 시기·성별·형태만, 시기+장르 질의는 경로가 닫힌다
+        "attr_filter_use_genre": _search_router._attr_filter_use_genre(),
         "text_sparse_source": _search_router._text_sparse_source(),
         "lyric_protect_phonetic_top1": _search_router._protect_phonetic_top1(),
         "lyric_protect_min_confidence": _search_router._lyric_protect_min_confidence(),

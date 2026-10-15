@@ -357,3 +357,129 @@ def test_switch_values_are_clamped() -> None:
         assert sr._attr_filter_k() == 30
     finally:
         os.environ.pop("ATTR_FILTER_K", None)
+
+
+# ---------------------------------------------------------------------------
+# v53 — 장르 축 제외(ATTR_FILTER_USE_GENRE=0)
+# ---------------------------------------------------------------------------
+
+def test_use_genre_default_is_on(monkeypatch) -> None:
+    """환경 변수가 없거나 모르는 값이면 장르 축을 넣는다(v51·v52 조건). 끔은 0/false/no/off만."""
+    monkeypatch.delenv("ATTR_FILTER_USE_GENRE", raising=False)
+    assert sr._attr_filter_use_genre() is True
+    for raw in ("1", "true", "yes", "", "  ", "nonsense", "2"):
+        monkeypatch.setenv("ATTR_FILTER_USE_GENRE", raw)
+        assert sr._attr_filter_use_genre() is True, raw
+    for raw in ("0", "false", "No", " OFF "):
+        monkeypatch.setenv("ATTR_FILTER_USE_GENRE", raw)
+        assert sr._attr_filter_use_genre() is False, raw
+
+
+def test_use_genre_one_is_identical_to_default(monkeypatch) -> None:
+    """`=1`을 명시해도 필터·호출·기록이 환경 변수 없음과 같다."""
+    analysis = _analysis(release_era=ERA, vocal_gender="남성", genre="록")
+    monkeypatch.delenv("ATTR_FILTER_USE_GENRE", raising=False)
+    default_filter = sr._build_attribute_filter(analysis)
+    default_ids, default_calls, default_record = _search(monkeypatch, "0.5", analysis=analysis)
+    monkeypatch.setenv("ATTR_FILTER_USE_GENRE", "1")
+    assert sr._build_attribute_filter(analysis) == default_filter
+    ids, calls, record = _search(monkeypatch, "0.5", analysis=analysis)
+    assert ids == default_ids and calls == default_calls
+    detail = lambda rec: {(sid, p.rank, p.detail) for sid, s in rec.songs.items() for p in s.paths if p.path == "attr_filter"}  # noqa: E731
+    assert detail(record) == detail(default_record)
+    assert all(p.detail == "가중치 0.50" for s in record.songs.values() for p in s.paths if p.path == "attr_filter")
+
+
+def test_genre_off_drops_the_genre_condition_only(monkeypatch) -> None:
+    """장르 제외: 장르 조건만 빠지고 시기·성별·형태는 그대로다."""
+    monkeypatch.setenv("ATTR_FILTER_USE_GENRE", "0")
+    analysis = _analysis(
+        release_era=ERA, vocal_gender="남성", genre="록",
+        artist_type=ArtistTypeClue(values=["밴드"], confidence=0.7),
+    )
+    assert sr._build_attribute_filter(analysis) == {"$and": [
+        {"$or": [{"release_date": {"$text": str(y)}} for y in (2004, 2005, 2006)]},
+        {"vocal_gender": {"$in": ["남성", "혼성"]}},
+        {"type": {"$in": ["밴드", "인디밴드"]}},
+    ]}
+    monkeypatch.setenv("ATTR_FILTER_USE_GENRE", "1")
+    assert {"genre": {"$in": ["록/메탈"]}} in sr._build_attribute_filter(analysis)["$and"]
+
+
+def test_genre_off_closes_era_plus_for_era_and_genre_only(monkeypatch) -> None:
+    """장르 제외 설정의 era_plus = 유효한 시기 창 + 성별 또는 형태 하나 이상. 시기+장르만 있는 질의는 경로가 닫힌다."""
+    monkeypatch.delenv("ATTR_FILTER_GATE", raising=False)
+    era_genre = _analysis(release_era=ERA, genre="발라드")
+    monkeypatch.setenv("ATTR_FILTER_USE_GENRE", "1")
+    assert sr._build_attribute_filter(era_genre) is not None  # 기존 설정에서는 열린다
+    monkeypatch.setenv("ATTR_FILTER_USE_GENRE", "0")
+    assert sr._build_attribute_filter(era_genre) is None
+    assert sr._build_attribute_filter(_analysis(release_era=ERA, genre="발라드", vocal_gender="여성")) == {"$and": [
+        {"$or": [{"release_date": {"$text": str(y)}} for y in (2004, 2005, 2006)]},
+        {"vocal_gender": {"$in": ["여성", "혼성"]}},
+    ]}
+    assert sr._build_attribute_filter(_analysis(
+        release_era=ERA, genre="발라드", artist_type=ArtistTypeClue(values=["듀오"], confidence=0.7),
+    )) == {"$and": [
+        {"$or": [{"release_date": {"$text": str(y)}} for y in (2004, 2005, 2006)]},
+        {"type": {"$in": ["듀엣", "듀오"]}},
+    ]}
+    # 경로가 닫히면 필터 검색도 없고 기록도 없다
+    _, calls, record = _search(monkeypatch, "0.5", analysis=era_genre)
+    assert not _filtered_calls(calls)
+    assert not any(p.path == "attr_filter" for s in record.songs.values() for p in s.paths)
+
+
+def test_genre_off_does_not_count_genre_as_an_axis_for_two_axes(monkeypatch) -> None:
+    """two_axes 게이트에서도 장르는 축으로 세지 않는다 — 성별+장르는 닫히고 성별+형태는 열린다."""
+    monkeypatch.setenv("ATTR_FILTER_GATE", "two_axes")
+    monkeypatch.setenv("ATTR_FILTER_USE_GENRE", "0")
+    assert sr._build_attribute_filter(_analysis(vocal_gender="남성", genre="록")) is None
+    assert sr._build_attribute_filter(_analysis(
+        vocal_gender="남성", artist_type=ArtistTypeClue(values=["밴드"], confidence=0.7),
+    )) == {"$and": [
+        {"vocal_gender": {"$in": ["남성", "혼성"]}},
+        {"type": {"$in": ["밴드", "인디밴드"]}},
+    ]}
+
+
+def test_genre_off_ignores_genre_answer_but_keeps_other_answers(monkeypatch) -> None:
+    """재질문 장르 답은 장르 제외 설정에서 조건이 되지 않는다(열지도 못한다). 성별·형태 답은 그대로 반영된다."""
+    monkeypatch.setenv("ATTR_FILTER_USE_GENRE", "0")
+    era_only = _analysis(release_era=ERA)
+    _, calls, _ = _search(monkeypatch, "0.5", analysis=era_only, answers=[ClarifyAnswer(slot="genre", value="댄스")])
+    assert not _filtered_calls(calls)  # v52의 n011 경로 — 장르 답으로는 열리지 않는다
+    _, calls, _ = _search(monkeypatch, "0.5", analysis=era_only, answers=[
+        ClarifyAnswer(slot="genre", value="댄스"), ClarifyAnswer(slot="vocal_gender", value="남성"),
+    ])
+    assert _filtered_calls(calls)[0]["metadata_filter"] == {"$and": [
+        {"$or": [{"release_date": {"$text": str(y)}} for y in (2004, 2005, 2006)]},
+        {"vocal_gender": {"$in": ["남성", "혼성"]}},
+    ]}
+
+
+def test_genre_off_is_recorded_in_explain_and_runinfo(monkeypatch) -> None:
+    monkeypatch.setenv("ATTR_FILTER_USE_GENRE", "0")
+    _, calls, record = _search(monkeypatch, "0.5")
+    assert len(_filtered_calls(calls)) == 1
+    details = {p.detail for s in record.songs.values() for p in s.paths if p.path == "attr_filter"}
+    assert details == {"가중치 0.50 · 장르 축 제외"}
+    from src.retrieval.evaluate_search_accuracy import _ranking_switches
+    assert _ranking_switches(None)["attr_filter_use_genre"] is False
+    monkeypatch.delenv("ATTR_FILTER_USE_GENRE", raising=False)
+    assert _ranking_switches(None)["attr_filter_use_genre"] is True
+
+
+def test_genre_boost_is_untouched_by_the_filter_switch(monkeypatch) -> None:
+    """장르 축을 빼도 장르 **가산**(genre_match)은 그대로다 — 조건에 맞는 곡이 보조 목록으로 들어와도 받는다."""
+    monkeypatch.setenv("ATTR_FILTER_USE_GENRE", "0")
+    monkeypatch.setenv("ATTR_FILTER_WEIGHT", "0.5")
+    text_hits = [_track(f"t{i}", title=f"텍스트{i}", release_date="1999.01.01") for i in range(1, 61)]
+    filtered = [_track("f1", title="조건곡", release_date="2005.05.05", genre="록/메탈", vocal_gender="남성")]
+    service = _RecordingTextService(text_hits, filtered)
+    router = _router(text_hits)
+    router._text_svc = service
+    rec = ExplainRecorder("q")
+    _run(router, _analysis(release_era=ERA, vocal_gender="남성", genre="록"), top_k=30, use_rerank=False, recorder=rec)
+    rules = {adj.rule for adj in rec.record.songs["f1"].adjustments}
+    assert "genre_match" in rules
