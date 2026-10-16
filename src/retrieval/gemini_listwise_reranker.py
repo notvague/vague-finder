@@ -251,9 +251,12 @@ class GeminiListwiseRerankerConfig:
     rare_fact_insert_rank: int = 9
     # 원격 호출 제한. 기본 경로가 된 뒤로는 멈춘 응답이 서버 워커를 붙잡지 않아야 한다 (PR 리뷰 P1).
     #   request_timeout_seconds: HTTP 연결·읽기 제한. SDK HttpOptions.timeout(ms)으로 넘긴다
-    #   time_budget_seconds: 리랭킹 한 번의 전체 예산. 넘으면 남은 호출(검증 배치·패스)을 하지 않고
-    #                        검색 순서를 돌려준다. 호출 하나의 벽시계 제한 = min(요청 제한, 남은 예산)이고
-    #                        넘기면 진행 중인 HTTP 연결까지 취소하므로 최악 대기 ≈ 예산
+    #   time_budget_seconds: **요청 하나의 리랭킹 단계** 전체 예산(v57, 2026-10-16). 라우터·평가기가 단계
+    #                        진입 때 마감을 한 번 만들어 보호 그룹·일반 후보·재시도·패스·검증 호출이 공유한다
+    #                        (전에는 rerank_run 호출마다 새로 세서 보호 그룹 N개 질의가 N×예산이었다 — v56 n007 93초).
+    #                        넘으면 남은 호출을 시작하지 않고 입력 순서를 돌려준다. 호출 하나의 벽시계 제한 =
+    #                        min(요청 제한, 남은 예산)이고 넘기면 진행 중인 HTTP 연결까지 취소하므로 최악 대기 ≈ 예산.
+    #                        단독 호출(deadline 없음)은 그 호출만의 예산으로 같은 값을 쓴다
     #   pass_reserve_seconds: 예산 중 본 패스 몫. 앞 단계(Search evidence·희소 사실 검증)는
     #                        `deadline - 몫`을 마감으로 받아, 검증 배치가 예산을 다 써서 본 패스가
     #                        0회 도는 일(PR 리뷰 3차)을 막는다. 실제 몫 = min(이 값, 요청 제한, 예산/2)
@@ -313,6 +316,9 @@ class GeminiListwiseReranker:
     # 재질문 답변을 프롬프트에 반영한다. search_router.call_reranker가 이 값을 보고
     # answers를 넘긴다 (Cross-Encoder는 질의-곡 쌍만 보므로 받지 않는다).
     uses_clarify_answers = True
+    # 요청의 리랭킹 단계가 공유하는 마감(`rerank_run(deadline=...)`)을 받는다. call_reranker가 이 값을
+    # 보고 넘긴다 — 받지 않는 백엔드는 호출마다 자기 예산으로 돈다(v57, 2026-10-16).
+    accepts_deadline = True
 
     def __init__(
         self,
@@ -338,6 +344,15 @@ class GeminiListwiseReranker:
     def enabled(self) -> bool:
         return bool(self.config.enabled and self._configured)
 
+    @property
+    def rerank_budget_seconds(self) -> float:
+        """요청 하나의 리랭킹 단계 예산. 라우터·평가기가 단계 진입 때 `rerank_stage_deadline`으로 마감을 한 번 만든다.
+
+        단독 호출(`rerank_run(deadline=None)`)도 같은 값을 자기 예산으로 쓴다 — 설정값(읽기 전용)이고
+        요청별 마감은 여기에 저장하지 않는다.
+        """
+        return float(self.config.time_budget_seconds)
+
     def load(self) -> "GeminiListwiseReranker":
         return self
 
@@ -360,19 +375,23 @@ class GeminiListwiseReranker:
     def _over_budget(deadline: Optional[float]) -> bool:
         return deadline is not None and time.monotonic() >= deadline
 
-    def _pass_reserve_seconds(self) -> float:
+    def _pass_reserve_seconds(self, budget_seconds: Optional[float] = None) -> float:
         """본 패스에 남겨 둘 예산. 앞 단계는 이만큼 이른 마감을 받는다.
 
         검증 배치 하나의 제한이 min(요청 제한 20초, 남은 예산)이라, 30곡(배치 2회)이면 두 배치가
         30초 예산을 다 쓰고 본 패스가 한 번도 못 돌 수 있다(PR 리뷰 3차). 기본 10초를 남기고,
         예산이 작으면 절반까지만 남긴다 — 앞 단계가 0초가 되지는 않는다.
+
+        budget_seconds는 이 호출이 실제로 쓸 수 있는 예산이다. 공유 마감을 받은 뒤 그룹 호출은 설정값보다
+        적게 남아 있으므로 그 값으로 절반을 잰다. 없으면 설정값(단독 호출).
         """
+        budget = self.config.time_budget_seconds if budget_seconds is None else max(0.0, float(budget_seconds))
         return max(
             0.0,
             min(
                 self.config.pass_reserve_seconds,
                 self.config.request_timeout_seconds,
-                self.config.time_budget_seconds / 2.0,
+                budget / 2.0,
             ),
         )
 
@@ -401,7 +420,8 @@ class GeminiListwiseReranker:
         """
         remaining = (deadline - time.monotonic()) if deadline is not None else self.config.request_timeout_seconds
         if remaining <= 0:
-            raise TimeoutError(f"리랭킹 시간 예산 {self.config.time_budget_seconds:.0f}초 초과")
+            raise TimeoutError("리랭킹 시간 예산 초과 (호출 전 남은 시간 없음)")
+        # 호출 하나의 제한 = min(단일 호출 제한, 남은 예산). 공유 마감이면 남은 예산은 앞 그룹이 쓴 만큼 짧다.
         timeout = min(self.config.request_timeout_seconds, remaining)
         client = self._new_client()
         aio = getattr(client, "aio", None)
@@ -1120,12 +1140,19 @@ Return:
         tracks: Sequence[MatchingTrack],
         top_k: int,
         answers: Optional[Sequence[ClarifyAnswer]] = None,
+        *,
+        deadline: Optional[float] = None,
     ) -> RerankRun:
         """결과와 **실행 상태**를 함께 돌려준다.
 
         이 백엔드는 재시도가 전부 실패해도 예외를 던지지 않고 입력 순서를 그대로
         돌려준다(아래 '최종 실패' 경로). 호출 횟수만 보면 성공과 구분되지 않으므로,
         상태를 명시적으로 알려야 설명이 거짓말을 하지 않는다.
+
+        deadline(`time.monotonic()` 기준)을 받으면 **그 마감까지만** 돈다 — 요청의 리랭킹 단계가
+        보호 그룹·일반 후보 호출에 걸쳐 하나의 예산을 공유하게 하는 통로다(search_router.call_reranker).
+        없으면 이 호출만의 예산(`time_budget_seconds`)을 지금부터 센다(단독 호출·평가 도구·기존 테스트).
+        마감은 인자로만 받고 어디에도 저장하지 않는다 — 이 객체는 singleton이라 동시 요청이 공유한다.
         """
         if not tracks:
             return RerankRun([], RERANK_SKIPPED, [])
@@ -1140,11 +1167,18 @@ Return:
             tuple[list[str], dict[str, float], float, dict[str, str]]
         ] = []
         last_error: Optional[Exception] = None
-        # 리랭킹 한 번의 전체 예산. 검증 배치·패스 사이마다 확인하고, 넘으면 더 부르지 않는다.
-        deadline = time.monotonic() + self.config.time_budget_seconds
+        # 이 실행의 전체 예산. 검증 배치·패스·재시도 사이마다 확인하고, 넘으면 더 부르지 않는다.
+        # 공유 마감을 받았으면 남은 시간이 곧 예산이다(앞 그룹이 쓴 만큼 줄어 있다).
+        if deadline is None:
+            budget_seconds = float(self.config.time_budget_seconds)
+            deadline = time.monotonic() + budget_seconds
+            budget_label = f"리랭킹 시간 예산 {budget_seconds:.0f}초"
+        else:
+            budget_seconds = max(0.0, deadline - time.monotonic())
+            budget_label = f"리랭킹 단계 공유 예산(남은 {budget_seconds:.1f}초)"
         # 앞 단계(Search evidence·희소 사실 검증)는 본 패스 몫을 남긴 이른 마감을 받는다.
         # 같은 마감을 주면 검증 배치 2회가 예산을 다 써 본 패스가 0회 돌고 결과가 failed로 끝난다.
-        pre_pass_deadline = deadline - self._pass_reserve_seconds()
+        pre_pass_deadline = deadline - self._pass_reserve_seconds(budget_seconds)
 
         # 일반 Search evidence는 한 번만 수행하고 두 listwise pass가 공유한다.
         external_evidence = self._collect_search_evidence(query, judged, deadline=pre_pass_deadline)
@@ -1156,7 +1190,7 @@ Return:
         for pass_index in range(self.config.passes):
             if self._over_budget(deadline):
                 last_error = last_error or TimeoutError(
-                    f"리랭킹 시간 예산 {self.config.time_budget_seconds:.0f}초 초과 (pass {pass_index + 1} 전)"
+                    f"{budget_label} 초과 (pass {pass_index + 1} 전)"
                 )
                 break
             prompt_tracks = judged if pass_index % 2 == 0 else list(reversed(judged))
@@ -1172,7 +1206,7 @@ Return:
             for attempt in range(self.config.max_retries):
                 if self._over_budget(deadline):
                     last_error = last_error or TimeoutError(
-                        f"리랭킹 시간 예산 {self.config.time_budget_seconds:.0f}초 초과 (pass {pass_index + 1}, 시도 {attempt + 1} 전)"
+                        f"{budget_label} 초과 (pass {pass_index + 1}, 시도 {attempt + 1} 전)"
                     )
                     break
                 try:
@@ -1186,9 +1220,9 @@ Return:
                         deadline=deadline,
                     )
                     if self._over_budget(deadline):
-                        # 응답이 예산 뒤에 왔다. 반영하면 "30초 안에 끝낸다"는 약속이 거짓이 된다.
+                        # 응답이 예산 뒤에 왔다. 반영하면 "예산 안에 끝낸다"는 약속이 거짓이 된다.
                         last_error = TimeoutError(
-                            f"리랭킹 시간 예산 {self.config.time_budget_seconds:.0f}초 초과 (pass {pass_index + 1} 응답이 늦게 도착)"
+                            f"{budget_label} 초과 (pass {pass_index + 1} 응답이 늦게 도착)"
                         )
                         break
                     pass_results.append(self._parse_response(response.text, valid_ids))
@@ -1207,12 +1241,16 @@ Return:
                         "Use only candidate ids from the supplied list, exactly once each."
                     )
                     if attempt + 1 < self.config.max_retries:
-                        time.sleep(1)
+                        # 재시도 대기도 예산 안이다. 남은 시간보다 길게 자면 예산이 그만큼 늘어난다
+                        # (v56: 30초 예산이 31초로). 남은 시간이 없으면 자지 않고 다음 검사에서 끝난다.
+                        wait = min(1.0, deadline - time.monotonic())
+                        if wait > 0:
+                            time.sleep(wait)
 
         if pass_results and self._over_budget(deadline):
             # 최종 반영 직전 검사. 받은 결과가 있어도 예산을 넘겼으면 쓰지 않는다 — 검색 순서 + failed.
             last_error = last_error or TimeoutError(
-                f"리랭킹 시간 예산 {self.config.time_budget_seconds:.0f}초 초과 (반영 전)"
+                f"{budget_label} 초과 (반영 전)"
             )
             pass_results = []
 
