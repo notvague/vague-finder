@@ -39,6 +39,7 @@ from src.retrieval.analysis_cache import (
 from src.retrieval.explain import (
     NULL_RECORDER,
     RERANK_APPLIED,
+    RERANK_BUDGET_EXHAUSTED,
     RERANK_FAILED,
     RERANK_SKIP_MV_SCENE_UNVERIFIABLE,
     RERANK_UNKNOWN,
@@ -56,6 +57,7 @@ from src.retrieval.search_router import (
     exact_lyric_constraint_score,
     lyric_priority_rule,
     place_protected_lyrics_first,
+    rerank_stage_deadline,
     select_protected_lyric_ids,
 )
 
@@ -275,6 +277,8 @@ def _rerank_with_lyric_protection(
     """
     if statuses is None:
         statuses = []
+    # 라우터와 같게 — 이 질의의 리랭킹 단계(보호 그룹·일반 후보·재시도) 전체가 하나의 마감을 공유한다(v57).
+    deadline = rerank_stage_deadline(reranker)
 
     def _after_call(result, subset):
         n_before = _after_call.n_before
@@ -290,7 +294,7 @@ def _rerank_with_lyric_protection(
         _after_call.n_before = len(statuses)
         reranked = call_reranker(
             reranker, analysis.original_query, candidates, top_k, answers, recorder,
-            runs_out=statuses,
+            runs_out=statuses, deadline=deadline,
         )
         reranked = _after_call(reranked, candidates)[:top_k]
         recorder.commit_reorder()
@@ -320,6 +324,7 @@ def _rerank_with_lyric_protection(
                 answers,
                 recorder,
                 runs_out=statuses,
+                deadline=deadline,
             )
             group = _after_call(group, group_in)
         ordered_protected.extend(group[:slots])
@@ -336,6 +341,7 @@ def _rerank_with_lyric_protection(
             answers,
             recorder,
             runs_out=statuses,
+            deadline=deadline,
         )
         reranked_others = _after_call(reranked_others, others)[:remaining]
     final = [*protected, *reranked_others][:top_k]
@@ -423,7 +429,8 @@ def rerank_outcome(statuses, rerank_error: str, policy_skip: str = "") -> str:
         return OUTCOME_EXCEPTION
     if policy_skip:
         return OUTCOME_POLICY_SKIPPED
-    failed = any(status == RERANK_FAILED for status in statuses)
+    # 예산 소진으로 부르지 않은 그룹(`budget_exhausted`)은 실패 쪽으로 센다 — 그 그룹은 리랭킹이 없었다.
+    failed = any(status in (RERANK_FAILED, RERANK_BUDGET_EXHAUSTED) for status in statuses)
     applied = any(status == RERANK_APPLIED for status in statuses)
     if failed and applied:
         return OUTCOME_PARTIAL_FAILURE

@@ -54,6 +54,7 @@ from src.retrieval.explain import (
     NULL_RECORDER,
     PATH_LABELS,
     RERANK_APPLIED,
+    RERANK_BUDGET_EXHAUSTED,
     RERANK_FAILED,
     RERANK_SKIP_MV_SCENE_UNVERIFIABLE,
     RERANK_UNKNOWN,
@@ -891,6 +892,29 @@ def pin_feedback_entrants(
     return pinned
 
 
+def rerank_stage_deadline(reranker: Any) -> Optional[float]:
+    """요청 하나의 **리랭킹 단계** 전체가 공유할 마감(`time.monotonic()` 기준). 단계에 들어갈 때 한 번 만든다.
+
+    보호 그룹·일반 후보·재시도·추가 패스·검증 호출이 모두 이 마감 안에서 끝나야 한다. 호출마다
+    예산을 새로 만들면 가사 exact 보호 그룹이 N개인 질의는 모델이 멈출 때 N×예산이 걸린다(v56 실측
+    n007 93초 · t018 62초 > 화면 제한 60초). 리랭커가 예산을 알리지(`rerank_budget_seconds`) 않으면
+    None — 그 백엔드(Cross-Encoder·시험 스텁)는 기존대로 호출 단위로 동작한다.
+
+    요청별 값이라 리랭커(singleton)나 라우터에 저장하지 않는다 — 지역 변수로 들고 호출마다 넘긴다.
+    질의 분석·가사 적재까지 포함한 검색 전체의 제한이 아니다.
+    """
+    budget = getattr(reranker, "rerank_budget_seconds", None)
+    if budget is None:
+        return None
+    try:
+        budget = float(budget)
+    except (TypeError, ValueError):
+        return None
+    if budget <= 0:
+        return None
+    return time.monotonic() + budget
+
+
 def call_reranker(
     reranker: Any,
     query: str,
@@ -899,6 +923,7 @@ def call_reranker(
     answers: Optional[Sequence[ClarifyAnswer]] = None,
     recorder: ExplainRecorder = NULL_RECORDER,
     runs_out: Optional[List[str]] = None,
+    deadline: Optional[float] = None,
 ) -> List[MatchingTrack]:
     """리랭커를 부른다. 재질문 답변을 쓰는 리랭커에만 answers를 넘긴다.
 
@@ -913,16 +938,29 @@ def call_reranker(
     설명 기록을 끄면 NULL_RECORDER가 상태를 버리는데, 백엔드가 예외 없이 실패한
     사실(Gemini 내부 폴백)은 기록 스위치와 무관하게 집계돼야 한다. 그러지 않으면
     측정에서 실패가 "리랭킹 효과 없음"으로 조용히 섞인다.
+
+    deadline은 요청의 리랭킹 단계가 공유하는 마감(`rerank_stage_deadline`). 이미 지났으면 모델을
+    **부르지 않고** 입력 순서를 `budget_exhausted`로 돌려준다 — 호출부의 폴백 규칙(보너스 순서 복귀)은
+    failed와 같게 적용된다. 마감을 받는 리랭커(`accepts_deadline`)에만 넘기고, 받지 않는 리랭커는
+    기존 단독 호출 예산으로 돈다. None이면 기존 동작 그대로다.
     """
     pass_answers = bool(answers) and getattr(reranker, "uses_clarify_answers", False)
     detailed = getattr(reranker, "rerank_run", None)
 
-    if detailed is not None:
-        run = (
-            detailed(query, tracks, top_k, answers=list(answers))
-            if pass_answers
-            else detailed(query, tracks, top_k)
+    if deadline is not None and time.monotonic() >= deadline:
+        # 앞 그룹이 예산을 다 썼다. 시작하지 않은 호출을 실패로도 성공으로도 적지 않고 그대로 남긴다.
+        logger.warning(
+            "[call_reranker] 리랭킹 단계 예산 소진 — %d곡 그룹은 모델을 부르지 않고 입력 순서 유지",
+            len(tracks),
         )
+        run = RerankRun(list(tracks)[:top_k], RERANK_BUDGET_EXHAUSTED, [])
+    elif detailed is not None:
+        kwargs: Dict[str, Any] = {}
+        if pass_answers:
+            kwargs["answers"] = list(answers)
+        if deadline is not None and getattr(reranker, "accepts_deadline", False):
+            kwargs["deadline"] = deadline
+        run = detailed(query, tracks, top_k, **kwargs)
     else:
         # 상태를 보고하지 않는 백엔드. 평가 범위도 알 수 없으므로 judged를 비운다 —
         # 모르는 것을 "리랭킹됨"으로 표시하면 안 된다.
@@ -2472,6 +2510,9 @@ class SearchRouter:
         if rerank_eligible and not skip_reason:
             recorder.set_reorder_attempted(True)
             rerank_started = time.perf_counter()
+            # 이 요청의 리랭킹 단계 전체(보호 그룹·일반 후보·재시도·패스·검증)가 공유하는 마감. 여기서 한 번만
+            # 만들고 호출마다 넘긴다 — 리랭커는 singleton이라 거기에 저장하면 동시 요청의 예산이 섞인다(v57).
+            rerank_deadline = rerank_stage_deadline(self._reranker)
             try:
                 # full_lyrics 연속 구절 exact 일치는 검색의 가장 강한 증거다.
                 # exact 그룹은 그룹 내부에서만 리랭킹하고 일반 후보 아래로는 내리지 않는다.
@@ -2519,6 +2560,7 @@ class SearchRouter:
                                 reranker_answers,
                                 recorder,
                                 run_statuses,
+                                deadline=rerank_deadline,
                             )
                             n_before = len(run_statuses)
                             group_in = group
@@ -2531,7 +2573,8 @@ class SearchRouter:
                                 ),
                             )
                             if rerank_input_differs and not self._call_applied(run_statuses, n_before):
-                                # 이 그룹만 적용 실패 — 입력(보너스 전) 순서 대신 그 그룹의 보너스 순서로
+                                # 이 그룹만 적용 실패(또는 예산 소진으로 미실행) — 입력(보너스 전) 순서 대신
+                                # 그 그룹의 보너스 순서로
                                 group = self._bonus_order(candidate_tracks, group_in)
                         ordered_protected.extend(group[:remaining_group_slots])
                     protected_tracks = ordered_protected
@@ -2547,6 +2590,7 @@ class SearchRouter:
                             reranker_answers,
                             recorder,
                             run_statuses,
+                            deadline=rerank_deadline,
                         )
                         n_before = len(run_statuses)
                         others_in = other_tracks
@@ -2599,6 +2643,7 @@ class SearchRouter:
                     reranker_answers,
                     recorder,
                     run_statuses,
+                    deadline=rerank_deadline,
                 )
                 reranked = await loop.run_in_executor(
                     self._pool,
@@ -2800,7 +2845,7 @@ class SearchRouter:
 
     @staticmethod
     def _rerank_reported_failure(statuses: Sequence[str]) -> bool:
-        """백엔드가 보고한 상태 중 적용된 것이 하나도 없으면 True(실패·생략·상태 없음 모두). 리뷰 — 조건 하나로."""
+        """백엔드가 보고한 상태 중 적용된 것이 하나도 없으면 True(실패·예산 소진 미실행·생략·상태 없음 모두). 리뷰 — 조건 하나로."""
         return RERANK_APPLIED not in statuses
 
     @staticmethod

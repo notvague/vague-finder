@@ -1,0 +1,163 @@
+[
+ {
+  "case": "n007형 전부 느림(3그룹)",
+  "script": [
+   "slow"
+  ],
+  "elapsed_s": 1.01,
+  "budget_s": 1.0,
+  "fake_calls": 1,
+  "fake_outcomes": [
+   "cancelled"
+  ],
+  "fake_elapsed_s": [
+   0.602
+  ],
+  "statuses": [
+   "failed",
+   "budget_exhausted",
+   "budget_exhausted"
+  ],
+  "reorder_stage": "model_failed",
+  "rerank_calls": 3,
+  "applied": 0,
+  "result_ids": [
+   "p1",
+   "p2",
+   "p3",
+   "p4",
+   "o1",
+   "o2",
+   "o3"
+  ]
+ },
+ {
+  "case": "t018형 전부 느림(2그룹)",
+  "script": [
+   "slow"
+  ],
+  "elapsed_s": 1.01,
+  "budget_s": 1.0,
+  "fake_calls": 1,
+  "fake_outcomes": [
+   "cancelled"
+  ],
+  "fake_elapsed_s": [
+   0.602
+  ],
+  "statuses": [
+   "failed",
+   "budget_exhausted"
+  ],
+  "reorder_stage": "model_failed",
+  "rerank_calls": 2,
+  "applied": 0,
+  "result_ids": [
+   "p1",
+   "p2",
+   "o1",
+   "o2",
+   "o3"
+  ]
+ },
+ {
+  "case": "n007형 1그룹 성공 뒤 느림",
+  "script": [
+   "normal",
+   "slow"
+  ],
+  "elapsed_s": 1.01,
+  "budget_s": 1.0,
+  "fake_calls": 2,
+  "fake_outcomes": [
+   "returned",
+   "cancelled"
+  ],
+  "fake_elapsed_s": [
+   0.0,
+   0.602
+  ],
+  "statuses": [
+   "applied",
+   "failed",
+   "budget_exhausted"
+  ],
+  "reorder_stage": "model_applied",
+  "rerank_calls": 3,
+  "applied": 1,
+  "result_ids": [
+   "p1",
+   "p2",
+   "p3",
+   "p4",
+   "o1",
+   "o2",
+   "o3"
+  ]
+ },
+ {
+  "case": "단일 호출 예외 재시도(예산 0.5)",
+  "script": [
+   "exception"
+  ],
+  "elapsed_s": 0.51,
+  "budget_s": 1.0,
+  "fake_calls": 1,
+  "fake_outcomes": [
+   "raised"
+  ],
+  "fake_elapsed_s": [
+   0.0
+  ],
+  "statuses": [
+   "failed",
+   "budget_exhausted"
+  ],
+  "reorder_stage": "model_failed",
+  "rerank_calls": 2,
+  "applied": 0,
+  "result_ids": [
+   "p1",
+   "p2",
+   "o1",
+   "o2",
+   "o3"
+  ]
+ },
+ {
+  "case": "n007형 정상",
+  "script": [
+   "normal"
+  ],
+  "elapsed_s": 0.01,
+  "budget_s": 1.0,
+  "fake_calls": 3,
+  "fake_outcomes": [
+   "returned",
+   "returned",
+   "returned"
+  ],
+  "fake_elapsed_s": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "statuses": [
+   "applied",
+   "applied",
+   "applied"
+  ],
+  "reorder_stage": "model_applied",
+  "rerank_calls": 3,
+  "applied": 3,
+  "result_ids": [
+   "p1",
+   "p2",
+   "p3",
+   "p4",
+   "o3",
+   "o2",
+   "o1"
+  ]
+ }
+]

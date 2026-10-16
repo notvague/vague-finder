@@ -201,6 +201,13 @@ experiments/genre_memory_gap/results_*/*.excluded/
 # Vertex AI 서비스 계정 키 (팀 드라이브로만 전달, 절대 커밋·이미지에 넣지 않는다)
 secrets/
 
+# v57 HTTP 재현 결과는 공유하고 실행 중 상태·원시 로그는 로컬에 보존한다
+!experiments/reranking/results_v57_rerank_shared_budget/fallback_results_A_v57.csv
+experiments/reranking/results_v57_rerank_shared_budget/logs/
+experiments/reranking/results_v57_rerank_shared_budget/ctl/
+experiments/reranking/results_v57_rerank_shared_budget/progress.txt
+experiments/reranking/results_v57_rerank_shared_budget/timing_A.jsonl
+experiments/reranking/results_v57_rerank_shared_budget/fake_calls_A.jsonl
 # v56 재집계 입력·질의별 결과 (이 실험 폴더만 예외)
 !experiments/reranking/results_v56_attr_runtime_validation/fallback_results_subset_run2.csv
 !experiments/reranking/results_v56_attr_runtime_validation/latency_joined.csv

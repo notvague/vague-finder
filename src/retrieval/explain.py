@@ -117,6 +117,10 @@ RERANK_APPLIED = "applied"   # 모델이 돌아 순서를 정했다
 RERANK_FAILED = "failed"     # 호출했으나 실패해 입력 순서로 폴백했다
 RERANK_SKIPPED = "skipped"   # 모델을 부를 조건이 아니었다(후보 없음, 꺼짐)
 RERANK_UNKNOWN = "unknown"   # 상태를 보고하지 않는 백엔드. 단정하지 않는다
+# 요청의 리랭킹 단계 예산이 앞 그룹에서 다 떨어져 이 그룹은 모델을 **부르지 않았다**(v57, 2026-10-16).
+# `failed`(불렀는데 실패)와 다른 사실이지만 결과는 같다 — 그 그룹은 입력 순서(폴백 규칙)로 나간다.
+# 단계·결말 집계에서는 실패 쪽으로 센다. 성공으로 세면 안 되고, 모르는 값으로 남겨도 안 된다.
+RERANK_BUDGET_EXHAUSTED = "budget_exhausted"
 
 
 @dataclass
@@ -490,7 +494,8 @@ class SearchExplain:
                 if self.order_rules_applied
                 else REORDER_NOT_ATTEMPTED
             )
-        if any(status == RERANK_FAILED for status in self.rerank_runs):
+        if any(status in (RERANK_FAILED, RERANK_BUDGET_EXHAUSTED) for status in self.rerank_runs):
+            # 예산 소진으로 부르지 않은 그룹도 실패 쪽이다 — 모델이 돈 적이 없는데 다른 단계로 보이면 안 된다
             return REORDER_MODEL_FAILED
         if any(status == RERANK_UNKNOWN for status in self.rerank_runs):
             return REORDER_MODEL_UNKNOWN
