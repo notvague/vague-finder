@@ -4,6 +4,10 @@
   B: 하이브리드 호출을 독립 정확 합산(`exact_hybrid.py`)으로 바꿔 끼움
   C: 현행 구현에 상한만 실제 point 수(`count(exact)`)로 — "실제 대상 수를 반영한 조회" 수정안의 결과 확인용. 기준은 B다.
 
+v62(2026-10-16) 이후: 운영 구현이 요청마다 count로 limit을 정하므로 모듈 상수 `HYBRID_SCAN_LIMIT`은 폐기 예정 호환값(기본 None)이고
+조회를 자르지 않는다. 따라서 **A와 C는 같은 결과**이며, 아래 `hybrid_scan_limit_*`·`scan_limit_truncates` 기록은 v61 기준 커밋(fc20e86)
+코드에서만 의미가 있다(그 값들은 참고 기록으로만 남긴다). v62 검증은 `--arm A --out-root <v62 폴더>/cand_fixed`로 돌린다.
+
 세 구성은 같은 분석 캐시(v49 Vertex dev) · 같은 색인 복사본(`artifacts/qdrant_v61_audit`) · 같은 설정(`v61_guard.fixed_env`)을
 쓴다. 모델·Mongo·운영 Qdrant 호출은 `v61_guard`가 막고, 끝나면 차단 확인 결과를 `conditions.json`에 적는다.
 
@@ -124,7 +128,8 @@ def main() -> int:
         "point_count": point_count,
         "hybrid_scan_limit_default": default_limit,
         "hybrid_scan_limit_used": scan_limit_used,
-        "scan_limit_truncates": (args.arm != "B") and scan_limit_used < point_count,
+        # v62부터 상수가 None(조회를 자르지 않음)일 수 있다 — 그때는 잘림 없음으로 기록한다
+        "scan_limit_truncates": (args.arm != "B") and scan_limit_used is not None and scan_limit_used < point_count,
         "reference_fingerprint": fingerprint,
         "reference_build_seconds": reference_build_s,
         "env": applied_env,

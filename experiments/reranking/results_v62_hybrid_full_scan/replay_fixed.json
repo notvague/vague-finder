@@ -1,0 +1,169 @@
+{
+ "label": "fixed",
+ "git_sha": "fc20e86+dirty",
+ "source_arm": "A",
+ "source_inputs": {
+  "root": "/private/tmp/vague-finder-hybrid-scan-audit/experiments/reranking/results_v61_hybrid_scan_audit",
+  "files": {
+   "cand_A/v06_dev/calls.jsonl": {
+    "bytes": 215846,
+    "sha256_16": "9b512e14328ace58"
+   },
+   "cand_A/v06_dev/calls_vectors.npz": {
+    "bytes": 3866075,
+    "sha256_16": "33c2d548aa089f16"
+   },
+   "cand_A/v06_dev/candidates.jsonl": {
+    "bytes": 56952,
+    "sha256_16": "6df25c2a77beb34b"
+   },
+   "cand_A/v06_dev/search_eval_dev_detail.csv": {
+    "bytes": 226231,
+    "sha256_16": "400ead59bcec6d0a"
+   },
+   "cand_A/v09_dev/calls.jsonl": {
+    "bytes": 216844,
+    "sha256_16": "1be0292e43e761e2"
+   },
+   "cand_A/v09_dev/calls_vectors.npz": {
+    "bytes": 3902580,
+    "sha256_16": "ef6a66285c2d5baf"
+   },
+   "cand_A/v09_dev/candidates.jsonl": {
+    "bytes": 58386,
+    "sha256_16": "915630b0103b14b9"
+   },
+   "cand_A/v09_dev/search_eval_dev_detail.csv": {
+    "bytes": 232653,
+    "sha256_16": "2787a65249b53e42"
+   },
+   "cand_A/v10_dev/calls.jsonl": {
+    "bytes": 211504,
+    "sha256_16": "7a934da50ef799b8"
+   },
+   "cand_A/v10_dev/calls_vectors.npz": {
+    "bytes": 3847643,
+    "sha256_16": "05b820b12445fb2d"
+   },
+   "cand_A/v10_dev/candidates.jsonl": {
+    "bytes": 57733,
+    "sha256_16": "6f765abfde6f99b5"
+   },
+   "cand_A/v10_dev/search_eval_dev_detail.csv": {
+    "bytes": 229190,
+    "sha256_16": "27cd8b3db0838d43"
+   }
+  }
+ },
+ "hybrid_scan_limit_compat_value": null,
+ "env_QDRANT_HYBRID_SCAN_LIMIT": "",
+ "qdrant_path": "artifacts/qdrant_v61_audit",
+ "point_count": 5143,
+ "reference_fingerprint": {
+  "collection": "vaguefinder-text-1024-koe5__dev",
+  "points": 5143,
+  "dense_dim": 1024,
+  "sparse_nnz": 1061090,
+  "sparse_vocab": 44486,
+  "content_sha256_16": "238299e6c8c17f2a",
+  "matches_v61": true
+ },
+ "analysis_cache_compat": {
+  "v06": {
+   "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v06_dev_vertex.json",
+   "entries": 57,
+   "fingerprint_drift": [
+    "gemini_backend",
+    "gemini_location"
+   ],
+   "fallback_ids": [],
+   "route": {
+    "gemini_backend": "vertex",
+    "gemini_location": "global"
+   }
+  },
+  "v09": {
+   "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v09_dev_vertex.json",
+   "entries": 59,
+   "fingerprint_drift": [
+    "gemini_backend",
+    "gemini_location"
+   ],
+   "fallback_ids": [],
+   "route": {
+    "gemini_backend": "vertex",
+    "gemini_location": "global"
+   }
+  },
+  "v10": {
+   "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v10_dev_vertex.json",
+   "entries": 60,
+   "fingerprint_drift": [
+    "gemini_backend",
+    "gemini_location"
+   ],
+   "fallback_ids": [],
+   "route": {
+    "gemini_backend": "vertex",
+    "gemini_location": "global"
+   }
+  }
+ },
+ "tolerance": 0.0001,
+ "counts": {
+  "calls": 311,
+  "matches_exact": 311,
+  "kind_float_within_tol": 305,
+  "limit_equals_count": 311,
+  "dense_returned_all_targets": 311,
+  "filtered_calls": 16,
+  "calls_with_tie_groups": 288,
+  "missing_songs": 0,
+  "score_mismatch_songs": 0,
+  "kind_identical": 6
+ },
+ "max_abs_score_delta_common": 2.9654765087983037e-08,
+ "diffs": [],
+ "replayed_call_ms": {
+  "median": 232.34,
+  "p95": 329.1
+ },
+ "prepare_seconds": {
+  "open_copy": 1.289,
+  "reference_build": 1.343
+ },
+ "env": {
+  "QDRANT_PATH": "artifacts/qdrant_v61_audit",
+  "CONTEXT_WEIGHT": "0.5",
+  "ATTR_FILTER_WEIGHT": "0",
+  "AUDIO_FUSION_SCALE": "1",
+  "SEARCH_REFERENCE_YEAR": "2026",
+  "RERANKER_ENABLED": "false",
+  "RERANKER_BACKEND": "gemini_listwise",
+  "GEMINI_RERANK_RARE_FACT_VERIFY": "0",
+  "GEMINI_RETRIEVAL_BACKEND": "vertex",
+  "FEEDBACK_COLLECTION_ENABLED": "0",
+  "FEEDBACK_INDEX_WORKER_ENABLED": "0",
+  "HF_HUB_OFFLINE": "1",
+  "TRANSFORMERS_OFFLINE": "1",
+  "TOKENIZERS_PARALLELISM": "false"
+ },
+ "guard_before": {
+  "make_genai_client": "blocked",
+  "google.genai.Client": "blocked",
+  "pymongo.MongoClient": "blocked",
+  "src.common.mongodb": "blocked",
+  "QDRANT_URL": "unset"
+ },
+ "guard_after": {
+  "make_genai_client": "blocked",
+  "google.genai.Client": "blocked",
+  "pymongo.MongoClient": "blocked",
+  "src.common.mongodb": "blocked",
+  "QDRANT_URL": "unset"
+ },
+ "verdict": {
+  "ok": true,
+  "problems": []
+ }
+}

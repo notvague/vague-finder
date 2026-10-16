@@ -1,0 +1,82 @@
+{
+  "container": "vague-finder-qdrant-v62",
+  "image": "qdrant/qdrant:v1.19.1",
+  "url": "http://127.0.0.1:6362",
+  "storage": "artifacts/qdrant_server_v62/storage",
+  "untouched": [
+    "vague-finder-qdrant-v56 (6356)",
+    "artifacts/qdrant (운영 색인)",
+    "운영 서버"
+  ],
+  "container_state_before": "absent",
+  "ready_seconds": 0.52,
+  "start_seconds": 0.67,
+  "server_version": "1.19.1",
+  "migrate_seconds": 2.6,
+  "server_collections": [
+    "vaguefinder-text-1024-koe5__dev"
+  ],
+  "fingerprint_seconds": 3.9,
+  "text_collection": {
+    "name": "vaguefinder-text-1024-koe5__dev",
+    "points_source": 5143,
+    "points_server": 5143,
+    "vectors_source": {
+      "dense": {
+        "dense": {
+          "size": 1024,
+          "distance": "Dot"
+        }
+      },
+      "sparse": [
+        "sparse"
+      ]
+    },
+    "vectors_server": {
+      "dense": {
+        "dense": {
+          "size": 1024,
+          "distance": "Dot"
+        }
+      },
+      "sparse": [
+        "sparse"
+      ]
+    },
+    "fingerprint_source": {
+      "collection": "vaguefinder-text-1024-koe5__dev",
+      "points": 5143,
+      "dense_dim": 1024,
+      "sparse_nnz": 1061090,
+      "sparse_vocab": 44486,
+      "content_sha256_16": "238299e6c8c17f2a",
+      "matches_v61": true
+    },
+    "fingerprint_server": {
+      "collection": "vaguefinder-text-1024-koe5__dev",
+      "points": 5143,
+      "dense_dim": 1024,
+      "sparse_nnz": 1061090,
+      "sparse_vocab": 44486,
+      "content_sha256_16": "238299e6c8c17f2a"
+    },
+    "payload_indexes_server": []
+  },
+  "all_ok": true,
+  "guard": {
+    "before": {
+      "make_genai_client": "blocked",
+      "google.genai.Client": "blocked",
+      "pymongo.MongoClient": "blocked",
+      "src.common.mongodb": "blocked",
+      "QDRANT_URL": "unset"
+    },
+    "after": {
+      "make_genai_client": "blocked",
+      "google.genai.Client": "blocked",
+      "pymongo.MongoClient": "blocked",
+      "src.common.mongodb": "blocked",
+      "QDRANT_URL": "unset"
+    }
+  }
+}

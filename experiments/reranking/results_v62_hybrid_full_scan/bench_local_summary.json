@@ -1,0 +1,170 @@
+{
+ "mode": "local",
+ "url": null,
+ "server_version": null,
+ "qdrant_client": "1.19.1",
+ "exact_search_params": false,
+ "git_sha": "fc20e86+dirty",
+ "legacy_commit": "fc20e86",
+ "legacy_scan_limit": 5000,
+ "point_count": 5143,
+ "set": "v06",
+ "warmup_per_impl": 2,
+ "prepare_seconds": {
+  "open_client": 1.4,
+  "warmup": 1.94
+ },
+ "ru_maxrss_bytes": {
+  "start": 131891200,
+  "end": 996065280
+ },
+ "plain": {
+  "requests_per_impl": 60,
+  "distinct_inputs": 60,
+  "impl": {
+   "before": {
+    "median_ms": 233.17,
+    "p95_ms": 324.49,
+    "mean_ms": 240.19,
+    "min_ms": 174.53,
+    "max_ms": 337.43,
+    "qdrant_calls_per_request": 3.0,
+    "returned_points_per_request_mean": 9079.5,
+    "matches_per_request_mean": 59.0,
+    "step_median_ms": {
+     "count": null,
+     "dense": 14.31,
+     "sparse": 213.79,
+     "retrieve": 0.45
+    },
+    "step_p95_ms": {
+     "count": null,
+     "dense": 28.46,
+     "sparse": 295.23,
+     "retrieve": 1.24
+    }
+   },
+   "after": {
+    "median_ms": 231.77,
+    "p95_ms": 324.86,
+    "mean_ms": 231.92,
+    "min_ms": 120.44,
+    "max_ms": 345.28,
+    "qdrant_calls_per_request": 4.0,
+    "returned_points_per_request_mean": 9237.7,
+    "matches_per_request_mean": 59.0,
+    "step_median_ms": {
+     "count": 0.02,
+     "dense": 14.66,
+     "sparse": 212.49,
+     "retrieve": 0.78
+    },
+    "step_p95_ms": {
+     "count": 0.03,
+     "dense": 19.89,
+     "sparse": 231.07,
+     "retrieve": 1.6
+    }
+   }
+  },
+  "after_minus_before_ms": {
+   "median": -0.02,
+   "p95": 97.5,
+   "mean": -8.27,
+   "negative_share": 0.5,
+   "pairs": 60
+  },
+  "same_result_before_after": 60,
+  "different_result_pairs": []
+ },
+ "filtered": {
+  "requests_per_impl": 80,
+  "distinct_inputs": 16,
+  "impl": {
+   "before": {
+    "median_ms": 251.41,
+    "p95_ms": 281.23,
+    "mean_ms": 245.3,
+    "min_ms": 196.09,
+    "max_ms": 337.45,
+    "qdrant_calls_per_request": 3.0,
+    "returned_points_per_request_mean": 853.1,
+    "matches_per_request_mean": 29.4,
+    "step_median_ms": {
+     "count": null,
+     "dense": 23.14,
+     "sparse": 224.74,
+     "retrieve": 0.38
+    },
+    "step_p95_ms": {
+     "count": null,
+     "dense": 26.07,
+     "sparse": 259.93,
+     "retrieve": 1.03
+    }
+   },
+   "after": {
+    "median_ms": 262.71,
+    "p95_ms": 295.58,
+    "mean_ms": 260.79,
+    "min_ms": 214.72,
+    "max_ms": 303.82,
+    "qdrant_calls_per_request": 4.0,
+    "returned_points_per_request_mean": 853.1,
+    "matches_per_request_mean": 29.4,
+    "step_median_ms": {
+     "count": 18.38,
+     "dense": 23.01,
+     "sparse": 220.47,
+     "retrieve": 0.47
+    },
+    "step_p95_ms": {
+     "count": 21.8,
+     "dense": 25.77,
+     "sparse": 256.92,
+     "retrieve": 1.05
+    }
+   }
+  },
+  "after_minus_before_ms": {
+   "median": 18.2,
+   "p95": 21.68,
+   "mean": 15.48,
+   "negative_share": 0.025,
+   "pairs": 80
+  },
+  "same_result_before_after": 80,
+  "different_result_pairs": []
+ },
+ "note": "로컬 파일 모드 한 프로세스. 서버 모드 수치가 아니다",
+ "env": {
+  "QDRANT_PATH": "artifacts/qdrant_v61_audit",
+  "CONTEXT_WEIGHT": "0.5",
+  "ATTR_FILTER_WEIGHT": "0",
+  "AUDIO_FUSION_SCALE": "1",
+  "SEARCH_REFERENCE_YEAR": "2026",
+  "RERANKER_ENABLED": "false",
+  "RERANKER_BACKEND": "gemini_listwise",
+  "GEMINI_RERANK_RARE_FACT_VERIFY": "0",
+  "GEMINI_RETRIEVAL_BACKEND": "vertex",
+  "FEEDBACK_COLLECTION_ENABLED": "0",
+  "FEEDBACK_INDEX_WORKER_ENABLED": "0",
+  "HF_HUB_OFFLINE": "1",
+  "TRANSFORMERS_OFFLINE": "1",
+  "TOKENIZERS_PARALLELISM": "false"
+ },
+ "guard_before": {
+  "make_genai_client": "blocked",
+  "google.genai.Client": "blocked",
+  "pymongo.MongoClient": "blocked",
+  "src.common.mongodb": "blocked",
+  "QDRANT_URL": "unset"
+ },
+ "guard_after": {
+  "make_genai_client": "blocked",
+  "google.genai.Client": "blocked",
+  "pymongo.MongoClient": "blocked",
+  "src.common.mongodb": "blocked",
+  "QDRANT_URL": "unset"
+ }
+}
