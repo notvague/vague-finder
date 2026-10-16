@@ -1,0 +1,912 @@
+{
+  "arm": "new",
+  "old_code": false,
+  "ttl": 20.0,
+  "retry": 15.0,
+  "ready": {
+    "status": "ok",
+    "service": "vague-finder-backend",
+    "warmup": {
+      "state": "ready",
+      "elapsed_ms": 13535.0,
+      "stages": {
+        "koe5": {
+          "ms": 6152.8,
+          "outcome": "ok"
+        },
+        "bm25": {
+          "ms": 803.8,
+          "outcome": "ok"
+        },
+        "siglip2": {
+          "ms": 3991.2,
+          "outcome": "ok"
+        },
+        "clap": {
+          "ms": 2310.1,
+          "outcome": "ok"
+        },
+        "reranker": {
+          "ms": 1.2,
+          "outcome": "skipped: 로컬 CE가 아니다(GeminiListwiseReranker) — 원격 호출은 예열하지 않는다"
+        },
+        "lyrics": {
+          "ms": 11.7,
+          "outcome": "ok"
+        },
+        "vector_db": {
+          "ms": 264.1,
+          "outcome": "ok"
+        }
+      }
+    },
+    "lyrics_cache": {
+      "state": "fresh",
+      "closed": false,
+      "documents": 301,
+      "generation": 0,
+      "snapshot_generation": 0,
+      "age_seconds": 1.1,
+      "ttl_seconds": 20.0,
+      "last_success_epoch": 1792145864.162862,
+      "refreshing": false,
+      "refresh_running_seconds": null,
+      "refresh_successes": 0,
+      "refresh_failures": 0,
+      "refresh_cancelled": 0,
+      "refresh_discarded": 0,
+      "last_refresh_error": null,
+      "last_failure_age_seconds": null,
+      "retry_seconds": 15.0,
+      "retry_in_seconds": null,
+      "mongo_socket_timeout_seconds": 60.0,
+      "mongo_batch_size": 200,
+      "close_wait_seconds": 75.0
+    },
+    "feedback": {
+      "collection": {
+        "enabled": false,
+        "ready": false,
+        "ttl": null,
+        "ttl_checked_at": null
+      },
+      "index_worker": {
+        "enabled": false,
+        "state": "disabled",
+        "cycles": 0,
+        "last_cycle_at": null,
+        "last_success_at": null,
+        "last_error": null,
+        "last_report": null
+      },
+      "retrieval": {
+        "enabled": false
+      }
+    }
+  },
+  "rows": [
+    {
+      "arm": "new",
+      "label": "R1_normal",
+      "status_code": 200,
+      "elapsed_ms": 97.0,
+      "request_id": "6eb37f860cb8",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "b18f616ecb8c516b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 1,
+      "cache_state": "fresh",
+      "refreshing": false,
+      "refresh_successes": 0,
+      "refresh_failures": 0
+    },
+    {
+      "arm": "new",
+      "label": "R2_after_expiry",
+      "status_code": 200,
+      "elapsed_ms": 156.8,
+      "request_id": "8764e558b569",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "b18f616ecb8c516b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "stale",
+      "refreshing": true,
+      "refresh_successes": 0,
+      "refresh_failures": 0
+    },
+    {
+      "arm": "new",
+      "label": "R2b_concurrent",
+      "status_code": 200,
+      "elapsed_ms": 93.0,
+      "request_id": "fa910b3498c9",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "b18f616ecb8c516b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "stale",
+      "refreshing": true,
+      "refresh_successes": 0,
+      "refresh_failures": 0
+    },
+    {
+      "arm": "new",
+      "label": "R3_while_refresh_blocked",
+      "status_code": 200,
+      "elapsed_ms": 74.5,
+      "request_id": "c9ddade332fd",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "b18f616ecb8c516b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "stale",
+      "refreshing": true,
+      "refresh_successes": 0,
+      "refresh_failures": 0
+    },
+    {
+      "arm": "new",
+      "label": "R4_after_refresh",
+      "status_code": 200,
+      "elapsed_ms": 104.6,
+      "request_id": "d0bf5d8922ee",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "fresh",
+      "refreshing": false,
+      "refresh_successes": 1,
+      "refresh_failures": 0
+    },
+    {
+      "arm": "new",
+      "label": "R5_after_expiry_source_fails",
+      "status_code": 200,
+      "elapsed_ms": 157.8,
+      "request_id": "2156d95cfe47",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 3,
+      "cache_state": "stale",
+      "refreshing": false,
+      "refresh_successes": 1,
+      "refresh_failures": 1
+    },
+    {
+      "arm": "new",
+      "label": "R6_within_retry_interval",
+      "status_code": 200,
+      "elapsed_ms": 164.3,
+      "request_id": "4873137c4d24",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 3,
+      "cache_state": "stale",
+      "refreshing": false,
+      "refresh_successes": 1,
+      "refresh_failures": 1
+    },
+    {
+      "arm": "new",
+      "label": "R7_after_retry_interval",
+      "status_code": 200,
+      "elapsed_ms": 154.7,
+      "request_id": "04c73d302edf",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 4,
+      "cache_state": "fresh",
+      "refreshing": false,
+      "refresh_successes": 2,
+      "refresh_failures": 1
+    },
+    {
+      "arm": "new",
+      "label": "R8_after_recovery",
+      "status_code": 200,
+      "elapsed_ms": 49.6,
+      "request_id": "3518f5df4708",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "18d0f84a9be89a7b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 4,
+      "cache_state": "fresh",
+      "refreshing": false,
+      "refresh_successes": 2,
+      "refresh_failures": 1
+    },
+    {
+      "arm": "new",
+      "label": "R9_refresh_blocked_before_shutdown",
+      "status_code": 200,
+      "elapsed_ms": 145.5,
+      "request_id": "7e52dfbe28bb",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "18d0f84a9be89a7b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 5,
+      "cache_state": "stale",
+      "refreshing": true,
+      "refresh_successes": 2,
+      "refresh_failures": 1
+    }
+  ],
+  "shutdown": {
+    "alive_after_3s": true,
+    "exited": true,
+    "seconds_from_sigterm_to_exit": 3.22
+  },
+  "events": [
+    {
+      "event": "ready",
+      "warmup": {
+        "state": "ready",
+        "elapsed_ms": 13535.0,
+        "stages": {
+          "koe5": {
+            "ms": 6152.8,
+            "outcome": "ok"
+          },
+          "bm25": {
+            "ms": 803.8,
+            "outcome": "ok"
+          },
+          "siglip2": {
+            "ms": 3991.2,
+            "outcome": "ok"
+          },
+          "clap": {
+            "ms": 2310.1,
+            "outcome": "ok"
+          },
+          "reranker": {
+            "ms": 1.2,
+            "outcome": "skipped: 로컬 CE가 아니다(GeminiListwiseReranker) — 원격 호출은 예열하지 않는다"
+          },
+          "lyrics": {
+            "ms": 11.7,
+            "outcome": "ok"
+          },
+          "vector_db": {
+            "ms": 264.1,
+            "outcome": "ok"
+          }
+        }
+      },
+      "lyrics_cache": {
+        "state": "fresh",
+        "closed": false,
+        "documents": 301,
+        "generation": 0,
+        "snapshot_generation": 0,
+        "age_seconds": 1.1,
+        "ttl_seconds": 20.0,
+        "last_success_epoch": 1792145864.162862,
+        "refreshing": false,
+        "refresh_running_seconds": null,
+        "refresh_successes": 0,
+        "refresh_failures": 0,
+        "refresh_cancelled": 0,
+        "refresh_discarded": 0,
+        "last_refresh_error": null,
+        "last_failure_age_seconds": null,
+        "retry_seconds": 15.0,
+        "retry_in_seconds": null,
+        "mongo_socket_timeout_seconds": 60.0,
+        "mongo_batch_size": 200,
+        "close_wait_seconds": 75.0
+      },
+      "t": 1792145865.282
+    },
+    {
+      "event": "initial_status",
+      "service_type": "LyricsExactSearchService",
+      "module": "src.retrieval.lyrics_exact_search",
+      "guard": {
+        "make_genai_client": "blocked",
+        "google.genai.Client": "blocked",
+        "mongodb.get_collection": "blocked"
+      },
+      "config": {
+        "QDRANT_URL": "http://127.0.0.1:6356",
+        "QDRANT_PATH": "artifacts/qdrant_eval_v56_local",
+        "LYRICS_CACHE_TTL_SECONDS": "20",
+        "LYRICS_REFRESH_RETRY_SECONDS": "15",
+        "SEARCH_WARMUP": "",
+        "FEEDBACK_COLLECTION_ENABLED": "0",
+        "RERANKER_BACKEND": "gemini_listwise",
+        "V58_OLD_SERVICE": "0",
+        "V58_OLD_REF": "",
+        "V58_LYRICS_CTL": "experiments/reranking/results_v58_lyrics_cache_refresh/ctl/lyrics_ctl_new.json",
+        "V58_SOURCE_LOG": "experiments/reranking/results_v58_lyrics_cache_refresh/source_calls_new.jsonl",
+        "SEARCH_TIMING_LOG": "experiments/reranking/results_v58_lyrics_cache_refresh/timing_new.jsonl"
+      },
+      "t": 1792145865.283
+    },
+    {
+      "event": "request",
+      "arm": "new",
+      "label": "R1_normal",
+      "status_code": 200,
+      "elapsed_ms": 97.0,
+      "request_id": "6eb37f860cb8",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "b18f616ecb8c516b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 1,
+      "cache_state": "fresh",
+      "refreshing": false,
+      "refresh_successes": 0,
+      "refresh_failures": 0,
+      "t": 1792145865.381
+    },
+    {
+      "event": "ctl",
+      "mode": "gate",
+      "version": "v2",
+      "gate_file": "/private/tmp/vague-finder-lyrics-cache-refresh/experiments/reranking/results_v58_lyrics_cache_refresh/ctl/gate_new",
+      "gate_after": 1,
+      "t": 1792145865.381
+    },
+    {
+      "event": "sleep",
+      "seconds": 21.0,
+      "why": "TTL 만료 대기",
+      "t": 1792145865.381
+    },
+    {
+      "event": "request",
+      "arm": "new",
+      "label": "R2_after_expiry",
+      "status_code": 200,
+      "elapsed_ms": 156.8,
+      "request_id": "8764e558b569",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "b18f616ecb8c516b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "stale",
+      "refreshing": true,
+      "refresh_successes": 0,
+      "refresh_failures": 0,
+      "t": 1792145886.54
+    },
+    {
+      "event": "request",
+      "arm": "new",
+      "label": "R2b_concurrent",
+      "status_code": 200,
+      "elapsed_ms": 93.0,
+      "request_id": "fa910b3498c9",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "b18f616ecb8c516b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "stale",
+      "refreshing": true,
+      "refresh_successes": 0,
+      "refresh_failures": 0,
+      "t": 1792145886.782
+    },
+    {
+      "event": "request",
+      "arm": "new",
+      "label": "R3_while_refresh_blocked",
+      "status_code": 200,
+      "elapsed_ms": 74.5,
+      "request_id": "c9ddade332fd",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "b18f616ecb8c516b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "stale",
+      "refreshing": true,
+      "refresh_successes": 0,
+      "refresh_failures": 0,
+      "t": 1792145886.859
+    },
+    {
+      "event": "status_while_blocked",
+      "lyrics": {
+        "state": "stale",
+        "closed": false,
+        "documents": 301,
+        "generation": 0,
+        "snapshot_generation": 0,
+        "age_seconds": 22.7,
+        "ttl_seconds": 20.0,
+        "last_success_epoch": 1792145864.162862,
+        "refreshing": true,
+        "refresh_running_seconds": 0.5,
+        "refresh_successes": 0,
+        "refresh_failures": 0,
+        "refresh_cancelled": 0,
+        "refresh_discarded": 0,
+        "last_refresh_error": null,
+        "last_failure_age_seconds": null,
+        "retry_seconds": 15.0,
+        "retry_in_seconds": null,
+        "mongo_socket_timeout_seconds": 60.0,
+        "mongo_batch_size": 200,
+        "close_wait_seconds": 75.0
+      },
+      "t": 1792145886.86
+    },
+    {
+      "event": "gate_open",
+      "t": 1792145886.861
+    },
+    {
+      "event": "refresh_done",
+      "lyrics": {
+        "state": "fresh",
+        "closed": false,
+        "documents": 301,
+        "generation": 0,
+        "snapshot_generation": 0,
+        "age_seconds": 0.1,
+        "ttl_seconds": 20.0,
+        "last_success_epoch": 1792145886.9570482,
+        "refreshing": false,
+        "refresh_running_seconds": null,
+        "refresh_successes": 1,
+        "refresh_failures": 0,
+        "refresh_cancelled": 0,
+        "refresh_discarded": 0,
+        "last_refresh_error": null,
+        "last_failure_age_seconds": null,
+        "retry_seconds": 15.0,
+        "retry_in_seconds": null,
+        "mongo_socket_timeout_seconds": 60.0,
+        "mongo_batch_size": 200,
+        "close_wait_seconds": 75.0
+      },
+      "t": 1792145887.07
+    },
+    {
+      "event": "request",
+      "arm": "new",
+      "label": "R4_after_refresh",
+      "status_code": 200,
+      "elapsed_ms": 104.6,
+      "request_id": "d0bf5d8922ee",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "fresh",
+      "refreshing": false,
+      "refresh_successes": 1,
+      "refresh_failures": 0,
+      "t": 1792145887.177
+    },
+    {
+      "event": "ctl",
+      "mode": "fail",
+      "version": "v2",
+      "gate_file": "/private/tmp/vague-finder-lyrics-cache-refresh/experiments/reranking/results_v58_lyrics_cache_refresh/ctl/gate_new",
+      "gate_after": 1,
+      "t": 1792145887.177
+    },
+    {
+      "event": "sleep",
+      "seconds": 21.0,
+      "why": "TTL 만료 대기(fail)",
+      "t": 1792145887.177
+    },
+    {
+      "event": "request",
+      "arm": "new",
+      "label": "R5_after_expiry_source_fails",
+      "status_code": 200,
+      "elapsed_ms": 157.8,
+      "request_id": "2156d95cfe47",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 3,
+      "cache_state": "stale",
+      "refreshing": false,
+      "refresh_successes": 1,
+      "refresh_failures": 1,
+      "t": 1792145908.341
+    },
+    {
+      "event": "after_failure",
+      "lyrics": {
+        "state": "stale",
+        "closed": false,
+        "documents": 301,
+        "generation": 0,
+        "snapshot_generation": 0,
+        "age_seconds": 21.4,
+        "ttl_seconds": 20.0,
+        "last_success_epoch": 1792145886.9570482,
+        "refreshing": false,
+        "refresh_running_seconds": null,
+        "refresh_successes": 1,
+        "refresh_failures": 1,
+        "refresh_cancelled": 0,
+        "refresh_discarded": 0,
+        "last_refresh_error": "ConnectionError",
+        "last_failure_age_seconds": 0.1,
+        "retry_seconds": 15.0,
+        "retry_in_seconds": 14.9,
+        "mongo_socket_timeout_seconds": 60.0,
+        "mongo_batch_size": 200,
+        "close_wait_seconds": 75.0
+      },
+      "t": 1792145908.342
+    },
+    {
+      "event": "request",
+      "arm": "new",
+      "label": "R6_within_retry_interval",
+      "status_code": 200,
+      "elapsed_ms": 164.3,
+      "request_id": "4873137c4d24",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 3,
+      "cache_state": "stale",
+      "refreshing": false,
+      "refresh_successes": 1,
+      "refresh_failures": 1,
+      "t": 1792145913.512
+    },
+    {
+      "event": "ctl",
+      "mode": "normal",
+      "version": "v3",
+      "gate_file": "/private/tmp/vague-finder-lyrics-cache-refresh/experiments/reranking/results_v58_lyrics_cache_refresh/ctl/gate_new",
+      "gate_after": 1,
+      "t": 1792145913.512
+    },
+    {
+      "event": "sleep",
+      "seconds": 11.0,
+      "why": "재시도 간격 경과 대기",
+      "t": 1792145913.512
+    },
+    {
+      "event": "request",
+      "arm": "new",
+      "label": "R7_after_retry_interval",
+      "status_code": 200,
+      "elapsed_ms": 154.7,
+      "request_id": "04c73d302edf",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 4,
+      "cache_state": "fresh",
+      "refreshing": false,
+      "refresh_successes": 2,
+      "refresh_failures": 1,
+      "t": 1792145924.672
+    },
+    {
+      "event": "retry_done",
+      "lyrics": {
+        "state": "fresh",
+        "closed": false,
+        "documents": 301,
+        "generation": 0,
+        "snapshot_generation": 0,
+        "age_seconds": 0.1,
+        "ttl_seconds": 20.0,
+        "last_success_epoch": 1792145924.5610209,
+        "refreshing": false,
+        "refresh_running_seconds": null,
+        "refresh_successes": 2,
+        "refresh_failures": 1,
+        "refresh_cancelled": 0,
+        "refresh_discarded": 0,
+        "last_refresh_error": null,
+        "last_failure_age_seconds": null,
+        "retry_seconds": 15.0,
+        "retry_in_seconds": null,
+        "mongo_socket_timeout_seconds": 60.0,
+        "mongo_batch_size": 200,
+        "close_wait_seconds": 75.0
+      },
+      "t": 1792145924.673
+    },
+    {
+      "event": "request",
+      "arm": "new",
+      "label": "R8_after_recovery",
+      "status_code": 200,
+      "elapsed_ms": 49.6,
+      "request_id": "3518f5df4708",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "18d0f84a9be89a7b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 4,
+      "cache_state": "fresh",
+      "refreshing": false,
+      "refresh_successes": 2,
+      "refresh_failures": 1,
+      "t": 1792145924.723
+    },
+    {
+      "event": "ctl",
+      "mode": "gate",
+      "version": "v4",
+      "gate_file": "/private/tmp/vague-finder-lyrics-cache-refresh/experiments/reranking/results_v58_lyrics_cache_refresh/ctl/gate_new",
+      "gate_after": 1,
+      "t": 1792145924.724
+    },
+    {
+      "event": "sleep",
+      "seconds": 21.0,
+      "why": "TTL 만료 대기(종료 시나리오)",
+      "t": 1792145924.724
+    },
+    {
+      "event": "request",
+      "arm": "new",
+      "label": "R9_refresh_blocked_before_shutdown",
+      "status_code": 200,
+      "elapsed_ms": 145.5,
+      "request_id": "7e52dfbe28bb",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "18d0f84a9be89a7b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 5,
+      "cache_state": "stale",
+      "refreshing": true,
+      "refresh_successes": 2,
+      "refresh_failures": 1,
+      "t": 1792145945.873
+    },
+    {
+      "event": "sigterm",
+      "pid": 4879,
+      "t": 1792145945.874
+    },
+    {
+      "event": "alive_after_3s",
+      "alive": true,
+      "why": "갱신 읽기가 gate에 막혀 있어 종료가 기다려야 한다",
+      "t": 1792145948.89
+    },
+    {
+      "event": "gate_open",
+      "t": 1792145948.891
+    },
+    {
+      "event": "shutdown",
+      "alive_after_3s": true,
+      "exited": true,
+      "seconds_from_sigterm_to_exit": 3.22,
+      "t": 1792145949.098
+    }
+  ]
+}

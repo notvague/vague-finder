@@ -4,7 +4,7 @@ import os
 import threading
 from pathlib import Path
 
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Dict, Optional, TypeVar
 
 from src.common.gemini_client import RETRIEVAL, gemini_configured
 from src.embedding.models.audio_clap import CLAPAudioEmbedder
@@ -15,7 +15,12 @@ from src.feedback.case_index import FeedbackCaseIndex
 from src.feedback.retrieval import FeedbackRetriever
 from src.feedback.store import get_feedback_store
 from src.retrieval.query_analyzer import QueryAnalyzer
-from src.retrieval.lyrics_exact_search import LyricsExactSearchService
+from src.retrieval.lyrics_exact_search import (
+    DEFAULT_MONGO_BATCH_SIZE,
+    DEFAULT_MONGO_SOCKET_TIMEOUT_SECONDS,
+    DEFAULT_REFRESH_RETRY_SECONDS,
+    LyricsExactSearchService,
+)
 from src.retrieval.reranker import MusicReranker
 from src.retrieval.gemini_listwise_reranker import GeminiListwiseReranker
 from src.retrieval.search_router import SearchRouter
@@ -167,10 +172,55 @@ def get_query_analyzer() -> QueryAnalyzer:
 @singleton
 def get_lyrics_exact_search_service() -> LyricsExactSearchService:
     # Mongo 연결과 full_lyrics snapshot 로딩은 첫 가사 표면 검색 시 지연 수행된다.
+    # TTL(기본 300초)이 지나면 지금 판으로 검색하면서 백그라운드로 한 번 갱신하고,
+    # 갱신이 실패하면 LYRICS_REFRESH_RETRY_SECONDS(기본 60초) 동안 다시 시도하지 않는다.
     return LyricsExactSearchService(
         fuzzy_threshold=float(os.getenv("LYRICS_FUZZY_THRESHOLD", "0.78")),
         cache_ttl_seconds=float(os.getenv("LYRICS_CACHE_TTL_SECONDS", "300")),
+        refresh_retry_seconds=float(
+            os.getenv("LYRICS_REFRESH_RETRY_SECONDS", str(DEFAULT_REFRESH_RETRY_SECONDS))
+        ),
+        # 가사 읽기 전용 Mongo 클라이언트의 한 왕복(배치) socket 제한과 배치 크기. 공용 클라이언트는 건드리지 않는다.
+        mongo_socket_timeout_seconds=float(
+            os.getenv("LYRICS_MONGO_SOCKET_TIMEOUT_SECONDS", str(DEFAULT_MONGO_SOCKET_TIMEOUT_SECONDS))
+        ),
+        mongo_batch_size=int(os.getenv("LYRICS_MONGO_BATCH_SIZE", str(DEFAULT_MONGO_BATCH_SIZE))),
     )
+
+
+def lyrics_cache_status() -> Dict[str, Any]:
+    """`/health`용 가사 판 상태. **아직 안 만들어졌으면 만들지 않는다**(Mongo를 열지 않는다)."""
+    service = get_lyrics_exact_search_service.peek()  # type: ignore[attr-defined]
+    if service is None:
+        return {"state": "not_created"}
+    status = getattr(service, "status", None)
+    if not callable(status):  # 다른 구현(테스트 대체물)이 꽂혀 있어도 /health는 응답한다
+        return {"state": "unknown", "type": type(service).__name__}
+    try:
+        return dict(status())
+    except Exception as exc:  # noqa: BLE001 - 상태 조회가 /health를 깨뜨리면 안 된다
+        return {"state": "error", "error": type(exc).__name__}
+
+
+def close_lyrics_exact_search_service(timeout: Optional[float] = None) -> bool:
+    """가사 서비스를 닫는다 — 새 갱신을 막고 돌고 있는 갱신이 멈추기를 기다린다.
+
+    아직 만들어지지 않았으면 만들지 않는다. 예열(`warmup.stop_and_wait`)이 끝난 뒤에
+    불러야 한다 — 예열의 lyrics 단계가 최초 적재 중일 수 있다. timeout이 None이면 서비스의
+    `close_wait_seconds`(가사 전용 Mongo socket 제한 + 여유)만큼 기다린다 — 읽기는 그 안에
+    반환되거나 실패하므로 대기는 유한하다. False면 그 안에 끝나지 않았다는 뜻이다(제한이
+    작동하지 않은 이상 상황이며 취소 완료가 아니다).
+    """
+    service = get_lyrics_exact_search_service.peek()  # type: ignore[attr-defined]
+    get_lyrics_exact_search_service.cache_clear()  # type: ignore[attr-defined]
+    close = getattr(service, "close", None)
+    if service is None or not callable(close):
+        return True
+    try:
+        return bool(close(timeout))
+    except Exception as exc:  # noqa: BLE001 - 종료 경로에서 예외를 올리면 종료가 막힌다
+        print(f"[경고] 가사 서비스를 닫는 중 오류: {exc}")
+        return False
 
 
 @singleton

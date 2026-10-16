@@ -1,0 +1,11 @@
+arm,label,status_code,elapsed_ms,target_rank,quote_version,quote_span,quote_matches_target_text,source_calls,cache_state,refreshing,refresh_successes,refresh_failures,request_id
+new,R1_normal,200,97.0,1,b18f616ecb8c516b,"[17, 29]",True,1,fresh,False,0,0,6eb37f860cb8
+new,R2_after_expiry,200,156.8,1,b18f616ecb8c516b,"[17, 29]",True,2,stale,True,0,0,8764e558b569
+new,R2b_concurrent,200,93.0,1,b18f616ecb8c516b,"[17, 29]",True,2,stale,True,0,0,fa910b3498c9
+new,R3_while_refresh_blocked,200,74.5,1,b18f616ecb8c516b,"[17, 29]",True,2,stale,True,0,0,c9ddade332fd
+new,R4_after_refresh,200,104.6,1,3db59ec4804ee0c4,"[17, 29]",True,2,fresh,False,1,0,d0bf5d8922ee
+new,R5_after_expiry_source_fails,200,157.8,1,3db59ec4804ee0c4,"[17, 29]",True,3,stale,False,1,1,2156d95cfe47
+new,R6_within_retry_interval,200,164.3,1,3db59ec4804ee0c4,"[17, 29]",True,3,stale,False,1,1,4873137c4d24
+new,R7_after_retry_interval,200,154.7,1,3db59ec4804ee0c4,"[17, 29]",True,4,fresh,False,2,1,04c73d302edf
+new,R8_after_recovery,200,49.6,1,18d0f84a9be89a7b,"[17, 29]",True,4,fresh,False,2,1,3518f5df4708
+new,R9_refresh_blocked_before_shutdown,200,145.5,1,18d0f84a9be89a7b,"[17, 29]",True,5,stale,True,2,1,7e52dfbe28bb

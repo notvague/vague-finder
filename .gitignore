@@ -226,3 +226,13 @@ experiments/reranking/results_v56_attr_runtime_validation/logs/
 experiments/reranking/results_v56_attr_runtime_validation/ctl/
 experiments/reranking/results_v56_attr_runtime_validation/run1_noalias/logs_run1/
 experiments/reranking/results_v56_attr_runtime_validation/progress.txt
+
+# v58 가사 캐시 갱신 HTTP 검증 결과(요청별 표)는 공유하고 실행 제어·원시 로그는 로컬에 보존한다
+!experiments/reranking/results_v58_lyrics_cache_refresh/http_check_new.csv
+!experiments/reranking/results_v58_lyrics_cache_refresh/http_check_old.csv
+experiments/reranking/results_v58_lyrics_cache_refresh/logs/
+experiments/reranking/results_v58_lyrics_cache_refresh/ctl/
+experiments/reranking/results_v58_lyrics_cache_refresh/progress.txt
+experiments/reranking/results_v58_lyrics_cache_refresh/timing_*.jsonl
+experiments/reranking/results_v58_lyrics_cache_refresh/fake_calls_*.jsonl
+experiments/reranking/results_v58_lyrics_cache_refresh/source_calls_*.jsonl

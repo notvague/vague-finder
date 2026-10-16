@@ -6,7 +6,14 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from src.backend.api.dependencies import close_gemini_clients, close_vector_client, get_vector_client, reranker_backend
+from src.backend.api.dependencies import (
+    close_gemini_clients,
+    close_lyrics_exact_search_service,
+    close_vector_client,
+    get_vector_client,
+    lyrics_cache_status,
+    reranker_backend,
+)
 from src.common import gemini_client as gc
 from src.common.gemini_client import RETRIEVAL, GeminiConfigError
 from src.retrieval.gemini_listwise_reranker import GeminiListwiseRerankerConfig
@@ -99,6 +106,12 @@ async def lifespan(app: FastAPI):
         # **제한을 두지 않고 기다린다.** 돌고 있는 단계가 벡터 클라이언트를 만지는
         # 중일 수 있어서, 여기서 시간을 끊으면 닫은 뒤에 그 단계가 저장소를 다시 연다.
         await asyncio.to_thread(warmup.stop_and_wait)
+        # 가사 판 백그라운드 갱신(TTL 만료 뒤 Mongo 전체 읽기)을 멈춘다. 예열이 끝난 뒤여야
+        # 한다 — 예열 lyrics 단계가 최초 적재 중일 수 있다. 닫힌 뒤에는 새 갱신을 시작하지
+        # 않고 돌던 갱신은 결과를 게시하지 않는다. 대기는 유한하다 — 가사 읽기는 전용 Mongo
+        # 클라이언트의 socket 제한(한 배치) 안에 반환되거나 실패하므로 "제한 + 여유"만 기다리고,
+        # 그 안에 안 끝나면 경고(False)로 남긴다(join만 끊고 읽기를 남기는 것이 아니라 읽기 자체가 끝난다).
+        await asyncio.to_thread(close_lyrics_exact_search_service)
         # 색인 작업은 asyncio 작업이 아니라 스레드다. 멈춤 신호를 주고 **끝날 때까지 기다린 뒤**
         # 벡터 클라이언트를 닫는다 — 돌던 묶음이 닫힌 저장소에 쓰지 않게.
         await asyncio.to_thread(feedback_worker.stop_and_wait)
@@ -186,6 +199,9 @@ async def health_check():
         "status": "ok",
         "service": "vague-finder-backend",
         "warmup": warmup.status(),
+        # 가사 판(Mongo full_lyrics 캐시)의 상태 — fresh/stale, 곡 수, 마지막 성공 시각,
+        # 백그라운드 갱신 진행 여부, 실패·재시도 대기. 아직 안 만들어졌으면 만들지 않는다.
+        "lyrics_cache": lyrics_cache_status(),
         # 피드백 수집·색인 작업·검색 반영의 준비 상태. 건수·시각·상태 코드뿐이다 —
         # 원문·내부 오류 본문·연결 정보는 싣지 않는다.
         "feedback": feedback_health(),
