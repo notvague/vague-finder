@@ -1,0 +1,5 @@
+set,query_id,call_seq,top_k,filtered,song_id,shape,exact_rank,exact_score,exact_dense,exact_sparse,dense_rank_in_corpus,sparse_rank_among_matched,impl_rank,impl_score
+v09,n017,19,90,0,32228058,dense_portion_missing,76,0.289556,0.02594,0.263616,5038,76,76,0.263615936
+v10,t003,3,90,0,36310362,dense_portion_missing,7,0.48463,0.025455,0.459176,5027,6,8,0.459175676
+v10,t016,21,90,0,34535898,dense_portion_missing,59,0.663619,0.020193,0.643427,5097,54,65,0.643426657
+v10,t018,23,90,0,35637511,dense_portion_missing,33,0.299235,0.021502,0.277733,5046,19,50,0.277732551

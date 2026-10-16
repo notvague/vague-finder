@@ -1,0 +1,68 @@
+{
+  "arm": "B",
+  "set": "v06",
+  "rep": 0,
+  "query_ids": "",
+  "git_sha": "770843f",
+  "collection": "vaguefinder-text-1024-koe5__dev",
+  "point_count": 5143,
+  "hybrid_scan_limit_default": 5000,
+  "hybrid_scan_limit_used": 5000,
+  "scan_limit_truncates": false,
+  "reference_fingerprint": {
+    "collection": "vaguefinder-text-1024-koe5__dev",
+    "points": 5143,
+    "dense_dim": 1024,
+    "sparse_nnz": 1061090,
+    "sparse_vocab": 44486,
+    "content_sha256_16": "238299e6c8c17f2a"
+  },
+  "reference_build_seconds": 0.797,
+  "env": {
+    "QDRANT_PATH": "artifacts/qdrant_v61_audit",
+    "CONTEXT_WEIGHT": "0.5",
+    "ATTR_FILTER_WEIGHT": "0",
+    "AUDIO_FUSION_SCALE": "1",
+    "SEARCH_REFERENCE_YEAR": "2026",
+    "RERANKER_ENABLED": "false",
+    "RERANKER_BACKEND": "gemini_listwise",
+    "GEMINI_RERANK_RARE_FACT_VERIFY": "0",
+    "GEMINI_RETRIEVAL_BACKEND": "vertex",
+    "FEEDBACK_COLLECTION_ENABLED": "0",
+    "FEEDBACK_INDEX_WORKER_ENABLED": "0",
+    "HF_HUB_OFFLINE": "1",
+    "TRANSFORMERS_OFFLINE": "1",
+    "TOKENIZERS_PARALLELISM": "false"
+  },
+  "guard_before": {
+    "make_genai_client": "blocked",
+    "google.genai.Client": "blocked",
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "QDRANT_URL": "unset"
+  },
+  "guard_after": {
+    "make_genai_client": "blocked",
+    "google.genai.Client": "blocked",
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "QDRANT_URL": "unset"
+  },
+  "capture": {
+    "hybrid_calls": 105,
+    "dense_only_calls": 53,
+    "hybrid_elapsed_ms_median": 3.213,
+    "hybrid_elapsed_ms_p95": 30.006799999999995,
+    "dense_hits_total": 0,
+    "sparse_hits_total": 0,
+    "queries_seen": 57
+  },
+  "eval_seconds": 12.401,
+  "total_seconds": 15.27,
+  "ru_maxrss_bytes": {
+    "before": 527138816,
+    "after_prepare": 1589837824,
+    "end": 4260478976
+  },
+  "qdrant_meta_mtime": 1792154096.6380992
+}

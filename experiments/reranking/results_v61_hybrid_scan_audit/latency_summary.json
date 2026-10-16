@@ -1,0 +1,81 @@
+{
+ "set": "v06",
+ "calls_measured": 60,
+ "warmup_per_arm": 2,
+ "point_count": 5143,
+ "prepare_seconds": {
+  "open_copy": 1.309,
+  "reference_build": 0.718
+ },
+ "ru_maxrss_bytes": {
+  "start": 131235840,
+  "after_open": 993116160,
+  "after_reference": 1129021440,
+  "end": 1130643456
+ },
+ "arms": {
+  "A": {
+   "median_ms": 231.47,
+   "p95_ms": 328.25,
+   "mean_ms": 236.09,
+   "min_ms": 119.03,
+   "max_ms": 342.01,
+   "qdrant_calls_per_query": 2.0,
+   "returned_points_per_query_mean": 9079.45
+  },
+  "C": {
+   "median_ms": 230.79,
+   "p95_ms": 321.56,
+   "mean_ms": 230.25,
+   "min_ms": 119.36,
+   "max_ms": 337.49,
+   "qdrant_calls_per_query": 2.0,
+   "returned_points_per_query_mean": 9237.683333333332
+  },
+  "D": {
+   "median_ms": 231.09,
+   "p95_ms": 327.78,
+   "mean_ms": 235.24,
+   "min_ms": 121.34,
+   "max_ms": 337.16,
+   "qdrant_calls_per_query": 3.0,
+   "returned_points_per_query_mean": 9237.683333333332
+  },
+  "B": {
+   "median_ms": 1.48,
+   "p95_ms": 2.1,
+   "mean_ms": 1.72,
+   "min_ms": 1.33,
+   "max_ms": 3.57,
+   "qdrant_calls_per_query": 1.0,
+   "returned_points_per_query_mean": 59.0
+  }
+ },
+ "note": "A·C는 같은 구현(상한만 다름, C의 count는 준비 단계 1회). D = 요청마다 count(exact) + 상한=그 값(수정안 §7-A 모양, count 비용 포함). B는 메모리 행렬 기준 구현이며 운영 수정안의 비용 추정이 아니다. 로컬 파일 모드 측정이며 서버 모드 수치가 아니다",
+ "filter_count_ms": {
+  "distinct_filters": 9,
+  "repeats_each": 10,
+  "median_ms": 17.064,
+  "p95_ms": 20.014,
+  "matched_range": [
+   3,
+   2464
+  ]
+ },
+ "C_minus_A_ms": {
+  "median": 0.75,
+  "p95": 94.02,
+  "mean": -5.84,
+  "negative_share": 0.333
+ },
+ "D_minus_A_ms": {
+  "median": 0.88,
+  "p95": 96.26,
+  "mean": -0.85,
+  "negative_share": 0.3
+ },
+ "D_count_ms": {
+  "median": 0.021,
+  "p95": 0.024
+ }
+}

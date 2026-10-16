@@ -1,0 +1,92 @@
+{
+ "reference_fingerprint": {
+  "collection": "vaguefinder-text-1024-koe5__dev",
+  "points": 5143,
+  "dense_dim": 1024,
+  "sparse_nnz": 1061090,
+  "sparse_vocab": 44486,
+  "content_sha256_16": "238299e6c8c17f2a"
+ },
+ "sets": {
+  "v06": {
+   "calls": 105,
+   "dense_truncated": 95,
+   "sparse_truncated": 15,
+   "filtered": 10,
+   "A_identical": 105,
+   "A_same_set": 105,
+   "A_any_diff": 0,
+   "A_missing_songs": 0,
+   "A_score_mismatch_songs": 0,
+   "B_matches_exact": 105,
+   "B_compared": 105,
+   "C_matches_exact": 105,
+   "C_compared": 105,
+   "exact_dense_negative_songs": 98,
+   "B_calls_without_A_match": 0
+  },
+  "v09": {
+   "calls": 102,
+   "dense_truncated": 100,
+   "sparse_truncated": 9,
+   "filtered": 2,
+   "A_identical": 102,
+   "A_same_set": 102,
+   "A_any_diff": 1,
+   "A_missing_songs": 0,
+   "A_score_mismatch_songs": 1,
+   "B_matches_exact": 102,
+   "B_compared": 102,
+   "C_matches_exact": 102,
+   "C_compared": 102,
+   "exact_dense_negative_songs": 112,
+   "shape:dense_portion_missing": 1,
+   "B_calls_without_A_match": 0
+  },
+  "v10": {
+   "calls": 104,
+   "dense_truncated": 100,
+   "sparse_truncated": 11,
+   "filtered": 4,
+   "A_identical": 101,
+   "A_same_set": 104,
+   "A_any_diff": 3,
+   "A_missing_songs": 0,
+   "A_score_mismatch_songs": 3,
+   "B_matches_exact": 104,
+   "B_compared": 104,
+   "C_matches_exact": 104,
+   "C_compared": 104,
+   "exact_dense_negative_songs": 23,
+   "shape:dense_portion_missing": 3,
+   "B_calls_without_A_match": 0
+  }
+ },
+ "tolerance": {
+  "total": 0.0001
+ },
+ "all": {
+  "calls": 311,
+  "dense_truncated": 295,
+  "sparse_truncated": 35,
+  "filtered": 16,
+  "A_identical": 308,
+  "A_same_set": 311,
+  "A_any_diff": 4,
+  "A_missing_songs": 0,
+  "A_score_mismatch_songs": 4,
+  "B_matches_exact": 311,
+  "B_compared": 311,
+  "C_matches_exact": 311,
+  "C_compared": 311,
+  "exact_dense_negative_songs": 233,
+  "B_calls_without_A_match": 0,
+  "shape:dense_portion_missing": 4
+ },
+ "queries_with_any_call_diff": [
+  "v09:n017",
+  "v10:t003",
+  "v10:t016",
+  "v10:t018"
+ ]
+}

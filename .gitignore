@@ -236,3 +236,14 @@ experiments/reranking/results_v58_lyrics_cache_refresh/progress.txt
 experiments/reranking/results_v58_lyrics_cache_refresh/timing_*.jsonl
 experiments/reranking/results_v58_lyrics_cache_refresh/fake_calls_*.jsonl
 experiments/reranking/results_v58_lyrics_cache_refresh/source_calls_*.jsonl
+
+# v61 하이브리드 조회 상한 진단(results_v61_hybrid_scan_audit) — 질의별 후보 변화·호출별 대조·누락 곡·지연 표(곡 ID·질의 ID·숫자만)는 공유하고,
+# 질의 벡터·조회 id 덤프(npz)·호출/후보 기록(jsonl)·실행 로그·진행 파일은 로컬에만 둔다
+!experiments/reranking/results_v61_hybrid_scan_audit/candidate_changes.csv
+!experiments/reranking/results_v61_hybrid_scan_audit/text_calls_diff.csv
+!experiments/reranking/results_v61_hybrid_scan_audit/truncation_songs.csv
+!experiments/reranking/results_v61_hybrid_scan_audit/latency_calls.csv
+experiments/reranking/results_v61_hybrid_scan_audit/cand_*/*/calls.jsonl
+experiments/reranking/results_v61_hybrid_scan_audit/cand_*/*/candidates.jsonl
+experiments/reranking/results_v61_hybrid_scan_audit/cand_*/*/calls_vectors.npz
+experiments/reranking/results_v61_hybrid_scan_audit/progress.txt
