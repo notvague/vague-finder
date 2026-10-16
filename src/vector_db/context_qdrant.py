@@ -424,14 +424,23 @@ def _alias_targets(client: QdrantVectorClient) -> dict[str, str]:
     }
 
 
-def _collection_config_matches(
-    client: QdrantVectorClient,
+def collection_config_matches(
+    raw_client: object,
     collection: str,
     *,
     kind: str,
     dimension: int,
 ) -> bool:
-    info = client.client.get_collection(collection)
+    """Does an existing collection carry the vector schema this publisher writes?
+
+    ``kind`` is ``"dense"`` (one named dense vector, DOT, ``dimension``) or
+    ``"sparse"`` (no dense vectors, one named sparse vector). Reads collection
+    metadata only — no points, payloads or vectors. Shared with the service
+    startup check (``ContextQdrantSearch.verify_publication``) so the publisher
+    and the service never disagree about what a published collection looks like.
+    ``raw_client`` is the ``qdrant_client.QdrantClient`` itself.
+    """
+    info = raw_client.get_collection(collection)
     vectors = info.config.params.vectors
     sparse = info.config.params.sparse_vectors or {}
     if kind == "dense":
@@ -440,6 +449,16 @@ def _collection_config_matches(
         config = vectors[DENSE_VECTOR]
         return int(config.size) == dimension and config.distance == models.Distance.DOT
     return isinstance(vectors, Mapping) and not vectors and set(sparse) == {SPARSE_VECTOR}
+
+
+def _collection_config_matches(
+    client: QdrantVectorClient,
+    collection: str,
+    *,
+    kind: str,
+    dimension: int,
+) -> bool:
+    return collection_config_matches(client.client, collection, kind=kind, dimension=dimension)
 
 
 def _verify_collection(

@@ -1,0 +1,252 @@
+{
+  "code": {
+    "root": "/private/tmp/vague-finder-context-startup-check",
+    "commit": "f4e87ff",
+    "has_context_startup": true
+  },
+  "scenarios": {
+    "ok": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5"
+      },
+      "startup": {
+        "started": true,
+        "health_context": {
+          "state": "verified",
+          "source": "startup",
+          "checked_at": "2026-10-16T12:19:17+00:00",
+          "note": "기동 시점의 결과다. 지금 연결 상태를 보장하지 않는다.",
+          "reason": "ok",
+          "publication": {
+            "dense_alias": "vaguefinder-context-dense-1024-koe5__test",
+            "sparse_alias": "vaguefinder-context-sparse-bm25__test",
+            "dense_collection": "vaguefinder-context-dense-1024-koe5__test__generation_0c449b4c0fa4a0e2",
+            "sparse_collection": "vaguefinder-context-sparse-bm25__test__generation_0c449b4c0fa4a0e2",
+            "context_build_id": "0c449b4c0fa4a0e2217f9db5cbde18f7d33242c63cdfa03ce588fa3a26d33bcc",
+            "dense_dimension": 4
+          }
+        },
+        "error": null,
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "results",
+        "song_ids": [
+          "101",
+          "202"
+        ]
+      }
+    },
+    "aliases_missing": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5"
+      },
+      "startup": {
+        "started": false,
+        "health_context": null,
+        "error": {
+          "type": "ContextStartupError",
+          "reason": "aliases_missing",
+          "message": "Context를 쓰도록 설정됐는데 색인·별칭이 맞지 않는다(aliases_missing): published context Qdrant aliases are missing"
+        },
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "exception_to_empty_in_router",
+        "type": "ContextPublicationError",
+        "reason": "aliases_missing",
+        "message": "published context Qdrant aliases are missing"
+      }
+    },
+    "alias_partial": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5"
+      },
+      "startup": {
+        "started": false,
+        "health_context": null,
+        "error": {
+          "type": "ContextStartupError",
+          "reason": "aliases_partial",
+          "message": "Context를 쓰도록 설정됐는데 색인·별칭이 맞지 않는다(aliases_partial): context Qdrant aliases are only partially published"
+        },
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "exception_to_empty_in_router",
+        "type": "ContextPublicationError",
+        "reason": "aliases_partial",
+        "message": "context Qdrant aliases are only partially published"
+      }
+    },
+    "alias_wrong_target": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5"
+      },
+      "startup": {
+        "started": false,
+        "health_context": null,
+        "error": {
+          "type": "ContextStartupError",
+          "reason": "publication_mismatch",
+          "message": "Context를 쓰도록 설정됐는데 색인·별칭이 맞지 않는다(publication_mismatch): context Qdrant publication differs from its state manifest"
+        },
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "exception_to_empty_in_router",
+        "type": "ContextPublicationError",
+        "reason": "publication_mismatch",
+        "message": "context Qdrant publication differs from its state manifest"
+      }
+    },
+    "manifest_missing": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5"
+      },
+      "startup": {
+        "started": false,
+        "health_context": null,
+        "error": {
+          "type": "ContextStartupError",
+          "reason": "manifest_missing",
+          "message": "Context를 쓰도록 설정됐는데 색인·별칭이 맞지 않는다(manifest_missing): context search manifest is missing: /var/folders/sx/sbjlpm_x0vgf8bpnwfngpv8r0000gn/T/v60-manifest_missing-c9w4hqrz/state.json"
+        },
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "exception_to_empty_in_router",
+        "type": "ContextPublicationError",
+        "reason": "manifest_missing",
+        "message": "context search manifest is missing: /var/folders/sx/sbjlpm_x0vgf8bpnwfngpv8r0000gn/T/v60-manifest_missing-c9w4hqrz/state.json"
+      }
+    },
+    "manifest_corrupt": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5"
+      },
+      "startup": {
+        "started": false,
+        "health_context": null,
+        "error": {
+          "type": "ContextStartupError",
+          "reason": "manifest_invalid",
+          "message": "Context를 쓰도록 설정됐는데 색인·별칭이 맞지 않는다(manifest_invalid): invalid context search manifest: /var/folders/sx/sbjlpm_x0vgf8bpnwfngpv8r0000gn/T/v60-manifest_corrupt-46mnmrha/state.json"
+        },
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "exception_to_empty_in_router",
+        "type": "ContextPublicationError",
+        "reason": "manifest_invalid",
+        "message": "invalid context search manifest: /var/folders/sx/sbjlpm_x0vgf8bpnwfngpv8r0000gn/T/v60-manifest_corrupt-46mnmrha/state.json"
+      }
+    },
+    "manifest_mismatch": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5"
+      },
+      "startup": {
+        "started": false,
+        "health_context": null,
+        "error": {
+          "type": "ContextStartupError",
+          "reason": "publication_mismatch",
+          "message": "Context를 쓰도록 설정됐는데 색인·별칭이 맞지 않는다(publication_mismatch): context Qdrant publication differs from its state manifest"
+        },
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "exception_to_empty_in_router",
+        "type": "ContextPublicationError",
+        "reason": "publication_mismatch",
+        "message": "context Qdrant publication differs from its state manifest"
+      }
+    },
+    "disabled_aliases_missing": {
+      "env": {
+        "CONTEXT_WEIGHT": "0"
+      },
+      "startup": {
+        "started": true,
+        "health_context": {
+          "state": "disabled",
+          "source": "startup",
+          "checked_at": "2026-10-16T12:19:17+00:00",
+          "note": "기동 시점의 결과다. 지금 연결 상태를 보장하지 않는다.",
+          "reason": "context_weight_zero"
+        },
+        "error": null,
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "exception_to_empty_in_router",
+        "type": "ContextPublicationError",
+        "reason": "aliases_missing",
+        "message": "published context Qdrant aliases are missing"
+      }
+    },
+    "connection_failure": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5",
+        "QDRANT_URL": "http://127.0.0.1:1"
+      },
+      "startup": {
+        "started": true,
+        "health_context": {
+          "state": "unavailable",
+          "source": "startup",
+          "checked_at": "2026-10-16T12:19:17+00:00",
+          "note": "기동 시점의 결과다. 지금 연결 상태를 보장하지 않는다.",
+          "reason": "backend_error",
+          "error_type": "ResponseHandlingException"
+        },
+        "error": null
+      }
+    }
+  },
+  "fused_candidates": {
+    "테스트 프로그램 배경음악": [
+      {
+        "song_id": "101",
+        "dense_rank": 1,
+        "sparse_rank": 2,
+        "score": 0.032522
+      },
+      {
+        "song_id": "202",
+        "dense_rank": 2,
+        "sparse_rank": 1,
+        "score": 0.032522
+      }
+    ],
+    "프로듀서가 데모를 다시 녹음": [
+      {
+        "song_id": "202",
+        "dense_rank": 1,
+        "sparse_rank": 1,
+        "score": 0.032787
+      },
+      {
+        "song_id": "101",
+        "dense_rank": 2,
+        "sparse_rank": 2,
+        "score": 0.032258
+      }
+    ],
+    "삽입곡": [
+      {
+        "song_id": "202",
+        "dense_rank": 1,
+        "sparse_rank": 1,
+        "score": 0.032787
+      },
+      {
+        "song_id": "101",
+        "dense_rank": 2,
+        "sparse_rank": 2,
+        "score": 0.032258
+      }
+    ]
+  }
+}

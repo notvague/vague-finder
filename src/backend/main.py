@@ -22,7 +22,7 @@ from src.backend.api.routes import feedback
 from src.feedback import worker as feedback_worker
 from src.feedback.health import feedback_health
 from src.feedback.store import close_feedback_store, prepare_indexes
-from src.backend import warmup
+from src.backend import context_startup, warmup
 from src.retrieval import timing
 
 STATIC_DIR = Path(__file__).resolve().parents[1] / "frontend" / "static"
@@ -80,10 +80,25 @@ async def lifespan(app: FastAPI):
     else:
         print(f"[Gemini] Vertex AI 확인: location={route.get('location')} models={route.get('models') or [route.get('model')]} probe={route.get('probe')}")
 
+    vector_client = None
     try:
-        get_vector_client()
+        vector_client = get_vector_client()
     except Exception as exc:
         print(f"[경고] 벡터 DB 초기화 실패(첫 검색 요청에서 다시 시도): {exc}")
+
+    # Context(배경 지식) 색인·별칭 기동 검사 — Context를 쓰도록 설정됐을 때만(`CONTEXT_WEIGHT>0`).
+    # v56에서 서버 Qdrant로 옮기며 별칭을 빠뜨렸는데 서버가 정상으로 뜨고 검색마다 경고만 남긴 채 Context 없이
+    # 돌았다. 별칭 누락·잘못된 대상·manifest 불일치는 다시 시도해도 낫지 않는 설정 오류라 서버를 띄우지 않는다.
+    # 연결 불가·시간 초과는 위 벡터 DB 실패와 같은 일시 장애로 보고 경고만 남긴다(확인 불가로 기록, 확인 완료 아님).
+    # 예열·색인 작업·피드백 스레드보다 **먼저** 돈다 — 실패하면 아직 띄운 것이 벡터 클라이언트뿐이라 그것만 닫으면
+    # 로컬 Qdrant 저장 폴더 잠금이 풀리고 같은 프로세스에서 다시 띄울 수 있다. 모델을 올리지 않는다.
+    # 설정 오류(ContextStartupError)뿐 아니라 검사 코드의 **예상 밖 예외**(리뷰: 자료형 오류로 TypeError가 난 사례)에도
+    # 닫는다 — 어떤 이유로든 기동이 여기서 끊기면 클라이언트는 남지 않아야 한다. 원래 예외를 그대로 다시 올린다.
+    try:
+        context_startup.run(vector_client)
+    except Exception:
+        await asyncio.to_thread(close_vector_client)
+        raise
 
     # 모델 예열은 기동을 막지 않는다. 첫 검색 하나가 11초를 혼자 내지 않게 하는
     # 것이 목적이고, 그 사이에 들어온 요청은 예열 없던 때와 같은 값을 낼 뿐이다.
@@ -205,6 +220,10 @@ async def health_check():
         # 피드백 수집·색인 작업·검색 반영의 준비 상태. 건수·시각·상태 코드뿐이다 —
         # 원문·내부 오류 본문·연결 정보는 싣지 않는다.
         "feedback": feedback_health(),
+        # Context(배경 지식) 색인·별칭의 **기동 검사** 결과 — disabled / verified / unavailable
+        # (config_error면 서버가 뜨지 않으므로 여기 보이지 않는다). 저장된 결과를 돌려줄 뿐, 조회마다
+        # Qdrant를 다시 묻지 않는다. `checked_at`·`note`가 기동 시점 결과임을 말한다.
+        "context": context_startup.status(),
     }
 
 app.include_router(search.router, prefix="/api/v1")

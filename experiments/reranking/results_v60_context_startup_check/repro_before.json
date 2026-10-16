@@ -1,0 +1,201 @@
+{
+  "code": {
+    "root": "/Users/ozzing727/Desktop/Developer/졸작-RISE/vague-finder",
+    "commit": "f4e87ff",
+    "has_context_startup": false
+  },
+  "scenarios": {
+    "ok": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5"
+      },
+      "startup": {
+        "started": true,
+        "health_context": "<없음 — 수정 전 코드>",
+        "error": null,
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "results",
+        "song_ids": [
+          "101",
+          "202"
+        ]
+      }
+    },
+    "aliases_missing": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5"
+      },
+      "startup": {
+        "started": true,
+        "health_context": "<없음 — 수정 전 코드>",
+        "error": null,
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "exception_to_empty_in_router",
+        "type": "RuntimeError",
+        "reason": null,
+        "message": "published context Qdrant aliases are missing"
+      }
+    },
+    "alias_partial": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5"
+      },
+      "startup": {
+        "started": true,
+        "health_context": "<없음 — 수정 전 코드>",
+        "error": null,
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "exception_to_empty_in_router",
+        "type": "RuntimeError",
+        "reason": null,
+        "message": "context Qdrant aliases are only partially published"
+      }
+    },
+    "alias_wrong_target": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5"
+      },
+      "startup": {
+        "started": true,
+        "health_context": "<없음 — 수정 전 코드>",
+        "error": null,
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "exception_to_empty_in_router",
+        "type": "RuntimeError",
+        "reason": null,
+        "message": "context Qdrant publication differs from its state manifest"
+      }
+    },
+    "manifest_missing": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5"
+      },
+      "startup": {
+        "started": true,
+        "health_context": "<없음 — 수정 전 코드>",
+        "error": null,
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "exception_to_empty_in_router",
+        "type": "RuntimeError",
+        "reason": null,
+        "message": "context search manifest is missing: /var/folders/sx/sbjlpm_x0vgf8bpnwfngpv8r0000gn/T/v60-manifest_missing-5i1lsv2m/state.json"
+      }
+    },
+    "manifest_corrupt": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5"
+      },
+      "startup": {
+        "started": true,
+        "health_context": "<없음 — 수정 전 코드>",
+        "error": null,
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "exception_to_empty_in_router",
+        "type": "RuntimeError",
+        "reason": null,
+        "message": "invalid context search manifest: /var/folders/sx/sbjlpm_x0vgf8bpnwfngpv8r0000gn/T/v60-manifest_corrupt-wfa8465z/state.json"
+      }
+    },
+    "manifest_mismatch": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5"
+      },
+      "startup": {
+        "started": true,
+        "health_context": "<없음 — 수정 전 코드>",
+        "error": null,
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "exception_to_empty_in_router",
+        "type": "RuntimeError",
+        "reason": null,
+        "message": "context Qdrant publication differs from its state manifest"
+      }
+    },
+    "disabled_aliases_missing": {
+      "env": {
+        "CONTEXT_WEIGHT": "0"
+      },
+      "startup": {
+        "started": true,
+        "health_context": "<없음 — 수정 전 코드>",
+        "error": null,
+        "storage_reopenable_after": true
+      },
+      "search_probe": {
+        "outcome": "exception_to_empty_in_router",
+        "type": "RuntimeError",
+        "reason": null,
+        "message": "published context Qdrant aliases are missing"
+      }
+    },
+    "connection_failure": {
+      "env": {
+        "CONTEXT_WEIGHT": "0.5",
+        "QDRANT_URL": "http://127.0.0.1:1"
+      },
+      "startup": {
+        "started": true,
+        "health_context": "<없음 — 수정 전 코드>",
+        "error": null
+      }
+    }
+  },
+  "fused_candidates": {
+    "테스트 프로그램 배경음악": [
+      {
+        "song_id": "101",
+        "dense_rank": 1,
+        "sparse_rank": 2,
+        "score": 0.032522
+      },
+      {
+        "song_id": "202",
+        "dense_rank": 2,
+        "sparse_rank": 1,
+        "score": 0.032522
+      }
+    ],
+    "프로듀서가 데모를 다시 녹음": [
+      {
+        "song_id": "202",
+        "dense_rank": 1,
+        "sparse_rank": 1,
+        "score": 0.032787
+      },
+      {
+        "song_id": "101",
+        "dense_rank": 2,
+        "sparse_rank": 2,
+        "score": 0.032258
+      }
+    ],
+    "삽입곡": [
+      {
+        "song_id": "202",
+        "dense_rank": 1,
+        "sparse_rank": 1,
+        "score": 0.032787
+      },
+      {
+        "song_id": "101",
+        "dense_rank": 2,
+        "sparse_rank": 2,
+        "score": 0.032258
+      }
+    ]
+  }
+}

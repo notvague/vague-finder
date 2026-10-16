@@ -38,6 +38,7 @@ from src.retrieval.context_ranking import (
 from src.vector_db.context_qdrant import (
     CONTEXT_QDRANT_MANIFEST_VERSION,
     CONTEXT_QDRANT_PAYLOAD_VERSION,
+    collection_config_matches,
 )
 from src.vector_db.qdrant_backend import (
     DENSE_VECTOR,
@@ -69,6 +70,36 @@ class _Snapshot:
     sparse_manifest_sha256: str
 
 
+class ContextPublicationError(RuntimeError):
+    """The published Context pair (aliases · collections · manifests) is inconsistent.
+
+    A deterministic configuration error — retrying will not fix it: aliases were not
+    moved with the collections, the state manifest is missing or stale, a local
+    artifact does not match the published generation, and so on. Distinct from
+    transport failures (connection refused, timeout), which are *not* this type and
+    keep their own exception class so callers can tell "wrong setup" from "Qdrant is
+    down right now" by type instead of by message text.
+
+    ``reason`` is a short machine-readable code safe to publish in status output.
+    """
+
+    def __init__(self, message: str, *, reason: str) -> None:
+        super().__init__(message)
+        self.reason = reason
+
+
+@dataclass(frozen=True)
+class ContextPublicationStatus:
+    """What ``verify_publication`` confirmed. Metadata only — no payload/vector content."""
+
+    dense_alias: str
+    sparse_alias: str
+    dense_collection: str
+    sparse_collection: str
+    build_id: str
+    dense_dimension: int
+
+
 def _media_key(value: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFKC", value).casefold()
                    if c.isalnum())
@@ -76,13 +107,19 @@ def _media_key(value: str) -> str:
 
 def _manifest(path: Path, schema: str) -> dict:
     if path.is_symlink() or not path.is_file():
-        raise RuntimeError(f"context search manifest is missing: {path}")
+        raise ContextPublicationError(
+            f"context search manifest is missing: {path}", reason="manifest_missing"
+        )
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        raise RuntimeError(f"invalid context search manifest: {path}") from exc
+        raise ContextPublicationError(
+            f"invalid context search manifest: {path}", reason="manifest_invalid"
+        ) from exc
     if not isinstance(value, dict) or value.get("schema_version") != schema:
-        raise RuntimeError(f"unsupported context search manifest: {path}")
+        raise ContextPublicationError(
+            f"unsupported context search manifest: {path}", reason="manifest_unsupported"
+        )
     expected = value.get("manifest_content_sha256")
     content = dict(value)
     content.pop("manifest_content_sha256", None)
@@ -90,8 +127,24 @@ def _manifest(path: Path, schema: str) -> dict:
         content, ensure_ascii=False, sort_keys=True, separators=(",", ":")
     ).encode("utf-8")).hexdigest()
     if not expected or expected != actual:
-        raise RuntimeError(f"context search manifest hash mismatch: {path}")
+        raise ContextPublicationError(
+            f"context search manifest hash mismatch: {path}", reason="manifest_hash_mismatch"
+        )
     return value
+
+
+def _nonempty_str(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _dense_embedding_config(dense: dict) -> dict:
+    """The dense artifact manifest's ``embedding`` block — a broken block is a config error."""
+    config = dense.get("embedding")
+    if not isinstance(config, dict):
+        raise ContextPublicationError(
+            "context dense manifest has an invalid embedding block", reason="manifest_invalid"
+        )
+    return config
 
 
 def _required(payload: dict, key: str) -> str:
@@ -158,14 +211,36 @@ class ContextQdrantSearch:
         sparse = aliases.get(self.sparse_alias)
         if dense is None and sparse is None:
             if self.state_manifest.exists() or self.state_manifest.is_symlink():
-                raise RuntimeError("published context Qdrant aliases are missing")
+                raise ContextPublicationError(
+                    "published context Qdrant aliases are missing", reason="aliases_missing"
+                )
             return None
         if dense is None or sparse is None:
-            raise RuntimeError("context Qdrant aliases are only partially published")
+            raise ContextPublicationError(
+                "context Qdrant aliases are only partially published", reason="aliases_partial"
+            )
 
         state = _manifest(self.state_manifest, CONTEXT_QDRANT_MANIFEST_VERSION)
-        info = state.get("qdrant", {})
-        hashes = state.get("source_hashes", {})
+        # Nested blocks and required values must have the right *types* before any
+        # comparison. A hash-consistent manifest with ``qdrant: null`` or a numeric
+        # build id is a broken local file, not a transport failure — it must surface as
+        # a publication error, never as an AttributeError/TypeError that a startup
+        # check would misread as "Qdrant unavailable" and let the service boot.
+        info = state.get("qdrant")
+        hashes = state.get("source_hashes")
+        build_id = state.get("context_build_id")
+        if not isinstance(info, dict) or not isinstance(hashes, dict):
+            raise ContextPublicationError(
+                "context state manifest has an invalid qdrant/source_hashes block",
+                reason="manifest_invalid",
+            )
+        dense_sha = hashes.get("dense_manifest_content_sha256")
+        sparse_sha = hashes.get("sparse_manifest_content_sha256")
+        if not all(_nonempty_str(value) for value in (build_id, dense_sha, sparse_sha)):
+            raise ContextPublicationError(
+                "context state manifest build id or source hashes are not nonempty strings",
+                reason="manifest_invalid",
+            )
         if (
             state.get("status") != "ok"
             or info.get("dense_alias") != self.dense_alias
@@ -176,18 +251,18 @@ class ContextQdrantSearch:
             or info.get("sparse_vector_name") != SPARSE_VECTOR
             or info.get("payload_schema_version") != CONTEXT_QDRANT_PAYLOAD_VERSION
             or info.get("dense_dimension") != self.expected_dense_dim
-            or not state.get("context_build_id")
-            or not hashes.get("dense_manifest_content_sha256")
-            or not hashes.get("sparse_manifest_content_sha256")
         ):
-            raise RuntimeError("context Qdrant publication differs from its state manifest")
+            raise ContextPublicationError(
+                "context Qdrant publication differs from its state manifest",
+                reason="publication_mismatch",
+            )
         return _Snapshot(
             dense_collection=dense,
             sparse_collection=sparse,
-            build_id=state["context_build_id"],
+            build_id=build_id,
             dimension=self.expected_dense_dim,
-            dense_manifest_sha256=hashes["dense_manifest_content_sha256"],
-            sparse_manifest_sha256=hashes["sparse_manifest_content_sha256"],
+            dense_manifest_sha256=dense_sha,
+            sparse_manifest_sha256=sparse_sha,
         )
 
     def _text_embedder(self, snapshot: _Snapshot) -> Any:
@@ -196,20 +271,26 @@ class ContextQdrantSearch:
                 dense = _manifest(
                     self.dense_dir / "manifest.json", CONTEXT_DENSE_MANIFEST_VERSION
                 )
-                config = dense.get("embedding", {})
+                config = _dense_embedding_config(dense)
                 if (
                     dense["manifest_content_sha256"] != snapshot.dense_manifest_sha256
                     or config.get("dimension") != snapshot.dimension
                     or not config.get("model_name")
                     or config.get("e5_prefix") != "passage: "
                 ):
-                    raise RuntimeError("context dense model differs from the published corpus")
+                    raise ContextPublicationError(
+                        "context dense model differs from the published corpus",
+                        reason="dense_artifact_mismatch",
+                    )
                 if self._injected_embedder:
                     if isinstance(self._embedder, KoE5Embedder) and (
                         self._embedder.model_name != config["model_name"]
                         or self._embedder.revision != config.get("model_revision")
                     ):
-                        raise RuntimeError("context query embedder differs from the published model")
+                        raise ContextPublicationError(
+                            "context query embedder differs from the published model",
+                            reason="embedder_mismatch",
+                        )
                 else:
                     self._embedder = KoE5Embedder(
                         model_name=config["model_name"], revision=config.get("model_revision")
@@ -224,11 +305,91 @@ class ContextQdrantSearch:
                     self.sparse_dir, hash_fn=self._hash_fn
                 )
                 if encoder.manifest_content_sha256 != snapshot.sparse_manifest_sha256:
-                    raise RuntimeError("context BM25 parameters differ from the published corpus")
+                    raise ContextPublicationError(
+                        "context BM25 parameters differ from the published corpus",
+                        reason="sparse_artifact_mismatch",
+                    )
                 self._sparse_encoder = encoder
                 self._sparse_manifest_sha256 = snapshot.sparse_manifest_sha256
             assert self._sparse_encoder is not None
             return self._sparse_encoder
+
+    def verify_publication(self) -> ContextPublicationStatus:
+        """Confirm that a Context-enabled service can actually search Context.
+
+        Reuses the same checks the query path runs lazily (``_snapshot`` → aliases and
+        state manifest; the dense/sparse artifact-hash checks) and adds the two things
+        the query path only discovers on the first query: that each alias target
+        collection **exists** and carries the published **vector schema**. Reads
+        metadata only — no model load, no model download, no point/payload/vector scan,
+        and nothing is created, repaired or re-published.
+
+        Contract differences from searching:
+
+        * A catalogue that never published Context (no aliases *and* no state
+          manifest) is a valid empty result for :meth:`search`, but for a service
+          configured to use Context it is a configuration error
+          (``reason="not_published"``) — the service would silently run without
+          background knowledge, which is exactly the v56 incident.
+        * Configuration errors raise :class:`ContextPublicationError` (``reason`` set).
+          Anything else (connection refused, timeout, unexpected server response)
+          propagates as the client's own exception type so the caller can treat it as
+          "could not check" rather than "misconfigured".
+
+        What this does **not** verify: payload contents, vector values, point counts,
+        or the KoE5 query embedder (not constructed here — the dense artifact manifest
+        is compared by hash and dimension only).
+        """
+        snapshot = self._snapshot()
+        if snapshot is None:
+            raise ContextPublicationError(
+                "context Qdrant pair is not published (no aliases and no state manifest)",
+                reason="not_published",
+            )
+        for kind, collection in (
+            ("dense", snapshot.dense_collection),
+            ("sparse", snapshot.sparse_collection),
+        ):
+            if not self.client.collection_exists(collection):
+                raise ContextPublicationError(
+                    f"context {kind} alias points to a missing collection",
+                    reason=f"{kind}_collection_missing",
+                )
+            if not collection_config_matches(
+                self.client, collection, kind=kind, dimension=snapshot.dimension
+            ):
+                raise ContextPublicationError(
+                    f"context {kind} collection vector schema differs from the publication",
+                    reason=f"{kind}_collection_schema_mismatch",
+                )
+        # Local artifacts the query path will read: same hash checks, no embedder.
+        dense = _manifest(self.dense_dir / "manifest.json", CONTEXT_DENSE_MANIFEST_VERSION)
+        config = _dense_embedding_config(dense)
+        if (
+            dense.get("manifest_content_sha256") != snapshot.dense_manifest_sha256
+            or config.get("dimension") != snapshot.dimension
+        ):
+            raise ContextPublicationError(
+                "context dense model differs from the published corpus",
+                reason="dense_artifact_mismatch",
+            )
+        try:
+            self._query_encoder(snapshot)
+        except ContextPublicationError:
+            raise
+        except Exception as exc:  # missing/corrupt BM25 artifact — a local setup error
+            raise ContextPublicationError(
+                "context BM25 query encoder cannot be loaded from the sparse artifact",
+                reason="sparse_artifact_invalid",
+            ) from exc
+        return ContextPublicationStatus(
+            dense_alias=self.dense_alias,
+            sparse_alias=self.sparse_alias,
+            dense_collection=snapshot.dense_collection,
+            sparse_collection=snapshot.sparse_collection,
+            build_id=snapshot.build_id,
+            dense_dimension=snapshot.dimension,
+        )
 
     @staticmethod
     def _payload(hit: models.ScoredPoint, snapshot: _Snapshot, kind: str) -> dict:
