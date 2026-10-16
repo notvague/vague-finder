@@ -1,0 +1,177 @@
+{
+  "old_ref": "origin/main",
+  "before": {
+    "ttl_seconds": 1.0,
+    "slow_seconds": 3.0,
+    "steps": [
+      {
+        "label": "1_initial_load(blocking, expected≈slow)",
+        "elapsed_s": 3.018,
+        "ids": [
+          "v58-target"
+        ],
+        "match_types": [
+          "exact"
+        ],
+        "snapshot_songs": 121,
+        "snapshot_version_marker": "v1",
+        "quote_version": "b18f616ecb8c516b",
+        "quote_span": [
+          17,
+          29
+        ]
+      },
+      {
+        "label": "2_first_request_after_expiry",
+        "elapsed_s": 3.021,
+        "ids": [
+          "v58-target"
+        ],
+        "match_types": [
+          "exact"
+        ],
+        "snapshot_songs": 121,
+        "snapshot_version_marker": "v2",
+        "quote_version": "3db59ec4804ee0c4",
+        "quote_span": [
+          17,
+          29
+        ]
+      },
+      {
+        "label": "3_second_request_while_reload_in_progress",
+        "elapsed_s": 2.716,
+        "ids": [
+          "v58-target"
+        ],
+        "match_types": [
+          "exact"
+        ],
+        "snapshot_songs": 121,
+        "snapshot_version_marker": "v2",
+        "quote_version": "3db59ec4804ee0c4",
+        "quote_span": [
+          17,
+          29
+        ]
+      },
+      {
+        "label": "4_request_after_refresh_completed",
+        "elapsed_s": 0.001,
+        "ids": [
+          "v58-target"
+        ],
+        "match_types": [
+          "exact"
+        ],
+        "snapshot_songs": 121,
+        "snapshot_version_marker": "v2",
+        "quote_version": "3db59ec4804ee0c4",
+        "quote_span": [
+          17,
+          29
+        ]
+      }
+    ],
+    "wall_for_both_requests_s": 3.023,
+    "source_calls": 2,
+    "status": "n/a(old code)"
+  },
+  "after": {
+    "ttl_seconds": 1.0,
+    "slow_seconds": 3.0,
+    "steps": [
+      {
+        "label": "1_initial_load(blocking, expected≈slow)",
+        "elapsed_s": 3.024,
+        "ids": [
+          "v58-target"
+        ],
+        "match_types": [
+          "exact"
+        ],
+        "snapshot_songs": 121,
+        "snapshot_version_marker": "v1",
+        "quote_version": "b18f616ecb8c516b",
+        "quote_span": [
+          17,
+          29
+        ]
+      },
+      {
+        "label": "2_first_request_after_expiry",
+        "elapsed_s": 0.009,
+        "ids": [
+          "v58-target"
+        ],
+        "match_types": [
+          "exact"
+        ],
+        "snapshot_songs": 121,
+        "snapshot_version_marker": "v1",
+        "quote_version": "b18f616ecb8c516b",
+        "quote_span": [
+          17,
+          29
+        ]
+      },
+      {
+        "label": "3_second_request_while_reload_in_progress",
+        "elapsed_s": 0.002,
+        "ids": [
+          "v58-target"
+        ],
+        "match_types": [
+          "exact"
+        ],
+        "snapshot_songs": 121,
+        "snapshot_version_marker": "v1",
+        "quote_version": "b18f616ecb8c516b",
+        "quote_span": [
+          17,
+          29
+        ]
+      },
+      {
+        "label": "4_request_after_refresh_completed",
+        "elapsed_s": 0.001,
+        "ids": [
+          "v58-target"
+        ],
+        "match_types": [
+          "exact"
+        ],
+        "snapshot_songs": 121,
+        "snapshot_version_marker": "v2",
+        "quote_version": "3db59ec4804ee0c4",
+        "quote_span": [
+          17,
+          29
+        ]
+      }
+    ],
+    "wall_for_both_requests_s": 0.314,
+    "source_calls": 2,
+    "status": {
+      "state": "fresh",
+      "closed": false,
+      "documents": 121,
+      "generation": 0,
+      "snapshot_generation": 0,
+      "age_seconds": 0.0,
+      "ttl_seconds": 1.0,
+      "last_success_epoch": 1792144439.6207528,
+      "refreshing": false,
+      "refresh_running_seconds": null,
+      "refresh_successes": 1,
+      "refresh_failures": 0,
+      "refresh_cancelled": 0,
+      "refresh_discarded": 0,
+      "last_refresh_error": null,
+      "last_failure_age_seconds": null,
+      "retry_seconds": 60.0,
+      "retry_in_seconds": null
+    }
+  },
+  "same_ids_types_spans_before_vs_after": true
+}

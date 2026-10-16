@@ -1,0 +1,10 @@
+arm,label,status_code,elapsed_ms,target_rank,quote_version,quote_span,quote_matches_target_text,source_calls,cache_state,refreshing,refresh_successes,refresh_failures,request_id
+old,R1_normal,200,155.1,1,b18f616ecb8c516b,"[17, 29]",True,1,no_status_method(old code),,,,3cb3baf7084b
+old,R2b_concurrent,200,24804.9,1,3db59ec4804ee0c4,"[17, 29]",True,2,no_status_method(old code),,,,682173ec1c79
+old,R2_after_expiry,200,25108.6,1,3db59ec4804ee0c4,"[17, 29]",True,2,no_status_method(old code),,,,e74eb37d00a6
+old,R3_after_blocking_reload,200,469.3,1,3db59ec4804ee0c4,"[17, 29]",True,2,no_status_method(old code),,,,448044f96cd7
+old,R4_after_refresh,200,49.3,1,3db59ec4804ee0c4,"[17, 29]",True,2,no_status_method(old code),,,,1272dc737fc8
+old,R5_after_expiry_source_fails,200,165.5,,,,,3,no_status_method(old code),,,,dec67c1aac65
+old,R6_within_retry_interval,200,160.0,,,,,4,no_status_method(old code),,,,2d540028293d
+old,R7_after_retry_interval,200,181.8,1,18d0f84a9be89a7b,"[17, 29]",True,5,no_status_method(old code),,,,c5fb9f0452d9
+old,R8_after_recovery,200,51.4,1,18d0f84a9be89a7b,"[17, 29]",True,5,no_status_method(old code),,,,9d30d6aec41d

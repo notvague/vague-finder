@@ -1,0 +1,669 @@
+{
+  "arm": "old",
+  "old_code": true,
+  "ttl": 20.0,
+  "retry": 15.0,
+  "ready": {
+    "status": "ok",
+    "service": "vague-finder-backend",
+    "warmup": {
+      "state": "ready",
+      "elapsed_ms": 14752.4,
+      "stages": {
+        "koe5": {
+          "ms": 7308.3,
+          "outcome": "ok"
+        },
+        "bm25": {
+          "ms": 830.1,
+          "outcome": "ok"
+        },
+        "siglip2": {
+          "ms": 3939.1,
+          "outcome": "ok"
+        },
+        "clap": {
+          "ms": 2229.2,
+          "outcome": "ok"
+        },
+        "reranker": {
+          "ms": 1.3,
+          "outcome": "skipped: 로컬 CE가 아니다(GeminiListwiseReranker) — 원격 호출은 예열하지 않는다"
+        },
+        "lyrics": {
+          "ms": 148.0,
+          "outcome": "ok"
+        },
+        "vector_db": {
+          "ms": 295.5,
+          "outcome": "ok"
+        }
+      }
+    },
+    "lyrics_cache": {
+      "state": "unknown",
+      "type": "LyricsExactSearchService"
+    },
+    "feedback": {
+      "collection": {
+        "enabled": false,
+        "ready": false,
+        "ttl": null,
+        "ttl_checked_at": null
+      },
+      "index_worker": {
+        "enabled": false,
+        "state": "disabled",
+        "cycles": 0,
+        "last_cycle_at": null,
+        "last_success_at": null,
+        "last_error": null,
+        "last_report": null
+      },
+      "retrieval": {
+        "enabled": false
+      }
+    }
+  },
+  "rows": [
+    {
+      "arm": "old",
+      "label": "R1_normal",
+      "status_code": 200,
+      "elapsed_ms": 155.1,
+      "request_id": "3cb3baf7084b",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "b18f616ecb8c516b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 1,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null
+    },
+    {
+      "arm": "old",
+      "label": "R2b_concurrent",
+      "status_code": 200,
+      "elapsed_ms": 24804.9,
+      "request_id": "682173ec1c79",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null
+    },
+    {
+      "arm": "old",
+      "label": "R2_after_expiry",
+      "status_code": 200,
+      "elapsed_ms": 25108.6,
+      "request_id": "e74eb37d00a6",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null
+    },
+    {
+      "arm": "old",
+      "label": "R3_after_blocking_reload",
+      "status_code": 200,
+      "elapsed_ms": 469.3,
+      "request_id": "448044f96cd7",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null
+    },
+    {
+      "arm": "old",
+      "label": "R4_after_refresh",
+      "status_code": 200,
+      "elapsed_ms": 49.3,
+      "request_id": "1272dc737fc8",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null
+    },
+    {
+      "arm": "old",
+      "label": "R5_after_expiry_source_fails",
+      "status_code": 200,
+      "elapsed_ms": 165.5,
+      "request_id": "dec67c1aac65",
+      "top_ids": [
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958",
+        "602509588"
+      ],
+      "target_rank": null,
+      "quote_version": null,
+      "quote_span": null,
+      "quote_matches_target_text": null,
+      "source_calls": 3,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null
+    },
+    {
+      "arm": "old",
+      "label": "R6_within_retry_interval",
+      "status_code": 200,
+      "elapsed_ms": 160.0,
+      "request_id": "2d540028293d",
+      "top_ids": [
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958",
+        "602509588"
+      ],
+      "target_rank": null,
+      "quote_version": null,
+      "quote_span": null,
+      "quote_matches_target_text": null,
+      "source_calls": 4,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null
+    },
+    {
+      "arm": "old",
+      "label": "R7_after_retry_interval",
+      "status_code": 200,
+      "elapsed_ms": 181.8,
+      "request_id": "c5fb9f0452d9",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "18d0f84a9be89a7b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 5,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null
+    },
+    {
+      "arm": "old",
+      "label": "R8_after_recovery",
+      "status_code": 200,
+      "elapsed_ms": 51.4,
+      "request_id": "9d30d6aec41d",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "18d0f84a9be89a7b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 5,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null
+    }
+  ],
+  "shutdown": {
+    "exited": true,
+    "seconds_from_sigterm_to_exit": 0.42
+  },
+  "events": [
+    {
+      "event": "ready",
+      "warmup": {
+        "state": "ready",
+        "elapsed_ms": 14752.4,
+        "stages": {
+          "koe5": {
+            "ms": 7308.3,
+            "outcome": "ok"
+          },
+          "bm25": {
+            "ms": 830.1,
+            "outcome": "ok"
+          },
+          "siglip2": {
+            "ms": 3939.1,
+            "outcome": "ok"
+          },
+          "clap": {
+            "ms": 2229.2,
+            "outcome": "ok"
+          },
+          "reranker": {
+            "ms": 1.3,
+            "outcome": "skipped: 로컬 CE가 아니다(GeminiListwiseReranker) — 원격 호출은 예열하지 않는다"
+          },
+          "lyrics": {
+            "ms": 148.0,
+            "outcome": "ok"
+          },
+          "vector_db": {
+            "ms": 295.5,
+            "outcome": "ok"
+          }
+        }
+      },
+      "lyrics_cache": {
+        "state": "unknown",
+        "type": "LyricsExactSearchService"
+      },
+      "t": 1792144485.895
+    },
+    {
+      "event": "initial_status",
+      "service_type": "LyricsExactSearchService",
+      "module": "lyrics_exact_search_old",
+      "guard": {
+        "make_genai_client": "blocked",
+        "google.genai.Client": "blocked",
+        "mongodb.get_collection": "blocked"
+      },
+      "config": {
+        "QDRANT_URL": "http://127.0.0.1:6356",
+        "QDRANT_PATH": "artifacts/qdrant_eval_v56_local",
+        "LYRICS_CACHE_TTL_SECONDS": "20",
+        "LYRICS_REFRESH_RETRY_SECONDS": "15",
+        "SEARCH_WARMUP": "",
+        "FEEDBACK_COLLECTION_ENABLED": "0",
+        "RERANKER_BACKEND": "gemini_listwise",
+        "V58_OLD_SERVICE": "1",
+        "V58_OLD_REF": "origin/main",
+        "V58_LYRICS_CTL": "experiments/reranking/results_v58_lyrics_cache_refresh/ctl/lyrics_ctl_old.json",
+        "V58_SOURCE_LOG": "experiments/reranking/results_v58_lyrics_cache_refresh/source_calls_old.jsonl",
+        "SEARCH_TIMING_LOG": "experiments/reranking/results_v58_lyrics_cache_refresh/timing_old.jsonl"
+      },
+      "t": 1792144485.896
+    },
+    {
+      "event": "request",
+      "arm": "old",
+      "label": "R1_normal",
+      "status_code": 200,
+      "elapsed_ms": 155.1,
+      "request_id": "3cb3baf7084b",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "b18f616ecb8c516b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 1,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null,
+      "t": 1792144486.052
+    },
+    {
+      "event": "ctl",
+      "mode": "gate",
+      "version": "v2",
+      "gate_file": "/private/tmp/vague-finder-lyrics-cache-refresh/experiments/reranking/results_v58_lyrics_cache_refresh/ctl/gate_old",
+      "gate_after": 1,
+      "t": 1792144486.052
+    },
+    {
+      "event": "sleep",
+      "seconds": 21.0,
+      "why": "TTL 만료 대기",
+      "t": 1792144486.052
+    },
+    {
+      "event": "gate_open",
+      "t": 1792144532.061
+    },
+    {
+      "event": "request",
+      "arm": "old",
+      "label": "R2b_concurrent",
+      "status_code": 200,
+      "elapsed_ms": 24804.9,
+      "request_id": "682173ec1c79",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null,
+      "t": 1792144532.166
+    },
+    {
+      "event": "request",
+      "arm": "old",
+      "label": "R2_after_expiry",
+      "status_code": 200,
+      "elapsed_ms": 25108.6,
+      "request_id": "e74eb37d00a6",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null,
+      "t": 1792144532.167
+    },
+    {
+      "event": "request",
+      "arm": "old",
+      "label": "R3_after_blocking_reload",
+      "status_code": 200,
+      "elapsed_ms": 469.3,
+      "request_id": "448044f96cd7",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null,
+      "t": 1792144532.637
+    },
+    {
+      "event": "request",
+      "arm": "old",
+      "label": "R4_after_refresh",
+      "status_code": 200,
+      "elapsed_ms": 49.3,
+      "request_id": "1272dc737fc8",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "3db59ec4804ee0c4",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 2,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null,
+      "t": 1792144532.688
+    },
+    {
+      "event": "ctl",
+      "mode": "fail",
+      "version": "v2",
+      "gate_file": "/private/tmp/vague-finder-lyrics-cache-refresh/experiments/reranking/results_v58_lyrics_cache_refresh/ctl/gate_old",
+      "gate_after": 1,
+      "t": 1792144532.688
+    },
+    {
+      "event": "sleep",
+      "seconds": 21.0,
+      "why": "TTL 만료 대기(fail)",
+      "t": 1792144532.688
+    },
+    {
+      "event": "request",
+      "arm": "old",
+      "label": "R5_after_expiry_source_fails",
+      "status_code": 200,
+      "elapsed_ms": 165.5,
+      "request_id": "dec67c1aac65",
+      "top_ids": [
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958",
+        "602509588"
+      ],
+      "target_rank": null,
+      "quote_version": null,
+      "quote_span": null,
+      "quote_matches_target_text": null,
+      "source_calls": 3,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null,
+      "t": 1792144553.859
+    },
+    {
+      "event": "request",
+      "arm": "old",
+      "label": "R6_within_retry_interval",
+      "status_code": 200,
+      "elapsed_ms": 160.0,
+      "request_id": "2d540028293d",
+      "top_ids": [
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958",
+        "602509588"
+      ],
+      "target_rank": null,
+      "quote_version": null,
+      "quote_span": null,
+      "quote_matches_target_text": null,
+      "source_calls": 4,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null,
+      "t": 1792144559.02
+    },
+    {
+      "event": "ctl",
+      "mode": "normal",
+      "version": "v3",
+      "gate_file": "/private/tmp/vague-finder-lyrics-cache-refresh/experiments/reranking/results_v58_lyrics_cache_refresh/ctl/gate_old",
+      "gate_after": 1,
+      "t": 1792144559.02
+    },
+    {
+      "event": "sleep",
+      "seconds": 11.0,
+      "why": "재시도 간격 경과 대기",
+      "t": 1792144559.02
+    },
+    {
+      "event": "request",
+      "arm": "old",
+      "label": "R7_after_retry_interval",
+      "status_code": 200,
+      "elapsed_ms": 181.8,
+      "request_id": "c5fb9f0452d9",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "18d0f84a9be89a7b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 5,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null,
+      "t": 1792144570.205
+    },
+    {
+      "event": "request",
+      "arm": "old",
+      "label": "R8_after_recovery",
+      "status_code": 200,
+      "elapsed_ms": 51.4,
+      "request_id": "9d30d6aec41d",
+      "top_ids": [
+        "v58-target",
+        "602537963",
+        "602305631",
+        "4175025",
+        "5653958"
+      ],
+      "target_rank": 1,
+      "quote_version": "18d0f84a9be89a7b",
+      "quote_span": [
+        17,
+        29
+      ],
+      "quote_matches_target_text": true,
+      "source_calls": 5,
+      "cache_state": "no_status_method(old code)",
+      "refreshing": null,
+      "refresh_successes": null,
+      "refresh_failures": null,
+      "t": 1792144570.258
+    },
+    {
+      "event": "shutdown",
+      "exited": true,
+      "seconds_from_sigterm_to_exit": 0.42,
+      "t": 1792144570.676
+    }
+  ]
+}
