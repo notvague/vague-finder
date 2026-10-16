@@ -194,11 +194,31 @@ class RerankRun:
     # 규칙이 옮긴 위치를 모델의 정렬로 기록하게 된다.
     model_order_ids: List[str] = field(default_factory=list)
 
+    # 모델에 넘겼지만 **어느 응답에도 돌아오지 않아** 파서가 입력 순서로 보충한 곡(v59, 2026-10-16).
+    # judged_ids에는 들어 있다(프롬프트에 있었다) — 그러나 이 곡의 자리는 모델이 정한 것이 아니라
+    # 보충 규칙 → 점수 합성 → 순서 규칙이 정했다(최종 위치가 반환된 곡 뒤라는 보장은 없다 — 저신뢰 합성에서
+    # 검색 점수가 앞세울 수 있다). 설명이 "모델이 묶음 안에서 N위로 내렸다"고 말하면 안 되는 곡이다.
+    unreturned_ids: List[str] = field(default_factory=list)
+
+    # 이 실행이 실제로 SDK(모델 API)를 부른 횟수 — 재시도·앞 단계(Search evidence·희소 사실 검증) 포함.
+    # None이면 백엔드가 세지 않은 것이다(단정하지 않는다). 그룹 기록 수(`SearchExplain.rerank_runs`)로는
+    # 이 수를 알 수 없다 — 예산 소진으로 부르지 않은 그룹은 0회, 재시도한 그룹은 3회일 수 있다.
+    model_calls: Optional[int] = None
+
+    # 응답 품질 관측치(파서가 본 것). 순위 계산에 쓰이지 않는다 — 누락·중복·무효 id가 얼마나 있었는가.
+    # 키: valid(유효 고유 id 수) · missing(응답에 없어 채운 수) · duplicate(중복 항목 수) · invalid(후보 밖/형식 오류 항목 수)
+    response_stats: Dict[str, int] = field(default_factory=dict)
+
 
 # 요청 전체의 재정렬 단계. 실행 결과들에서 파생한다.
 REORDER_NOT_ATTEMPTED = "not_attempted"      # 게이트를 통과하지 못해 시도 자체가 없음
 REORDER_POLICY_SKIPPED = "policy_skipped"    # 부를 수 있었지만 정책으로 **일부러** 부르지 않음(아래 RERANK_SKIP_*)
-REORDER_MODEL_APPLIED = "model_applied"      # 한 번이라도 모델이 돌았다
+REORDER_MODEL_APPLIED = "model_applied"      # 반영된 그룹이 모두 모델 순서다(실패·미실행 그룹 없음)
+# 최종 순서에 반영된 그룹 가운데 모델이 정한 것과 실패(`failed`)·예산 소진 미실행(`budget_exhausted`)이
+# **섞였다**(v59, 2026-10-16). 전에는 하나라도 성공하면 `model_applied`로 보여 실패한 그룹이 숨었다 —
+# 평가기는 같은 조합을 `partial_failure`로 세므로 서비스와 분류가 어긋났다(v56 §7-③).
+# 성공한 그룹의 모델 순서는 그대로 보존된다. 정상 건너뜀(`skipped`)·상태 미보고(`unknown`)는 실패가 아니라 섞지 않는다.
+REORDER_MODEL_PARTIAL = "model_partial"
 REORDER_MODEL_FAILED = "model_failed"        # 실행은 했으나 성공이 0회
 REORDER_MODEL_SKIPPED = "model_skipped"      # 실행은 했으나 전부 건너뜀
 REORDER_MODEL_UNKNOWN = "model_unknown"      # 상태를 모르는 백엔드
@@ -235,10 +255,23 @@ REORDER_STAGE_LABELS: Dict[str, str] = {
     REORDER_NOT_ATTEMPTED: "리랭킹을 시도하지 않음",
     REORDER_POLICY_SKIPPED: "리랭킹 생략(정책)",
     REORDER_MODEL_APPLIED: "리랭킹 적용",
+    REORDER_MODEL_PARTIAL: "리랭킹 일부 적용",
     REORDER_MODEL_FAILED: "리랭킹 실패",
     REORDER_MODEL_SKIPPED: "리랭킹 건너뜀(조건 미충족)",
     REORDER_MODEL_UNKNOWN: "리랭킹 결과 확인 불가",
     REORDER_ORDER_RULES_ONLY: "모델 미실행, 순서 규칙만 적용",
+}
+
+# 단계 → 사용자에게 **반환된 결과가 무엇인지** 말하는 고정 문구(v59). 라벨이 "단계에 무슨 일이 있었나"라면
+# 이 문구는 "그래서 지금 보는 순서가 무엇인가"다. 서버가 주고 화면은 짓지 않는다.
+#
+# 부분 적용에서 "검색 순서"라고 쓰지 않는다 — 실패한 그룹은 **리랭킹 직전의 후보 순서**(보정·가사 보호·
+# 답 가산·거절 반영)로 나가며, 그것이 1차 검색 순서와 같다는 보장은 없다. 전부 실패도 같은 이유로
+# 요청 단위 문구를 두지 않는다(보호 배치가 남으면 "검색 순서"가 거짓이 된다 — 곡별 기록이 말한다).
+REORDER_STAGE_NOTES: Dict[str, str] = {
+    REORDER_MODEL_PARTIAL: (
+        "일부 후보 묶음만 리랭킹했고, 나머지 묶음은 리랭킹 전 후보 순서를 그대로 사용했습니다."
+    ),
 }
 
 
@@ -359,6 +392,15 @@ class SongExplain:
     #   - 한 그룹이 성공한 뒤 다음 그룹에서 예외가 나면 **전체가 폴백**한다
     reorder_applied: bool = False
 
+    # 이 곡이 속한 **리랭커 호출 묶음**의 결과(RERANK_*). 비어 있으면 어느 호출에도 넘겨지지 않았다
+    # (단독 보호 그룹, 리랭킹 없음). `reorder_applied`가 거짓인 곡이 "실패한 묶음에 있었다"와
+    # "모델에 넘기지 않았다" 가운데 어느 쪽인지 가른다 — 부분 실패 요청에서 둘은 다른 설명이다(v59).
+    rerank_group_status: str = ""
+
+    # 모델에 넘겼지만 응답에 돌아오지 않아 파서가 입력 순서로 보충한 곡(v59). `reorder_applied`는 참이지만
+    # 자리는 모델이 아니라 보충 → 점수 합성 → 순서 규칙이 정했다 — 설명이 그 이동을 모델에 귀속하면 안 된다.
+    rerank_unreturned: bool = False
+
     def path_total(self) -> float:
         """**최종 점수에 반영된** 경로 기여 합. 탈락한 기여는 빼야 fused_score와 맞는다."""
         return sum(p.delta for p in self.paths if not p.dropped)
@@ -443,8 +485,13 @@ class SearchExplain:
 
     reranker: str = "none"           # 주입된 리랭커 클래스명 또는 "none"
     rerank_error: str = ""           # 라우터가 예외를 잡았으면 사유
-    # 리랭커를 부른 횟수와 그 결과. 호출 수 ≠ 성공 수다.
+    # 리랭커 **그룹 처리 기록**(호출 단위 결과). 길이는 그룹 기록 수이고 실제 SDK 호출 횟수가 아니다 —
+    # 예산 소진으로 부르지 않은 그룹(`budget_exhausted`)도 한 기록이고, 재시도 3회도 한 기록이다(v59).
     rerank_runs: List[str] = field(default_factory=list)
+    # 백엔드가 보고한 **실제 SDK 호출 횟수**의 합(재시도·앞 단계 포함). 하나라도 세지 않은 실행이 있으면
+    # None — 모르는 것을 더해 숫자를 만들지 않는다.
+    rerank_model_calls: Optional[int] = None
+    rerank_model_calls_unknown: bool = False
     songs: Dict[str, SongExplain] = field(default_factory=dict)
 
     # 게이트를 통과해 재정렬을 시도했는가. 통과하지 못하면 실행 자체가 없다.
@@ -469,6 +516,21 @@ class SearchExplain:
         return sum(1 for status in self.rerank_runs if status == RERANK_APPLIED)
 
     @property
+    def rerank_runs_failed(self) -> int:
+        """불렀는데 실패한 그룹 수(라우터 예외의 `failed` 기록 포함). 예산 소진 미실행은 따로 센다."""
+        return sum(1 for status in self.rerank_runs if status == RERANK_FAILED)
+
+    @property
+    def rerank_runs_budget_exhausted(self) -> int:
+        """예산 소진으로 **모델을 부르지 않은** 그룹 수. 실패와 결과는 같지만 호출이 없었다는 다른 사실이다."""
+        return sum(1 for status in self.rerank_runs if status == RERANK_BUDGET_EXHAUSTED)
+
+    @property
+    def rerank_runs_not_applied(self) -> int:
+        """최종 순서에 모델 순서가 반영되지 않은 그룹 수(실패 + 예산 소진). 정상 건너뜀·미보고는 넣지 않는다."""
+        return self.rerank_runs_failed + self.rerank_runs_budget_exhausted
+
+    @property
     def rerank_applied(self) -> bool:
         """모델이 한 번이라도 성공했는가. 호출 여부와는 다른 질문이다."""
         return self.rerank_runs_applied > 0
@@ -480,6 +542,11 @@ class SearchExplain:
         **커밋 여부를 먼저 본다.** 실행이 성공했는지가 아니라 그 결과가 최종
         순서가 됐는지가 설명의 기준이다 — 앞 그룹이 성공하고 뒤에서 예외가 나면
         전체가 검색 순서로 돌아가므로, 성공 이력이 있어도 반영된 것은 없다.
+
+        커밋된 뒤에는 그룹 결과의 **조합**을 본다(v59). 성공만 있으면 `model_applied`, 성공과
+        실패·예산 소진이 섞이면 `model_partial`, 성공이 없고 실패·소진이 있으면 `model_failed`.
+        정상 건너뜀·상태 미보고는 실패가 아니므로 성공과 섞여도 부분 적용이 아니다.
+        평가기의 `rerank_outcome`(applied / partial_failure / fallback)과 같은 조합 규칙이다.
         """
         if not self.reorder_attempted:
             # 정책 생략은 시도하지 않은 것과 다르다. 사유가 있으면 그것을 말한다.
@@ -487,7 +554,7 @@ class SearchExplain:
         if not self.reorder_committed:
             return REORDER_MODEL_FAILED
         if self.rerank_applied:
-            return REORDER_MODEL_APPLIED
+            return REORDER_MODEL_PARTIAL if self.rerank_runs_not_applied else REORDER_MODEL_APPLIED
         if not self.rerank_runs:
             return (
                 REORDER_ORDER_RULES_ONLY
@@ -559,21 +626,44 @@ class ExplainRecorder:
         """속성 조건 보조 필터의 장르 축 판정(v54 실험 정책). 라우터는 conditional 정책이 실제로 필터를 만들었을 때만 부른다."""
         self.record.attr_filter_genre = dict(decision)
 
-    def note_rerank_run(self, status: str, judged_ids: Iterable[str]) -> None:
+    def note_rerank_run(
+        self,
+        status: str,
+        judged_ids: Iterable[str],
+        *,
+        group_ids: Iterable[str] = (),
+        unreturned_ids: Iterable[str] = (),
+        model_calls: Optional[int] = None,
+    ) -> None:
         """리랭커 실행 한 번을 결과와 함께 기록한다.
 
         judged_ids는 백엔드가 **실제로 평가한 곡**이다. 넘겨준 후보 전체가 아니다 —
         Gemini는 max_candidates까지만 본다. 모델이 못 본 곡에 리랭킹을 말하면
         거짓이 되므로 평가한 곡만 표시한다.
 
+        group_ids는 이 호출에 **넘긴 묶음 전체**다(v59). 실패·예산 소진 묶음의 곡에 그 결과를 남겨야
+        "실패한 묶음에 있었다"와 "모델에 넘기지 않았다"를 설명이 가를 수 있다. unreturned_ids는
+        넘겼지만 응답에 없어 보충된 곡 — 자리를 모델이 정하지 않았다. model_calls는 백엔드가 센
+        실제 SDK 호출 횟수(None이면 모른다 → 합계도 모른다로 남긴다).
+
         이 표시는 아직 **잠정**이다. 뒤에서 예외가 나 전체가 폴백하면
         revoke_reorder()로 취소된다.
         """
         self.record.rerank_runs.append(status)
+        if model_calls is None:
+            self.record.rerank_model_calls_unknown = True
+            self.record.rerank_model_calls = None
+        elif not self.record.rerank_model_calls_unknown:
+            self.record.rerank_model_calls = (self.record.rerank_model_calls or 0) + int(model_calls)
+        for song_id in group_ids:
+            self.record.get(song_id).rerank_group_status = status
         if status != RERANK_APPLIED:
             return
+        unreturned = set(unreturned_ids)
         for song_id in judged_ids:
-            self.record.get(song_id).reorder_applied = True
+            explain = self.record.get(song_id)
+            explain.reorder_applied = True
+            explain.rerank_unreturned = song_id in unreturned
 
     def commit_reorder(self) -> None:
         """재정렬 결과가 최종 순서가 됐다."""
@@ -588,6 +678,8 @@ class ExplainRecorder:
         self.record.reorder_committed = False
         for explain in self.record.songs.values():
             explain.reorder_applied = False
+            explain.rerank_group_status = ""
+            explain.rerank_unreturned = False
             explain.order_rules.clear()
             explain.behind_protected = 0
             explain.group_rank_before = None
@@ -749,7 +841,7 @@ class _NullRecorder(ExplainRecorder):
     def set_attr_filter_genre(self, decision) -> None:
         return
 
-    def note_rerank_run(self, status, judged_ids) -> None:
+    def note_rerank_run(self, status, judged_ids, *, group_ids=(), unreturned_ids=(), model_calls=None) -> None:
         return
 
     def commit_reorder(self) -> None:
@@ -960,7 +1052,19 @@ def render_ko(
     def _moved(b: int, a: int) -> str:
         return f"{b}위에서 {a}위로 " + ("올림" if a < b else "내림")
 
-    if explain.reorder_applied and same_as_group and order_from_model:
+    # 모델에 넘겼지만 응답에 돌아오지 않은 곡(v59). 자리는 보충 규칙(반환된 곡 뒤, 입력 순서)이 정했으므로
+    # 어느 분기에서도 그 이동을 "리랭킹이 올림/내림"으로 말하지 않는다.
+    unreturned = bool(explain.reorder_applied and explain.rerank_unreturned)
+
+    if unreturned:
+        rank_changed = before is not None and after is not None and before != after
+        if rank_changed:
+            notes.append(f"최종 순위 {before}→{after}위")
+        # "묶음 뒤에 배치"라고 쓰지 않는다 — 파서의 보충 순서(반환된 곡 뒤, 입력 순서)는 중간 단계이고, 그 뒤 검색
+        # 점수 합성(저신뢰면 검색 쪽 비중이 커진다)과 순서 규칙이 자리를 또 바꾼다. 실제로 저신뢰 응답에서
+        # 누락 곡이 반환된 곡보다 앞에 놓였다(리뷰). 처리 과정만 말한다.
+        notes.append("모델 응답에 이 곡이 없어 입력 순서로 보충한 뒤 점수 합성·순서 규칙을 적용(모델이 정한 자리 아님)")
+    elif explain.reorder_applied and same_as_group and order_from_model:
         # 모델이 본 묶음이 후보 전체와 같다 — 순위 변화를 모델에 귀속할 수 있다.
         notes.append(
             f"리랭킹이 {_moved(before, after)}"
@@ -1000,6 +1104,12 @@ def render_ko(
             )
         elif reorder_stage == REORDER_MODEL_UNKNOWN:
             notes.append("리랭킹 결과를 확인할 수 없음")
+        elif explain.rerank_group_status == RERANK_FAILED:
+            # 부분 적용 요청에서 **이 곡의 묶음**이 실패했다(v59). "리랭커에 넘기지 않음"은 거짓이다 —
+            # 넘겼고 실패했다. 순서는 그 묶음의 리랭킹 전 순서다(검색 순서라고 단정하지 않는다).
+            notes.append("이 곡의 묶음은 리랭킹에 실패해 리랭킹 전 순서 사용")
+        elif explain.rerank_group_status == RERANK_BUDGET_EXHAUSTED:
+            notes.append("이 곡의 묶음은 리랭킹 예산이 소진돼 모델을 부르지 않음(리랭킹 전 순서 사용)")
         elif explain.order_rules and reorder_stage == REORDER_POLICY_SKIPPED:
             # 모델을 일부러 부르지 않은 요청에서 보호 배치만 적용됐다. "리랭커에 넘기지 않음"은
             # 모델이 돌았다는 뜻이 되므로 쓰지 않는다.

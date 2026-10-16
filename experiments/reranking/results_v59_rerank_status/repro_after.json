@@ -1,0 +1,1220 @@
+{
+  "label": "after",
+  "root": "/private/tmp/vague-finder-rerank-status",
+  "cases": {
+    "all_normal": {
+      "elapsed_s": 0.003,
+      "statuses": [
+        "applied",
+        "applied",
+        "applied"
+      ],
+      "reorder_stage": "model_applied",
+      "stage_label": "리랭킹 적용",
+      "stage_note": "",
+      "evaluator_outcome": "applied",
+      "rerank_calls": 3,
+      "rerank_calls_applied": 3,
+      "groups_failed": 0,
+      "groups_budget_exhausted": 0,
+      "model_calls_reported": 3,
+      "fake_sdk_calls": 3,
+      "fake_sdk_outcomes": [
+        "returned",
+        "returned",
+        "returned"
+      ],
+      "rerank_error": "",
+      "policy_skip": "",
+      "top_ids": [
+        "p1",
+        "p3",
+        "p2",
+        "p4",
+        "p5",
+        "o3",
+        "o2",
+        "o1"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 최종 순위 6→8위 · 리랭킹은 묶음 안에서 1위에서 3위로 내림 · 가사 일치 보호 곡 뒤에 배치 5곡 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "o2": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 리랭킹 적용(묶음 안 순서 유지) · 가사 일치 보호 곡 뒤에 배치 5곡 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "o3": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 최종 순위 8→6위 · 리랭킹은 묶음 안에서 3위에서 1위로 올림 · 가사 일치 보호 곡 뒤에 배치 5곡 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "p1": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "가사 표면일치 1위를 모델 순서보다 앞에 고정 (모델 순서 3위 → 1위 (표면일치 exact)) · 기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 1위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 리랭킹은 묶음 안에서 1위에서 3위로 내림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "p2": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 2위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 최종 순위 2→3위 · 리랭킹 적용(묶음 안 순서 유지) · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "p3": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 3위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 최종 순위 3→2위 · 리랭킹은 묶음 안에서 3위에서 1위로 올림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "p4": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "가사 표면일치 1위를 모델 순서보다 앞에 고정 (모델 순서 2위 → 1위 (표면일치 exact)) · 기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 4위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) → 리랭킹은 묶음 안에서 1위에서 2위로 내림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "p5": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 5위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) → 리랭킹은 묶음 안에서 2위에서 1위로 올림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        }
+      }
+    },
+    "fail_first_group": {
+      "elapsed_s": 0.001,
+      "statuses": [
+        "failed",
+        "applied"
+      ],
+      "reorder_stage": "model_partial",
+      "stage_label": "리랭킹 일부 적용",
+      "stage_note": "일부 후보 묶음만 리랭킹했고, 나머지 묶음은 리랭킹 전 후보 순서를 그대로 사용했습니다.",
+      "evaluator_outcome": "partial_failure",
+      "rerank_calls": 2,
+      "rerank_calls_applied": 1,
+      "groups_failed": 1,
+      "groups_budget_exhausted": 0,
+      "model_calls_reported": 2,
+      "fake_sdk_calls": 2,
+      "fake_sdk_outcomes": [
+        "raised",
+        "returned"
+      ],
+      "rerank_error": "",
+      "policy_skip": "",
+      "top_ids": [
+        "p1",
+        "p2",
+        "p3",
+        "o3",
+        "o2",
+        "o1"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 최종 순위 4→6위 · 리랭킹은 묶음 안에서 1위에서 3위로 내림 · 가사 일치 보호 곡 뒤에 배치 3곡 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "o2": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 리랭킹 적용(묶음 안 순서 유지) · 가사 일치 보호 곡 뒤에 배치 3곡 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "o3": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 최종 순위 6→4위 · 리랭킹은 묶음 안에서 3위에서 1위로 올림 · 가사 일치 보호 곡 뒤에 배치 3곡 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "p1": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 1위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 이 곡의 묶음은 리랭킹에 실패해 리랭킹 전 순서 사용"
+        },
+        "p2": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 2위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 이 곡의 묶음은 리랭킹에 실패해 리랭킹 전 순서 사용"
+        },
+        "p3": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 3위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 이 곡의 묶음은 리랭킹에 실패해 리랭킹 전 순서 사용"
+        }
+      }
+    },
+    "first_ok_then_fail": {
+      "elapsed_s": 0.001,
+      "statuses": [
+        "applied",
+        "failed"
+      ],
+      "reorder_stage": "model_partial",
+      "stage_label": "리랭킹 일부 적용",
+      "stage_note": "일부 후보 묶음만 리랭킹했고, 나머지 묶음은 리랭킹 전 후보 순서를 그대로 사용했습니다.",
+      "evaluator_outcome": "partial_failure",
+      "rerank_calls": 2,
+      "rerank_calls_applied": 1,
+      "groups_failed": 1,
+      "groups_budget_exhausted": 0,
+      "model_calls_reported": 2,
+      "fake_sdk_calls": 2,
+      "fake_sdk_outcomes": [
+        "returned",
+        "raised"
+      ],
+      "rerank_error": "",
+      "policy_skip": "",
+      "top_ids": [
+        "p1",
+        "p3",
+        "p2",
+        "o1",
+        "o2",
+        "o3"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 이 곡의 묶음은 리랭킹에 실패해 리랭킹 전 순서 사용 · 가사 일치 보호 곡 뒤에 배치 3곡"
+        },
+        "o2": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 이 곡의 묶음은 리랭킹에 실패해 리랭킹 전 순서 사용 · 가사 일치 보호 곡 뒤에 배치 3곡"
+        },
+        "o3": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 이 곡의 묶음은 리랭킹에 실패해 리랭킹 전 순서 사용 · 가사 일치 보호 곡 뒤에 배치 3곡"
+        },
+        "p1": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "가사 표면일치 1위를 모델 순서보다 앞에 고정 (모델 순서 3위 → 1위 (표면일치 exact)) · 기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 1위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 리랭킹은 묶음 안에서 1위에서 3위로 내림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "p2": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 2위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 최종 순위 2→3위 · 리랭킹 적용(묶음 안 순서 유지) · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "p3": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 3위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 최종 순위 3→2위 · 리랭킹은 묶음 안에서 3위에서 1위로 올림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        }
+      }
+    },
+    "first_ok_then_budget": {
+      "elapsed_s": 1.003,
+      "statuses": [
+        "applied",
+        "failed",
+        "budget_exhausted"
+      ],
+      "reorder_stage": "model_partial",
+      "stage_label": "리랭킹 일부 적용",
+      "stage_note": "일부 후보 묶음만 리랭킹했고, 나머지 묶음은 리랭킹 전 후보 순서를 그대로 사용했습니다.",
+      "evaluator_outcome": "partial_failure",
+      "rerank_calls": 3,
+      "rerank_calls_applied": 1,
+      "groups_failed": 1,
+      "groups_budget_exhausted": 1,
+      "model_calls_reported": 2,
+      "fake_sdk_calls": 2,
+      "fake_sdk_outcomes": [
+        "returned",
+        "cancelled"
+      ],
+      "rerank_error": "",
+      "policy_skip": "",
+      "top_ids": [
+        "p1",
+        "p3",
+        "p2",
+        "p4",
+        "p5",
+        "o1",
+        "o2",
+        "o3"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": false,
+          "group_status": "budget_exhausted",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 이 곡의 묶음은 리랭킹 예산이 소진돼 모델을 부르지 않음(리랭킹 전 순서 사용) · 가사 일치 보호 곡 뒤에 배치 5곡"
+        },
+        "o2": {
+          "reorder_applied": false,
+          "group_status": "budget_exhausted",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 이 곡의 묶음은 리랭킹 예산이 소진돼 모델을 부르지 않음(리랭킹 전 순서 사용) · 가사 일치 보호 곡 뒤에 배치 5곡"
+        },
+        "o3": {
+          "reorder_applied": false,
+          "group_status": "budget_exhausted",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 이 곡의 묶음은 리랭킹 예산이 소진돼 모델을 부르지 않음(리랭킹 전 순서 사용) · 가사 일치 보호 곡 뒤에 배치 5곡"
+        },
+        "p1": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "가사 표면일치 1위를 모델 순서보다 앞에 고정 (모델 순서 3위 → 1위 (표면일치 exact)) · 기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 1위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 리랭킹은 묶음 안에서 1위에서 3위로 내림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "p2": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 2위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 최종 순위 2→3위 · 리랭킹 적용(묶음 안 순서 유지) · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "p3": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 3위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 최종 순위 3→2위 · 리랭킹은 묶음 안에서 3위에서 1위로 올림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "p4": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 4위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) → 이 곡의 묶음은 리랭킹에 실패해 리랭킹 전 순서 사용"
+        },
+        "p5": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 5위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) → 이 곡의 묶음은 리랭킹에 실패해 리랭킹 전 순서 사용"
+        }
+      }
+    },
+    "all_slow": {
+      "elapsed_s": 1.006,
+      "statuses": [
+        "failed",
+        "budget_exhausted",
+        "budget_exhausted"
+      ],
+      "reorder_stage": "model_failed",
+      "stage_label": "리랭킹 실패",
+      "stage_note": "",
+      "evaluator_outcome": "fallback",
+      "rerank_calls": 3,
+      "rerank_calls_applied": 0,
+      "groups_failed": 1,
+      "groups_budget_exhausted": 2,
+      "model_calls_reported": 1,
+      "fake_sdk_calls": 1,
+      "fake_sdk_outcomes": [
+        "cancelled"
+      ],
+      "rerank_error": "",
+      "policy_skip": "",
+      "top_ids": [
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "o1",
+        "o2",
+        "o3"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": false,
+          "group_status": "budget_exhausted",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 리랭킹은 실패 · 가사 일치 보호 곡 뒤에 배치 5곡"
+        },
+        "o2": {
+          "reorder_applied": false,
+          "group_status": "budget_exhausted",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 리랭킹은 실패 · 가사 일치 보호 곡 뒤에 배치 5곡"
+        },
+        "o3": {
+          "reorder_applied": false,
+          "group_status": "budget_exhausted",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 리랭킹은 실패 · 가사 일치 보호 곡 뒤에 배치 5곡"
+        },
+        "p1": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 1위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "p2": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 2위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "p3": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 3위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "p4": {
+          "reorder_applied": false,
+          "group_status": "budget_exhausted",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 4위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "p5": {
+          "reorder_applied": false,
+          "group_status": "budget_exhausted",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 5위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) → 리랭킹이 실패해 검색 순서 유지"
+        }
+      }
+    },
+    "all_exception": {
+      "elapsed_s": 0.004,
+      "statuses": [
+        "failed",
+        "failed"
+      ],
+      "reorder_stage": "model_failed",
+      "stage_label": "리랭킹 실패",
+      "stage_note": "",
+      "evaluator_outcome": "fallback",
+      "rerank_calls": 2,
+      "rerank_calls_applied": 0,
+      "groups_failed": 2,
+      "groups_budget_exhausted": 0,
+      "model_calls_reported": 2,
+      "fake_sdk_calls": 2,
+      "fake_sdk_outcomes": [
+        "raised",
+        "raised"
+      ],
+      "rerank_error": "",
+      "policy_skip": "",
+      "top_ids": [
+        "p1",
+        "p2",
+        "p3",
+        "o1",
+        "o2",
+        "o3"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 리랭킹은 실패 · 가사 일치 보호 곡 뒤에 배치 3곡"
+        },
+        "o2": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 리랭킹은 실패 · 가사 일치 보호 곡 뒤에 배치 3곡"
+        },
+        "o3": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 리랭킹은 실패 · 가사 일치 보호 곡 뒤에 배치 3곡"
+        },
+        "p1": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 1위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "p2": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 2위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "p3": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 3위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 리랭킹이 실패해 검색 순서 유지"
+        }
+      }
+    },
+    "router_exception_after_success": {
+      "elapsed_s": 0.008,
+      "statuses": [
+        "applied",
+        "failed"
+      ],
+      "reorder_stage": "model_failed",
+      "stage_label": "리랭킹 실패",
+      "stage_note": "",
+      "evaluator_outcome": "exception",
+      "rerank_calls": 2,
+      "rerank_calls_applied": 1,
+      "groups_failed": 1,
+      "groups_budget_exhausted": 0,
+      "model_calls_reported": null,
+      "fake_sdk_calls": null,
+      "fake_sdk_outcomes": null,
+      "rerank_error": "RuntimeError: 리랭킹 실패(시험)",
+      "policy_skip": "",
+      "top_ids": [
+        "p1",
+        "p2",
+        "o1",
+        "o2",
+        "o3"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": false,
+          "group_status": "",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o2": {
+          "reorder_applied": false,
+          "group_status": "",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o3": {
+          "reorder_applied": false,
+          "group_status": "",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "p1": {
+          "reorder_applied": false,
+          "group_status": "",
+          "unreturned": false,
+          "summary": "가사 구절 일치 경로 1위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "p2": {
+          "reorder_applied": false,
+          "group_status": "",
+          "unreturned": false,
+          "summary": "가사 구절 일치 경로 2위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 리랭킹이 실패해 검색 순서 유지"
+        }
+      }
+    },
+    "foreign_ids_only": {
+      "elapsed_s": 2.009,
+      "statuses": [
+        "failed"
+      ],
+      "reorder_stage": "model_failed",
+      "stage_label": "리랭킹 실패",
+      "stage_note": "",
+      "evaluator_outcome": "fallback",
+      "rerank_calls": 1,
+      "rerank_calls_applied": 0,
+      "groups_failed": 1,
+      "groups_budget_exhausted": 0,
+      "model_calls_reported": 3,
+      "fake_sdk_calls": 3,
+      "fake_sdk_outcomes": [
+        "returned",
+        "returned",
+        "returned"
+      ],
+      "rerank_error": "",
+      "policy_skip": "",
+      "top_ids": [
+        "o1",
+        "o2",
+        "o3",
+        "o4",
+        "o5",
+        "o6"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o2": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o3": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o4": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 4위, 가중치 1.00 (+0.0156) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o5": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 5위, 가중치 1.00 (+0.0154) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o6": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 6위, 가중치 1.00 (+0.0152) → 리랭킹이 실패해 검색 순서 유지"
+        }
+      }
+    },
+    "empty_ranking": {
+      "elapsed_s": 2.014,
+      "statuses": [
+        "failed"
+      ],
+      "reorder_stage": "model_failed",
+      "stage_label": "리랭킹 실패",
+      "stage_note": "",
+      "evaluator_outcome": "fallback",
+      "rerank_calls": 1,
+      "rerank_calls_applied": 0,
+      "groups_failed": 1,
+      "groups_budget_exhausted": 0,
+      "model_calls_reported": 3,
+      "fake_sdk_calls": 3,
+      "fake_sdk_outcomes": [
+        "returned",
+        "returned",
+        "returned"
+      ],
+      "rerank_error": "",
+      "policy_skip": "",
+      "top_ids": [
+        "o1",
+        "o2",
+        "o3",
+        "o4",
+        "o5",
+        "o6"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o2": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o3": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o4": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 4위, 가중치 1.00 (+0.0156) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o5": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 5위, 가중치 1.00 (+0.0154) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o6": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 6위, 가중치 1.00 (+0.0152) → 리랭킹이 실패해 검색 순서 유지"
+        }
+      }
+    },
+    "wrong_types": {
+      "elapsed_s": 2.01,
+      "statuses": [
+        "failed"
+      ],
+      "reorder_stage": "model_failed",
+      "stage_label": "리랭킹 실패",
+      "stage_note": "",
+      "evaluator_outcome": "fallback",
+      "rerank_calls": 1,
+      "rerank_calls_applied": 0,
+      "groups_failed": 1,
+      "groups_budget_exhausted": 0,
+      "model_calls_reported": 3,
+      "fake_sdk_calls": 3,
+      "fake_sdk_outcomes": [
+        "returned",
+        "returned",
+        "returned"
+      ],
+      "rerank_error": "",
+      "policy_skip": "",
+      "top_ids": [
+        "o1",
+        "o2",
+        "o3",
+        "o4",
+        "o5",
+        "o6"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o2": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o3": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o4": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 4위, 가중치 1.00 (+0.0156) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o5": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 5위, 가중치 1.00 (+0.0154) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o6": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 6위, 가중치 1.00 (+0.0152) → 리랭킹이 실패해 검색 순서 유지"
+        }
+      }
+    },
+    "identity_order": {
+      "elapsed_s": 0.002,
+      "statuses": [
+        "applied"
+      ],
+      "reorder_stage": "model_applied",
+      "stage_label": "리랭킹 적용",
+      "stage_note": "",
+      "evaluator_outcome": "applied",
+      "rerank_calls": 1,
+      "rerank_calls_applied": 1,
+      "groups_failed": 0,
+      "groups_budget_exhausted": 0,
+      "model_calls_reported": 1,
+      "fake_sdk_calls": 1,
+      "fake_sdk_outcomes": [
+        "returned"
+      ],
+      "rerank_error": "",
+      "policy_skip": "",
+      "top_ids": [
+        "o1",
+        "o2",
+        "o3",
+        "o4",
+        "o5",
+        "o6"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 리랭킹이 1위 유지 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "o2": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 리랭킹이 2위 유지 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "o3": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 리랭킹이 3위 유지 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "o4": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 4위, 가중치 1.00 (+0.0156) → 리랭킹이 4위 유지 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "o5": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 5위, 가중치 1.00 (+0.0154) → 리랭킹이 5위 유지 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "o6": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 6위, 가중치 1.00 (+0.0152) → 리랭킹이 6위 유지 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        }
+      }
+    },
+    "partial_duplicate_foreign_mix": {
+      "elapsed_s": 0.002,
+      "statuses": [
+        "applied"
+      ],
+      "reorder_stage": "model_applied",
+      "stage_label": "리랭킹 적용",
+      "stage_note": "",
+      "evaluator_outcome": "applied",
+      "rerank_calls": 1,
+      "rerank_calls_applied": 1,
+      "groups_failed": 0,
+      "groups_budget_exhausted": 0,
+      "model_calls_reported": 1,
+      "fake_sdk_calls": 1,
+      "fake_sdk_outcomes": [
+        "returned"
+      ],
+      "rerank_error": "",
+      "policy_skip": "",
+      "top_ids": [
+        "o3",
+        "o2",
+        "o1",
+        "o4",
+        "o5",
+        "o6"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 리랭킹이 1위에서 3위로 내림 · 최종 점수는 리랭커 77% + 검색 23%(신뢰도 0.91로 85%에서 축소) 합성"
+        },
+        "o2": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 리랭킹이 2위 유지 · 최종 점수는 리랭커 77% + 검색 23%(신뢰도 0.91로 85%에서 축소) 합성"
+        },
+        "o3": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 리랭킹이 3위에서 1위로 올림 · 최종 점수는 리랭커 77% + 검색 23%(신뢰도 0.91로 85%에서 축소) 합성"
+        },
+        "o4": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": true,
+          "summary": "텍스트(의미+키워드) 경로 4위, 가중치 1.00 (+0.0156) → 모델 응답에 이 곡이 없어 입력 순서로 보충한 뒤 점수 합성·순서 규칙을 적용(모델이 정한 자리 아님) · 최종 점수는 리랭커 77% + 검색 23%(신뢰도 0.91로 85%에서 축소) 합성"
+        },
+        "o5": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": true,
+          "summary": "텍스트(의미+키워드) 경로 5위, 가중치 1.00 (+0.0154) → 모델 응답에 이 곡이 없어 입력 순서로 보충한 뒤 점수 합성·순서 규칙을 적용(모델이 정한 자리 아님) · 최종 점수는 리랭커 77% + 검색 23%(신뢰도 0.91로 85%에서 축소) 합성"
+        },
+        "o6": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": true,
+          "summary": "텍스트(의미+키워드) 경로 6위, 가중치 1.00 (+0.0152) → 모델 응답에 이 곡이 없어 입력 순서로 보충한 뒤 점수 합성·순서 규칙을 적용(모델이 정한 자리 아님) · 최종 점수는 리랭커 77% + 검색 23%(신뢰도 0.91로 85%에서 축소) 합성"
+        }
+      }
+    },
+    "invalid_then_normal": {
+      "elapsed_s": 1.008,
+      "statuses": [
+        "applied"
+      ],
+      "reorder_stage": "model_applied",
+      "stage_label": "리랭킹 적용",
+      "stage_note": "",
+      "evaluator_outcome": "applied",
+      "rerank_calls": 1,
+      "rerank_calls_applied": 1,
+      "groups_failed": 0,
+      "groups_budget_exhausted": 0,
+      "model_calls_reported": 2,
+      "fake_sdk_calls": 2,
+      "fake_sdk_outcomes": [
+        "returned",
+        "returned"
+      ],
+      "rerank_error": "",
+      "policy_skip": "",
+      "top_ids": [
+        "o6",
+        "o5",
+        "o4",
+        "o3",
+        "o2",
+        "o1"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 리랭킹이 1위에서 6위로 내림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "o2": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 리랭킹이 2위에서 5위로 내림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "o3": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 리랭킹이 3위에서 4위로 내림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "o4": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 4위, 가중치 1.00 (+0.0156) → 리랭킹이 4위에서 3위로 올림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "o5": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 5위, 가중치 1.00 (+0.0154) → 리랭킹이 5위에서 2위로 올림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        },
+        "o6": {
+          "reorder_applied": true,
+          "group_status": "applied",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 6위, 가중치 1.00 (+0.0152) → 리랭킹이 6위에서 1위로 올림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+        }
+      }
+    },
+    "invalid_persist_shared_deadline": {
+      "elapsed_s": 1.007,
+      "statuses": [
+        "failed"
+      ],
+      "reorder_stage": "model_failed",
+      "stage_label": "리랭킹 실패",
+      "stage_note": "",
+      "evaluator_outcome": "fallback",
+      "rerank_calls": 1,
+      "rerank_calls_applied": 0,
+      "groups_failed": 1,
+      "groups_budget_exhausted": 0,
+      "model_calls_reported": 1,
+      "fake_sdk_calls": 1,
+      "fake_sdk_outcomes": [
+        "returned"
+      ],
+      "rerank_error": "",
+      "policy_skip": "",
+      "top_ids": [
+        "o1",
+        "o2",
+        "o3",
+        "o4",
+        "o5",
+        "o6"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o2": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o3": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o4": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 4위, 가중치 1.00 (+0.0156) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o5": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 5위, 가중치 1.00 (+0.0154) → 리랭킹이 실패해 검색 순서 유지"
+        },
+        "o6": {
+          "reorder_applied": false,
+          "group_status": "failed",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 6위, 가중치 1.00 (+0.0152) → 리랭킹이 실패해 검색 순서 유지"
+        }
+      }
+    },
+    "policy_skip_image_dominant": {
+      "elapsed_s": 0.002,
+      "statuses": [],
+      "reorder_stage": "policy_skipped",
+      "stage_label": "리랭킹 생략(정책)",
+      "stage_note": "",
+      "evaluator_outcome": "policy_skipped",
+      "rerank_calls": 0,
+      "rerank_calls_applied": 0,
+      "groups_failed": 0,
+      "groups_budget_exhausted": 0,
+      "model_calls_reported": null,
+      "fake_sdk_calls": 0,
+      "fake_sdk_outcomes": [],
+      "rerank_error": "",
+      "policy_skip": "image_dominant",
+      "top_ids": [
+        "o1",
+        "o2",
+        "o3",
+        "o4"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": false,
+          "group_status": "",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 0.10 (+0.0016)"
+        },
+        "o2": {
+          "reorder_applied": false,
+          "group_status": "",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 0.10 (+0.0016)"
+        },
+        "o3": {
+          "reorder_applied": false,
+          "group_status": "",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 0.10 (+0.0016)"
+        },
+        "o4": {
+          "reorder_applied": false,
+          "group_status": "",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 4위, 가중치 0.10 (+0.0016)"
+        }
+      }
+    },
+    "rerank_disabled": {
+      "elapsed_s": 0.001,
+      "statuses": [],
+      "reorder_stage": "not_attempted",
+      "stage_label": "리랭킹을 시도하지 않음",
+      "stage_note": "",
+      "evaluator_outcome": "skipped",
+      "rerank_calls": 0,
+      "rerank_calls_applied": 0,
+      "groups_failed": 0,
+      "groups_budget_exhausted": 0,
+      "model_calls_reported": null,
+      "fake_sdk_calls": 0,
+      "fake_sdk_outcomes": [],
+      "rerank_error": "",
+      "policy_skip": "",
+      "top_ids": [
+        "o1",
+        "o2",
+        "o3",
+        "o4"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": false,
+          "group_status": "",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164)"
+        },
+        "o2": {
+          "reorder_applied": false,
+          "group_status": "",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161)"
+        },
+        "o3": {
+          "reorder_applied": false,
+          "group_status": "",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159)"
+        },
+        "o4": {
+          "reorder_applied": false,
+          "group_status": "",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 4위, 가중치 1.00 (+0.0156)"
+        }
+      }
+    },
+    "unknown_status_backend": {
+      "elapsed_s": 0.001,
+      "statuses": [
+        "unknown"
+      ],
+      "reorder_stage": "model_unknown",
+      "stage_label": "리랭킹 결과 확인 불가",
+      "stage_note": "",
+      "evaluator_outcome": "unknown",
+      "rerank_calls": 1,
+      "rerank_calls_applied": 0,
+      "groups_failed": 0,
+      "groups_budget_exhausted": 0,
+      "model_calls_reported": null,
+      "fake_sdk_calls": null,
+      "fake_sdk_outcomes": null,
+      "rerank_error": "",
+      "policy_skip": "",
+      "top_ids": [
+        "o4",
+        "o3",
+        "o2",
+        "o1"
+      ],
+      "songs": {
+        "o1": {
+          "reorder_applied": false,
+          "group_status": "unknown",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 최종 순위 1→4위 · 리랭킹 결과를 확인할 수 없음"
+        },
+        "o2": {
+          "reorder_applied": false,
+          "group_status": "unknown",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 최종 순위 2→3위 · 리랭킹 결과를 확인할 수 없음"
+        },
+        "o3": {
+          "reorder_applied": false,
+          "group_status": "unknown",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 최종 순위 3→2위 · 리랭킹 결과를 확인할 수 없음"
+        },
+        "o4": {
+          "reorder_applied": false,
+          "group_status": "unknown",
+          "unreturned": false,
+          "summary": "텍스트(의미+키워드) 경로 4위, 가중치 1.00 (+0.0156) → 최종 순위 4→1위 · 리랭킹 결과를 확인할 수 없음"
+        }
+      }
+    }
+  },
+  "http_partial": {
+    "status_code": 200,
+    "elapsed_s": 1.018,
+    "explain": {
+      "reorder_stage": "model_partial",
+      "reorder_stage_label": "리랭킹 일부 적용",
+      "reorder_stage_note": "일부 후보 묶음만 리랭킹했고, 나머지 묶음은 리랭킹 전 후보 순서를 그대로 사용했습니다.",
+      "rerank_calls": 3,
+      "rerank_calls_applied": 1,
+      "rerank_groups_failed": 1,
+      "rerank_groups_budget_exhausted": 1,
+      "rerank_model_calls": 2,
+      "rerank_error": ""
+    },
+    "ids": [
+      "p1",
+      "p3",
+      "p2",
+      "p4",
+      "p5",
+      "o1",
+      "o2",
+      "o3"
+    ],
+    "per_song": {
+      "p1": {
+        "reorder_applied": true,
+        "rerank_group_status": "applied",
+        "summary": "가사 표면일치 1위를 모델 순서보다 앞에 고정 (모델 순서 3위 → 1위 (표면일치 exact)) · 기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 1위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 리랭킹은 묶음 안에서 1위에서 3위로 내림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+      },
+      "p3": {
+        "reorder_applied": true,
+        "rerank_group_status": "applied",
+        "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 3위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 최종 순위 3→2위 · 리랭킹은 묶음 안에서 3위에서 1위로 올림 · 최종 점수는 리랭커 85% + 검색 15% 합성"
+      },
+      "p2": {
+        "reorder_applied": true,
+        "rerank_group_status": "applied",
+        "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 2위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) · 말한 성별과 일치, 남성 (+0.0164) → 최종 순위 2→3위 · 리랭킹 적용(묶음 안 순서 유지) · 최종 점수는 리랭커 85% + 검색 15% 합성"
+      },
+      "p4": {
+        "reorder_applied": false,
+        "rerank_group_status": "failed",
+        "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 4위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) → 이 곡의 묶음은 리랭킹에 실패해 리랭킹 전 순서 사용"
+      },
+      "p5": {
+        "reorder_applied": false,
+        "rerank_group_status": "failed",
+        "summary": "기억한 구절이 가사와 일치해 먼저 배치 (일반 후보 아래로 내려가지 않음) · 가사 구절 일치 경로 5위, 기억한 구절이 가사와 표기 정규화 후 일치 ×8.0, 단서 확신도 0.95 (+0.1246) → 이 곡의 묶음은 리랭킹에 실패해 리랭킹 전 순서 사용"
+      },
+      "o1": {
+        "reorder_applied": false,
+        "rerank_group_status": "budget_exhausted",
+        "summary": "텍스트(의미+키워드) 경로 1위, 가중치 1.00 (+0.0164) → 이 곡의 묶음은 리랭킹 예산이 소진돼 모델을 부르지 않음(리랭킹 전 순서 사용) · 가사 일치 보호 곡 뒤에 배치 5곡"
+      },
+      "o2": {
+        "reorder_applied": false,
+        "rerank_group_status": "budget_exhausted",
+        "summary": "텍스트(의미+키워드) 경로 2위, 가중치 1.00 (+0.0161) → 이 곡의 묶음은 리랭킹 예산이 소진돼 모델을 부르지 않음(리랭킹 전 순서 사용) · 가사 일치 보호 곡 뒤에 배치 5곡"
+      },
+      "o3": {
+        "reorder_applied": false,
+        "rerank_group_status": "budget_exhausted",
+        "summary": "텍스트(의미+키워드) 경로 3위, 가중치 1.00 (+0.0159) → 이 곡의 묶음은 리랭킹 예산이 소진돼 모델을 부르지 않음(리랭킹 전 순서 사용) · 가사 일치 보호 곡 뒤에 배치 5곡"
+      }
+    },
+    "fake_sdk_calls": [
+      "returned",
+      "cancelled"
+    ]
+  }
+}

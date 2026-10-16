@@ -1501,10 +1501,23 @@ function renderRunNote() {
   if (notice && notice.message) parts.push(notice.message);
   if (x) {
     parts.push(x.reorder_stage_label || x.reorder_stage);
+    // 단계가 뜻하는 반환 결과(서버 고정 문구). 지금은 "리랭킹 일부 적용"에만 온다
+    if (x.reorder_stage_note) parts.push(x.reorder_stage_note);
     if (x.reranker && x.reranker !== "none") parts.push(x.reranker);
-    // 호출 수 ≠ 성공 수다. 같을 때는 말할 것이 없다
+    /*
+     * rerank_calls는 **묶음 처리 기록 수**다 — 실제 모델을 몇 번 불렀는지가 아니다(예산 소진으로 부르지
+     * 않은 묶음도 1, 재시도 3회도 1). 예전 문구 "N번 불러 M번 적용"은 기록 수를 호출 횟수로 말했다(v56 §7-③).
+     * 묶음 수로 말하고, 실제 호출 횟수는 백엔드가 센 값(rerank_model_calls)이 있을 때만 적는다.
+     */
     if (x.rerank_calls !== x.rerank_calls_applied) {
-      parts.push(`${x.rerank_calls}번 불러 ${x.rerank_calls_applied}번 적용`);
+      const pieces = [`후보 묶음 ${x.rerank_calls}개 중 ${x.rerank_calls_applied}개 리랭킹`];
+      if (x.rerank_groups_budget_exhausted > 0) {
+        pieces.push(`${x.rerank_groups_budget_exhausted}개는 예산 소진으로 모델 미호출`);
+      }
+      parts.push(pieces.join(", "));
+    }
+    if (typeof x.rerank_model_calls === "number" && x.rerank_calls > 0) {
+      parts.push(`모델 호출 ${x.rerank_model_calls}회`);
     }
     if (x.rerank_error) parts.push(x.rerank_error);
     /*
@@ -1520,10 +1533,12 @@ function renderRunNote() {
     for (const path of x.failed_paths || []) parts.push(path.label);
   }
   runNote.textContent = parts.filter(Boolean).join(" · ");
-  // 정책 생략(안내)은 경고가 아니다 — 실패·폴백·죽은 경로만 경고색이다
+  // 정책 생략(안내)은 경고가 아니다 — 실패·폴백·죽은 경로만 경고색이다. 리랭킹 실패·일부 적용은 예외가
+  // 없어도(Gemini 내부 폴백) 폴백이 있었으므로 경고색이다
+  const rerankFellBack = !!(x && (x.reorder_stage === "model_failed" || x.reorder_stage === "model_partial"));
   runNote.classList.toggle(
     "warn",
-    !!(x && (x.rerank_error || x.analysis_fallback || (x.failed_paths || []).length))
+    !!(x && (x.rerank_error || rerankFellBack || x.analysis_fallback || (x.failed_paths || []).length))
   );
   runNote.hidden = false;
 }
