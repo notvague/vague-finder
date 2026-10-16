@@ -26,7 +26,7 @@
 - **실제 point 수**: 복사본 `artifacts/qdrant_v61_audit`(운영 색인 `artifacts/qdrant`의 파일 복사, 2026-10-16 21:34)에서 `count(exact)` = **5,143**(텍스트·이미지·오디오 각 5,143 · Context dense 5,054 · Context sparse 639). 평가기 runinfo의 `corpus.point_count`도 5,143. 전 곡에 sparse 벡터가 있다(항 수 중앙값 196, 최소 101, 최대 896, 어휘 44,486, 비영 항 1,061,090)
 - **"5,143 − 5,000 = 143곡이 항상 제외"는 틀리다.** dense 조회에서 잘리는 143곡은 **질의마다 다른** dense 최하위 곡이고, 그 곡이 sparse 목록에 있으면 sparse 몫으로 남는다(한쪽 점수 누락). sparse 목록은 질의 토큰과 겹치는 곡 수(dev 중앙값 4,495곡, 35건은 5,000 초과)만큼 돌아오므로 그쪽 잘림은 질의에 따라 있거나 없다. 양쪽 모두 밖인 곡만 결과에서 사라진다
 
-## 2. 합성 자료 재현 (`repro_synthetic.py` · `tests/test_v61_hybrid_scan_audit.py` 11건, 메모리 Qdrant · 3차원 · 7곡 · 상한 3)
+## 2. 합성 자료 재현 (`repro_synthetic.py` · `tests/test_v61_hybrid_scan_audit.py` 12건 = 합성 재현 10 + 설정 경로 2, 메모리 Qdrant · 3차원 · 7곡 · 상한 3)
 
 기준값은 구현을 따라 쓰지 않고 **원본 벡터로 직접 내적**(`_exact`). 구현에는 모듈 상수만 작게 바꿔 부른다. 자료(질의 dense=[0.5,0,0] · sparse {7: 0.5}): dense 순위 1>2>3>7>4>5>6, sparse(7) 순위 4>5>6>7>2>1(3은 미일치); 직접 합산 4=1.15 · 5=0.85 · 2=0.65 · 7=0.60 · 6=0.55 · 1=0.50 · 3=0.35(동점 없음).
 
@@ -166,10 +166,10 @@ v06 A 실행이 기록한 필터 없는 하이브리드 호출 60건을 입력�
 
 ## 8. 판단 (나눠서)
 
-1. **합성 사례에서 구현의 제한을 확인했는가 — 예.** 상한 < 자료 수일 때 한쪽 점수 누락(dense·sparse 양방향)과 양쪽 목록 밖 곡의 소실, 음수 dense 몫 누락이 점수를 올리는 방향까지 결정적으로 재현(§2, 테스트 11건)
+1. **합성 사례에서 구현의 제한을 확인했는가 — 예.** 상한 < 자료 수일 때 한쪽 점수 누락(dense·sparse 양방향)과 양쪽 목록 밖 곡의 소실, 음수 dense 몫 누락이 점수를 올리는 방향까지 결정적으로 재현(§2, 테스트 12건)
 2. **현재 dev 자료에서 실제 후보·정답 회수 영향이 있었는가 — 후보 30개 ID·순서·정답 회수 영향은 없었다.** 영향은 텍스트 top-90 안의 점수 4건(순서 3건)과 그중 1건이 융합 점수에 미친 0.0002 차이(순서 불변)에 그쳤다. 단 이 비교는 (a) Mongo 가사 경로가 빈 조건, (b) dev 176질의, (c) 5,143곡·상한 5,000(97.2%) 조건이다. **모든 질의에서 문제가 없다는 뜻이 아니다** — §5-4에서 현재 코퍼스의 상한만 낮춰도 top-30 소실이 바로 생긴다
 3. **후속 운영 수정이 필요한가 — 필요하다.** 결함은 자료 수가 상한을 넘는 순간부터 질의에 따라 조용히 커지며, 지금은 코퍼스가 상한을 2.9% 넘어 영향이 작은 구간이다. 권고 §7-A. 단순히 상한을 10,000으로 올리고 끝내지 않는다
-4. **수정 뒤 어떤 검증이 필요한가** — (가) **`replay_calls.py`**: 저장된 질의 벡터 311건을 **수정된 구현**에 다시 넣어 결과를 새로 만들고 독립 기준과 대조한다(`compare_text_calls.py`는 저장된 A/B/C 결과만 읽으므로 수정 코드 검증이 되지 않는다). 이번 코드로 돌린 결과: 현행 상한 5,000 → 차이 4건(§5-1과 같은 네 곡, `replay_current.json`), `QDRANT_HYBRID_SCAN_LIMIT=5143` → **0건**(`replay_limit5143.json`). 수정 코드는 환경변수 없이 0건이어야 한다. (나) 합성 테스트 11건 통과 + 수정 코드의 상한 결정(대상 수·필터 count) 단위 테스트 추가, (다) 수정 코드로 `run_candidates.py --arm A`를 **다른 `--out-root`**(예: `/private/tmp/vague-finder-hybrid-scan-validation`)에 다시 돌려 후보 30개 지문을 이번 A·B와 비교한다 — 기본 출력 경로로 돌리면 이 폴더의 수정 전 A 기록을 덮어쓰므로, `run_candidates.py`는 산출물이 있는 폴더에는 `--overwrite` 없이 쓰지 않는다. 비교는 `compare_candidates.py --baseline-root <이 폴더> --baseline-arm A --compare-root <새 폴더> --compare-arm A --no-reference --suffix fixed`(열 이름 A=수정 전, B=수정 후). 가사 경로가 빈 같은 조건에서는 t003 점수 1건만 바뀌고 순서는 전부 같아야 한다 — 다르면 다른 원인, (라) 서버 모드(독립 로컬 Docker Qdrant + 복사본)에서 count 왕복·반환 5,143×2의 지연 실측(v56 방식), (마) **품질 재측정 여부는 (다)를 가사 경로(Mongo)가 있는 조건으로 한 번 더 확인한 뒤 결정한다** — 이번 결과는 가사 경로가 빈 조건이라 그것만으로 "재측정 불필요"를 단정할 수 없다. 리랭킹 전 후보 30개가 서비스 조건에서도 같다면 리랭킹 뒤 숫자도 같으므로 재측정이 필요 없고, 다르면 바뀐 질의만 다시 잰다
+4. **수정 뒤 어떤 검증이 필요한가** — (가) **`replay_calls.py`**: 저장된 질의 벡터 311건을 **수정된 구현**에 다시 넣어 결과를 새로 만들고 독립 기준과 대조한다(`compare_text_calls.py`는 저장된 A/B/C 결과만 읽으므로 수정 코드 검증이 되지 않는다). 이번 코드로 돌린 결과: 현행 상한 5,000 → 차이 4건(§5-1과 같은 네 곡, `replay_current.json`), `QDRANT_HYBRID_SCAN_LIMIT=5143` → **0건**(`replay_limit5143.json`). 수정 코드는 환경변수 없이 0건이어야 한다. (나) 테스트 12건 통과 + 수정 코드의 상한 결정(대상 수·필터 count) 단위 테스트 추가, (다) 수정 코드로 `run_candidates.py --arm A`를 **다른 `--out-root`**(예: `/private/tmp/vague-finder-hybrid-scan-validation`)에 다시 돌려 후보 30개 지문을 이번 A·B와 비교한다 — 기본 출력 경로로 돌리면 이 폴더의 수정 전 A 기록을 덮어쓰므로, `run_candidates.py`는 산출물이 있는 폴더에는 `--overwrite` 없이 쓰지 않는다. 비교는 `compare_candidates.py --baseline-root <이 폴더> --baseline-arm A --compare-root <새 폴더> --compare-arm A --no-reference --suffix fixed`(열 이름 A=수정 전, B=수정 후). 가사 경로가 빈 같은 조건에서는 t003 점수 1건만 바뀌고 순서는 전부 같아야 한다 — 다르면 다른 원인, (라) 서버 모드(독립 로컬 Docker Qdrant + 복사본)에서 count 왕복·반환 5,143×2의 지연 실측(v56 방식), (마) **품질 재측정 여부는 (다)를 가사 경로(Mongo)가 있는 조건으로 한 번 더 확인한 뒤 결정한다** — 이번 결과는 가사 경로가 빈 조건이라 그것만으로 "재측정 불필요"를 단정할 수 없다. 리랭킹 전 후보 30개가 서비스 조건에서도 같다면 리랭킹 뒤 숫자도 같으므로 재측정이 필요 없고, 다르면 바뀐 질의만 다시 잰다
 
 ## 9. 한계
 
@@ -192,6 +192,7 @@ v06 A 실행이 기록한 필터 없는 하이브리드 호출 60건을 입력�
 | `compare_text_calls.py` 재실행은 수정 코드를 검증하지 못한다(저장 결과만 읽음); 가사 경로 빈 결과로 품질 재측정 불필요 단정 불가 | **`replay_calls.py`** 추가 — 저장 질의 벡터를 지금 디스크의 구현에 재생해 기준과 대조(현행 4건 · `QDRANT_HYBRID_SCAN_LIMIT=5143` 0건). §8-4를 재생 → 후보 지문 재생성(가사 경로 있는 조건 포함) → 그 뒤 재측정 여부 결정으로 수정 |
 | §5-2 표의 C 지문 변화 기준이 섞임 | A 대비 1건(t003) · B 대비 0건으로 행을 나눔 |
 | (2차) 수정 코드 검증 명령이 기본 출력 경로(`cand_A/<set>_dev`)에 써서 수정 전 A 기록을 덮어씀 | `run_candidates.py`가 산출물이 있는 폴더에는 `--overwrite` 없이 쓰지 않도록 중단 조건 추가(확인: 기본 경로 재실행 → 중단). `compare_candidates.py`에 `--baseline-root/--compare-root/--reference-root`·`--*-arm`·`--no-reference`·`--suffix`를 추가해 기준선과 새 결과를 각각 받음(기본 인자 결과는 이전과 동일 확인). §8-4(다)·재현 절을 새 `--out-root` 예시로 교체 |
+| (3차, PR #76 자동 리뷰) 설정 경로 테스트의 `finally` 안 `assert HYBRID_SCAN_LIMIT == 5000`은 셸·CI에 `QDRANT_HYBRID_SCAN_LIMIT`가 있으면 항상 실패하고, `finally`의 단언이라 본문 실패 원인을 가림 | `monkeypatch.setenv/delenv`로 바꾸고 둘로 나눔 — 변수=7 → reload 7 확인, 변수 삭제 → reload 기본 5000 확인. 둘 다 끝에 `monkeypatch.undo()` 뒤 reload로 실행 환경 값을 되돌리며 되돌린 값은 단언하지 않는다. 확인: 변수 없음·`QDRANT_HYBRID_SCAN_LIMIT=6000` 양쪽에서 12건 통과(수정 전 코드는 6000에서 1건 실패). 함께 지적된 `qdrant_backend.py` 주석(905곡 전제)·`docs/vector_backend.md`("잘림이 없다")는 §7-A "함께 고칠 것"대로 수정 PR에서 고친다 |
 
 ## 재현 (모델 호출 없음, 저장소 루트에서, `env -u CLAUDE_EFFORT`)
 
@@ -228,7 +229,7 @@ venv/bin/python experiments/reranking/results_v61_hybrid_scan_audit/compare_cand
 | `run_candidates.py` · `run_all.sh` | 기존 평가기로 후보 30개 실행(A/B/C · 세트 · rep) |
 | `compare_text_calls.py` · `compare_candidates.py` · `bench_latency.py` · `sensitivity_limit.py` | 호출 대조(저장 결과) · 후보 대조 · 지연(A·C·D·B, 필터 count) · 민감도 |
 | `replay_calls.py` · `replay_current.json` · `replay_limit5143.json` | 저장 질의 벡터를 **현재 구현**에 재생해 기준과 대조 — 수정 코드 검증용 |
-| `repro_synthetic.py` · `repro_synthetic.json` · `tests/test_v61_hybrid_scan_audit.py` | 합성 재현·회귀 테스트 11건 |
+| `repro_synthetic.py` · `repro_synthetic.json` · `tests/test_v61_hybrid_scan_audit.py` | 합성 재현·회귀 테스트 12건(합성 10 + `QDRANT_HYBRID_SCAN_LIMIT` 설정 경로 2) |
 | `cand_{A,B,C,A_rep2}/<set>_dev/` | 평가기 산출(summary·top10·runinfo 커밋, detail·explain 제외) + `conditions.json`(지문·차단 확인·시간·메모리). `calls.jsonl`·`candidates.jsonl`·`calls_vectors.npz`는 커밋 제외 |
 | `candidate_changes.csv` · `candidate_summary.json` · `text_calls_diff.csv` · `truncation_songs.csv` · `text_calls_summary.json` · `latency_calls.csv` · `latency_summary.json` · `sensitivity_limit.json` | 결과 표(곡 ID·질의 ID·숫자만) |
 

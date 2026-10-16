@@ -234,20 +234,26 @@ def test_ties_keep_both_songs_with_equal_scores_and_do_not_lose_either(client, m
     assert set(m["id"] for m in res["matches"][:2]) == {"1", "2"}
 
 
-def test_the_default_limit_is_read_from_the_environment_name_used_in_docs():
+def test_the_limit_is_read_from_the_environment_name_used_in_docs(monkeypatch):
     """운영 문서·.env.example의 이름(`QDRANT_HYBRID_SCAN_LIMIT`)과 모듈 상수가 같은 값을 가리킨다 — 진단이 가정한 설정 경로 확인."""
     import importlib
-    import os
 
-    old = os.environ.get("QDRANT_HYBRID_SCAN_LIMIT")
+    monkeypatch.setenv("QDRANT_HYBRID_SCAN_LIMIT", "7")
     try:
-        os.environ["QDRANT_HYBRID_SCAN_LIMIT"] = "7"
-        module = importlib.reload(qb)
-        assert module.HYBRID_SCAN_LIMIT == 7
+        assert importlib.reload(qb).HYBRID_SCAN_LIMIT == 7
     finally:
-        if old is None:
-            os.environ.pop("QDRANT_HYBRID_SCAN_LIMIT", None)
-        else:
-            os.environ["QDRANT_HYBRID_SCAN_LIMIT"] = old
+        # 환경을 먼저 되돌린 뒤 다시 읽어 다른 테스트에 7이 남지 않게 한다. 되돌린 값은 실행 환경에 따르므로 여기서 단언하지 않는다
+        monkeypatch.undo()
         importlib.reload(qb)
-        assert qb.HYBRID_SCAN_LIMIT == 5000
+
+
+def test_the_default_limit_is_5000_when_the_environment_variable_is_absent(monkeypatch):
+    """변수가 없을 때의 기본값이 진단이 전제한 5000이다. 셸·CI에 변수가 설정돼 있어도 지우고 재서 영향을 받지 않는다."""
+    import importlib
+
+    monkeypatch.delenv("QDRANT_HYBRID_SCAN_LIMIT", raising=False)
+    try:
+        assert importlib.reload(qb).HYBRID_SCAN_LIMIT == 5000
+    finally:
+        monkeypatch.undo()
+        importlib.reload(qb)
