@@ -1,0 +1,988 @@
+{
+  "universe": 176,
+  "excluded_lyric_path": 19,
+  "category_counts_all": {
+    "closed": 136,
+    "open_hits": 40,
+    "open_empty": 0
+  },
+  "category_counts_after_exclusion": {
+    "closed": 119,
+    "open_hits": 38,
+    "open_empty": 0
+  },
+  "selected": {
+    "closed": 10,
+    "open_hits": 10,
+    "open_empty": 0,
+    "open_empty_synthetic": 10
+  },
+  "per_category_target": 10,
+  "d_env": {
+    "ATTR_FILTER_WEIGHT": "0.5",
+    "ATTR_FILTER_GATE": "era_plus",
+    "ATTR_FILTER_K": "30",
+    "ATTR_FILTER_USE_GENRE": "1",
+    "ATTR_FILTER_GENRE_POLICY": "conditional"
+  },
+  "qdrant_url": "http://127.0.0.1:6356",
+  "selection_rule": "범주별 v06→v09→v10 번갈아, 세트 안 query_id 순, 가사 경로 질의 제외",
+  "sample": {
+    "closed": [
+      {
+        "query_id": "c601",
+        "set": "v06",
+        "query": "전 세계에서 사람들이 따라 추는 춤이 유행했던 곡이야. 뮤직비디오가 코미디처럼 웃겼고 남자가 불렀어",
+        "attr_hits": 0
+      },
+      {
+        "query_id": "n018",
+        "set": "v09",
+        "query": "인트로에 물흐르는 소리가 나오는 옛날 민요풍 트로트?",
+        "attr_hits": 0
+      },
+      {
+        "query_id": "t024",
+        "set": "v10",
+        "query": "오디션 출신 밴드 노래인데, 제목에 지명이 들어갔고 바다가 생각나는 노래야",
+        "attr_hits": 0
+      },
+      {
+        "query_id": "c602",
+        "set": "v06",
+        "query": "힙합 경연 프로그램에서 우승한 사람이 그 프로그램 안에서 발표한 곡이야",
+        "attr_hits": 0
+      },
+      {
+        "query_id": "n019",
+        "set": "v09",
+        "query": "헤어진 사람이랑 맨날 같이 가던 동네를 이제 못 가겠다는 남자 발라드. 동네 이름이 나왔던 것 같은데 기억이 안 나",
+        "attr_hits": 0
+      },
+      {
+        "query_id": "t029",
+        "set": "v10",
+        "query": "교과서 예시에 나오는 흔한 남자 이름이 제목에 들어간 노래, 평범한 사람이 하루하루 버티는 얘기를 남자 가수가 담담하게 불렀어. 릴스 배경 노래로 한창 나왔던 것 같아",
+        "attr_hits": 0
+      },
+      {
+        "query_id": "c603",
+        "set": "v06",
+        "query": "경연 프로그램에 나온 남자가 불러서 화제가 된 곡인데, 원래 다른 가수 곡을 다시 부른 거였어",
+        "attr_hits": 0
+      },
+      {
+        "query_id": "n020",
+        "set": "v09",
+        "query": "남자친구가 딴 여자 만나는 것 같다고 의심하는 가사였던 걸그룹 노래, 그룹이 밝은 콘셉트 하다가 처음으로 확 섹시하게 바꿨던 때였어",
+        "attr_hits": 0
+      },
+      {
+        "query_id": "t031",
+        "set": "v10",
+        "query": "아이유 노랜데 되게 핑크핑크한 분위기에 밝은 노래였어",
+        "attr_hits": 0
+      },
+      {
+        "query_id": "c605",
+        "set": "v06",
+        "query": "배우가 주인공으로 나온 작품에서 본인이 직접 부른 곡이야. 무대에서 노래하는 장면에 나왔어",
+        "attr_hits": 0
+      }
+    ],
+    "open_hits": [
+      {
+        "query_id": "m103",
+        "set": "v06",
+        "query": "2000년대 초반 겨울 드라마 OST였는데, 현악기가 깔리고 남자가 호소하듯 부르는 발라드야",
+        "attr_hits": 30
+      },
+      {
+        "query_id": "n002",
+        "set": "v09",
+        "query": "90년대 초반 록밴드 노래인데, 원래 보컬이 앨범 준비하다가 사고로 세상을 떠나서 그 동생이 대신 불렀다는 사연이 있었어.",
+        "attr_hits": 1
+      },
+      {
+        "query_id": "t001",
+        "set": "v10",
+        "query": "콘서트에서 압정밟은 것 처럼 뛰어다니고 닭소리 처럼 노래 부르는 걸로 유명한 남자 가수 있잖아, 그 사람 90년대 후반 발라드 중에 피아노 반주로 엄청 애절하게 지르는 거 뭐였더라",
+        "attr_hits": 30
+      },
+      {
+        "query_id": "q101",
+        "set": "v06",
+        "query": "2000년대 후반에 싸이월드 배경음악으로 엄청 유행했던 곡인데, 여자애들 여러 명이 부르는 빠른 댄스곡이었어. 제목이 알파벳 세 글자였던 것 같은데",
+        "attr_hits": 30
+      },
+      {
+        "query_id": "n006",
+        "set": "v09",
+        "query": "통기타 치면서 가볍게 부르는 남자 노래인데 꽃 피는 철에 맞춰 나왔던 거. 2013년쯤이었고 표절 얘기가 좀 돌았던 걸로 기억해",
+        "attr_hits": 30
+      },
+      {
+        "query_id": "t004",
+        "set": "v10",
+        "query": "그 사람 옆자리가 내 자리였으면 좋겠다는 짝사랑 발라드, 2000년대 중반 남자 솔로였고 후렴이 너무 높아서 노래방에서 다들 키 낮춰 불렀어",
+        "attr_hits": 30
+      },
+      {
+        "query_id": "q104",
+        "set": "v06",
+        "query": "2000년대 초반 여자 알앤비 가수였는데 기교랑 바이브레이션이 진짜 심했어. 제목은 영어 단어 하나였고 눈물이랑 지워지지 않는 기억 얘기가 나왔던 것 같아",
+        "attr_hits": 30
+      },
+      {
+        "query_id": "n010",
+        "set": "v09",
+        "query": "싸이월드 미니홈피 배경음악으로 한번쯤은 걸어놨던 힙합 발라드. 남자가 랩하고 여자가 노래 불러.",
+        "attr_hits": 30
+      },
+      {
+        "query_id": "t007",
+        "set": "v10",
+        "query": "대중교통에서 마주친 사람한테 첫눈에 반하는 내용의 댄스곡, 90년대 중후반 남녀 섞인 그룹이었고 엄청 발랄했던 거 같아",
+        "attr_hits": 3
+      },
+      {
+        "query_id": "q107",
+        "set": "v06",
+        "query": "인디밴드 노랜데 좋아하면 좋아할수록 상처받는다는 가사가 있었어. 기타 소리가 옛날 아날로그 느낌이었고 2000년대 초반 곡인 것 같아",
+        "attr_hits": 30
+      }
+    ],
+    "open_empty": [],
+    "open_empty_synthetic": [
+      {
+        "query_id": "m103",
+        "set": "v06",
+        "query": "2000년대 초반 겨울 드라마 OST였는데, 현악기가 깔리고 남자가 호소하듯 부르는 발라드야",
+        "attr_hits": 0,
+        "filter_open": true,
+        "prior_analysis": {
+          "original_query": "2000년대 초반 겨울 드라마 OST였는데, 현악기가 깔리고 남자가 호소하듯 부르는 발라드야",
+          "intent_type": "mixed",
+          "korean_tags": [
+            "2000년대초반",
+            "겨울",
+            "드라마OST",
+            "발라드",
+            "현악기",
+            "남성보컬",
+            "호소력"
+          ],
+          "lyric_keywords": [],
+          "lyric_clues": [],
+          "lyric_semantic_query": "",
+          "song_title": "",
+          "title_constraints": {
+            "script": null,
+            "char_count": null,
+            "word_count": null,
+            "contains_number": null,
+            "repeated_char": null,
+            "repeated_word": null,
+            "confidence": 0.0
+          },
+          "artist_name": "",
+          "artist_name_alt": [],
+          "vocal_gender": "남성",
+          "genre": "발라드",
+          "image_english_query": "",
+          "audio_english_query": "A ballad featuring a male vocalist singing with an emotional, pleading tone, accompanied by a prominent string section.",
+          "has_visual_clue": false,
+          "degraded_modalities": [],
+          "modality_weights": {
+            "text": 0.5,
+            "image": 0.0,
+            "audio": 0.5
+          },
+          "text_alpha": 0.7,
+          "confidence": 0.95,
+          "release_era": {
+            "start_year": 1960,
+            "end_year": 1965,
+            "confidence": 0.9
+          },
+          "artist_type": {
+            "values": [],
+            "confidence": 0.0
+          },
+          "title_meaning_clue": {
+            "kind": null,
+            "text": "",
+            "confidence": 0.0
+          },
+          "performance_clues": {
+            "vocal_count": "solo",
+            "vocal_roles": [
+              "남성노래"
+            ],
+            "sound_ensemble": [
+              "현악기",
+              "스트링"
+            ],
+            "confidence": 0.85
+          },
+          "context_clues": [
+            {
+              "target": "",
+              "relation": "드라마OST",
+              "search_query": "2000년대 초반 겨울 드라마 OST",
+              "confidence": 0.8
+            }
+          ],
+          "life_stage": {
+            "stage": null,
+            "text": "",
+            "spans": [],
+            "age_from": null,
+            "age_to": null,
+            "confidence": 0.0
+          }
+        }
+      },
+      {
+        "query_id": "n002",
+        "set": "v09",
+        "query": "90년대 초반 록밴드 노래인데, 원래 보컬이 앨범 준비하다가 사고로 세상을 떠나서 그 동생이 대신 불렀다는 사연이 있었어.",
+        "attr_hits": 0,
+        "filter_open": true,
+        "prior_analysis": {
+          "original_query": "90년대 초반 록밴드 노래인데, 원래 보컬이 앨범 준비하다가 사고로 세상을 떠나서 그 동생이 대신 불렀다는 사연이 있었어.",
+          "intent_type": "mixed",
+          "korean_tags": [
+            "90년대",
+            "록밴드",
+            "사연",
+            "비극"
+          ],
+          "lyric_keywords": [],
+          "lyric_clues": [],
+          "lyric_semantic_query": "",
+          "song_title": "",
+          "title_constraints": {
+            "script": null,
+            "char_count": null,
+            "word_count": null,
+            "contains_number": null,
+            "repeated_char": null,
+            "repeated_word": null,
+            "confidence": 0.0
+          },
+          "artist_name": "",
+          "artist_name_alt": [],
+          "vocal_gender": "남성",
+          "genre": "록",
+          "image_english_query": "",
+          "audio_english_query": "Rock band sound with a male vocalist.",
+          "has_visual_clue": false,
+          "degraded_modalities": [],
+          "modality_weights": {
+            "text": 0.8,
+            "image": 0.0,
+            "audio": 0.2
+          },
+          "text_alpha": 0.8,
+          "confidence": 0.95,
+          "release_era": {
+            "start_year": 1960,
+            "end_year": 1965,
+            "confidence": 0.9
+          },
+          "artist_type": {
+            "values": [
+              "밴드"
+            ],
+            "confidence": 0.85
+          },
+          "title_meaning_clue": {
+            "kind": null,
+            "text": "",
+            "confidence": 0.0
+          },
+          "performance_clues": {
+            "vocal_count": "solo",
+            "vocal_roles": [
+              "남성노래"
+            ],
+            "sound_ensemble": [
+              "록밴드"
+            ],
+            "confidence": 0.8
+          },
+          "context_clues": [],
+          "life_stage": {
+            "stage": null,
+            "text": "",
+            "spans": [],
+            "age_from": null,
+            "age_to": null,
+            "confidence": 0.0
+          }
+        }
+      },
+      {
+        "query_id": "t001",
+        "set": "v10",
+        "query": "콘서트에서 압정밟은 것 처럼 뛰어다니고 닭소리 처럼 노래 부르는 걸로 유명한 남자 가수 있잖아, 그 사람 90년대 후반 발라드 중에 피아노 반주로 엄청 애절하게 지르는 거 뭐였더라",
+        "attr_hits": 0,
+        "filter_open": true,
+        "prior_analysis": {
+          "original_query": "콘서트에서 압정밟은 것 처럼 뛰어다니고 닭소리 처럼 노래 부르는 걸로 유명한 남자 가수 있잖아, 그 사람 90년대 후반 발라드 중에 피아노 반주로 엄청 애절하게 지르는 거 뭐였더라",
+          "intent_type": "mixed",
+          "korean_tags": [
+            "90년대후반",
+            "발라드",
+            "남성솔로",
+            "애절한",
+            "피아노"
+          ],
+          "lyric_keywords": [],
+          "lyric_clues": [],
+          "lyric_semantic_query": "",
+          "song_title": "",
+          "title_constraints": {
+            "script": null,
+            "char_count": null,
+            "word_count": null,
+            "contains_number": null,
+            "repeated_char": null,
+            "repeated_word": null,
+            "confidence": 0.0
+          },
+          "artist_name": "",
+          "artist_name_alt": [],
+          "vocal_gender": "남성",
+          "genre": "발라드",
+          "image_english_query": "",
+          "audio_english_query": "Emotional male vocal performance with intense, high-pitched belting, accompanied by a prominent piano arrangement.",
+          "has_visual_clue": false,
+          "degraded_modalities": [],
+          "modality_weights": {
+            "text": 0.5,
+            "image": 0.0,
+            "audio": 0.5
+          },
+          "text_alpha": 0.6,
+          "confidence": 0.9,
+          "release_era": {
+            "start_year": 1960,
+            "end_year": 1965,
+            "confidence": 0.9
+          },
+          "artist_type": {
+            "values": [],
+            "confidence": 0.0
+          },
+          "title_meaning_clue": {
+            "kind": null,
+            "text": "",
+            "confidence": 0.0
+          },
+          "performance_clues": {
+            "vocal_count": "solo",
+            "vocal_roles": [
+              "남성노래",
+              "애절한창법"
+            ],
+            "sound_ensemble": [
+              "피아노반주",
+              "피아노"
+            ],
+            "confidence": 0.9
+          },
+          "context_clues": [],
+          "life_stage": {
+            "stage": null,
+            "text": "",
+            "spans": [],
+            "age_from": null,
+            "age_to": null,
+            "confidence": 0.0
+          }
+        }
+      },
+      {
+        "query_id": "q101",
+        "set": "v06",
+        "query": "2000년대 후반에 싸이월드 배경음악으로 엄청 유행했던 곡인데, 여자애들 여러 명이 부르는 빠른 댄스곡이었어. 제목이 알파벳 세 글자였던 것 같은데",
+        "attr_hits": 0,
+        "filter_open": true,
+        "prior_analysis": {
+          "original_query": "2000년대 후반에 싸이월드 배경음악으로 엄청 유행했던 곡인데, 여자애들 여러 명이 부르는 빠른 댄스곡이었어. 제목이 알파벳 세 글자였던 것 같은데",
+          "intent_type": "mixed",
+          "korean_tags": [
+            "2000년대후반",
+            "싸이월드",
+            "배경음악",
+            "걸그룹",
+            "댄스곡"
+          ],
+          "lyric_keywords": [],
+          "lyric_clues": [],
+          "lyric_semantic_query": "",
+          "song_title": "",
+          "title_constraints": {
+            "script": "latin",
+            "char_count": 3,
+            "word_count": null,
+            "contains_number": null,
+            "repeated_char": null,
+            "repeated_word": null,
+            "confidence": 0.7
+          },
+          "artist_name": "",
+          "artist_name_alt": [],
+          "vocal_gender": "여성",
+          "genre": "댄스",
+          "image_english_query": "",
+          "audio_english_query": "Fast-paced dance track with multiple female vocalists.",
+          "has_visual_clue": false,
+          "degraded_modalities": [],
+          "modality_weights": {
+            "text": 0.8,
+            "image": 0.0,
+            "audio": 0.2
+          },
+          "text_alpha": 0.5,
+          "confidence": 0.95,
+          "release_era": {
+            "start_year": 1960,
+            "end_year": 1965,
+            "confidence": 0.75
+          },
+          "artist_type": {
+            "values": [],
+            "confidence": 0.0
+          },
+          "title_meaning_clue": {
+            "kind": null,
+            "text": "",
+            "confidence": 0.0
+          },
+          "performance_clues": {
+            "vocal_count": "multiple",
+            "vocal_roles": [
+              "여성노래"
+            ],
+            "sound_ensemble": [
+              "댄스"
+            ],
+            "confidence": 0.85
+          },
+          "context_clues": [
+            {
+              "target": "싸이월드",
+              "relation": "배경음악",
+              "search_query": "싸이월드 배경음악으로 유행했던 곡",
+              "confidence": 0.8
+            }
+          ],
+          "life_stage": {
+            "stage": null,
+            "text": "",
+            "spans": [],
+            "age_from": null,
+            "age_to": null,
+            "confidence": 0.0
+          }
+        }
+      },
+      {
+        "query_id": "n006",
+        "set": "v09",
+        "query": "통기타 치면서 가볍게 부르는 남자 노래인데 꽃 피는 철에 맞춰 나왔던 거. 2013년쯤이었고 표절 얘기가 좀 돌았던 걸로 기억해",
+        "attr_hits": 0,
+        "filter_open": true,
+        "prior_analysis": {
+          "original_query": "통기타 치면서 가볍게 부르는 남자 노래인데 꽃 피는 철에 맞춰 나왔던 거. 2013년쯤이었고 표절 얘기가 좀 돌았던 걸로 기억해",
+          "intent_type": "mixed",
+          "korean_tags": [
+            "통기타",
+            "남성보컬",
+            "봄",
+            "어쿠스틱"
+          ],
+          "lyric_keywords": [],
+          "lyric_clues": [],
+          "lyric_semantic_query": "",
+          "song_title": "",
+          "title_constraints": {
+            "script": null,
+            "char_count": null,
+            "word_count": null,
+            "contains_number": null,
+            "repeated_char": null,
+            "repeated_word": null,
+            "confidence": 0.0
+          },
+          "artist_name": "",
+          "artist_name_alt": [],
+          "vocal_gender": "남성",
+          "genre": "",
+          "image_english_query": "",
+          "audio_english_query": "A light, acoustic song featuring a solo male vocalist accompanied by a strumming acoustic guitar.",
+          "has_visual_clue": false,
+          "degraded_modalities": [],
+          "modality_weights": {
+            "text": 0.7,
+            "image": 0.0,
+            "audio": 0.3
+          },
+          "text_alpha": 0.6,
+          "confidence": 0.9,
+          "release_era": {
+            "start_year": 1960,
+            "end_year": 1965,
+            "confidence": 0.75
+          },
+          "artist_type": {
+            "values": [],
+            "confidence": 0.0
+          },
+          "title_meaning_clue": {
+            "kind": null,
+            "text": "",
+            "confidence": 0.0
+          },
+          "performance_clues": {
+            "vocal_count": "solo",
+            "vocal_roles": [
+              "남성노래"
+            ],
+            "sound_ensemble": [
+              "통기타",
+              "어쿠스틱",
+              "기타"
+            ],
+            "confidence": 0.9
+          },
+          "context_clues": [],
+          "life_stage": {
+            "stage": null,
+            "text": "",
+            "spans": [],
+            "age_from": null,
+            "age_to": null,
+            "confidence": 0.0
+          }
+        }
+      },
+      {
+        "query_id": "t004",
+        "set": "v10",
+        "query": "그 사람 옆자리가 내 자리였으면 좋겠다는 짝사랑 발라드, 2000년대 중반 남자 솔로였고 후렴이 너무 높아서 노래방에서 다들 키 낮춰 불렀어",
+        "attr_hits": 0,
+        "filter_open": true,
+        "prior_analysis": {
+          "original_query": "그 사람 옆자리가 내 자리였으면 좋겠다는 짝사랑 발라드, 2000년대 중반 남자 솔로였고 후렴이 너무 높아서 노래방에서 다들 키 낮춰 불렀어",
+          "intent_type": "mixed",
+          "korean_tags": [
+            "짝사랑",
+            "발라드",
+            "2000년대중반",
+            "남성솔로",
+            "고음"
+          ],
+          "lyric_keywords": [],
+          "lyric_clues": [],
+          "lyric_semantic_query": "그 사람 옆자리가 내 자리였으면 좋겠다는 짝사랑의 마음",
+          "song_title": "",
+          "title_constraints": {
+            "script": null,
+            "char_count": null,
+            "word_count": null,
+            "contains_number": null,
+            "repeated_char": null,
+            "repeated_word": null,
+            "confidence": 0.0
+          },
+          "artist_name": "",
+          "artist_name_alt": [],
+          "vocal_gender": "남성",
+          "genre": "발라드",
+          "image_english_query": "",
+          "audio_english_query": "Emotional male ballad with a very high-pitched chorus that is challenging to sing.",
+          "has_visual_clue": false,
+          "degraded_modalities": [],
+          "modality_weights": {
+            "text": 0.7,
+            "image": 0.0,
+            "audio": 0.3
+          },
+          "text_alpha": 0.7,
+          "confidence": 0.95,
+          "release_era": {
+            "start_year": 1960,
+            "end_year": 1965,
+            "confidence": 0.9
+          },
+          "artist_type": {
+            "values": [
+              "솔로"
+            ],
+            "confidence": 0.85
+          },
+          "title_meaning_clue": {
+            "kind": null,
+            "text": "",
+            "confidence": 0.0
+          },
+          "performance_clues": {
+            "vocal_count": "solo",
+            "vocal_roles": [
+              "남성노래"
+            ],
+            "sound_ensemble": [],
+            "confidence": 0.8
+          },
+          "context_clues": [],
+          "life_stage": {
+            "stage": null,
+            "text": "",
+            "spans": [],
+            "age_from": null,
+            "age_to": null,
+            "confidence": 0.0
+          }
+        }
+      },
+      {
+        "query_id": "q104",
+        "set": "v06",
+        "query": "2000년대 초반 여자 알앤비 가수였는데 기교랑 바이브레이션이 진짜 심했어. 제목은 영어 단어 하나였고 눈물이랑 지워지지 않는 기억 얘기가 나왔던 것 같아",
+        "attr_hits": 0,
+        "filter_open": true,
+        "prior_analysis": {
+          "original_query": "2000년대 초반 여자 알앤비 가수였는데 기교랑 바이브레이션이 진짜 심했어. 제목은 영어 단어 하나였고 눈물이랑 지워지지 않는 기억 얘기가 나왔던 것 같아",
+          "intent_type": "mixed",
+          "korean_tags": [
+            "2000년대초반",
+            "여성가수",
+            "알앤비",
+            "기교",
+            "바이브레이션"
+          ],
+          "lyric_keywords": [],
+          "lyric_clues": [],
+          "lyric_semantic_query": "눈물과 지워지지 않는 기억에 관한 내용",
+          "song_title": "",
+          "title_constraints": {
+            "script": "latin",
+            "char_count": null,
+            "word_count": 1,
+            "contains_number": null,
+            "repeated_char": null,
+            "repeated_word": null,
+            "confidence": 0.85
+          },
+          "artist_name": "",
+          "artist_name_alt": [],
+          "vocal_gender": "여성",
+          "genre": "R&B/Soul",
+          "image_english_query": "",
+          "audio_english_query": "Female R&B vocal with heavy melismatic runs and intense vibrato.",
+          "has_visual_clue": false,
+          "degraded_modalities": [],
+          "modality_weights": {
+            "text": 0.7,
+            "image": 0.0,
+            "audio": 0.3
+          },
+          "text_alpha": 0.65,
+          "confidence": 0.9,
+          "release_era": {
+            "start_year": 1960,
+            "end_year": 1965,
+            "confidence": 0.75
+          },
+          "artist_type": {
+            "values": [],
+            "confidence": 0.0
+          },
+          "title_meaning_clue": {
+            "kind": null,
+            "text": "",
+            "confidence": 0.0
+          },
+          "performance_clues": {
+            "vocal_count": "solo",
+            "vocal_roles": [
+              "여성노래"
+            ],
+            "sound_ensemble": [],
+            "confidence": 0.85
+          },
+          "context_clues": [],
+          "life_stage": {
+            "stage": null,
+            "text": "",
+            "spans": [],
+            "age_from": null,
+            "age_to": null,
+            "confidence": 0.0
+          }
+        }
+      },
+      {
+        "query_id": "n010",
+        "set": "v09",
+        "query": "싸이월드 미니홈피 배경음악으로 한번쯤은 걸어놨던 힙합 발라드. 남자가 랩하고 여자가 노래 불러.",
+        "attr_hits": 0,
+        "filter_open": true,
+        "prior_analysis": {
+          "original_query": "싸이월드 미니홈피 배경음악으로 한번쯤은 걸어놨던 힙합 발라드. 남자가 랩하고 여자가 노래 불러.",
+          "intent_type": "mixed",
+          "korean_tags": [
+            "싸이월드",
+            "미니홈피",
+            "배경음악",
+            "힙합발라드",
+            "남녀보컬"
+          ],
+          "lyric_keywords": [],
+          "lyric_clues": [],
+          "lyric_semantic_query": "",
+          "song_title": "",
+          "title_constraints": {
+            "script": null,
+            "char_count": null,
+            "word_count": null,
+            "contains_number": null,
+            "repeated_char": null,
+            "repeated_word": null,
+            "confidence": 0.0
+          },
+          "artist_name": "",
+          "artist_name_alt": [],
+          "vocal_gender": "혼성",
+          "genre": "힙합/발라드",
+          "image_english_query": "",
+          "audio_english_query": "A hybrid hip-hop ballad featuring a male rapper and a female vocalist, typical of 2000s Korean pop production.",
+          "has_visual_clue": false,
+          "degraded_modalities": [],
+          "modality_weights": {
+            "text": 0.7,
+            "image": 0.0,
+            "audio": 0.3
+          },
+          "text_alpha": 0.7,
+          "confidence": 0.95,
+          "release_era": {
+            "start_year": 1960,
+            "end_year": 1965,
+            "confidence": 0.7
+          },
+          "artist_type": {
+            "values": [],
+            "confidence": 0.0
+          },
+          "title_meaning_clue": {
+            "kind": null,
+            "text": "",
+            "confidence": 0.0
+          },
+          "performance_clues": {
+            "vocal_count": "duet",
+            "vocal_roles": [
+              "남성랩",
+              "여성노래"
+            ],
+            "sound_ensemble": [
+              "힙합비트",
+              "발라드"
+            ],
+            "confidence": 0.9
+          },
+          "context_clues": [
+            {
+              "target": "",
+              "relation": "삽입곡·배경음악",
+              "search_query": "싸이월드 미니홈피 배경음악으로 한번쯤은 걸어놨던 힙합 발라드",
+              "confidence": 0.6
+            }
+          ],
+          "life_stage": {
+            "stage": null,
+            "text": "",
+            "spans": [],
+            "age_from": null,
+            "age_to": null,
+            "confidence": 0.0
+          }
+        }
+      },
+      {
+        "query_id": "t007",
+        "set": "v10",
+        "query": "대중교통에서 마주친 사람한테 첫눈에 반하는 내용의 댄스곡, 90년대 중후반 남녀 섞인 그룹이었고 엄청 발랄했던 거 같아",
+        "attr_hits": 0,
+        "filter_open": true,
+        "prior_analysis": {
+          "original_query": "대중교통에서 마주친 사람한테 첫눈에 반하는 내용의 댄스곡, 90년대 중후반 남녀 섞인 그룹이었고 엄청 발랄했던 거 같아",
+          "intent_type": "mixed",
+          "korean_tags": [
+            "90년대",
+            "혼성그룹",
+            "댄스곡",
+            "첫눈에반함",
+            "발랄한"
+          ],
+          "lyric_keywords": [],
+          "lyric_clues": [],
+          "lyric_semantic_query": "대중교통에서 마주친 사람에게 첫눈에 반하는 내용",
+          "song_title": "",
+          "title_constraints": {
+            "script": null,
+            "char_count": null,
+            "word_count": null,
+            "contains_number": null,
+            "repeated_char": null,
+            "repeated_word": null,
+            "confidence": 0.0
+          },
+          "artist_name": "",
+          "artist_name_alt": [],
+          "vocal_gender": "혼성",
+          "genre": "댄스",
+          "image_english_query": "",
+          "audio_english_query": "Upbeat, energetic 90s dance track with a mix of male and female vocals, fast tempo, and bright, cheerful production.",
+          "has_visual_clue": false,
+          "degraded_modalities": [],
+          "modality_weights": {
+            "text": 0.7,
+            "image": 0.0,
+            "audio": 0.3
+          },
+          "text_alpha": 0.7,
+          "confidence": 0.95,
+          "release_era": {
+            "start_year": 1960,
+            "end_year": 1965,
+            "confidence": 0.75
+          },
+          "artist_type": {
+            "values": [
+              "그룹"
+            ],
+            "confidence": 0.7
+          },
+          "title_meaning_clue": {
+            "kind": null,
+            "text": "",
+            "confidence": 0.0
+          },
+          "performance_clues": {
+            "vocal_count": "multiple",
+            "vocal_roles": [
+              "남성노래",
+              "여성노래"
+            ],
+            "sound_ensemble": [
+              "댄스음악"
+            ],
+            "confidence": 0.85
+          },
+          "context_clues": [],
+          "life_stage": {
+            "stage": null,
+            "text": "",
+            "spans": [],
+            "age_from": null,
+            "age_to": null,
+            "confidence": 0.0
+          }
+        }
+      },
+      {
+        "query_id": "q107",
+        "set": "v06",
+        "query": "인디밴드 노랜데 좋아하면 좋아할수록 상처받는다는 가사가 있었어. 기타 소리가 옛날 아날로그 느낌이었고 2000년대 초반 곡인 것 같아",
+        "attr_hits": 0,
+        "filter_open": true,
+        "prior_analysis": {
+          "original_query": "인디밴드 노랜데 좋아하면 좋아할수록 상처받는다는 가사가 있었어. 기타 소리가 옛날 아날로그 느낌이었고 2000년대 초반 곡인 것 같아",
+          "intent_type": "mixed",
+          "korean_tags": [
+            "인디밴드",
+            "기타",
+            "아날로그",
+            "2000년대초반"
+          ],
+          "lyric_keywords": [],
+          "lyric_clues": [
+            {
+              "text": "좋아하면 좋아할수록 상처받는다",
+              "kind": "semantic",
+              "variants": [],
+              "confidence": 0.9,
+              "source": "model"
+            }
+          ],
+          "lyric_semantic_query": "좋아하는 마음이 커질수록 상처를 입게 된다는 내용",
+          "song_title": "",
+          "title_constraints": {
+            "script": null,
+            "char_count": null,
+            "word_count": null,
+            "contains_number": null,
+            "repeated_char": null,
+            "repeated_word": null,
+            "confidence": 0.0
+          },
+          "artist_name": "",
+          "artist_name_alt": [],
+          "vocal_gender": null,
+          "genre": "",
+          "image_english_query": "",
+          "audio_english_query": "Indie band song featuring prominent guitar with a warm, vintage analog production texture.",
+          "has_visual_clue": false,
+          "degraded_modalities": [],
+          "modality_weights": {
+            "text": 0.7,
+            "image": 0.0,
+            "audio": 0.3
+          },
+          "text_alpha": 0.65,
+          "confidence": 0.95,
+          "release_era": {
+            "start_year": 1960,
+            "end_year": 1965,
+            "confidence": 0.75
+          },
+          "artist_type": {
+            "values": [
+              "밴드"
+            ],
+            "confidence": 0.7
+          },
+          "title_meaning_clue": {
+            "kind": null,
+            "text": "",
+            "confidence": 0.0
+          },
+          "performance_clues": {
+            "vocal_count": null,
+            "vocal_roles": [],
+            "sound_ensemble": [
+              "기타",
+              "아날로그사운드"
+            ],
+            "confidence": 0.85
+          },
+          "context_clues": [],
+          "life_stage": {
+            "stage": null,
+            "text": "",
+            "spans": [],
+            "age_from": null,
+            "age_to": null,
+            "confidence": 0.0
+          }
+        }
+      }
+    ]
+  }
+}
