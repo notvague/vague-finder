@@ -200,3 +200,22 @@ experiments/genre_memory_gap/results_*/*.excluded/
 
 # Vertex AI 서비스 계정 키 (팀 드라이브로만 전달, 절대 커밋·이미지에 넣지 않는다)
 secrets/
+
+# v56 재집계 입력·질의별 결과 (이 실험 폴더만 예외)
+!experiments/reranking/results_v56_attr_runtime_validation/fallback_results_subset_run2.csv
+!experiments/reranking/results_v56_attr_runtime_validation/latency_joined.csv
+!experiments/reranking/results_v56_attr_runtime_validation/latency_per_query.csv
+!experiments/reranking/results_v56_attr_runtime_validation/latency_requests.csv
+!experiments/reranking/results_v56_attr_runtime_validation/latency_summary.csv
+!experiments/reranking/results_v56_attr_runtime_validation/query_categories.csv
+!experiments/reranking/results_v56_attr_runtime_validation/run1_noalias/fallback_results.csv
+!experiments/reranking/results_v56_attr_runtime_validation/run1_noalias/latency_joined.csv
+!experiments/reranking/results_v56_attr_runtime_validation/run1_noalias/latency_per_query.csv
+!experiments/reranking/results_v56_attr_runtime_validation/run1_noalias/latency_requests.csv
+!experiments/reranking/results_v56_attr_runtime_validation/run1_noalias/latency_summary.csv
+
+# v56 실행 중 제어 파일·서버 로그는 공유하지 않는다
+experiments/reranking/results_v56_attr_runtime_validation/logs/
+experiments/reranking/results_v56_attr_runtime_validation/ctl/
+experiments/reranking/results_v56_attr_runtime_validation/run1_noalias/logs_run1/
+experiments/reranking/results_v56_attr_runtime_validation/progress.txt

@@ -1,0 +1,283 @@
+{
+ "q101": {
+  "_build_attribute_filter": {
+   "filter": {
+    "$and": [
+     {
+      "$or": [
+       {
+        "release_date": {
+         "$text": "2007"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "2008"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "2009"
+        }
+       }
+      ]
+     },
+     {
+      "vocal_gender": {
+       "$in": [
+        "여성",
+        "혼성"
+       ]
+      }
+     },
+     {
+      "genre": {
+       "$in": [
+        "댄스"
+       ]
+      }
+     }
+    ]
+   },
+   "n_local": 70,
+   "n_server": 70,
+   "only_local": [],
+   "only_server": []
+  }
+ },
+ "t049": {
+  "_build_attribute_filter": {
+   "filter": {
+    "$and": [
+     {
+      "$or": [
+       {
+        "release_date": {
+         "$text": "2011"
+        }
+       }
+      ]
+     },
+     {
+      "vocal_gender": {
+       "$eq": "혼성"
+      }
+     },
+     {
+      "genre": {
+       "$in": [
+        "랩/힙합"
+       ]
+      }
+     },
+     {
+      "type": {
+       "$in": [
+        "듀엣",
+        "듀오"
+       ]
+      }
+     }
+    ]
+   },
+   "n_local": 2,
+   "n_server": 2,
+   "only_local": [],
+   "only_server": []
+  }
+ },
+ "c601": {},
+ "n010": {
+  "_build_attribute_filter": {
+   "filter": {
+    "$and": [
+     {
+      "$or": [
+       {
+        "release_date": {
+         "$text": "2000"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "2001"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "2002"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "2003"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "2004"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "2005"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "2006"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "2007"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "2008"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "2009"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "2010"
+        }
+       }
+      ]
+     },
+     {
+      "vocal_gender": {
+       "$eq": "혼성"
+      }
+     }
+    ]
+   },
+   "n_local": 127,
+   "n_server": 127,
+   "only_local": [],
+   "only_server": []
+  },
+  "_build_performance_metadata_filter": {
+   "filter": {
+    "$and": [
+     {
+      "vocal_gender": {
+       "$eq": "혼성"
+      }
+     },
+     {
+      "genre": {
+       "$eq": "랩/힙합"
+      }
+     }
+    ]
+   },
+   "n_local": 153,
+   "n_server": 153,
+   "only_local": [],
+   "only_server": []
+  }
+ },
+ "m103": {
+  "_build_attribute_filter": {
+   "filter": {
+    "$and": [
+     {
+      "$or": [
+       {
+        "release_date": {
+         "$text": "2000"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "2001"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "2002"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "2003"
+        }
+       }
+      ]
+     },
+     {
+      "vocal_gender": {
+       "$in": [
+        "남성",
+        "혼성"
+       ]
+      }
+     },
+     {
+      "genre": {
+       "$in": [
+        "발라드"
+       ]
+      }
+     }
+    ]
+   },
+   "n_local": 146,
+   "n_server": 146,
+   "only_local": [],
+   "only_server": []
+  }
+ },
+ "t001": {
+  "_build_attribute_filter": {
+   "filter": {
+    "$and": [
+     {
+      "$or": [
+       {
+        "release_date": {
+         "$text": "1997"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "1998"
+        }
+       },
+       {
+        "release_date": {
+         "$text": "1999"
+        }
+       }
+      ]
+     },
+     {
+      "vocal_gender": {
+       "$in": [
+        "남성",
+        "혼성"
+       ]
+      }
+     },
+     {
+      "genre": {
+       "$in": [
+        "발라드"
+       ]
+      }
+     }
+    ]
+   },
+   "n_local": 15,
+   "n_server": 15,
+   "only_local": [],
+   "only_server": []
+  }
+ }
+}
