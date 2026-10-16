@@ -100,6 +100,47 @@ docker compose up -d backend
 로컬 적재에서 `storage is already accessed`가 나오면 backend가 아직 같은
 `QDRANT_PATH`를 열고 있는 것이다. backend를 중지한 뒤 다시 실행한다.
 
+## 기동 검사 (2026-10-16, v60)
+
+**왜.** 서버 Qdrant로 옮길 때 `qdrant-client migrate`나 수동 복사는 컬렉션만 옮기고 **alias는
+옮기지 않는다.** v56 검증(`experiments/reranking/results_v56_attr_runtime_validation/RUN_INFO.md`
+§4-1)에서 그 상태로 서비스가 정상으로 뜨고, 검색마다 로그에 `배경 지식 경로 실패 (빈 결과로 대체)`만
+남긴 채 Context 없이 돌았다. 그래서 backend는 기동할 때 한 번 다음을 확인한다
+(`src/backend/context_startup.py` → `ContextQdrantSearch.verify_publication`).
+
+| 조건 | 기동 | `/health.context.state` |
+|---|---|---|
+| `CONTEXT_WEIGHT=0` | 뜬다. Qdrant에 묻지 않는다 | `disabled` |
+| `CONTEXT_WEIGHT>0` + alias 2개·대상 컬렉션·manifest·artifact 모두 일치 | 뜬다 | `verified` |
+| `CONTEXT_WEIGHT>0` + alias 누락(둘·하나) · 잘못된 대상 · manifest 누락/손상/불일치 · 미발행 | **뜨지 않는다**(`ContextStartupError`, 벡터 클라이언트는 닫는다) | (서버 없음 — 로그에 사유 코드) |
+| `CONTEXT_WEIGHT>0` + Qdrant 연결 불가·시간 초과 | 뜬다(기존 벡터 DB 장애 정책과 같음). 요청에서 다시 시도 | `unavailable` (+ 예외 형식 이름) |
+| `CONTEXT_WEIGHT`가 숫자가 아님·음수 | 뜨지 않는다 | — |
+
+확인하는 것(메타데이터 읽기만): alias 두 개의 존재 → 각 alias가 가리키는 컬렉션의 **존재**와 **벡터
+설정**(dense: 이름 `dense`·차원·DOT, sparse: 이름 `sparse`) → 상태 manifest
+(`artifacts/vector_db/context_qdrant/<namespace>/manifest.json`)의 schema·내용 해시·`status=ok`·alias
+이름·대상 컬렉션·벡터 이름·payload 스키마·차원 → 로컬 dense/sparse artifact manifest 해시가 발행 세대와
+같음. **확인하지 않는 것:** 포인트 수, payload·벡터 내용, KoE5 질의 임베더(모델을 만들지 않는다). 검사는
+읽기만 하며 alias를 만들거나 고치거나 재발행하지 않는다. `verified`는 **기동 시점**의 결과다 —
+`checked_at`·`note`가 함께 실리고, `/health` 조회마다 다시 묻지 않는다.
+
+사유 코드와 운영자가 볼 곳:
+
+| `reason` | 뜻 | 확인·조치 |
+|---|---|---|
+| `not_published` | alias도 manifest도 없다 | 이 Qdrant에 Context를 발행한 적이 없다. `qdrant_load_context`로 발행하거나 `CONTEXT_WEIGHT=0` |
+| `aliases_missing` / `aliases_partial` | manifest는 있는데 alias가 없다 / 하나만 있다 | 컬렉션만 옮긴 경우. 서버의 alias 목록(`GET /aliases`)을 manifest의 `qdrant.dense_alias`·`sparse_alias` → `dense_collection`·`sparse_collection`과 맞춘다. `migrate_to_server.py`(v56)는 alias를 함께 복원·검증한다 |
+| `publication_mismatch` | alias 대상·namespace·벡터 이름·차원·payload 스키마가 manifest와 다르다 | manifest의 `qdrant` 블록과 서버 alias 대상을 대조한다. 다른 namespace의 manifest를 가리키고 있지 않은지(`QDRANT_NAMESPACE`) 본다 |
+| `dense_collection_missing` / `sparse_collection_missing` | alias는 있는데 대상 컬렉션이 없다 | 대상 컬렉션이 지워졌다. 재발행 |
+| `*_collection_schema_mismatch` | 대상 컬렉션의 벡터 설정이 다르다 | 다른 도구로 만든 컬렉션에 alias를 붙인 경우. 정규 경로로 재발행 |
+| `manifest_missing` / `manifest_invalid` / `manifest_unsupported` / `manifest_hash_mismatch` | 상태 manifest가 없다 / JSON이 아니거나 `qdrant`·`source_hashes` 블록·`context_build_id`·입력 해시의 자료형이 틀렸다(dense artifact manifest의 `embedding` 블록 포함) / 다른 schema / 내용이 손으로 고쳐졌다 | manifest는 발행 도구가 쓰는 감사 파일이다. 손으로 고치지 말고 재발행하거나 발행 때의 파일을 그대로 둔다 |
+| `dense_artifact_mismatch` / `sparse_artifact_mismatch` / `sparse_artifact_invalid` | 로컬 `artifacts/embeddings/context_dense·context_sparse`가 발행 세대와 다르다 | artifact를 새로 만들었으면 Qdrant에도 재발행해야 한다(반대도 같다) |
+| `settings_invalid` | `CONTEXT_WEIGHT` 값 오류 | `.env` 값 |
+
+검증은 가짜 SDK·`:memory:`/임시 폴더 Qdrant로만 했다(`tests/test_v60_context_startup_check.py`,
+`experiments/reranking/results_v60_context_startup_check/RUN_INFO.md`). 운영 서버 Qdrant에서의 실측은
+하지 않았다.
+
 ## 검색 연결 현황과 다음 단계
 
 `ContextQdrantSearch.search_song_candidates(query, fact_k=50, sparse_k=50)`는

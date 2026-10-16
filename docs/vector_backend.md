@@ -84,6 +84,9 @@ Sparse를 별도 세대 컬렉션에 안전하게 게시하는 절차는
 - `artifacts/qdrant/`는 **적재 산출물**이라 커밋하지 않는다. 벡터가 바뀌면 다시 적재한다.
 - 로컬 모드는 한 프로세스만 디렉터리를 연다. 서버와 측정 스크립트를 동시에 돌리려면
   각각 다른 `QDRANT_PATH`를 쓰거나 서버 모드(`QDRANT_URL`)를 쓴다.
+- 서버 모드로 옮길 때 Context 컬렉션은 **alias 2개까지** 함께 옮긴다. `qdrant-client migrate`·수동 복사는
+  alias를 옮기지 않는다. `CONTEXT_WEIGHT>0`이면 backend가 기동 때 alias·컬렉션·manifest를 확인하고
+  맞지 않으면 뜨지 않는다 — [`namuwiki_context_vector_db.md`](namuwiki_context_vector_db.md) "기동 검사".
 - BM25 sparse는 `artifacts/bm25_params.json`과 짝이다. 한쪽만 바꾸면 점수가 어긋난다.
 - BM25 인코딩은 `pinecone-text` 라이브러리를 쓴다. 이름만 같고 Pinecone 서비스와는 무관하다.
 
