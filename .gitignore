@@ -247,3 +247,18 @@ experiments/reranking/results_v61_hybrid_scan_audit/cand_*/*/calls.jsonl
 experiments/reranking/results_v61_hybrid_scan_audit/cand_*/*/candidates.jsonl
 experiments/reranking/results_v61_hybrid_scan_audit/cand_*/*/calls_vectors.npz
 experiments/reranking/results_v61_hybrid_scan_audit/progress.txt
+
+# v62 하이브리드 조회 상한 수정(results_v62_hybrid_full_scan) — 재생 대조표·후보 변화·지연 표(곡 ID·질의 ID·숫자만)는 공유하고,
+# 질의 벡터·호출/후보 기록(jsonl·npz)·옛 구현 사본·실행 로그는 로컬에만 둔다
+!experiments/reranking/results_v62_hybrid_full_scan/replay_fixed_calls.csv
+!experiments/reranking/results_v62_hybrid_full_scan/candidate_changes_fixed_vs_A.csv
+!experiments/reranking/results_v62_hybrid_full_scan/candidate_changes_fixed_vs_B.csv
+!experiments/reranking/results_v62_hybrid_full_scan/bench_local_calls.csv
+!experiments/reranking/results_v62_hybrid_full_scan/bench_server_calls.csv
+experiments/reranking/results_v62_hybrid_full_scan/cand_fixed/*/*/calls.jsonl
+experiments/reranking/results_v62_hybrid_full_scan/cand_fixed/*/*/candidates.jsonl
+experiments/reranking/results_v62_hybrid_full_scan/cand_fixed/*/*/calls_vectors.npz
+experiments/reranking/results_v62_hybrid_full_scan/logs/
+!experiments/reranking/results_v62_hybrid_full_scan/cand_fixed/*/*/search_eval_*_summary.csv
+!experiments/reranking/results_v62_hybrid_full_scan/cand_fixed/*/*/search_eval_*_top10.csv
+experiments/reranking/results_v62_hybrid_full_scan/cand_fixed/*/*/*_explain.jsonl

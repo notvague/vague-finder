@@ -1,0 +1,170 @@
+{
+ "mode": "server",
+ "url": "http://127.0.0.1:6362",
+ "server_version": "1.19.1",
+ "qdrant_client": "1.19.1",
+ "exact_search_params": true,
+ "git_sha": "fc20e86+dirty",
+ "legacy_commit": "fc20e86",
+ "legacy_scan_limit": 5000,
+ "point_count": 5143,
+ "set": "v06",
+ "warmup_per_impl": 2,
+ "prepare_seconds": {
+  "open_client": 0.056,
+  "warmup": 0.275
+ },
+ "ru_maxrss_bytes": {
+  "start": 132005888,
+  "end": 168050688
+ },
+ "plain": {
+  "requests_per_impl": 60,
+  "distinct_inputs": 60,
+  "impl": {
+   "before": {
+    "median_ms": 20.69,
+    "p95_ms": 24.27,
+    "mean_ms": 21.34,
+    "min_ms": 14.65,
+    "max_ms": 51.18,
+    "qdrant_calls_per_request": 3.0,
+    "returned_points_per_request_mean": 9079.5,
+    "matches_per_request_mean": 59.0,
+    "step_median_ms": {
+     "count": null,
+     "dense": 7.83,
+     "sparse": 6.87,
+     "retrieve": 2.9
+    },
+    "step_p95_ms": {
+     "count": null,
+     "dense": 8.59,
+     "sparse": 8.01,
+     "retrieve": 4.71
+    }
+   },
+   "after": {
+    "median_ms": 21.96,
+    "p95_ms": 27.5,
+    "mean_ms": 23.09,
+    "min_ms": 16.56,
+    "max_ms": 50.5,
+    "qdrant_calls_per_request": 4.0,
+    "returned_points_per_request_mean": 9237.7,
+    "matches_per_request_mean": 59.0,
+    "step_median_ms": {
+     "count": 1.46,
+     "dense": 8.0,
+     "sparse": 7.02,
+     "retrieve": 2.87
+    },
+    "step_p95_ms": {
+     "count": 1.9,
+     "dense": 9.55,
+     "sparse": 8.51,
+     "retrieve": 4.82
+    }
+   }
+  },
+  "after_minus_before_ms": {
+   "median": 1.8,
+   "p95": 6.14,
+   "mean": 1.75,
+   "negative_share": 0.067,
+   "pairs": 60
+  },
+  "same_result_before_after": 60,
+  "different_result_pairs": []
+ },
+ "filtered": {
+  "requests_per_impl": 80,
+  "distinct_inputs": 16,
+  "impl": {
+   "before": {
+    "median_ms": 22.36,
+    "p95_ms": 30.33,
+    "mean_ms": 23.04,
+    "min_ms": 15.27,
+    "max_ms": 37.15,
+    "qdrant_calls_per_request": 3.0,
+    "returned_points_per_request_mean": 853.1,
+    "matches_per_request_mean": 29.4,
+    "step_median_ms": {
+     "count": null,
+     "dense": 10.38,
+     "sparse": 8.13,
+     "retrieve": 3.3
+    },
+    "step_p95_ms": {
+     "count": null,
+     "dense": 14.83,
+     "sparse": 10.05,
+     "retrieve": 5.26
+    }
+   },
+   "after": {
+    "median_ms": 56.31,
+    "p95_ms": 72.47,
+    "mean_ms": 58.31,
+    "min_ms": 43.08,
+    "max_ms": 117.78,
+    "qdrant_calls_per_request": 4.0,
+    "returned_points_per_request_mean": 853.1,
+    "matches_per_request_mean": 29.4,
+    "step_median_ms": {
+     "count": 32.04,
+     "dense": 10.39,
+     "sparse": 8.32,
+     "retrieve": 3.47
+    },
+    "step_p95_ms": {
+     "count": 38.41,
+     "dense": 19.2,
+     "sparse": 11.32,
+     "retrieve": 5.43
+    }
+   }
+  },
+  "after_minus_before_ms": {
+   "median": 33.82,
+   "p95": 43.53,
+   "mean": 35.27,
+   "negative_share": 0.0,
+   "pairs": 80
+  },
+  "same_result_before_after": 80,
+  "different_result_pairs": []
+ },
+ "note": "같은 클라이언트 위에서 두 구현을 호출마다 교대로 실행(동시 실행 없음). 전체 ms = count+dense+sparse+retrieve+합산. 로컬 PC(루프백)의 Docker 서버라 배포 서버의 네트워크·하드웨어 수치가 아니다",
+ "env": {
+  "QDRANT_PATH": "artifacts/qdrant_v61_audit",
+  "CONTEXT_WEIGHT": "0.5",
+  "ATTR_FILTER_WEIGHT": "0",
+  "AUDIO_FUSION_SCALE": "1",
+  "SEARCH_REFERENCE_YEAR": "2026",
+  "RERANKER_ENABLED": "false",
+  "RERANKER_BACKEND": "gemini_listwise",
+  "GEMINI_RERANK_RARE_FACT_VERIFY": "0",
+  "GEMINI_RETRIEVAL_BACKEND": "vertex",
+  "FEEDBACK_COLLECTION_ENABLED": "0",
+  "FEEDBACK_INDEX_WORKER_ENABLED": "0",
+  "HF_HUB_OFFLINE": "1",
+  "TRANSFORMERS_OFFLINE": "1",
+  "TOKENIZERS_PARALLELISM": "false"
+ },
+ "guard_before": {
+  "make_genai_client": "blocked",
+  "google.genai.Client": "blocked",
+  "pymongo.MongoClient": "blocked",
+  "src.common.mongodb": "blocked",
+  "QDRANT_URL": "unset"
+ },
+ "guard_after": {
+  "make_genai_client": "blocked",
+  "google.genai.Client": "blocked",
+  "pymongo.MongoClient": "blocked",
+  "src.common.mongodb": "blocked",
+  "QDRANT_URL": "unset"
+ }
+}

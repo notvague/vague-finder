@@ -1,0 +1,119 @@
+{
+ "fixed_conditions": {
+  "v06": {
+   "git_sha": "fc20e86",
+   "point_count": 5143,
+   "hybrid_scan_limit_default": null,
+   "hybrid_scan_limit_used": null,
+   "capture": {
+    "hybrid_calls": 105,
+    "dense_only_calls": 53,
+    "hybrid_elapsed_ms_median": 458.453,
+    "hybrid_elapsed_ms_p95": 731.2905999999999,
+    "dense_hits_total": 494469,
+    "sparse_hits_total": 387859,
+    "queries_seen": 57
+   },
+   "eval_seconds": 40.381,
+   "guard_after": {
+    "make_genai_client": "blocked",
+    "google.genai.Client": "blocked",
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "QDRANT_URL": "unset"
+   }
+  },
+  "v09": {
+   "git_sha": "fc20e86",
+   "point_count": 5143,
+   "hybrid_scan_limit_default": null,
+   "hybrid_scan_limit_used": null,
+   "capture": {
+    "hybrid_calls": 102,
+    "dense_only_calls": 55,
+    "hybrid_elapsed_ms_median": 444.8505,
+    "hybrid_elapsed_ms_p95": 665.42795,
+    "dense_hits_total": 514606,
+    "sparse_hits_total": 380665,
+    "queries_seen": 59
+   },
+   "eval_seconds": 36.265,
+   "guard_after": {
+    "make_genai_client": "blocked",
+    "google.genai.Client": "blocked",
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "QDRANT_URL": "unset"
+   }
+  },
+  "v10": {
+   "git_sha": "fc20e86",
+   "point_count": 5143,
+   "hybrid_scan_limit_default": null,
+   "hybrid_scan_limit_used": null,
+   "capture": {
+    "hybrid_calls": 104,
+    "dense_only_calls": 53,
+    "hybrid_elapsed_ms_median": 448.9,
+    "hybrid_elapsed_ms_p95": 882.5895499999999,
+    "dense_hits_total": 516704,
+    "sparse_hits_total": 361773,
+    "queries_seen": 60
+   },
+   "eval_seconds": 37.246,
+   "guard_after": {
+    "make_genai_client": "blocked",
+    "google.genai.Client": "blocked",
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "QDRANT_URL": "unset"
+   }
+  }
+ },
+ "vs_A": {
+  "label": "수정 전 A ↔ 수정 구현",
+  "baseline": "/private/tmp/vague-finder-hybrid-scan-audit/experiments/reranking/results_v61_hybrid_scan_audit/cand_A",
+  "fixed": "/private/tmp/vague-finder-hybrid-full-scan/experiments/reranking/results_v62_hybrid_full_scan/cand_fixed/cand_A",
+  "queries": 176,
+  "columns_compared": "detail CSV 전체 열(시간 열 retrieval_ms·rerank_only_ms 제외)",
+  "columns_with_differences": {
+   "candidate_digest": 1
+  },
+  "examples": {
+   "candidate_digest": [
+    {
+     "set": "v10",
+     "query_id": "t003",
+     "before": "s8fb5e384b379a54",
+     "after": "s691713cc22a4f83"
+    }
+   ]
+  },
+  "candidate_list_differences": [
+   {
+    "set": "v10",
+    "query_id": "t003",
+    "same_ids_and_order": true,
+    "n_before": 30,
+    "n_after": 30,
+    "changed_ids": [],
+    "max_abs_fusion_score_delta": 0.00021949099999999527,
+    "positions_with_score_change": [
+     5
+    ]
+   }
+  ],
+  "candidate_lists_identical": 175
+ },
+ "vs_B": {
+  "label": "독립 기준 B ↔ 수정 구현",
+  "baseline": "/private/tmp/vague-finder-hybrid-scan-audit/experiments/reranking/results_v61_hybrid_scan_audit/cand_B",
+  "fixed": "/private/tmp/vague-finder-hybrid-full-scan/experiments/reranking/results_v62_hybrid_full_scan/cand_fixed/cand_A",
+  "queries": 176,
+  "columns_compared": "detail CSV 전체 열(시간 열 retrieval_ms·rerank_only_ms 제외)",
+  "columns_with_differences": {},
+  "examples": {},
+  "candidate_list_differences": [],
+  "candidate_lists_identical": 176
+ }
+}

@@ -1,0 +1,329 @@
+{
+ "sets": {
+  "v06": {
+   "queries": 57,
+   "digest_changed_AB": 0,
+   "digest_changed_BC": 0,
+   "target_in30_A": 43,
+   "target_in30_B": 43,
+   "gained": 0,
+   "lost": 0,
+   "hit1_A": 17,
+   "hit1_B": 17,
+   "hit5_A": 28,
+   "hit5_B": 28,
+   "hit10_A": 37,
+   "hit10_B": 37,
+   "lyric_surface_queries": 4,
+   "mrr_A": 22.166667000000004,
+   "mrr_B": 22.166667000000004,
+   "candidate_recall30_A": 0.754386,
+   "candidate_recall30_B": 0.754386,
+   "hit1_A_rate": 0.298246,
+   "hit1_B_rate": 0.298246,
+   "hit5_A_rate": 0.491228,
+   "hit5_B_rate": 0.491228,
+   "hit10_A_rate": 0.649123,
+   "hit10_B_rate": 0.649123,
+   "mrr10_A": 0.388889,
+   "mrr10_B": 0.388889,
+   "denominator": "dev v06 질의 전부(57건, 모두 정답 있음)"
+  },
+  "v09": {
+   "queries": 59,
+   "digest_changed_AB": 0,
+   "digest_changed_BC": 0,
+   "target_in30_A": 41,
+   "target_in30_B": 41,
+   "gained": 0,
+   "lost": 0,
+   "hit1_A": 10,
+   "hit1_B": 10,
+   "hit5_A": 24,
+   "hit5_B": 24,
+   "hit10_A": 36,
+   "hit10_B": 36,
+   "lyric_surface_queries": 6,
+   "mrr_A": 17.670236999999997,
+   "mrr_B": 17.670236999999997,
+   "candidate_recall30_A": 0.694915,
+   "candidate_recall30_B": 0.694915,
+   "hit1_A_rate": 0.169492,
+   "hit1_B_rate": 0.169492,
+   "hit5_A_rate": 0.40678,
+   "hit5_B_rate": 0.40678,
+   "hit10_A_rate": 0.610169,
+   "hit10_B_rate": 0.610169,
+   "mrr10_A": 0.299496,
+   "mrr10_B": 0.299496,
+   "denominator": "dev v09 질의 전부(59건, 모두 정답 있음)"
+  },
+  "v10": {
+   "queries": 60,
+   "digest_changed_AB": 0,
+   "digest_changed_BC": 0,
+   "target_in30_A": 38,
+   "target_in30_B": 38,
+   "gained": 0,
+   "lost": 0,
+   "hit1_A": 11,
+   "hit1_B": 11,
+   "hit5_A": 21,
+   "hit5_B": 21,
+   "hit10_A": 28,
+   "hit10_B": 28,
+   "lyric_surface_queries": 9,
+   "mrr_A": 15.591664999999999,
+   "mrr_B": 15.591664999999999,
+   "candidate_recall30_A": 0.633333,
+   "candidate_recall30_B": 0.633333,
+   "hit1_A_rate": 0.183333,
+   "hit1_B_rate": 0.183333,
+   "hit5_A_rate": 0.35,
+   "hit5_B_rate": 0.35,
+   "hit10_A_rate": 0.466667,
+   "hit10_B_rate": 0.466667,
+   "mrr10_A": 0.259861,
+   "mrr10_B": 0.259861,
+   "denominator": "dev v10 질의 전부(60건, 모두 정답 있음)"
+  }
+ },
+ "all": {
+  "queries": 176,
+  "digest_changed_AB": 0,
+  "digest_changed_BC": 0,
+  "target_in30_A": 122,
+  "target_in30_B": 122,
+  "gained": 0,
+  "lost": 0,
+  "hit1_A": 38,
+  "hit1_B": 38,
+  "hit5_A": 73,
+  "hit5_B": 73,
+  "hit10_A": 101,
+  "hit10_B": 101,
+  "mrr_A": 55.428569,
+  "mrr_B": 55.428569,
+  "lyric_surface_queries": 19,
+  "candidate_recall30_A": 0.693182,
+  "candidate_recall30_B": 0.693182,
+  "hit1_A_rate": 0.215909,
+  "hit1_B_rate": 0.215909,
+  "hit5_A_rate": 0.414773,
+  "hit5_B_rate": 0.414773,
+  "hit10_A_rate": 0.573864,
+  "hit10_B_rate": 0.573864,
+  "mrr10_A": 0.314935,
+  "mrr10_B": 0.314935,
+  "denominator": "dev 176건 전부(176건) — 리랭킹 전 후보·순서 지표, 최종 서비스 Hit@10이 아님"
+ },
+ "repeatability": {},
+ "conditions": {
+  "v06": {
+   "A": {
+    "git_sha": "770843f",
+    "point_count": 5143,
+    "hybrid_scan_limit_used": 5000,
+    "scan_limit_truncates": false,
+    "reference_fingerprint": {
+     "collection": "vaguefinder-text-1024-koe5__dev",
+     "points": 5143,
+     "dense_dim": 1024,
+     "sparse_nnz": 1061090,
+     "sparse_vocab": 44486,
+     "content_sha256_16": "238299e6c8c17f2a"
+    },
+    "guard_after": {
+     "make_genai_client": "blocked",
+     "google.genai.Client": "blocked",
+     "pymongo.MongoClient": "blocked",
+     "src.common.mongodb": "blocked",
+     "QDRANT_URL": "unset"
+    },
+    "capture": {
+     "hybrid_calls": 105,
+     "dense_only_calls": 53,
+     "hybrid_elapsed_ms_median": 3.213,
+     "hybrid_elapsed_ms_p95": 30.006799999999995,
+     "dense_hits_total": 0,
+     "sparse_hits_total": 0,
+     "queries_seen": 57
+    },
+    "eval_seconds": 12.401,
+    "ru_maxrss_bytes": {
+     "before": 527138816,
+     "after_prepare": 1589837824,
+     "end": 4260478976
+    }
+   },
+   "B": {
+    "git_sha": "fc20e86",
+    "point_count": 5143,
+    "hybrid_scan_limit_used": null,
+    "scan_limit_truncates": false,
+    "reference_fingerprint": null,
+    "guard_after": {
+     "make_genai_client": "blocked",
+     "google.genai.Client": "blocked",
+     "pymongo.MongoClient": "blocked",
+     "src.common.mongodb": "blocked",
+     "QDRANT_URL": "unset"
+    },
+    "capture": {
+     "hybrid_calls": 105,
+     "dense_only_calls": 53,
+     "hybrid_elapsed_ms_median": 458.453,
+     "hybrid_elapsed_ms_p95": 731.2905999999999,
+     "dense_hits_total": 494469,
+     "sparse_hits_total": 387859,
+     "queries_seen": 57
+    },
+    "eval_seconds": 40.381,
+    "ru_maxrss_bytes": {
+     "before": 527187968,
+     "after_prepare": 1385365504,
+     "end": 3508404224
+    }
+   }
+  },
+  "v09": {
+   "A": {
+    "git_sha": "770843f",
+    "point_count": 5143,
+    "hybrid_scan_limit_used": 5000,
+    "scan_limit_truncates": false,
+    "reference_fingerprint": {
+     "collection": "vaguefinder-text-1024-koe5__dev",
+     "points": 5143,
+     "dense_dim": 1024,
+     "sparse_nnz": 1061090,
+     "sparse_vocab": 44486,
+     "content_sha256_16": "238299e6c8c17f2a"
+    },
+    "guard_after": {
+     "make_genai_client": "blocked",
+     "google.genai.Client": "blocked",
+     "pymongo.MongoClient": "blocked",
+     "src.common.mongodb": "blocked",
+     "QDRANT_URL": "unset"
+    },
+    "capture": {
+     "hybrid_calls": 102,
+     "dense_only_calls": 55,
+     "hybrid_elapsed_ms_median": 2.9115,
+     "hybrid_elapsed_ms_p95": 13.773599999999986,
+     "dense_hits_total": 0,
+     "sparse_hits_total": 0,
+     "queries_seen": 59
+    },
+    "eval_seconds": 10.777,
+    "ru_maxrss_bytes": {
+     "before": 526237696,
+     "after_prepare": 1653669888,
+     "end": 4379426816
+    }
+   },
+   "B": {
+    "git_sha": "fc20e86",
+    "point_count": 5143,
+    "hybrid_scan_limit_used": null,
+    "scan_limit_truncates": false,
+    "reference_fingerprint": null,
+    "guard_after": {
+     "make_genai_client": "blocked",
+     "google.genai.Client": "blocked",
+     "pymongo.MongoClient": "blocked",
+     "src.common.mongodb": "blocked",
+     "QDRANT_URL": "unset"
+    },
+    "capture": {
+     "hybrid_calls": 102,
+     "dense_only_calls": 55,
+     "hybrid_elapsed_ms_median": 444.8505,
+     "hybrid_elapsed_ms_p95": 665.42795,
+     "dense_hits_total": 514606,
+     "sparse_hits_total": 380665,
+     "queries_seen": 59
+    },
+    "eval_seconds": 36.265,
+    "ru_maxrss_bytes": {
+     "before": 527548416,
+     "after_prepare": 1441693696,
+     "end": 4265558016
+    }
+   }
+  },
+  "v10": {
+   "A": {
+    "git_sha": "770843f",
+    "point_count": 5143,
+    "hybrid_scan_limit_used": 5000,
+    "scan_limit_truncates": false,
+    "reference_fingerprint": {
+     "collection": "vaguefinder-text-1024-koe5__dev",
+     "points": 5143,
+     "dense_dim": 1024,
+     "sparse_nnz": 1061090,
+     "sparse_vocab": 44486,
+     "content_sha256_16": "238299e6c8c17f2a"
+    },
+    "guard_after": {
+     "make_genai_client": "blocked",
+     "google.genai.Client": "blocked",
+     "pymongo.MongoClient": "blocked",
+     "src.common.mongodb": "blocked",
+     "QDRANT_URL": "unset"
+    },
+    "capture": {
+     "hybrid_calls": 104,
+     "dense_only_calls": 53,
+     "hybrid_elapsed_ms_median": 2.983,
+     "hybrid_elapsed_ms_p95": 21.585049999999974,
+     "dense_hits_total": 0,
+     "sparse_hits_total": 0,
+     "queries_seen": 60
+    },
+    "eval_seconds": 11.255,
+    "ru_maxrss_bytes": {
+     "before": 526761984,
+     "after_prepare": 1591820288,
+     "end": 4417077248
+    }
+   },
+   "B": {
+    "git_sha": "fc20e86",
+    "point_count": 5143,
+    "hybrid_scan_limit_used": null,
+    "scan_limit_truncates": false,
+    "reference_fingerprint": null,
+    "guard_after": {
+     "make_genai_client": "blocked",
+     "google.genai.Client": "blocked",
+     "pymongo.MongoClient": "blocked",
+     "src.common.mongodb": "blocked",
+     "QDRANT_URL": "unset"
+    },
+    "capture": {
+     "hybrid_calls": 104,
+     "dense_only_calls": 53,
+     "hybrid_elapsed_ms_median": 448.9,
+     "hybrid_elapsed_ms_p95": 882.5895499999999,
+     "dense_hits_total": 516704,
+     "sparse_hits_total": 361773,
+     "queries_seen": 60
+    },
+    "eval_seconds": 37.246,
+    "ru_maxrss_bytes": {
+     "before": 527319040,
+     "after_prepare": 1441562624,
+     "end": 4306288640
+    }
+   }
+  }
+ },
+ "inputs": {
+  "A": "/private/tmp/vague-finder-hybrid-scan-audit/experiments/reranking/results_v61_hybrid_scan_audit/cand_B",
+  "B": "/private/tmp/vague-finder-hybrid-full-scan/experiments/reranking/results_v62_hybrid_full_scan/cand_fixed/cand_A",
+  "C": null
+ }
+}

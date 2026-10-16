@@ -13,11 +13,19 @@ Qdrant 벡터 클라이언트.
 점수 계산
 ---------
 - 텍스트: 하이브리드 점수는 alpha로 스케일한 dense·sparse 내적의 합이다. Qdrant에는
-  그 합산이 없으므로 dense와 sparse를 따로 조회해 **코드에서 더한다.** 두 조회 모두
-  컬렉션 전체를 훑어 합산하므로(HYBRID_SCAN_LIMIT) 잘린 상위 목록만 더해서 생기는
-  차이가 없다. 훑을 때는 **점수만** 받고, 페이로드는 합산 뒤 남긴 top_k만 따로 읽는다 —
-  전체 페이로드를 두 번 받으면 곡 수에 비례해 느려진다(API 텍스트 조회 중앙값 952곡 127ms,
-  3,010곡 430ms → 이렇게 바꾼 뒤 267ms). 점수와 순서는 페이로드와 무관하다.
+  그 합산이 없으므로 dense와 sparse를 따로 조회해 **코드에서 더한다.** 두 조회의 `limit`은
+  요청마다 **그 조회의 대상 수**(`count(exact=True)`, 필터가 있으면 같은 필터)로 정한다 —
+  그래야 두 목록이 모두 전수가 되어 잘린 상위 목록만 더해서 생기는 누락(한쪽 점수 누락 ·
+  양쪽 목록 밖 곡 소실)이 없다. 2026-10-16(v61)까지는 고정 상한 5,000(`HYBRID_SCAN_LIMIT`)을
+  썼고, 5,143곡부터 그 상한에 걸려 가사 질의 top-90의 dense 몫이 빠졌다. 훑을 때는
+  **점수만** 받고, 페이로드는 합산 뒤 남긴 top_k만 따로 읽는다 — 전체 페이로드를 두 번
+  받으면 곡 수에 비례해 느려진다(API 텍스트 조회 중앙값 952곡 127ms, 3,010곡 430ms →
+  이렇게 바꾼 뒤 267ms). 점수와 순서는 페이로드와 무관하다.
+  **정확성의 전제**: count와 두 조회는 한 스냅샷이 아니다. 그 사이에 같은 컬렉션에 점이
+  추가·삭제되면 그 요청의 합산은 전수가 아닐 수 있고, 반환 건수로는 감지할 수 없다(전수
+  조회도 정확히 limit개를 돌려준다). 적재(`qdrant_load`)는 서비스가 조회하는 컬렉션에 직접
+  upsert하므로 **적재 중에는 검색을 받지 않는다**는 운영 조건이 필요하다. 요청 사이에
+  count를 캐시하지 않는다 — 캐시 무효화 설계가 없으면 적재 뒤 첫 요청이 잘린다.
 - 이미지·오디오: 저장된 벡터가 전부 L2 정규화되어 있어 cosine == dot이다.
 - 정확 검색(`exact=True`)을 쓴다. 근사 검색은 측정할 때마다 순위가 흔들릴 수 있다.
 
@@ -57,8 +65,36 @@ INDEX_DISTANCE: Dict[str, models.Distance] = {
     FEEDBACK_INDEX_NAME: models.Distance.COSINE,
 }
 
-# 하이브리드 합산을 위해 한 번에 훑을 상한. 코퍼스(905곡)보다 크면 전수 합산이 된다.
-HYBRID_SCAN_LIMIT = int(os.getenv("QDRANT_HYBRID_SCAN_LIMIT", "5000"))
+DEPRECATED_HYBRID_SCAN_LIMIT_ENV = "QDRANT_HYBRID_SCAN_LIMIT"
+
+
+def _read_deprecated_hybrid_scan_limit() -> Optional[int]:
+    """`QDRANT_HYBRID_SCAN_LIMIT`은 **폐기 예정 호환값**이다 — 더는 조회를 자르지 않는다.
+
+    2026-10-16(v62)까지 이 값(기본 5000)이 dense·sparse 조회의 `limit`이었고, 코퍼스가 5,143곡이 되자
+    조용히 전수 합산이 깨졌다(v61 진단). 이제 하이브리드 조회의 limit은 요청마다 `count(exact)`로 센
+    대상 수다. 값이 남아 있으면 **import 때 한 번** 경고한다(요청마다 반복하지 않는다). 상수를 남겨 두는
+    이유는 옛 설정이 남은 환경이 조용히 무시되지 않게 하고, 진단 도구(v56·v61)가 이름을 읽어도 멈추지
+    않게 하기 위해서다. 이 값으로 조회를 다시 자르는 경로는 없다. 잘렸던 옛 결과를 재현하려면 v61
+    기준 커밋(fc20e86, PR #76)의 코드를 쓴다.
+    """
+    raw = os.getenv(DEPRECATED_HYBRID_SCAN_LIMIT_ENV, "").strip()
+    if not raw:
+        return None
+    try:
+        value: Optional[int] = int(raw)
+    except ValueError:
+        value = None
+    logger.warning(
+        "[Qdrant] %s=%r 은(는) 더 이상 하이브리드 조회를 자르지 않습니다(v62부터 대상 수로 전수 조회). "
+        "설정에서 지우세요.",
+        DEPRECATED_HYBRID_SCAN_LIMIT_ENV, raw,
+    )
+    return value
+
+
+# 폐기 예정 호환값. 조회 상한이 아니다 — 위 설명 참조.
+HYBRID_SCAN_LIMIT: Optional[int] = _read_deprecated_hybrid_scan_limit()
 
 
 def collection_name(index_name: str, namespace: str = NAMESPACE) -> str:
@@ -233,11 +269,22 @@ class QdrantIndex:
         query_filter = translate_filter(filter)
 
         hybrid = sparse_vector is not None
+        if hybrid:
+            # 두 조회의 limit = 지금 이 요청의 대상 수(필터가 있으면 필터를 통과하는 점 수). 전수 합산의
+            # 조건이다. 요청마다 새로 센다(캐시 없음). count와 조회 사이의 동시 적재는 감지하지 못한다
+            # — 모듈 설명 "정확성의 전제". 실패는 다른 조회와 같이 기록하고 그대로 전파한다.
+            scan_limit = self._count(collection, query_filter)
+            if scan_limit <= 0:
+                # 대상이 없으면 조회할 것도, 읽을 페이로드도 없다
+                return {"matches": []}
+        else:
+            scan_limit = top_k
+
         dense_hits = self._search(
             collection,
             query=list(vector),
             using=DENSE_VECTOR,
-            limit=HYBRID_SCAN_LIMIT if hybrid else top_k,
+            limit=scan_limit,
             query_filter=query_filter,
             # 전수 합산용 조회는 점수만 받는다. 페이로드는 아래에서 top_k만 읽는다
             with_payload=include_metadata and not hybrid,
@@ -253,7 +300,7 @@ class QdrantIndex:
                 values=[float(v) for v in sparse_vector.get("values", [])],
             ),
             using=SPARSE_VECTOR,
-            limit=HYBRID_SCAN_LIMIT,
+            limit=scan_limit,
             query_filter=query_filter,
             with_payload=False,
         )
@@ -369,6 +416,23 @@ class QdrantIndex:
             record.id: record.payload or {}
             for record in records
         }
+
+    def _count(self, collection: str, query_filter: Optional[models.Filter]) -> int:
+        """하이브리드 조회의 대상 수 — 필터가 있으면 같은 필터로, 항상 정확(`exact=True`) 집계.
+
+        실패를 삼키고 고정 상한으로 대체하지 않는다(그러면 잘림이 조용히 돌아온다). `_search`와 같은
+        모양으로 기록하고 전파한다 — 라우터는 경로 실패를 빈 결과로 바꾼다(기존 계약).
+        """
+        try:
+            result = self._client.count(
+                collection_name=collection,
+                count_filter=query_filter,
+                exact=True,
+            )
+        except Exception as exc:
+            logger.error("[Qdrant] %s 대상 수(count) 조회 실패: %s", collection, exc)
+            raise
+        return int(result.count)
 
     def _search(
         self,
