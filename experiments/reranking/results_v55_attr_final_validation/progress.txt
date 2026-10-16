@@ -1,0 +1,13 @@
+start smoke_D_v10_dev 01:43:46
+done smoke_D_v10_dev exit=0 01:45:28
+start smoke_A_v10_dev 01:45:28
+done smoke_A_v10_dev exit=0 01:47:07
+start build_cache v10 test 01:47:57
+done build_cache v10 test exit=0 01:49:42
+start A_v10_test 01:49:42
+done A_v10_test exit=0 02:00:39
+start B_v10_test 02:00:39
+done B_v10_test exit=0 02:11:47
+start D_v10_test 02:11:47
+done D_v10_test exit=0 02:22:50
+pipeline done 02:22:50
