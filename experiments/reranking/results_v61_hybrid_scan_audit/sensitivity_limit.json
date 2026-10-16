@@ -1,0 +1,74 @@
+{
+ "points": 5143,
+ "limits": {
+  "5143": {
+   "ratio_limit_over_points": 1.0,
+   "calls_top30_changed_set_or_score": 0,
+   "calls_top30_missing_song": 0,
+   "songs_missing_from_top30": 0,
+   "calls_top90_changed_set_or_score": 0,
+   "songs_missing_from_top90": 0,
+   "calls_top30_order_changed": 0
+  },
+  "5000": {
+   "ratio_limit_over_points": 0.972,
+   "calls_top30_changed_set_or_score": 1,
+   "calls_top30_missing_song": 0,
+   "songs_missing_from_top30": 0,
+   "calls_top90_changed_set_or_score": 7,
+   "songs_missing_from_top90": 1,
+   "calls_top30_order_changed": 1
+  },
+  "4500": {
+   "ratio_limit_over_points": 0.875,
+   "calls_top30_changed_set_or_score": 17,
+   "calls_top30_missing_song": 8,
+   "songs_missing_from_top30": 10,
+   "calls_top90_changed_set_or_score": 31,
+   "songs_missing_from_top90": 39,
+   "calls_top30_order_changed": 8
+  },
+  "4000": {
+   "ratio_limit_over_points": 0.778,
+   "calls_top30_changed_set_or_score": 28,
+   "calls_top30_missing_song": 18,
+   "songs_missing_from_top30": 23,
+   "calls_top90_changed_set_or_score": 65,
+   "songs_missing_from_top90": 90,
+   "calls_top30_order_changed": 9
+  },
+  "3500": {
+   "ratio_limit_over_points": 0.681,
+   "calls_top30_changed_set_or_score": 39,
+   "calls_top30_missing_song": 31,
+   "songs_missing_from_top30": 44,
+   "calls_top90_changed_set_or_score": 87,
+   "songs_missing_from_top90": 172,
+   "calls_top30_order_changed": 7
+  },
+  "3000": {
+   "ratio_limit_over_points": 0.583,
+   "calls_top30_changed_set_or_score": 58,
+   "calls_top30_missing_song": 49,
+   "songs_missing_from_top30": 79,
+   "calls_top90_changed_set_or_score": 117,
+   "songs_missing_from_top90": 301,
+   "calls_top30_order_changed": 7
+  },
+  "2500": {
+   "ratio_limit_over_points": 0.486,
+   "calls_top30_changed_set_or_score": 80,
+   "calls_top30_missing_song": 70,
+   "songs_missing_from_top30": 115,
+   "calls_top90_changed_set_or_score": 166,
+   "songs_missing_from_top90": 505,
+   "calls_top30_order_changed": 10
+  }
+ },
+ "validated_at_5000": {
+  "calls": 295,
+  "emulation_matches_actual_A": 295
+ },
+ "tolerance": 0.0001,
+ "calls": 295
+}

@@ -1,0 +1,26 @@
+{
+ "label": "limit5143",
+ "source_arm": "A",
+ "hybrid_scan_limit_in_effect": 5143,
+ "env_QDRANT_HYBRID_SCAN_LIMIT": "5143",
+ "reference_fingerprint": {
+  "collection": "vaguefinder-text-1024-koe5__dev",
+  "points": 5143,
+  "dense_dim": 1024,
+  "sparse_nnz": 1061090,
+  "sparse_vocab": 44486,
+  "content_sha256_16": "238299e6c8c17f2a"
+ },
+ "tolerance": 0.0001,
+ "counts": {
+  "calls": 311,
+  "matches_exact": 311,
+  "missing_songs": 0,
+  "score_mismatch_songs": 0
+ },
+ "diffs": [],
+ "replayed_call_ms": {
+  "median": 233.38,
+  "p95": 328.71
+ }
+}
