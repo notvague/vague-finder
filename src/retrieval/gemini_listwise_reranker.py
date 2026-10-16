@@ -36,6 +36,14 @@ from src.common.title_features import analyze_title_structure, base_title
 logger = logging.getLogger(__name__)
 
 
+class InvalidRankingResponse(ValueError):
+    """정상 JSON이지만 리랭킹 결과로 쓸 수 없는 응답 — 유효 후보 id 0개, 자료형 어긋남(v59).
+
+    JSON 구문 오류(`json.JSONDecodeError`)와 같은 자리(재시도 루프의 `except Exception`)에서 처리된다.
+    따로 둔 이유는 로그·보고서에서 "모델이 JSON을 못 썼다"와 "JSON은 썼는데 후보를 안 돌려줬다"를 가르기 위해서다.
+    """
+
+
 def _env_bool(name: str, default: bool) -> bool:
     raw = os.getenv(name)
     if raw is None:
@@ -410,13 +418,19 @@ class GeminiListwiseReranker:
             http_options=types.HttpOptions(timeout=int(self.config.request_timeout_seconds * 1000)),
         )
 
-    def _generate(self, *, contents: str, config: Any, deadline: Optional[float]):
+    def _generate(
+        self, *, contents: str, config: Any, deadline: Optional[float], tally: Optional[List[int]] = None,
+    ):
         """Gemini 호출 한 번. **벽시계 제한**을 건다 — min(요청 제한, 남은 예산).
 
         `HttpOptions.timeout`은 연결·읽기 단계마다 따로 세고 읽기는 *조각 하나*를 기다리는 값이라,
         조금씩 오는 응답은 그 제한을 넘겨 계속된다(0.2초 제한 + 0.3초 예산에 0.89초 확인, PR 리뷰).
         그래서 비동기 호출을 `asyncio.wait_for`로 감싼다 — 시간이 다 되면 진행 중인 HTTP 요청이
         취소되고 연결이 닫힌다. 스레드 대기만 끊는 방식은 버려진 요청이 계속 돌아 부족하다.
+
+        tally(한 칸 리스트)를 받으면 **실제로 SDK를 부른 횟수**를 더한다(v59). 남은 시간이 없어 부르지
+        않은 경우와 클라이언트 생성이 실패한 경우는 세지 않는다(`generate_content`를 부르는 자리에서 센다).
+        이 객체는 singleton이라 인스턴스에 세지 않고 실행마다 넘겨 받는다.
         """
         remaining = (deadline - time.monotonic()) if deadline is not None else self.config.request_timeout_seconds
         if remaining <= 0:
@@ -427,12 +441,17 @@ class GeminiListwiseReranker:
         aio = getattr(client, "aio", None)
         if aio is None:
             # 비동기 면이 없는 클라이언트(테스트용 가짜). 동기 호출 — 취소는 못 하지만 예산 검사는 밖에서 한다.
+            # 횟수는 **SDK를 실제로 부르는 자리**에서 센다 — 클라이언트 생성이 실패하면 호출이 없었던 것이다(리뷰).
+            if tally is not None:
+                tally[0] += 1
             return client.models.generate_content(
                 model=self.config.model_name, contents=contents, config=config
             )
 
         async def _call():
             try:
+                if tally is not None:
+                    tally[0] += 1
                 return await asyncio.wait_for(
                     aio.models.generate_content(
                         model=self.config.model_name, contents=contents, config=config
@@ -561,6 +580,7 @@ Return concise Korean evidence notes. Whenever you find support for a candidate,
 
     def _collect_search_evidence(
         self, query: str, tracks: Sequence[MatchingTrack], deadline: Optional[float] = None,
+        tally: Optional[List[int]] = None,
     ) -> str:
         if not self.config.use_search_grounding or not tracks:
             return ""
@@ -578,6 +598,7 @@ Return concise Korean evidence notes. Whenever you find support for a candidate,
                 contents=self._build_search_evidence_prompt(query, tracks),
                 config=config,
                 deadline=deadline,
+                tally=tally,
             )
             if self._over_budget(deadline):
                 logger.warning("[GeminiListwiseReranker] Search evidence가 예산 뒤에 도착 — 버린다")
@@ -703,6 +724,7 @@ Return:
         tracks: Sequence[MatchingTrack],
         answers: Optional[Sequence[ClarifyAnswer]] = None,
         deadline: Optional[float] = None,
+        tally: Optional[List[int]] = None,
     ) -> tuple[dict[str, dict[str, Any]], float, str]:
         if not self.config.rare_fact_verification or not tracks:
             return {}, 0.0, ""
@@ -746,6 +768,7 @@ Return:
                         temperature=0.0,
                     ),
                     deadline=deadline,
+                    tally=tally,
                 )
                 if self._over_budget(deadline):
                     logger.warning("[GeminiListwiseReranker] rare-fact 검증 응답이 예산 뒤에 도착 — 버린다")
@@ -850,21 +873,46 @@ Return:
 
     @staticmethod
     def _parse_response(
-        raw_text: str, valid_ids: Sequence[str]
+        raw_text: str, valid_ids: Sequence[str], stats_out: Optional[dict[str, int]] = None
     ) -> tuple[list[str], dict[str, float], float, dict[str, str]]:
         """응답에서 순서·관련도·신뢰도와 함께 **모델이 쓴 이유 문장**을 꺼낸다.
 
         이유 문장은 프롬프트가 이미 요구하고 있는데(`"reason":"short Korean reason"`)
         여기서 버려 왔다. 검증된 기록은 아니지만 "모델이 무엇을 보고 그렇게 말했나"를
         확인할 때 유일한 단서라 보존한다. 확인된 근거와는 끝까지 분리해서 다룬다.
+
+        **유효 후보가 0개인 응답은 성공이 아니다**(v59, 2026-10-16). ranking이 비었거나 후보 밖 id만
+        있으면 보충 전에 `InvalidRankingResponse`를 던진다 — 호출부의 기존 재시도(정정 지시 덧붙임)·
+        공유 마감이 그대로 처리하고, 끝까지 무효면 `failed`로 폴백한다. 전에는 파서가 입력 순서로
+        채워 `applied`가 됐다(v56 §7-③: 모델이 기여한 것이 없는데 "적용"으로 기록).
+        입력 순서와 **같은** 정상 응답(모든 유효 id를 같은 순서로)은 여전히 정상이다 — 순서가 같다는
+        이유로 실패 판정하지 않는다. 일부 id만 있는 응답의 보충(빠진 id를 입력 순서로 뒤에)은 그대로다.
+
+        정상 JSON이어도 자료형이 어긋나면(객체가 아닌 최상위, 배열이 아닌 ranking, id가 문자열이 아닌 항목)
+        예외 또는 무효 항목으로 처리한다 — 어느 쪽도 성공으로 흐르지 않는다.
+
+        stats_out(선택)에 관측치를 채운다: valid(유효 고유 id 수) · missing(응답에 없어 채운 수) ·
+        duplicate(이미 본 유효 id의 반복) · invalid(후보 밖 id·형식 오류 항목). 순위 계산에는 쓰지 않는다.
         """
         payload = json.loads(raw_text)
-        ranking = payload.get("ranking") or []
+        if not isinstance(payload, dict):
+            raise InvalidRankingResponse(
+                f"응답 최상위가 JSON 객체가 아님({type(payload).__name__})"
+            )
+        ranking = payload.get("ranking")
+        if ranking is None:
+            ranking = []
+        if not isinstance(ranking, list):
+            raise InvalidRankingResponse(
+                f"ranking이 배열이 아님({type(ranking).__name__})"
+            )
         valid = set(valid_ids)
         ordered: list[str] = []
         scores: dict[str, float] = {}
         reasons: dict[str, str] = {}
         seen: set[str] = set()
+        duplicate = 0
+        invalid = 0
 
         for item in ranking:
             if isinstance(item, str):
@@ -872,27 +920,48 @@ Return:
                 relevance = None
                 reason = ""
             elif isinstance(item, dict):
-                song_id = str(item.get("id") or "").strip()
+                raw_id = item.get("id")
+                # id는 문자열(또는 정수 표기)만 인정한다. 객체·배열·실수를 str()로 바꾸면 우연히 후보와
+                # 겹칠 일은 없지만 "형식 오류"를 "후보 밖 id"로 섞어 세게 된다.
+                song_id = str(raw_id).strip() if isinstance(raw_id, (str, int)) and not isinstance(raw_id, bool) else ""
                 relevance = item.get("relevance")
-                reason = str(item.get("reason") or "").strip()
+                reason_raw = item.get("reason")
+                reason = str(reason_raw).strip() if isinstance(reason_raw, str) else ""
             else:
+                invalid += 1
                 continue
 
-            if song_id not in valid or song_id in seen:
+            if song_id not in valid:
+                invalid += 1
+                continue
+            if song_id in seen:
+                duplicate += 1
                 continue
             seen.add(song_id)
             ordered.append(song_id)
             if reason:
                 reasons[song_id] = reason
             try:
-                if relevance is not None:
+                if relevance is not None and not isinstance(relevance, bool):
                     scores[song_id] = min(1.0, max(0.0, float(relevance)))
             except (TypeError, ValueError):
                 pass
 
+        missing = len(valid_ids) - len(ordered)
+        if stats_out is not None:
+            stats_out.update(valid=len(ordered), missing=missing, duplicate=duplicate, invalid=invalid)
+        if not ordered:
+            # 모델이 돌려준 것 중 후보가 하나도 없다. 보충하면 입력 순서가 "모델 순서"로 둔갑한다.
+            raise InvalidRankingResponse(
+                f"유효 후보 id가 없음(항목 {len(ranking)}개 · 후보 밖/형식 오류 {invalid}개 · 후보 {len(valid_ids)}개)"
+            )
+
         ordered.extend(song_id for song_id in valid_ids if song_id not in seen)
         try:
-            confidence = min(1.0, max(0.0, float(payload.get("query_confidence", 0.5))))
+            confidence_raw = payload.get("query_confidence", 0.5)
+            if isinstance(confidence_raw, bool):
+                raise TypeError
+            confidence = min(1.0, max(0.0, float(confidence_raw)))
         except (TypeError, ValueError):
             confidence = 0.5
         return ordered, scores, confidence, reasons
@@ -1155,9 +1224,9 @@ Return:
         마감은 인자로만 받고 어디에도 저장하지 않는다 — 이 객체는 singleton이라 동시 요청이 공유한다.
         """
         if not tracks:
-            return RerankRun([], RERANK_SKIPPED, [])
+            return RerankRun([], RERANK_SKIPPED, [], model_calls=0)
         if len(tracks) == 1 or not self.enabled:
-            return RerankRun(list(tracks)[:top_k], RERANK_SKIPPED, [])
+            return RerankRun(list(tracks)[:top_k], RERANK_SKIPPED, [], model_calls=0)
 
         judged = list(tracks[: self.config.max_candidates])
         tail = list(tracks[self.config.max_candidates :])
@@ -1167,6 +1236,11 @@ Return:
             tuple[list[str], dict[str, float], float, dict[str, str]]
         ] = []
         last_error: Optional[Exception] = None
+        # 이 실행의 실제 SDK 호출 횟수(앞 단계·재시도 포함)와 응답 관측치. 그룹 기록 수로는 알 수 없는 사실이라
+        # 백엔드가 직접 센다(v59). 응답에 돌아온 id는 패스별로 모아 "어느 응답에도 없던 곡"을 가른다.
+        tally: List[int] = [0]
+        response_stats: Dict[str, int] = {"valid": 0, "missing": 0, "duplicate": 0, "invalid": 0}
+        returned_ids: set[str] = set()
         # 이 실행의 전체 예산. 검증 배치·패스·재시도 사이마다 확인하고, 넘으면 더 부르지 않는다.
         # 공유 마감을 받았으면 남은 시간이 곧 예산이다(앞 그룹이 쓴 만큼 줄어 있다).
         if deadline is None:
@@ -1181,10 +1255,10 @@ Return:
         pre_pass_deadline = deadline - self._pass_reserve_seconds(budget_seconds)
 
         # 일반 Search evidence는 한 번만 수행하고 두 listwise pass가 공유한다.
-        external_evidence = self._collect_search_evidence(query, judged, deadline=pre_pass_deadline)
+        external_evidence = self._collect_search_evidence(query, judged, deadline=pre_pass_deadline, tally=tally)
         # 희소 사실이 있는 질의만 15곡 단위로 더 엄격하게 교차검증한다.
         rare_verdicts, rare_confidence, rare_reason = self._verify_rare_facts(
-            query, judged, answers, deadline=pre_pass_deadline
+            query, judged, answers, deadline=pre_pass_deadline, tally=tally
         )
 
         for pass_index in range(self.config.passes):
@@ -1218,6 +1292,7 @@ Return:
                             "top_p": 1.0,
                         },
                         deadline=deadline,
+                        tally=tally,
                     )
                     if self._over_budget(deadline):
                         # 응답이 예산 뒤에 왔다. 반영하면 "예산 안에 끝낸다"는 약속이 거짓이 된다.
@@ -1225,15 +1300,24 @@ Return:
                             f"{budget_label} 초과 (pass {pass_index + 1} 응답이 늦게 도착)"
                         )
                         break
-                    pass_results.append(self._parse_response(response.text, valid_ids))
+                    # 유효 후보 0개·자료형 오류는 여기서 예외로 나가 아래 재시도(정정 지시)로 간다 — 보충해서 성공으로
+                    # 만들지 않는다(v59). 관측치는 **반영된** 응답 것만 남긴다(무효 응답 통계는 로그에 남는다).
+                    pass_stats: Dict[str, int] = {}
+                    parsed = self._parse_response(response.text, valid_ids, pass_stats)
+                    pass_results.append(parsed)
+                    for key in response_stats:
+                        response_stats[key] += int(pass_stats.get(key, 0))
+                    # 파서의 순서는 "응답에 있던 유효 id(응답 순서)" 뒤에 "채운 id(입력 순서)"다 — 앞 valid개가 돌아온 곡
+                    returned_ids.update(parsed[0][: pass_stats.get("valid", 0)])
                     break
                 except Exception as exc:
                     last_error = exc
                     logger.warning(
-                        "[GeminiListwiseReranker] pass=%d 호출/파싱 실패 (%d/%d): %s",
+                        "[GeminiListwiseReranker] pass=%d 호출/파싱 실패 (%d/%d): %s: %s",
                         pass_index + 1,
                         attempt + 1,
                         self.config.max_retries,
+                        type(exc).__name__,
                         exc,
                     )
                     correction = (
@@ -1292,10 +1376,15 @@ Return:
                 model_notes=model_reasons,
                 order_notes=order_notes,
                 model_order_ids=model_order_ids,
+                # 어느 패스 응답에도 없던 곡 — 자리는 보충 규칙이 정했다(설명이 모델에 귀속하면 안 된다)
+                unreturned_ids=[song_id for song_id in valid_ids if song_id not in returned_ids],
+                model_calls=tally[0],
+                response_stats=dict(response_stats),
             )
 
         logger.warning(
-            "[GeminiListwiseReranker] 최종 실패 — retrieval 순서 유지: %s",
+            "[GeminiListwiseReranker] 최종 실패 — retrieval 순서 유지: %s: %s",
+            type(last_error).__name__ if last_error is not None else "",
             last_error,
         )
-        return RerankRun(list(tracks)[:top_k], RERANK_FAILED, [])
+        return RerankRun(list(tracks)[:top_k], RERANK_FAILED, [], model_calls=tally[0])

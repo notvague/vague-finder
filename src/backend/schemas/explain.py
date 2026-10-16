@@ -25,6 +25,7 @@ from src.retrieval.explain import (
     PATH_LABELS,
     REORDER_NOT_ATTEMPTED,
     REORDER_STAGE_LABELS,
+    REORDER_STAGE_NOTES,
     RERANK_SKIP_LABELS,
     RULE_LABELS,
     PathContribution,
@@ -322,6 +323,22 @@ class TrackExplain(BaseModel):
         default=False,
         description="이 곡의 최종 순위에 리랭커 결과가 반영됐는가",
     )
+    rerank_group_status: str = Field(
+        default="",
+        description=(
+            "이 곡이 속한 리랭커 호출 묶음의 결과(applied · failed · budget_exhausted · skipped · unknown). "
+            "비어 있으면 어느 호출에도 넘기지 않았다. 부분 적용 요청에서 reorder_applied=false인 곡이 "
+            "실패한 묶음에 있었는지, 모델에 넘기지 않은 곡인지 가른다"
+        ),
+    )
+    rerank_unreturned: bool = Field(
+        default=False,
+        description=(
+            "모델에 넘겼지만 응답에 돌아오지 않아 입력 순서로 보충한 뒤 점수 합성·순서 규칙을 거친 곡. "
+            "reorder_applied는 참이지만 자리는 모델이 정하지 않았다(보충이 '묶음 뒤'라는 뜻은 아니다 — "
+            "저신뢰 합성에서는 검색 점수가 반환된 곡보다 앞에 놓을 수 있다)"
+        ),
+    )
     reorder_stage: str = Field(default=REORDER_NOT_ATTEMPTED, description="요청 전체의 재정렬 단계")
     reorder_stage_label: str = Field(default="", description="단계 이름 (화면용)")
 
@@ -451,6 +468,14 @@ class SearchExplainOut(BaseModel):
     reranker: str = "none"
     reorder_stage: str = REORDER_NOT_ATTEMPTED
     reorder_stage_label: str = ""
+    reorder_stage_note: str = Field(
+        default="",
+        description=(
+            "단계가 뜻하는 **반환 결과**를 사용자에게 말하는 고정 문구(서버가 준다 — 화면이 짓지 않는다). "
+            "지금은 리랭킹 일부 적용(model_partial)에만 있다: 일부 묶음만 리랭킹했고 나머지 묶음은 "
+            "리랭킹 전 후보 순서 그대로. 그 밖의 단계는 빈 문자열"
+        ),
+    )
     rerank_skip_reason: str = Field(
         default="",
         description=(
@@ -466,10 +491,32 @@ class SearchExplainOut(BaseModel):
         default="",
         description="라우터가 예외를 잡았으면 그 사유. 비어 있으면 예외는 없었다",
     )
-    rerank_calls: int = Field(default=0, description="리랭커를 부른 횟수")
+    rerank_calls: int = Field(
+        default=0,
+        description=(
+            "리랭커 **그룹 처리 기록 수**(호환용 이름 — 실제 SDK/API 호출 횟수가 아니다). 가사 보호 묶음·일반 후보 "
+            "묶음마다 1이고, 예산 소진으로 모델을 부르지 않은 묶음도 1, 재시도 3회도 1이다. 실제 호출 횟수는 "
+            "rerank_model_calls를 본다"
+        ),
+    )
     rerank_calls_applied: int = Field(
         default=0,
-        description="그중 모델이 실제로 순서를 정한 횟수. 호출 수 ≠ 성공 수다",
+        description="그중 모델이 실제로 순서를 정한 묶음 수. 기록 수 ≠ 적용 수다",
+    )
+    rerank_groups_failed: int = Field(
+        default=0,
+        description="모델을 불렀으나 실패해 리랭킹 전 순서로 나간 묶음 수(라우터 예외 폴백의 기록 포함)",
+    )
+    rerank_groups_budget_exhausted: int = Field(
+        default=0,
+        description="리랭킹 단계 예산이 앞 묶음에서 다 떨어져 **모델을 부르지 않은** 묶음 수. 실패와 결과는 같지만 호출이 없었다",
+    )
+    rerank_model_calls: Optional[int] = Field(
+        default=None,
+        description=(
+            "백엔드가 보고한 **실제 SDK/API 호출 횟수**의 합(재시도·검색 증거·검증 호출 포함, 예산 소진 묶음은 0). "
+            "세지 않는 백엔드가 하나라도 섞이면 null — 그룹 기록 수로 추정하지 않는다"
+        ),
     )
     feedback_supplement: Optional[FeedbackSupplementOut] = Field(
         default=None,
@@ -494,11 +541,15 @@ class SearchExplainOut(BaseModel):
             reranker=record.reranker,
             reorder_stage=stage,
             reorder_stage_label=REORDER_STAGE_LABELS.get(stage, stage),
+            reorder_stage_note=REORDER_STAGE_NOTES.get(stage, ""),
             rerank_skip_reason=record.rerank_policy_skip,
             rerank_skip_label=RERANK_SKIP_LABELS.get(record.rerank_policy_skip, ""),
             rerank_error=record.rerank_error,
             rerank_calls=len(record.rerank_runs),
             rerank_calls_applied=record.rerank_runs_applied,
+            rerank_groups_failed=record.rerank_runs_failed,
+            rerank_groups_budget_exhausted=record.rerank_runs_budget_exhausted,
+            rerank_model_calls=record.rerank_model_calls,
             feedback_supplement=FeedbackSupplementOut.of(record.feedback),
         )
 
@@ -605,6 +656,8 @@ def to_track_explain(
         group_rank_after=explain.group_rank_after,
         behind_protected=explain.behind_protected,
         reorder_applied=explain.reorder_applied,
+        rerank_group_status=explain.rerank_group_status,
+        rerank_unreturned=explain.rerank_unreturned,
         reorder_stage=reorder_stage,
         reorder_stage_label=REORDER_STAGE_LABELS.get(reorder_stage, reorder_stage),
         lyric_match=dict(explain.lyric_match) if explain.lyric_match else None,

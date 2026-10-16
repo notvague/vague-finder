@@ -380,8 +380,9 @@ test('UFE-09: 가감점 줄의 서버 표시(note)가 부연으로 보인다 · 
 test('정적 파일 버전이 올라갔다', () => {
   const html = fs.readFileSync(path.join(__dirname, '../../src/frontend/static/index.html'), 'utf8');
   // 피드백(#47)이 문자열 버전(?v=feedback-1)으로 바꾼 뒤라 숫자가 아니라 새 문자열로 올린다.
-  // 정답 버튼을 근거 옆으로 옮기며 세 파일이 함께 바뀌었다(evidence-1 → answer-1, feedback.js 3 → 4)
-  assert.ok(/map\.js\?v=answer-1/.test(html), 'map.js 버전');
+  // 정답 버튼을 근거 옆으로 옮기며 세 파일이 함께 바뀌었다(evidence-1 → answer-1, feedback.js 3 → 4).
+  // v59(리랭킹 일부 적용 · 묶음 수 표기)는 map.js만 바뀌어 map.js 버전만 올렸다(answer-1 → rerank-status-1)
+  assert.ok(/map\.js\?v=rerank-status-1/.test(html), 'map.js 버전');
   assert.ok(/style\.css\?v=answer-1/.test(html), 'style.css 버전');
   assert.ok(/feedback\.js\?v=4/.test(html), 'feedback.js 버전');
 });
@@ -455,4 +456,73 @@ test('UFE-05: 리허설 스크립트(check_demo_faults.py)가 읽는 곡별 설�
   delete old.user_explanation;
   r.ctx.x = old;
   assert.equal(read(r.ev('explainPanel(x)')), record, '사용자용 설명이 없는 배치에서도 같은 문장을 읽는다');
+});
+
+/* ---------- v59: 리랭킹 일부 적용 · 묶음 수와 실제 호출 수 (2026-10-16) ---------- */
+
+function runExplain(extra = {}) {
+  return {
+    reorder_stage: 'model_applied', reorder_stage_label: '리랭킹 적용', reorder_stage_note: '',
+    reranker: 'GeminiListwiseReranker', rerank_calls: 1, rerank_calls_applied: 1,
+    rerank_groups_failed: 0, rerank_groups_budget_exhausted: 0, rerank_model_calls: 1,
+    rerank_error: '', analysis_fallback: false, failed_paths: [], ...extra,
+  };
+}
+
+test('v59: 일부 적용은 단계·서버 문구·묶음 수·예산 소진 묶음·실제 호출 수를 적고 경고색이다 — "N번 불러"는 쓰지 않는다', () => {
+  const r = realm();
+  r.ev('convo = ' + JSON.stringify({
+    notice: null,
+    explain: runExplain({
+      reorder_stage: 'model_partial', reorder_stage_label: '리랭킹 일부 적용',
+      reorder_stage_note: '일부 후보 묶음만 리랭킹했고, 나머지 묶음은 리랭킹 전 후보 순서를 그대로 사용했습니다.',
+      rerank_calls: 3, rerank_calls_applied: 1, rerank_groups_failed: 1, rerank_groups_budget_exhausted: 1,
+      rerank_model_calls: 2,
+    }),
+  }));
+  r.ev('renderRunNote()');
+  const text = r.runNoteEl.textContent;
+  assert.ok(text.includes('리랭킹 일부 적용'), text);
+  assert.ok(text.includes('나머지 묶음은 리랭킹 전 후보 순서'), text);
+  assert.ok(text.includes('후보 묶음 3개 중 1개 리랭킹, 1개는 예산 소진으로 모델 미호출'), text);
+  assert.ok(text.includes('모델 호출 2회'), text);
+  assert.ok(!text.includes('번 불러'), '묶음 기록 수를 호출 횟수처럼 말하지 않는다');
+  assert.ok(!text.includes('3번'), text);
+  assert.equal(r.runNoteEl.classList.contains('warn'), true, '일부 폴백은 경고색');
+});
+
+test('v59: 모두 적용이면 묶음 문구가 없고 경고색이 아니다 · 호출 수를 세지 않는 백엔드(null)는 호출 횟수를 적지 않는다', () => {
+  const r = realm();
+  r.ev('convo = ' + JSON.stringify({ notice: null, explain: runExplain({ rerank_model_calls: null }) }));
+  r.ev('renderRunNote()');
+  const text = r.runNoteEl.textContent;
+  assert.ok(text.includes('리랭킹 적용'), text);
+  assert.ok(!text.includes('묶음') && !text.includes('모델 호출'), text);
+  assert.equal(r.runNoteEl.classList.contains('warn'), false);
+
+  r.ev('convo = ' + JSON.stringify({ notice: null, explain: runExplain({ rerank_model_calls: 1 }) }));
+  r.ev('renderRunNote()');
+  assert.ok(r.runNoteEl.textContent.includes('모델 호출 1회'));
+});
+
+test('v59: 예외 없는 리랭킹 실패(백엔드 내부 폴백)도 경고색이다 · 정책 생략은 여전히 경고가 아니다', () => {
+  const r = realm();
+  r.ev('convo = ' + JSON.stringify({
+    notice: null,
+    explain: runExplain({ reorder_stage: 'model_failed', reorder_stage_label: '리랭킹 실패',
+                          rerank_calls: 1, rerank_calls_applied: 0, rerank_groups_failed: 1, rerank_model_calls: 3 }),
+  }));
+  r.ev('renderRunNote()');
+  assert.ok(r.runNoteEl.textContent.includes('후보 묶음 1개 중 0개 리랭킹'), r.runNoteEl.textContent);
+  assert.ok(r.runNoteEl.textContent.includes('모델 호출 3회'), '재시도 3회가 묶음 기록 1과 다르게 보인다');
+  assert.equal(r.runNoteEl.classList.contains('warn'), true);
+
+  r.ev('convo = ' + JSON.stringify({
+    notice: null,
+    explain: runExplain({ reorder_stage: 'policy_skipped', reorder_stage_label: '리랭킹 생략(정책)',
+                          rerank_calls: 0, rerank_calls_applied: 0, rerank_model_calls: 0 }),
+  }));
+  r.ev('renderRunNote()');
+  assert.ok(!r.runNoteEl.textContent.includes('모델 호출'), '부르지 않은 요청에 호출 횟수를 적지 않는다');
+  assert.equal(r.runNoteEl.classList.contains('warn'), false);
 });

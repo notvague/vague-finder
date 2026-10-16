@@ -953,7 +953,7 @@ def call_reranker(
             "[call_reranker] 리랭킹 단계 예산 소진 — %d곡 그룹은 모델을 부르지 않고 입력 순서 유지",
             len(tracks),
         )
-        run = RerankRun(list(tracks)[:top_k], RERANK_BUDGET_EXHAUSTED, [])
+        run = RerankRun(list(tracks)[:top_k], RERANK_BUDGET_EXHAUSTED, [], model_calls=0)
     elif detailed is not None:
         kwargs: Dict[str, Any] = {}
         if pass_answers:
@@ -974,7 +974,15 @@ def call_reranker(
     if runs_out is not None:
         runs_out.append(run.status)
 
-    recorder.note_rerank_run(run.status, run.judged_ids)
+    # 묶음 전체의 id도 함께 넘긴다(v59) — 실패·예산 소진 묶음의 곡에 그 결과가 남아야 설명이
+    # "넘기지 않았다"와 "넘겼는데 실패했다"를 가른다. 미반환 곡·실제 SDK 호출 수는 백엔드가 보고한 값 그대로다.
+    recorder.note_rerank_run(
+        run.status,
+        run.judged_ids,
+        group_ids=[track.id for track in tracks],
+        unreturned_ids=run.unreturned_ids,
+        model_calls=run.model_calls,
+    )
     if run.status == RERANK_APPLIED:
         # 모델에 귀속할 수 있는 변화는 **이 묶음 안에서의 이동**뿐이다.
         # 요청 전체 순위는 보호 배치 같은 다른 원인과 섞인다.

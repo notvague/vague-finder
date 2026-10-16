@@ -82,13 +82,17 @@ def test_invalid_json_retries_with_correction_then_fails():
     assert len(client.calls) == 3
 
 
-def test_foreign_ids_are_dropped_and_input_order_is_kept_but_status_applied():
-    reranker, client = _reranker("foreign_ids")
+def test_foreign_ids_only_response_is_retried_then_reported_failed():
+    """v56에서는 후보 밖 id만 돌아와도 파서가 입력 순서로 채워 `applied`였다(§7-③). v59부터 유효 후보 0개는
+    무효 응답 — 기존 재시도(정정 지시)를 다 쓴 뒤 `failed`로 폴백하고 순서는 입력 그대로다."""
+    reranker, client = _reranker("foreign_ids", time_budget_seconds=5.0)
     tracks = _tracks()
     run = reranker.rerank_run("q", tracks, top_k=6)
-    assert run.status == RERANK_APPLIED
+    assert run.status == RERANK_FAILED
     assert [t.id for t in run.tracks] == [t.id for t in tracks]
     assert not any(t.id.startswith(FOREIGN_ID_PREFIX) for t in run.tracks)
+    assert len(client.calls) == 3 and all(c.outcome == "returned" for c in client.calls)
+    assert run.model_calls == 3
 
 
 def test_mode_file_switches_mode_between_calls(tmp_path):

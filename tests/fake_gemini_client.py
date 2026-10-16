@@ -11,7 +11,11 @@
   slow           응답하지 않고 잔다 → 리랭커의 벽시계 제한이 호출을 취소한다(요청 제한 20초 · 전체 예산 30초)
   slow_within    `sleep`초 뒤 정상 응답(예산 안의 느린 응답)
   invalid_json   JSON이 아닌 본문 → 파서 실패 → 재시도 3회 → failed
-  foreign_ids    후보에 없는 id만 돌려준다 → 파서가 전부 버리고 입력 순서를 채운다(applied지만 순위 그대로)
+  foreign_ids    후보에 없는 id만 돌려준다 → v59부터 유효 후보 0개는 무효 응답(재시도 뒤 failed). v56까지는 applied·순위 그대로였다
+  empty_ranking  `{"ranking": []}` → 같은 무효 응답
+  wrong_types    정상 JSON이지만 자료형이 어긋남(최상위 배열) → 무효 응답
+  partial_ids    후보의 앞 절반만 역순으로, 첫 id는 두 번, 후보 밖 id 하나 섞어 돌려준다 → 일부 누락·중복·무효 혼합(정상, 보충 유지)
+  invalid_then_normal  모드를 켠 뒤 첫 호출만 foreign_ids, 다음부터 normal → 무효 응답 뒤 재시도 성공
   fail_group_first  모드를 켠 뒤 **처음 본 후보 집합**(가사 보호 그룹 등)만 계속 실패시키고 다른 집합은 normal
                     → 그룹 하나만 실패하는 부분 실패를 만든다
 
@@ -152,6 +156,24 @@ class FakeGeminiClient:
         if mode == "foreign_ids":
             fake_ids = [f"{FOREIGN_ID_PREFIX}{i:04d}" for i in range(len(ids))]
             return _Response(normal_ranking(fake_ids, reverse=False))
+        if mode == "empty_ranking":
+            return _Response(json.dumps({"query_confidence": 0.9, "ranking": []}))
+        if mode == "wrong_types":
+            # 정상 JSON이지만 최상위가 배열 — `payload.get`이 없는 형태
+            return _Response(json.dumps([{"id": song_id} for song_id in ids]))
+        if mode == "partial_ids":
+            half = ids[: max(1, len(ids) // 2)]
+            items = [*reversed(half), half[0], f"{FOREIGN_ID_PREFIX}9999"]
+            return _Response(json.dumps({
+                "query_confidence": 0.9,
+                "ranking": [{"id": song_id, "relevance": 0.5, "reason": "v59 가짜 응답"} for song_id in items],
+            }))
+        if mode == "invalid_then_normal":
+            if self._fail_set is None:
+                self._fail_set = frozenset({"__first_call_done__"})
+                fake_ids = [f"{FOREIGN_ID_PREFIX}{i:04d}" for i in range(len(ids))]
+                return _Response(normal_ranking(fake_ids, reverse=False))
+            return _Response(normal_ranking(ids))
         if mode == "identity":
             return _Response(normal_ranking(ids, reverse=False))
         if mode == "fail_group_first":

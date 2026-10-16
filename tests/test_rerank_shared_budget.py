@@ -26,8 +26,8 @@ from src.retrieval.evaluate_search_accuracy import (
     rerank_preserving_exact_lyrics,
 )
 from src.retrieval.explain import (
-    REORDER_MODEL_APPLIED,
     REORDER_MODEL_FAILED,
+    REORDER_MODEL_PARTIAL,
     RERANK_APPLIED,
     RERANK_BUDGET_EXHAUSTED,
     RERANK_FAILED,
@@ -211,9 +211,11 @@ def test_first_group_applied_then_budget_runs_out(monkeypatch):
     assert ids[:3] == ["p1", "p3", "p2"], "앞 그룹의 모델 순서는 보존된다"
     assert ids[3:] == ["p4", "p5", "o1", "o2", "o3"], "실패·미실행 그룹은 입력 순서"
     assert len(ids) == len(set(ids)) == 8
-    # 기존 부분 실패 정책과 같다 — 한 번이라도 적용됐으면 단계는 model_applied, 호출 수에 흔적(3/1)
-    assert rec.record.reorder_stage == REORDER_MODEL_APPLIED
+    # v59: 성공과 실패·예산 소진이 섞이면 단계는 model_partial — 평가기의 partial_failure와 같은 분류다
+    # (v57까지는 한 번이라도 적용되면 model_applied였고 호출 수 3/1에만 흔적이 남았다)
+    assert rec.record.reorder_stage == REORDER_MODEL_PARTIAL
     assert len(rec.record.rerank_runs) == 3 and rec.record.rerank_runs_applied == 1
+    assert rec.record.rerank_runs_failed == 1 and rec.record.rerank_runs_budget_exhausted == 1
     assert rerank_outcome(list(rec.record.rerank_runs), "") == OUTCOME_PARTIAL_FAILURE
 
 
@@ -431,4 +433,4 @@ def test_evaluator_protected_groups_share_the_budget():
     assert statuses == [RERANK_APPLIED, RERANK_FAILED, RERANK_BUDGET_EXHAUSTED]
     assert [c.outcome for c in client.calls] == ["returned", "cancelled"]
     assert [t.id for t in final] == ["p1", "p3", "p2", "p4", "p5", "o1", "o2", "o3"]
-    assert rec.record.reorder_stage == REORDER_MODEL_APPLIED and rec.record.rerank_runs_applied == 1
+    assert rec.record.reorder_stage == REORDER_MODEL_PARTIAL and rec.record.rerank_runs_applied == 1  # v59
