@@ -1,0 +1,2992 @@
+{
+ "mode": "local",
+ "points": 5143,
+ "scan_limit": 5000,
+ "queries": {
+  "q101": {
+   "candidates": [
+    "2930969",
+    "1807098",
+    "1566277",
+    "1929329",
+    "1724693",
+    "2238379",
+    "2197448",
+    "2271648",
+    "2289852",
+    "2797558",
+    "2012282",
+    "2345593",
+    "1926582",
+    "2117748",
+    "3764899",
+    "2688949",
+    "3893934",
+    "2093360",
+    "2140966",
+    "1733348",
+    "27654",
+    "2203097",
+    "1315554",
+    "3532821",
+    "38701540",
+    "36635522",
+    "602024047",
+    "35985167",
+    "32175937",
+    "601970481"
+   ],
+   "songs": {
+    "2930969": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=7, delta=0.011940298507462687, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='context', rank=2, delta=0.012903225806451613, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=3, delta=0.007173280423280425, detail='단서 강도 0.97', dropped=False)"
+     ],
+     "fused_score": 0.032016804737194725,
+     "retrieval_score": 0.10227295227817833
+    },
+    "1807098": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=4, delta=0.0125, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=2, delta=0.007288978494623656, detail='단서 강도 0.97', dropped=False)",
+      "PathContribution(path='metadata', rank=4, delta=0.002343750000000002, detail='단서 강도 0.75', dropped=False)"
+     ],
+     "fused_score": 0.02213272849462366,
+     "retrieval_score": 0.09623108915036137
+    },
+    "1566277": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=5, delta=0.012307692307692308, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=1, delta=0.007408469945355191, detail='단서 강도 0.97', dropped=False)",
+      "PathContribution(path='metadata', rank=5, delta=0.002307692307692309, detail='단서 강도 0.75', dropped=False)"
+     ],
+     "fused_score": 0.022023854560739808,
+     "retrieval_score": 0.09612221521647753
+    },
+    "1929329": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=13, delta=0.010958904109589041, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=4, delta=0.007061197916666668, detail='단서 강도 0.97', dropped=False)",
+      "PathContribution(path='metadata', rank=10, delta=0.0021428571428571443, detail='단서 강도 0.75', dropped=False)"
+     ],
+     "fused_score": 0.020162959169112853,
+     "retrieval_score": 0.09426131982485057
+    },
+    "1724693": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=12, delta=0.011111111111111112, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=7, delta=0.0067450248756218915, detail='단서 강도 0.97', dropped=False)",
+      "PathContribution(path='metadata', rank=9, delta=0.002173913043478262, detail='단서 강도 0.75', dropped=False)"
+     ],
+     "fused_score": 0.020030049030211265,
+     "retrieval_score": 0.09412840968594897
+    },
+    "2238379": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=11, delta=0.011267605633802818, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=9, delta=0.006549516908212561, detail='단서 강도 0.97', dropped=False)",
+      "PathContribution(path='metadata', rank=8, delta=0.0022058823529411756, detail='단서 강도 0.75', dropped=False)"
+     ],
+     "fused_score": 0.020023004894956554,
+     "retrieval_score": 0.09412136555069427
+    },
+    "2197448": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=18, delta=0.010256410256410256, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=12, delta=0.006276620370370372, detail='단서 강도 0.97', dropped=False)",
+      "PathContribution(path='metadata', rank=13, delta=0.002054794520547947, detail='단서 강도 0.75', dropped=False)"
+     ],
+     "fused_score": 0.018587825147328575,
+     "retrieval_score": 0.09268618580306628
+    },
+    "2271648": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=26, delta=0.009302325581395349, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=8, delta=0.0066458333333333335, detail='단서 강도 0.97', dropped=False)"
+     ],
+     "fused_score": 0.015948158914728682,
+     "retrieval_score": 0.0900465195704664
+    },
+    "2289852": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=25, delta=0.009411764705882354, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='title', rank=1, delta=0.0040163934426229505, detail='확신도 0.70', dropped=False)",
+      "PathContribution(path='performance', rank=13, delta=0.006190639269406394, detail='단서 강도 0.97', dropped=False)"
+     ],
+     "fused_score": 0.0196187974179117,
+     "retrieval_score": 0.08715978102446909
+    },
+    "2797558": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=21, delta=0.009876543209876543, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=6, delta=0.0068472222222222216, detail='단서 강도 0.97', dropped=False)"
+     ],
+     "fused_score": 0.016723765432098765,
+     "retrieval_score": 0.08697991297308237
+    },
+    "2012282": {
+     "paths": [
+      "PathContribution(path='title', rank=3, delta=0.0038888888888888883, detail='확신도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.0038888888888888883,
+     "retrieval_score": 0.08372495446265939
+    },
+    "2345593": {
+     "paths": [
+      "PathContribution(path='title', rank=5, delta=0.0037692307692307686, detail='확신도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.0037692307692307686,
+     "retrieval_score": 0.08360529634300128
+    },
+    "1926582": {
+     "paths": [
+      "PathContribution(path='title', rank=6, delta=0.0037121212121212117, detail='확신도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.0037121212121212117,
+     "retrieval_score": 0.08354818678589171
+    },
+    "2117748": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=14, delta=0.010810810810810811, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=14, delta=0.006106981981981983, detail='단서 강도 0.97', dropped=False)",
+      "PathContribution(path='metadata', rank=11, delta=0.002112676056338029, detail='단서 강도 0.75', dropped=False)"
+     ],
+     "fused_score": 0.019030468849130823,
+     "retrieval_score": 0.08083374753765542
+    },
+    "3764899": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=15, delta=0.010666666666666668, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=5, delta=0.006952564102564101, detail='단서 강도 0.97', dropped=False)"
+     ],
+     "fused_score": 0.01761923076923077,
+     "retrieval_score": 0.08019095208070619
+    },
+    "2688949": {
+     "paths": [
+      "PathContribution(path='title', rank=4, delta=0.0038281249999999995, detail='확신도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.0038281249999999995,
+     "retrieval_score": 0.07982197745901641
+    },
+    "3893934": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=23, delta=0.00963855421686747, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=11, delta=0.006365023474178404, detail='단서 강도 0.97', dropped=False)"
+     ],
+     "fused_score": 0.016003577691045875,
+     "retrieval_score": 0.07857529900252129
+    },
+    "2093360": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=2, delta=0.012903225806451613, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=2, delta=0.0024193548387096784, detail='단서 강도 0.75', dropped=False)"
+     ],
+     "fused_score": 0.015322580645161291,
+     "retrieval_score": 0.07741274457958752
+    },
+    "2140966": {
+     "paths": [
+      "PathContribution(path='title', rank=9, delta=0.003550724637681159, detail='확신도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.003550724637681159,
+     "retrieval_score": 0.07711629840817297
+    },
+    "1733348": {
+     "paths": [
+      "PathContribution(path='audio', rank=18, delta=0.002564102564102564, detail='가중치 0.20', dropped=False)"
+     ],
+     "fused_score": 0.002564102564102564,
+     "retrieval_score": 0.07666246321984027
+    },
+    "27654": {
+     "paths": [
+      "PathContribution(path='title', rank=2, delta=0.003951612903225806, detail='확신도 0.70', dropped=False)",
+      "PathContribution(path='performance', rank=15, delta=0.006025555555555556, detail='단서 강도 0.97', dropped=False)"
+     ],
+     "fused_score": 0.009977168458781362,
+     "retrieval_score": 0.07444438157353546
+    },
+    "2203097": {
+     "paths": [
+      "PathContribution(path='audio', rank=23, delta=0.0024096385542168677, detail='가중치 0.20', dropped=False)"
+     ],
+     "fused_score": 0.0024096385542168677,
+     "retrieval_score": 0.07077029429192179
+    },
+    "1315554": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=22, delta=0.00975609756097561, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='audio', rank=11, delta=0.0028169014084507044, detail='가중치 0.20', dropped=False)"
+     ],
+     "fused_score": 0.012572998969426314,
+     "retrieval_score": 0.07053406454319681
+    },
+    "3532821": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=30, delta=0.008888888888888889, detail='가중치 0.80', dropped=False)"
+     ],
+     "fused_score": 0.008888888888888889,
+     "retrieval_score": 0.06903233151183971
+    },
+    "38701540": {
+     "paths": [
+      "PathContribution(path='title', rank=8, delta=0.003602941176470588, detail='확신도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.003602941176470588,
+     "retrieval_score": 0.06807015429122469
+    },
+    "36635522": {
+     "paths": [
+      "PathContribution(path='title', rank=10, delta=0.0034999999999999996, detail='확신도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.0034999999999999996,
+     "retrieval_score": 0.06796721311475411
+    },
+    "602024047": {
+     "paths": [
+      "PathContribution(path='title', rank=11, delta=0.003450704225352112, detail='확신도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.003450704225352112,
+     "retrieval_score": 0.06791791734010622
+    },
+    "35985167": {
+     "paths": [
+      "PathContribution(path='title', rank=12, delta=0.003402777777777777, detail='확신도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.003402777777777777,
+     "retrieval_score": 0.06786999089253187
+    },
+    "32175937": {
+     "paths": [
+      "PathContribution(path='title', rank=19, delta=0.0031012658227848097, detail='확신도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.0031012658227848097,
+     "retrieval_score": 0.06756847893753891
+    },
+    "601970481": {
+     "paths": [
+      "PathContribution(path='title', rank=22, delta=0.00298780487804878, detail='확신도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.00298780487804878,
+     "retrieval_score": 0.06745501799280289
+    }
+   },
+   "dense_total_returned": 5143,
+   "dense_rank_4990_5010": [
+    [
+     "502970",
+     0.22790939305197383
+    ],
+    [
+     "602304557",
+     0.227839272705886
+    ],
+    [
+     "38441115",
+     0.22757988857406486
+    ],
+    [
+     "34603523",
+     0.22742200213448605
+    ],
+    [
+     "30902271",
+     0.22664709163176675
+    ],
+    [
+     "3467462",
+     0.22653821774148358
+    ],
+    [
+     "600280870",
+     0.22637413097482917
+    ],
+    [
+     "523766",
+     0.22636934884478646
+    ],
+    [
+     "8143111",
+     0.226320164040123
+    ],
+    [
+     "35207535",
+     0.22631924874977605
+    ],
+    [
+     "602479420",
+     0.22619083369010376
+    ],
+    [
+     "1771023",
+     0.2261742556871933
+    ],
+    [
+     "8274",
+     0.22574825092287004
+    ],
+    [
+     "482404",
+     0.22525111957842014
+    ],
+    [
+     "600110802",
+     0.22522787305801345
+    ],
+    [
+     "418254",
+     0.22521513908384008
+    ],
+    [
+     "3849503",
+     0.2251862234862574
+    ],
+    [
+     "36794830",
+     0.22513268127457825
+    ],
+    [
+     "34610476",
+     0.2249638135501641
+    ],
+    [
+     "1846941",
+     0.22476601074388353
+    ],
+    [
+     "2258760",
+     0.2246559225900033
+    ]
+   ],
+   "dense_beyond_5000_ids": [
+    "1004166",
+    "10398",
+    "1046278",
+    "1099478",
+    "11172",
+    "1173856",
+    "1185463",
+    "1264830",
+    "1415456",
+    "1456656",
+    "1491337",
+    "1493041",
+    "1512805",
+    "1563237",
+    "1771023",
+    "1798217",
+    "1846941",
+    "1850253",
+    "1853690",
+    "1996934",
+    "2016051",
+    "2107624",
+    "2258760",
+    "2570038",
+    "2604975",
+    "30140001",
+    "3015999",
+    "30179089",
+    "30247520",
+    "30378157",
+    "31066720",
+    "31096073",
+    "31356458",
+    "31524346",
+    "31666410",
+    "31666421",
+    "31756724",
+    "31777113",
+    "32115919",
+    "32400835",
+    "32574",
+    "32939042",
+    "32939045",
+    "32987478",
+    "33067994",
+    "33161013",
+    "33435717",
+    "33589488",
+    "33655",
+    "33759183",
+    "3411851",
+    "3423253",
+    "34332469",
+    "34397419",
+    "34610476",
+    "3478951",
+    "35008524",
+    "35537291",
+    "35577965",
+    "35586588",
+    "35608491",
+    "35637511",
+    "35757406",
+    "3593455",
+    "36010484",
+    "36395487",
+    "36397952",
+    "36580205",
+    "36607723",
+    "36617489",
+    "36652905",
+    "36730850",
+    "36757726",
+    "36775446",
+    "36780221",
+    "36794830",
+    "36911176",
+    "36950908",
+    "37058963",
+    "37079483",
+    "37118010",
+    "37118011",
+    "37371032",
+    "37390939",
+    "37948128",
+    "37991",
+    "38112177",
+    "38204330",
+    "38466781",
+    "3849496",
+    "3849503",
+    "38714308",
+    "38779495",
+    "39130569",
+    "39230398",
+    "4100925",
+    "418254",
+    "433742",
+    "4582959",
+    "469778",
+    "482404",
+    "487702",
+    "492082",
+    "509824",
+    "5380852",
+    "5493729",
+    "5551234",
+    "55991",
+    "600003072",
+    "600110802",
+    "600223035",
+    "600332492",
+    "600827622",
+    "601818096",
+    "601890954",
+    "602305637",
+    "602321067",
+    "602378366",
+    "602380275",
+    "602398994",
+    "602412331",
+    "602420890",
+    "602460414",
+    "602466922",
+    "602479445",
+    "602487147",
+    "602496852",
+    "602512364",
+    "602519577",
+    "602539198",
+    "602539984",
+    "602542991",
+    "602874841",
+    "602937096",
+    "603097473",
+    "603145428",
+    "603174308",
+    "608223",
+    "611998",
+    "665226",
+    "68713",
+    "7880306",
+    "8274"
+   ],
+   "dense_top5000_set_sha": "861b00662a3d"
+  },
+  "t049": {
+   "candidates": [
+    "1871159",
+    "4832150",
+    "4004361",
+    "2017265",
+    "602539184",
+    "4020215",
+    "602196322",
+    "602341716",
+    "1857969",
+    "971439",
+    "4160243",
+    "3584075",
+    "36761467",
+    "4074419",
+    "3890826",
+    "3170749",
+    "1199786",
+    "39180051",
+    "5657227",
+    "31907533",
+    "4579474",
+    "602142162",
+    "36929231",
+    "32646938",
+    "5546828",
+    "600604301",
+    "1114595",
+    "601768212",
+    "30957524",
+    "3940533"
+   ],
+   "songs": {
+    "1871159": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=12, delta=0.011111111111111112, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=9, delta=0.003007246376811594, detail='단서 강도 1.04', dropped=False)"
+     ],
+     "fused_score": 0.014118357487922705,
+     "retrieval_score": 0.081894996832185
+    },
+    "4832150": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=13, delta=0.010958904109589041, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=10, delta=0.0029642857142857144, detail='단서 강도 1.04', dropped=False)"
+     ],
+     "fused_score": 0.013923189823874756,
+     "retrieval_score": 0.08169982916813705
+    },
+    "4004361": {
+     "paths": [
+      "PathContribution(path='metadata', rank=5, delta=0.0037692307692307695, detail='단서 강도 1.23', dropped=False)"
+     ],
+     "fused_score": 0.0037692307692307695,
+     "retrieval_score": 0.07538808322824717
+    },
+    "2017265": {
+     "paths": [
+      "PathContribution(path='metadata', rank=7, delta=0.003656716417910448, detail='단서 강도 1.23', dropped=False)"
+     ],
+     "fused_score": 0.003656716417910448,
+     "retrieval_score": 0.07527556887692684
+    },
+    "602539184": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=17, delta=0.01038961038961039, detail='가중치 0.80', dropped=False)"
+     ],
+     "fused_score": 0.01038961038961039,
+     "retrieval_score": 0.07432403661911859
+    },
+    "4020215": {
+     "paths": [
+      "PathContribution(path='audio', rank=15, delta=0.002666666666666667, detail='가중치 0.20', dropped=False)"
+     ],
+     "fused_score": 0.002666666666666667,
+     "retrieval_score": 0.07428551912568307
+    },
+    "602196322": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=29, delta=0.008988764044943821, detail='가중치 0.80', dropped=False)"
+     ],
+     "fused_score": 0.008988764044943821,
+     "retrieval_score": 0.07292319027445202
+    },
+    "602341716": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=30, delta=0.008888888888888889, detail='가중치 0.80', dropped=False)"
+     ],
+     "fused_score": 0.008888888888888889,
+     "retrieval_score": 0.07282331511839708
+    },
+    "1857969": {
+     "paths": [
+      "PathContribution(path='metadata', rank=14, delta=0.0028040540540540545, detail='단서 강도 1.04', dropped=False)"
+     ],
+     "fused_score": 0.0028040540540540545,
+     "retrieval_score": 0.07058069339831635
+    },
+    "971439": {
+     "paths": [
+      "PathContribution(path='context', rank=28, delta=0.004545454545454546, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.004545454545454546,
+     "retrieval_score": 0.06995529061102831
+    },
+    "4160243": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=8, delta=0.011764705882352941, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=3, delta=0.0038888888888888896, detail='단서 강도 1.23', dropped=False)"
+     ],
+     "fused_score": 0.01565359477124183,
+     "retrieval_score": 0.06989539804993036
+    },
+    "3584075": {
+     "paths": [
+      "PathContribution(path='audio', rank=2, delta=0.0032258064516129032, detail='가중치 0.20', dropped=False)"
+     ],
+     "fused_score": 0.0032258064516129032,
+     "retrieval_score": 0.0685946589106293
+    },
+    "36761467": {
+     "paths": [
+      "PathContribution(path='context', rank=34, delta=0.00425531914893617, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.00425531914893617,
+     "retrieval_score": 0.06818974537844437
+    },
+    "4074419": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=21, delta=0.009876543209876543, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=4, delta=0.003828125, detail='단서 강도 1.23', dropped=False)"
+     ],
+     "fused_score": 0.013704668209876543,
+     "retrieval_score": 0.06794647148856507
+    },
+    "3890826": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=7, delta=0.011940298507462687, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=2, delta=0.004556451612903226, detail='단서 강도 1.41', dropped=False)"
+     ],
+     "fused_score": 0.016496750120365913,
+     "retrieval_score": 0.0657283074974151
+    },
+    "3170749": {
+     "paths": [
+      "PathContribution(path='metadata', rank=1, delta=0.005245901639344263, detail='단서 강도 1.60', dropped=False)"
+     ],
+     "fused_score": 0.005245901639344263,
+     "retrieval_score": 0.060778688524590174
+    },
+    "1199786": {
+     "paths": [
+      "PathContribution(path='performance', rank=3, delta=0.006634920634920636, detail='단서 강도 0.95', dropped=False)"
+     ],
+     "fused_score": 0.006634920634920636,
+     "retrieval_score": 0.05811033047098621
+    },
+    "39180051": {
+     "paths": [
+      "PathContribution(path='performance', rank=4, delta=0.006531250000000001, detail='단서 강도 0.95', dropped=False)"
+     ],
+     "fused_score": 0.006531250000000001,
+     "retrieval_score": 0.05800665983606558
+    },
+    "5657227": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=27, delta=0.009195402298850575, detail='가중치 0.80', dropped=False)"
+     ],
+     "fused_score": 0.009195402298850575,
+     "retrieval_score": 0.05673638590540795
+    },
+    "31907533": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=20, delta=0.01, detail='가중치 0.80', dropped=False)"
+     ],
+     "fused_score": 0.01,
+     "retrieval_score": 0.05655737704918033
+    },
+    "4579474": {
+     "paths": [
+      "PathContribution(path='audio', rank=16, delta=0.002631578947368421, detail='가중치 0.20', dropped=False)"
+     ],
+     "fused_score": 0.002631578947368421,
+     "retrieval_score": 0.056473792062122524
+    },
+    "602142162": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=23, delta=0.00963855421686747, detail='가중치 0.80', dropped=False)"
+     ],
+     "fused_score": 0.00963855421686747,
+     "retrieval_score": 0.0561959312660478
+    },
+    "36929231": {
+     "paths": [
+      "PathContribution(path='context', rank=74, delta=0.0029850746268656717, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.0029850746268656717,
+     "retrieval_score": 0.05446048446293125
+    },
+    "32646938": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=4, delta=0.0125, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=1, delta=0.006852459016393444, detail='단서 강도 0.95', dropped=False)"
+     ],
+     "fused_score": 0.019352459016393445,
+     "retrieval_score": 0.0544344262295082
+    },
+    "5546828": {
+     "paths": [
+      "PathContribution(path='audio', rank=14, delta=0.002702702702702703, detail='가중치 0.20', dropped=False)"
+     ],
+     "fused_score": 0.002702702702702703,
+     "retrieval_score": 0.05417811253876828
+    },
+    "600604301": {
+     "paths": [
+      "PathContribution(path='audio', rank=24, delta=0.002380952380952381, detail='가중치 0.20', dropped=False)"
+     ],
+     "fused_score": 0.002380952380952381,
+     "retrieval_score": 0.053856362217017964
+    },
+    "1114595": {
+     "paths": [
+      "PathContribution(path='context', rank=56, delta=0.003448275862068966, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.003448275862068966,
+     "retrieval_score": 0.052464669304691916
+    },
+    "601768212": {
+     "paths": [
+      "PathContribution(path='audio', rank=27, delta=0.0022988505747126436, detail='가중치 0.20', dropped=False)"
+     ],
+     "fused_score": 0.0022988505747126436,
+     "retrieval_score": 0.052298850574712646
+    },
+    "30957524": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=9, delta=0.011594202898550725, detail='가중치 0.80', dropped=False)"
+     ],
+     "fused_score": 0.011594202898550725,
+     "retrieval_score": 0.05175813732478024
+    },
+    "3940533": {
+     "paths": [
+      "PathContribution(path='audio', rank=23, delta=0.0024096385542168677, detail='가중치 0.20', dropped=False)"
+     ],
+     "fused_score": 0.0024096385542168677,
+     "retrieval_score": 0.05164119593126605
+    }
+   },
+   "dense_total_returned": 5143,
+   "dense_rank_4990_5010": [
+    [
+     "1046278",
+     0.1736751465511884
+    ],
+    [
+     "34209613",
+     0.17357352201350643
+    ],
+    [
+     "509824",
+     0.17341938310364263
+    ],
+    [
+     "33043504",
+     0.17326947524523953
+    ],
+    [
+     "602427156",
+     0.17320791367306537
+    ],
+    [
+     "38926115",
+     0.17308206654739153
+    ],
+    [
+     "601434578",
+     0.17303887724649117
+    ],
+    [
+     "30178900",
+     0.17301973964967035
+    ],
+    [
+     "1493041",
+     0.17301486738527452
+    ],
+    [
+     "38429074",
+     0.172846634388263
+    ],
+    [
+     "33353459",
+     0.17282400386083518
+    ],
+    [
+     "523766",
+     0.17262685435759967
+    ],
+    [
+     "603095305",
+     0.17253570528178244
+    ],
+    [
+     "31938046",
+     0.17249353404946194
+    ],
+    [
+     "7963607",
+     0.17246480926475966
+    ],
+    [
+     "31582380",
+     0.1722725146350204
+    ],
+    [
+     "698979",
+     0.17224889704619417
+    ],
+    [
+     "1853690",
+     0.17218450137844515
+    ],
+    [
+     "608240",
+     0.17216016298322362
+    ],
+    [
+     "36757834",
+     0.17213111166095346
+    ],
+    [
+     "7942948",
+     0.17210756394018747
+    ]
+   ],
+   "dense_beyond_5000_ids": [
+    "1032760",
+    "104788",
+    "104927",
+    "11172",
+    "1137829",
+    "1288622",
+    "1415456",
+    "1771023",
+    "1798217",
+    "1853690",
+    "2016051",
+    "25594",
+    "2570038",
+    "2720266",
+    "2720268",
+    "2726472",
+    "2983548",
+    "30140001",
+    "3015999",
+    "30169383",
+    "30179089",
+    "30224963",
+    "30244931",
+    "30502417",
+    "30809166",
+    "30877002",
+    "30999754",
+    "31040793",
+    "31066720",
+    "31240973",
+    "31299371",
+    "31330987",
+    "31356458",
+    "31524346",
+    "31568468",
+    "31582380",
+    "31652061",
+    "31756724",
+    "31777113",
+    "31938046",
+    "31938460",
+    "31984204",
+    "32083474",
+    "32235310",
+    "32254292",
+    "32361098",
+    "32646766",
+    "32939041",
+    "32939045",
+    "32961284",
+    "33161013",
+    "33325607",
+    "33435717",
+    "33548514",
+    "33571536",
+    "33618864",
+    "33655",
+    "33736499",
+    "33868321",
+    "34332469",
+    "34397419",
+    "34443401",
+    "34443405",
+    "34942194",
+    "35008527",
+    "35207535",
+    "35537291",
+    "35637511",
+    "35727941",
+    "35727942",
+    "35962512",
+    "36023164",
+    "36179292",
+    "36580205",
+    "36607723",
+    "36757726",
+    "36757834",
+    "36775446",
+    "36778869",
+    "37088403",
+    "37118010",
+    "37371032",
+    "37390939",
+    "37948128",
+    "37997",
+    "38092614",
+    "38157586",
+    "38441115",
+    "3849496",
+    "3851548",
+    "38690637",
+    "39130569",
+    "39230398",
+    "39307947",
+    "39307950",
+    "39454232",
+    "4038857",
+    "425634",
+    "433742",
+    "4446485",
+    "469777",
+    "469788",
+    "47130",
+    "523766",
+    "5465066",
+    "5465108",
+    "5495296",
+    "5629186",
+    "58150",
+    "600003072",
+    "600134272",
+    "600332490",
+    "600400112",
+    "600692626",
+    "601182524",
+    "601671594",
+    "601955702",
+    "602152415",
+    "602334315",
+    "602377125",
+    "602420890",
+    "602427189",
+    "602460414",
+    "602479279",
+    "602479420",
+    "602539198",
+    "602551876",
+    "602937096",
+    "603095305",
+    "603174308",
+    "608222",
+    "608223",
+    "608240",
+    "612068",
+    "623250",
+    "698979",
+    "7148",
+    "7942948",
+    "7963607",
+    "8089568",
+    "8094460",
+    "89806",
+    "91484"
+   ],
+   "dense_top5000_set_sha": "90eb3d560fbf"
+  },
+  "c601": {
+   "candidates": [
+    "39301992",
+    "601890440",
+    "39504720",
+    "2352749",
+    "32313543",
+    "3467467",
+    "5470838",
+    "317670",
+    "1210836",
+    "1964790",
+    "1322134",
+    "7956303",
+    "430912",
+    "4382254",
+    "536317",
+    "4535038",
+    "38926979",
+    "4085875",
+    "31742666",
+    "837567",
+    "531748",
+    "105850",
+    "4749304",
+    "1698598",
+    "31453551",
+    "62462",
+    "2540268",
+    "1459449",
+    "31684636",
+    "1177475"
+   ],
+   "songs": {
+    "39301992": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=1, delta=0.01639344262295082, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.01639344262295082,
+     "retrieval_score": 0.03278688524590164
+    },
+    "601890440": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=2, delta=0.016129032258064516, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.016129032258064516,
+     "retrieval_score": 0.03252247488101534
+    },
+    "39504720": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=3, delta=0.015873015873015872, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.015873015873015872,
+     "retrieval_score": 0.032266458495966696
+    },
+    "2352749": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=5, delta=0.015384615384615385, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.015384615384615385,
+     "retrieval_score": 0.03177805800756621
+    },
+    "32313543": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=6, delta=0.015151515151515152, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.015151515151515152,
+     "retrieval_score": 0.031544957774465976
+    },
+    "3467467": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=7, delta=0.014925373134328358, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.014925373134328358,
+     "retrieval_score": 0.03131881575727918
+    },
+    "5470838": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=8, delta=0.014705882352941176, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.014705882352941176,
+     "retrieval_score": 0.031099324975891997
+    },
+    "317670": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=11, delta=0.014084507042253521, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.014084507042253521,
+     "retrieval_score": 0.03047794966520434
+    },
+    "1210836": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=12, delta=0.013888888888888888, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.013888888888888888,
+     "retrieval_score": 0.03028233151183971
+    },
+    "1964790": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=13, delta=0.0136986301369863, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.0136986301369863,
+     "retrieval_score": 0.03009207275993712
+    },
+    "1322134": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=15, delta=0.013333333333333334, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.013333333333333334,
+     "retrieval_score": 0.029726775956284153
+    },
+    "7956303": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=19, delta=0.012658227848101266, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.012658227848101266,
+     "retrieval_score": 0.029051670471052088
+    },
+    "430912": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=21, delta=0.012345679012345678, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.012345679012345678,
+     "retrieval_score": 0.0287391216352965
+    },
+    "4382254": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=24, delta=0.011904761904761904, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.011904761904761904,
+     "retrieval_score": 0.028298204527712725
+    },
+    "536317": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=25, delta=0.011764705882352941, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.011764705882352941,
+     "retrieval_score": 0.02815814850530376
+    },
+    "4535038": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=27, delta=0.011494252873563218, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.011494252873563218,
+     "retrieval_score": 0.02788769549651404
+    },
+    "38926979": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=28, delta=0.011363636363636364, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.011363636363636364,
+     "retrieval_score": 0.027757078986587184
+    },
+    "4085875": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=30, delta=0.011111111111111112, detail='가중치 1.00', dropped=False)"
+     ],
+     "fused_score": 0.011111111111111112,
+     "retrieval_score": 0.02750455373406193
+    },
+    "31742666": {
+     "paths": [
+      "PathContribution(path='context', rank=3, delta=0.006349206349206349, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.006349206349206349,
+     "retrieval_score": 0.02274264897215717
+    },
+    "837567": {
+     "paths": [
+      "PathContribution(path='context', rank=5, delta=0.006153846153846154, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.006153846153846154,
+     "retrieval_score": 0.022547288776796973
+    },
+    "531748": {
+     "paths": [
+      "PathContribution(path='context', rank=8, delta=0.0058823529411764705, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.0058823529411764705,
+     "retrieval_score": 0.02227579556412729
+    },
+    "105850": {
+     "paths": [
+      "PathContribution(path='context', rank=10, delta=0.005714285714285714, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.005714285714285714,
+     "retrieval_score": 0.022107728337236534
+    },
+    "4749304": {
+     "paths": [
+      "PathContribution(path='context', rank=11, delta=0.005633802816901409, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.005633802816901409,
+     "retrieval_score": 0.02202724543985223
+    },
+    "1698598": {
+     "paths": [
+      "PathContribution(path='context', rank=13, delta=0.005479452054794521, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.005479452054794521,
+     "retrieval_score": 0.021872894677745343
+    },
+    "31453551": {
+     "paths": [
+      "PathContribution(path='context', rank=14, delta=0.005405405405405406, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.005405405405405406,
+     "retrieval_score": 0.021798848028356226
+    },
+    "62462": {
+     "paths": [
+      "PathContribution(path='context', rank=15, delta=0.005333333333333334, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.005333333333333334,
+     "retrieval_score": 0.021726775956284153
+    },
+    "2540268": {
+     "paths": [
+      "PathContribution(path='context', rank=16, delta=0.005263157894736842, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.005263157894736842,
+     "retrieval_score": 0.02165660051768766
+    },
+    "1459449": {
+     "paths": [
+      "PathContribution(path='context', rank=17, delta=0.005194805194805195, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.005194805194805195,
+     "retrieval_score": 0.021588247817756014
+    },
+    "31684636": {
+     "paths": [
+      "PathContribution(path='context', rank=20, delta=0.005, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.005,
+     "retrieval_score": 0.02139344262295082
+    },
+    "1177475": {
+     "paths": [
+      "PathContribution(path='context', rank=22, delta=0.004878048780487805, detail='가중치 0.40', dropped=False)"
+     ],
+     "fused_score": 0.004878048780487805,
+     "retrieval_score": 0.021271491403438626
+    }
+   },
+   "dense_total_returned": 5143,
+   "dense_rank_4990_5010": [
+    [
+     "490201",
+     0.22851957292685732
+    ],
+    [
+     "1493041",
+     0.22849225135820084
+    ],
+    [
+     "3561276",
+     0.22839581961045877
+    ],
+    [
+     "842022",
+     0.22832118330045215
+    ],
+    [
+     "602519577",
+     0.22800500516593458
+    ],
+    [
+     "8036156",
+     0.2279970400272538
+    ],
+    [
+     "1114181",
+     0.22787359327293966
+    ],
+    [
+     "602321067",
+     0.22772768906109037
+    ],
+    [
+     "2092090",
+     0.227629860615658
+    ],
+    [
+     "602479367",
+     0.22754184818959983
+    ],
+    [
+     "602292836",
+     0.22739979218518794
+    ],
+    [
+     "27833",
+     0.22735083513959703
+    ],
+    [
+     "33240849",
+     0.22719394915948493
+    ],
+    [
+     "33067994",
+     0.22715356734255754
+    ],
+    [
+     "33589488",
+     0.2270455259239564
+    ],
+    [
+     "3411851",
+     0.22702337009544526
+    ],
+    [
+     "602036890",
+     0.22694916467222082
+    ],
+    [
+     "38017005",
+     0.22672322865006378
+    ],
+    [
+     "68709",
+     0.2265423931666284
+    ],
+    [
+     "34801199",
+     0.226491279054028
+    ],
+    [
+     "602294035",
+     0.22599141276967596
+    ]
+   ],
+   "dense_beyond_5000_ids": [
+    "1099478",
+    "11172",
+    "1137829",
+    "1173856",
+    "1185463",
+    "1491337",
+    "1726654",
+    "1746411",
+    "1996934",
+    "2016051",
+    "2107624",
+    "27833",
+    "2983548",
+    "30140001",
+    "3015999",
+    "30179089",
+    "30224963",
+    "30247520",
+    "30636089",
+    "30675647",
+    "31356458",
+    "31663597",
+    "31777113",
+    "31984204",
+    "32115919",
+    "32311870",
+    "32400835",
+    "32614125",
+    "32646766",
+    "32873748",
+    "32906021",
+    "32939041",
+    "32939042",
+    "32939045",
+    "32987478",
+    "33013550",
+    "33067994",
+    "33240849",
+    "33353459",
+    "33476728",
+    "33589488",
+    "33759183",
+    "33868321",
+    "34002022",
+    "3411851",
+    "34329302",
+    "34332469",
+    "34535898",
+    "34603523",
+    "34801199",
+    "34826873",
+    "35003350",
+    "35003353",
+    "35003356",
+    "3509752",
+    "35537291",
+    "35577965",
+    "35990667",
+    "36010484",
+    "36607723",
+    "36617489",
+    "36730850",
+    "36757726",
+    "36775446",
+    "36822664",
+    "36907351",
+    "36911176",
+    "36950908",
+    "37003911",
+    "37100912",
+    "37118010",
+    "37371032",
+    "37411215",
+    "3774488",
+    "37948128",
+    "37991",
+    "38017005",
+    "38048466",
+    "38112177",
+    "38447159",
+    "38714308",
+    "38779495",
+    "39130569",
+    "4038857",
+    "4153450",
+    "433742",
+    "4375626",
+    "4478189",
+    "469778",
+    "4762446",
+    "492082",
+    "502970",
+    "507875",
+    "525682",
+    "537749",
+    "54517",
+    "5460305",
+    "5551234",
+    "5700639",
+    "600003072",
+    "600318356",
+    "600400595",
+    "600692626",
+    "601182524",
+    "602036890",
+    "602058011",
+    "602152415",
+    "602294035",
+    "602304557",
+    "602336644",
+    "602367844",
+    "602371144",
+    "602376574",
+    "602377105",
+    "602378366",
+    "602398994",
+    "602420890",
+    "602427181",
+    "602452561",
+    "602460414",
+    "602466922",
+    "602479279",
+    "602479416",
+    "602479420",
+    "602479445",
+    "602480487",
+    "602489934",
+    "602502007",
+    "602508880",
+    "602512311",
+    "602512364",
+    "602519270",
+    "602539198",
+    "602937096",
+    "602982952",
+    "603061995",
+    "603095305",
+    "603174308",
+    "603295614",
+    "608223",
+    "665226",
+    "68709",
+    "981452"
+   ],
+   "dense_top5000_set_sha": "38b0182b03c9"
+  },
+  "n010": {
+   "candidates": [
+    "1539174",
+    "1871159",
+    "1915397",
+    "2733249",
+    "1956876",
+    "1199786",
+    "1556553",
+    "2245593",
+    "1550828",
+    "531840",
+    "2566835",
+    "1653451",
+    "2601848",
+    "606177",
+    "489252",
+    "2289852",
+    "3946867",
+    "8184472",
+    "2017265",
+    "2134448",
+    "2109949",
+    "1816224",
+    "1825248",
+    "456856",
+    "1315554",
+    "3584075",
+    "3588757",
+    "5442688",
+    "32226461",
+    "5628083"
+   ],
+   "songs": {
+    "1539174": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=9, delta=0.010144927536231883, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='performance', rank=1, delta=0.006762295081967212, detail='단서 강도 0.83', dropped=False)",
+      "PathContribution(path='performance_metadata', rank=9, delta=0.006521739130434783, detail='', dropped=False)",
+      "PathContribution(path='metadata', rank=7, delta=0.0020895522388059695, detail='단서 강도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.025518513987439848,
+     "retrieval_score": 0.0746988418562923
+    },
+    "1871159": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=5, delta=0.010769230769230769, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='performance', rank=10, delta=0.004714285714285714, detail='단서 강도 0.67', dropped=False)",
+      "PathContribution(path='performance_metadata', rank=2, delta=0.0072580645161290334, detail='', dropped=False)",
+      "PathContribution(path='metadata', rank=3, delta=0.0022222222222222227, detail='단서 강도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.02496380322186774,
+     "retrieval_score": 0.07045560650055627
+    },
+    "1915397": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=6, delta=0.010606060606060605, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='performance', rank=11, delta=0.004647887323943663, detail='단서 강도 0.67', dropped=False)",
+      "PathContribution(path='performance_metadata', rank=16, delta=0.005921052631578948, detail='', dropped=False)",
+      "PathContribution(path='metadata', rank=4, delta=0.0021874999999999985, detail='단서 강도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.023362500561583215,
+     "retrieval_score": 0.06885430384027175
+    },
+    "2733249": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=72, delta=0.0053030303030303025, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='performance', rank=3, delta=0.006547619047619049, detail='단서 강도 0.83', dropped=False)",
+      "PathContribution(path='performance_metadata', rank=3, delta=0.007142857142857142, detail='', dropped=False)"
+     ],
+     "fused_score": 0.018993506493506493,
+     "retrieval_score": 0.06817383436235896
+    },
+    "1956876": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=43, delta=0.006796116504854369, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='performance', rank=2, delta=0.006653225806451613, detail='단서 강도 0.83', dropped=False)",
+      "PathContribution(path='performance_metadata', rank=22, delta=0.00548780487804878, detail='', dropped=False)"
+     ],
+     "fused_score": 0.018937147189354762,
+     "retrieval_score": 0.06811747505820723
+    },
+    "1199786": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=19, delta=0.008860759493670885, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='performance', rank=13, delta=0.00452054794520548, detail='단서 강도 0.67', dropped=False)",
+      "PathContribution(path='performance_metadata', rank=1, delta=0.007377049180327871, detail='', dropped=False)",
+      "PathContribution(path='metadata', rank=15, delta=0.0018666666666666658, detail='단서 강도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.0226250232858709,
+     "retrieval_score": 0.06811682656455943
+    },
+    "1556553": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=21, delta=0.008641975308641974, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='performance', rank=15, delta=0.004399999999999999, detail='단서 강도 0.67', dropped=False)",
+      "PathContribution(path='performance_metadata', rank=12, delta=0.006250000000000002, detail='', dropped=False)"
+     ],
+     "fused_score": 0.019291975308641976,
+     "retrieval_score": 0.0647837785873305
+    },
+    "2245593": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=30, delta=0.0077777777777777776, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='performance', rank=12, delta=0.004583333333333333, detail='단서 강도 0.67', dropped=False)",
+      "PathContribution(path='performance_metadata', rank=10, delta=0.006428571428571429, detail='', dropped=False)"
+     ],
+     "fused_score": 0.01878968253968254,
+     "retrieval_score": 0.06428148581837106
+    },
+    "1550828": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=18, delta=0.008974358974358974, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='performance', rank=5, delta=0.005521153846153846, detail='단서 강도 0.72', dropped=False)",
+      "PathContribution(path='metadata', rank=14, delta=0.0018918918918918934, detail='단서 강도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.016387404712404713,
+     "retrieval_score": 0.06317019159765062
+    },
+    "531840": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=22, delta=0.008536585365853657, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='performance_metadata', rank=6, delta=0.006818181818181819, detail='', dropped=False)"
+     ],
+     "fused_score": 0.015354767184035476,
+     "retrieval_score": 0.060846570462724
+    },
+    "2566835": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=26, delta=0.00813953488372093, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='performance_metadata', rank=8, delta=0.00661764705882353, detail='', dropped=False)"
+     ],
+     "fused_score": 0.01475718194254446,
+     "retrieval_score": 0.06024898522123298
+    },
+    "1653451": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=28, delta=0.007954545454545454, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='performance', rank=6, delta=0.0054375, detail='단서 강도 0.72', dropped=False)"
+     ],
+     "fused_score": 0.013392045454545453,
+     "retrieval_score": 0.06017483233979136
+    },
+    "2601848": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=61, delta=0.005785123966942148, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='performance', rank=4, delta=0.005607421875, detail='단서 강도 0.72', dropped=False)"
+     ],
+     "fused_score": 0.011392545841942148,
+     "retrieval_score": 0.058175332727188056
+    },
+    "606177": {
+     "paths": [
+      "PathContribution(path='performance_metadata', rank=15, delta=0.006, detail='', dropped=False)"
+     ],
+     "fused_score": 0.006,
+     "retrieval_score": 0.05518032786885246
+    },
+    "489252": {
+     "paths": [
+      "PathContribution(path='audio', rank=58, delta=0.002542372881355932, detail='가중치 0.30', dropped=False)",
+      "PathContribution(path='performance', rank=8, delta=0.005277573529411765, detail='단서 강도 0.72', dropped=False)"
+     ],
+     "fused_score": 0.007819946410767697,
+     "retrieval_score": 0.0546027332960136
+    },
+    "2289852": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=17, delta=0.00909090909090909, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='metadata', rank=13, delta=0.001917808219178082, detail='단서 강도 0.70', dropped=False)"
+     ],
+     "fused_score": 0.011008717310087172,
+     "retrieval_score": 0.05410297960516914
+    },
+    "3946867": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=33, delta=0.007526881720430107, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='performance', rank=7, delta=0.00535634328358209, detail='단서 강도 0.72', dropped=False)"
+     ],
+     "fused_score": 0.012883225004012197,
+     "retrieval_score": 0.05249388074171711
+    },
+    "8184472": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=47, delta=0.006542056074766355, detail='가중치 0.70', dropped=False)",
+      "PathContribution(path='audio', rank=32, delta=0.003260869565217391, detail='가중치 0.30', dropped=False)",
+      "PathContribution(path='performance', rank=14, delta=0.004459459459459461, detail='단서 강도 0.67', dropped=False)",
+      "PathContribution(path='performance_metadata', rank=7, delta=0.006716417910447761, detail='', dropped=False)"
+     ],
+     "fused_score": 0.020978803009890967,
+     "retrieval_score": 0.052126343993497526
+    },
+    "2017265": {
+     "paths": [
+      "PathContribution(path='performance_metadata', rank=11, delta=0.006338028169014085, detail='', dropped=False)"
+     ],
+     "fused_score": 0.006338028169014085,
+     "retrieval_score": 0.05182983144770261
+    },
+    "2134448": {
+     "paths": [
+      "PathContribution(path='performance_metadata', rank=14, delta=0.006081081081081081, detail='', dropped=False)"
+     ],
+     "fused_score": 0.006081081081081081,
+     "retrieval_score": 0.0515728843597696
+    },
+    "2109949": {
+     "paths": [
+      "PathContribution(path='performance_metadata', rank=18, delta=0.0057692307692307696, detail='', dropped=False)"
+     ],
+     "fused_score": 0.0057692307692307696,
+     "retrieval_score": 0.05126103404791929
+    },
+    "1816224": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=63, delta=0.005691056910569105, detail='가중치 0.70', dropped=False)"
+     ],
+     "fused_score": 0.005691056910569105,
+     "retrieval_score": 0.05118286018925763
+    },
+    "1825248": {
+     "paths": [
+      "PathContribution(path='performance_metadata', rank=25, delta=0.005294117647058823, detail='', dropped=False)"
+     ],
+     "fused_score": 0.005294117647058823,
+     "retrieval_score": 0.050785920925747345
+    },
+    "456856": {
+     "paths": [
+      "PathContribution(path='audio', rank=39, delta=0.0030303030303030303, detail='가중치 0.30', dropped=False)"
+     ],
+     "fused_score": 0.0030303030303030303,
+     "retrieval_score": 0.04852210630899155
+    },
+    "1315554": {
+     "paths": [
+      "PathContribution(path='audio', rank=15, delta=0.004, detail='가중치 0.30', dropped=False)"
+     ],
+     "fused_score": 0.004,
+     "retrieval_score": 0.04709426229508197
+    },
+    "3584075": {
+     "paths": [
+      "PathContribution(path='audio', rank=52, delta=0.0026785714285714286, detail='가중치 0.30', dropped=False)"
+     ],
+     "fused_score": 0.0026785714285714286,
+     "retrieval_score": 0.04458430913348946
+    },
+    "3588757": {
+     "paths": [
+      "PathContribution(path='audio', rank=73, delta=0.0022556390977443606, detail='가중치 0.30', dropped=False)"
+     ],
+     "fused_score": 0.0022556390977443606,
+     "retrieval_score": 0.04416137680266239
+    },
+    "5442688": {
+     "paths": [
+      "PathContribution(path='performance_metadata', rank=4, delta=0.00703125, detail='', dropped=False)"
+     ],
+     "fused_score": 0.00703125,
+     "retrieval_score": 0.04186731557377049
+    },
+    "32226461": {
+     "paths": [
+      "PathContribution(path='performance_metadata', rank=24, delta=0.005357142857142857, detail='', dropped=False)"
+     ],
+     "fused_score": 0.005357142857142857,
+     "retrieval_score": 0.04019320843091335
+    },
+    "5628083": {
+     "paths": [
+      "PathContribution(path='audio', rank=64, delta=0.0024193548387096775, detail='가중치 0.30', dropped=False)",
+      "PathContribution(path='performance', rank=9, delta=0.005201086956521739, detail='단서 강도 0.72', dropped=False)"
+     ],
+     "fused_score": 0.007620441795231417,
+     "retrieval_score": 0.040058966385395356
+    }
+   },
+   "dense_total_returned": 5143,
+   "dense_rank_4990_5010": [
+    [
+     "32939041",
+     0.28382657237583603
+    ],
+    [
+     "31475603",
+     0.28366257088611424
+    ],
+    [
+     "916286",
+     0.283597435738526
+    ],
+    [
+     "33067994",
+     0.2835892286567673
+    ],
+    [
+     "36730850",
+     0.28340719933895975
+    ],
+    [
+     "47130",
+     0.28323988678259504
+    ],
+    [
+     "602326279",
+     0.28275586917608164
+    ],
+    [
+     "37997",
+     0.2827142647097647
+    ],
+    [
+     "33151262",
+     0.2826959357686756
+    ],
+    [
+     "8036156",
+     0.2825810674136784
+    ],
+    [
+     "602292836",
+     0.2822109610654674
+    ],
+    [
+     "36401354",
+     0.28189369427863475
+    ],
+    [
+     "32939045",
+     0.28158003471463716
+    ],
+    [
+     "3565243",
+     0.2815535041348366
+    ],
+    [
+     "36911176",
+     0.28132593546657614
+    ],
+    [
+     "602460414",
+     0.2812210177200779
+    ],
+    [
+     "601890954",
+     0.28118351230495625
+    ],
+    [
+     "36397950",
+     0.281174423083721
+    ],
+    [
+     "30810653",
+     0.28112685607491683
+    ],
+    [
+     "2983548",
+     0.281115907596886
+    ],
+    [
+     "4248374",
+     0.28106443785584584
+    ]
+   ],
+   "dense_beyond_5000_ids": [
+    "1004166",
+    "11172",
+    "1185463",
+    "1264300",
+    "1415456",
+    "1493041",
+    "1850253",
+    "2016051",
+    "2107624",
+    "2570038",
+    "2726472",
+    "2983548",
+    "30140001",
+    "3015999",
+    "30169383",
+    "30179089",
+    "30244931",
+    "30247520",
+    "30636089",
+    "30810653",
+    "30896608",
+    "30948698",
+    "3106066",
+    "31093710",
+    "3156953",
+    "31663597",
+    "31666421",
+    "31688205",
+    "31777113",
+    "32254292",
+    "32311870",
+    "32374061",
+    "32455023",
+    "32566898",
+    "32578498",
+    "32906021",
+    "32939042",
+    "32939045",
+    "33046410",
+    "33240849",
+    "33484820",
+    "33548514",
+    "33589488",
+    "33655",
+    "33868321",
+    "34397419",
+    "34443401",
+    "34533308",
+    "3454115",
+    "34603520",
+    "34610476",
+    "3478951",
+    "3509752",
+    "35207535",
+    "35537291",
+    "35577965",
+    "35637499",
+    "35637511",
+    "3565243",
+    "35727942",
+    "35931532",
+    "35936071",
+    "35990667",
+    "36010484",
+    "36397950",
+    "36397952",
+    "36401354",
+    "36617489",
+    "36885378",
+    "36911176",
+    "37062499",
+    "37079483",
+    "37118010",
+    "37118011",
+    "37885188",
+    "37946927",
+    "37991",
+    "38092614",
+    "38237867",
+    "38300904",
+    "38441115",
+    "3849496",
+    "38609054",
+    "38612544",
+    "38779495",
+    "39130568",
+    "39130569",
+    "39130571",
+    "39230398",
+    "39254502",
+    "39421971",
+    "4153450",
+    "420522",
+    "4248374",
+    "4478189",
+    "492082",
+    "502946",
+    "509824",
+    "5436000",
+    "54517",
+    "5493729",
+    "5515283",
+    "55991",
+    "5760115",
+    "600003072",
+    "600223035",
+    "600318356",
+    "600332492",
+    "600827622",
+    "601182524",
+    "601434584",
+    "601594059",
+    "601671595",
+    "601719493",
+    "601879410",
+    "601890954",
+    "601937270",
+    "602010541",
+    "602234962",
+    "602321067",
+    "602334315",
+    "602358131",
+    "602380275",
+    "602420890",
+    "602427107",
+    "602460414",
+    "602479416",
+    "602479445",
+    "602499539",
+    "602512364",
+    "602519270",
+    "602539198",
+    "602540788",
+    "602937096",
+    "603061995",
+    "603095305",
+    "603097476",
+    "603174308",
+    "608223",
+    "8138942",
+    "8143111",
+    "855659",
+    "926193"
+   ],
+   "dense_top5000_set_sha": "79e3eab45c7c"
+  },
+  "m103": {
+   "candidates": [
+    "523274",
+    "27600",
+    "89806",
+    "1116679",
+    "4299165",
+    "527016",
+    "2025249",
+    "86668",
+    "4446485",
+    "622912",
+    "32574",
+    "530043",
+    "499230",
+    "36616378",
+    "623902",
+    "36062335",
+    "1944402",
+    "602479279",
+    "848804",
+    "33353459",
+    "33618864",
+    "38311902",
+    "38714308",
+    "848156",
+    "602441427",
+    "31595606",
+    "8122589",
+    "1739689",
+    "4038857",
+    "5668985"
+   ],
+   "songs": {
+    "523274": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=1, delta=0.00819672131147541, detail='가중치 0.50', dropped=False)",
+      "PathContribution(path='performance', rank=1, delta=0.007280737704918034, detail='단서 강도 0.95', dropped=False)",
+      "PathContribution(path='metadata', rank=1, delta=0.0029508196721311462, detail='단서 강도 0.90', dropped=False)"
+     ],
+     "fused_score": 0.01842827868852459,
+     "retrieval_score": 0.0895143442622951
+    },
+    "27600": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=3, delta=0.007936507936507936, detail='가중치 0.50', dropped=False)",
+      "PathContribution(path='performance', rank=2, delta=0.0071633064516129046, detail='단서 강도 0.95', dropped=False)",
+      "PathContribution(path='metadata', rank=2, delta=0.0029032258064516127, detail='단서 강도 0.90', dropped=False)"
+     ],
+     "fused_score": 0.018003040194572453,
+     "retrieval_score": 0.08908910576834296
+    },
+    "89806": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=43, delta=0.0048543689320388345, detail='가중치 0.50', dropped=False)",
+      "PathContribution(path='performance', rank=5, delta=0.006832692307692309, detail='단서 강도 0.95', dropped=False)",
+      "PathContribution(path='metadata', rank=5, delta=0.0027692307692307704, detail='단서 강도 0.90', dropped=False)"
+     ],
+     "fused_score": 0.014456292008961914,
+     "retrieval_score": 0.08554235758273242
+    },
+    "1116679": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=21, delta=0.006172839506172839, detail='가중치 0.50', dropped=False)",
+      "PathContribution(path='metadata', rank=3, delta=0.0028571428571428567, detail='단서 강도 0.90', dropped=False)"
+     ],
+     "fused_score": 0.009029982363315696,
+     "retrieval_score": 0.07663244137970915
+    },
+    "4299165": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=40, delta=0.005, detail='가중치 0.50', dropped=False)",
+      "PathContribution(path='metadata', rank=4, delta=0.0028125, detail='단서 강도 0.90', dropped=False)"
+     ],
+     "fused_score": 0.0078125,
+     "retrieval_score": 0.07541495901639345
+    },
+    "527016": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=78, delta=0.0036231884057971015, detail='가중치 0.50', dropped=True)",
+      "PathContribution(path='performance', rank=7, delta=0.006628731343283583, detail='단서 강도 0.95', dropped=False)",
+      "PathContribution(path='metadata', rank=14, delta=0.0018243243243243248, detail='단서 강도 0.68', dropped=False)"
+     ],
+     "fused_score": 0.008453055667607907,
+     "retrieval_score": 0.07492846550367349
+    },
+    "2025249": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=80, delta=0.0035714285714285713, detail='가중치 0.50', dropped=True)",
+      "PathContribution(path='performance', rank=8, delta=0.006531250000000001, detail='단서 강도 0.95', dropped=False)",
+      "PathContribution(path='metadata', rank=15, delta=0.0017999999999999995, detail='단서 강도 0.68', dropped=False)"
+     ],
+     "fused_score": 0.00833125,
+     "retrieval_score": 0.07480665983606558
+    },
+    "86668": {
+     "paths": [
+      "PathContribution(path='audio', rank=24, delta=0.005952380952380952, detail='가중치 0.50', dropped=False)"
+     ],
+     "fused_score": 0.005952380952380952,
+     "retrieval_score": 0.07007123341139736
+    },
+    "4446485": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=4, delta=0.0078125, detail='가중치 0.50', dropped=False)",
+      "PathContribution(path='performance', rank=3, delta=0.0070496031746031754, detail='단서 강도 0.95', dropped=False)"
+     ],
+     "fused_score": 0.014862103174603175,
+     "retrieval_score": 0.067505545797554
+    },
+    "622912": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=26, delta=0.005813953488372093, detail='가중치 0.50', dropped=False)",
+      "PathContribution(path='metadata', rank=11, delta=0.001901408450704226, detail='단서 강도 0.68', dropped=False)"
+     ],
+     "fused_score": 0.007715361939076319,
+     "retrieval_score": 0.0672235586603878
+    },
+    "32574": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=77, delta=0.0036496350364963502, detail='가중치 0.50', dropped=True)",
+      "PathContribution(path='metadata', rank=9, delta=0.0026086956521739132, detail='단서 강도 0.90', dropped=False)"
+     ],
+     "fused_score": 0.0026086956521739132,
+     "retrieval_score": 0.06672754811119032
+    },
+    "530043": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=34, delta=0.005319148936170213, detail='가중치 0.50', dropped=False)",
+      "PathContribution(path='metadata', rank=13, delta=0.001849315068493151, detail='단서 강도 0.68', dropped=False)"
+     ],
+     "fused_score": 0.007168464004663364,
+     "retrieval_score": 0.06667666072597485
+    },
+    "499230": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=89, delta=0.003355704697986577, detail='가중치 0.50', dropped=True)",
+      "PathContribution(path='metadata', rank=10, delta=0.0025714285714285717, detail='단서 강도 0.90', dropped=False)"
+     ],
+     "fused_score": 0.0025714285714285717,
+     "retrieval_score": 0.06564519906323185
+    },
+    "36616378": {
+     "paths": [
+      "PathContribution(path='audio', rank=22, delta=0.006097560975609756, detail='가중치 0.50', dropped=False)",
+      "PathContribution(path='performance', rank=11, delta=0.006255281690140847, detail='단서 강도 0.95', dropped=False)"
+     ],
+     "fused_score": 0.012352842665750603,
+     "retrieval_score": 0.06499628528870142
+    },
+    "623902": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=28, delta=0.005681818181818182, detail='가중치 0.50', dropped=False)",
+      "PathContribution(path='performance', rank=4, delta=0.006939453125, detail='단서 강도 0.95', dropped=False)",
+      "PathContribution(path='metadata', rank=12, delta=0.001875, detail='단서 강도 0.68', dropped=False)"
+     ],
+     "fused_score": 0.014496271306818182,
+     "retrieval_score": 0.06457823851993294
+    },
+    "36062335": {
+     "paths": [
+      "PathContribution(path='audio', rank=32, delta=0.005434782608695652, detail='가중치 0.50', dropped=False)",
+      "PathContribution(path='performance', rank=12, delta=0.00616840277777778, detail='단서 강도 0.95', dropped=False)"
+     ],
+     "fused_score": 0.011603185386473432,
+     "retrieval_score": 0.06424662800942425
+    },
+    "1944402": {
+     "paths": [
+      "PathContribution(path='audio', rank=34, delta=0.005319148936170213, detail='가중치 0.50', dropped=False)"
+     ],
+     "fused_score": 0.005319148936170213,
+     "retrieval_score": 0.06378226369026858
+    },
+    "602479279": {
+     "paths": [
+      "PathContribution(path='audio', rank=43, delta=0.0048543689320388345, detail='가중치 0.50', dropped=False)",
+      "PathContribution(path='performance', rank=14, delta=0.00600168918918919, detail='단서 강도 0.95', dropped=False)"
+     ],
+     "fused_score": 0.010856058121228024,
+     "retrieval_score": 0.06349950074417884
+    },
+    "848804": {
+     "paths": [
+      "PathContribution(path='audio', rank=12, delta=0.006944444444444444, detail='가중치 0.50', dropped=False)"
+     ],
+     "fused_score": 0.006944444444444444,
+     "retrieval_score": 0.060796903460837895
+    },
+    "33353459": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=58, delta=0.00423728813559322, detail='가중치 0.50', dropped=False)",
+      "PathContribution(path='audio', rank=18, delta=0.00641025641025641, detail='가중치 0.50', dropped=False)"
+     ],
+     "fused_score": 0.010647544545849631,
+     "retrieval_score": 0.059807380611423405
+    },
+    "33618864": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=68, delta=0.00390625, detail='가중치 0.50', dropped=True)",
+      "PathContribution(path='performance', rank=6, delta=0.006729166666666667, detail='단서 강도 0.95', dropped=False)"
+     ],
+     "fused_score": 0.006729166666666667,
+     "retrieval_score": 0.05937260928961749
+    },
+    "38311902": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=81, delta=0.0035460992907801418, detail='가중치 0.50', dropped=True)",
+      "PathContribution(path='performance', rank=9, delta=0.006436594202898552, detail='단서 강도 0.95', dropped=False)"
+     ],
+     "fused_score": 0.006436594202898552,
+     "retrieval_score": 0.05908003682584938
+    },
+    "38714308": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=90, delta=0.0033333333333333335, detail='가중치 0.50', dropped=True)",
+      "PathContribution(path='performance', rank=10, delta=0.006344642857142858, detail='단서 강도 0.95', dropped=False)"
+     ],
+     "fused_score": 0.006344642857142858,
+     "retrieval_score": 0.05898808548009368
+    },
+    "848156": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=39, delta=0.005050505050505051, detail='가중치 0.50', dropped=False)"
+     ],
+     "fused_score": 0.005050505050505051,
+     "retrieval_score": 0.0589029640668985
+    },
+    "602441427": {
+     "paths": [
+      "PathContribution(path='audio', rank=46, delta=0.0047169811320754715, detail='가중치 0.50', dropped=True)",
+      "PathContribution(path='performance', rank=15, delta=0.005921666666666667, detail='단서 강도 0.95', dropped=False)"
+     ],
+     "fused_score": 0.005921666666666667,
+     "retrieval_score": 0.05856510928961749
+    },
+    "31595606": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=12, delta=0.006944444444444444, detail='가중치 0.50', dropped=False)"
+     ],
+     "fused_score": 0.006944444444444444,
+     "retrieval_score": 0.05854280510018216
+    },
+    "8122589": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=17, delta=0.006493506493506494, detail='가중치 0.50', dropped=False)"
+     ],
+     "fused_score": 0.006493506493506494,
+     "retrieval_score": 0.058091867149244206
+    },
+    "1739689": {
+     "paths": [
+      "PathContribution(path='audio', rank=1, delta=0.00819672131147541, detail='가중치 0.50', dropped=False)"
+     ],
+     "fused_score": 0.00819672131147541,
+     "retrieval_score": 0.057356557377049186
+    },
+    "4038857": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=5, delta=0.007692307692307693, detail='가중치 0.50', dropped=False)"
+     ],
+     "fused_score": 0.007692307692307693,
+     "retrieval_score": 0.056852143757881474
+    },
+    "5668985": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=42, delta=0.004901960784313725, detail='가중치 0.50', dropped=False)"
+     ],
+     "fused_score": 0.004901960784313725,
+     "retrieval_score": 0.05650032144005143
+    }
+   },
+   "dense_total_returned": 5143,
+   "dense_rank_4990_5010": [
+    [
+     "2772064",
+     0.30017528146684647
+    ],
+    [
+     "602322596",
+     0.29992600399079006
+    ],
+    [
+     "38123332",
+     0.2996471954378197
+    ],
+    [
+     "1897284",
+     0.29918399493804126
+    ],
+    [
+     "30040810",
+     0.2991043272874704
+    ],
+    [
+     "603175884",
+     0.2989924294979636
+    ],
+    [
+     "35238220",
+     0.29882696506918394
+    ],
+    [
+     "35238221",
+     0.2987100928189309
+    ],
+    [
+     "601471384",
+     0.2985295216238706
+    ],
+    [
+     "36105548",
+     0.29839026102135213
+    ],
+    [
+     "37900204",
+     0.2983515065379122
+    ],
+    [
+     "7911687",
+     0.2983092024938532
+    ],
+    [
+     "602391973",
+     0.29820731383762594
+    ],
+    [
+     "601969572",
+     0.297816865140045
+    ],
+    [
+     "32993983",
+     0.29758706889822073
+    ],
+    [
+     "33077590",
+     0.29754105495185246
+    ],
+    [
+     "602497020",
+     0.29732319919361955
+    ],
+    [
+     "602125921",
+     0.2973140860344635
+    ],
+    [
+     "30566061",
+     0.29728398417987995
+    ],
+    [
+     "5719286",
+     0.29709152080154066
+    ],
+    [
+     "602163000",
+     0.29705944311334964
+    ]
+   ],
+   "dense_beyond_5000_ids": [
+    "1185463",
+    "1903050",
+    "1931407",
+    "1939100",
+    "2008648",
+    "2667293",
+    "2688951",
+    "2930967",
+    "30040813",
+    "30566061",
+    "30566062",
+    "3087888",
+    "30996736",
+    "31093710",
+    "31241792",
+    "32281723",
+    "32281724",
+    "32381408",
+    "32647505",
+    "32993983",
+    "33012877",
+    "33077590",
+    "33372783",
+    "33459776",
+    "33573963",
+    "33585742",
+    "34754299",
+    "34847379",
+    "35536571",
+    "35542908",
+    "35590340",
+    "35595136",
+    "35651589",
+    "3565193",
+    "35738340",
+    "36411344",
+    "36416114",
+    "36530834",
+    "36599949",
+    "36635522",
+    "36871671",
+    "37225606",
+    "37373808",
+    "37376119",
+    "37460832",
+    "37524037",
+    "37524038",
+    "37563682",
+    "38289453",
+    "38522797",
+    "38585054",
+    "39121279",
+    "39180051",
+    "39814354",
+    "4184826",
+    "4478191",
+    "476521",
+    "504835",
+    "5616999",
+    "5620266",
+    "5719286",
+    "600222569",
+    "600509726",
+    "600551549",
+    "600585707",
+    "600604303",
+    "600884835",
+    "601237102",
+    "601356376",
+    "601356379",
+    "601394753",
+    "601412016",
+    "601461622",
+    "601638709",
+    "601768213",
+    "601807965",
+    "601818096",
+    "601879408",
+    "601890411",
+    "601969572",
+    "601970622",
+    "602025754",
+    "602034440",
+    "602046370",
+    "602051216",
+    "602057422",
+    "602058264",
+    "602066108",
+    "602068253",
+    "602099103",
+    "602111234",
+    "602111270",
+    "602124981",
+    "602125921",
+    "602132595",
+    "602137380",
+    "602142162",
+    "602162547",
+    "602163000",
+    "602173812",
+    "602174932",
+    "602195369",
+    "602226401",
+    "602248118",
+    "602276747",
+    "602278708",
+    "602290302",
+    "602293417",
+    "602303952",
+    "602313594",
+    "602313634",
+    "602332433",
+    "602333678",
+    "602359050",
+    "602368768",
+    "602369677",
+    "602381013",
+    "602391973",
+    "602414481",
+    "602426776",
+    "602427107",
+    "602427138",
+    "602450078",
+    "602462999",
+    "602466728",
+    "602479445",
+    "602497020",
+    "602508879",
+    "602538534",
+    "602538547",
+    "602538995",
+    "602540014",
+    "602540613",
+    "602677150",
+    "603175883",
+    "603175885",
+    "603274331",
+    "7896508",
+    "7911687",
+    "8171202",
+    "8171204",
+    "8171207",
+    "8304595"
+   ],
+   "dense_top5000_set_sha": "778959a95b9c"
+  },
+  "n002": {
+   "candidates": [
+    "3053359",
+    "2366783",
+    "534252",
+    "2255158",
+    "732513",
+    "91322",
+    "20951",
+    "37885189",
+    "79953",
+    "487515",
+    "602420891",
+    "1137108",
+    "601793420",
+    "732514",
+    "2226049",
+    "3133396",
+    "3015998",
+    "600500273",
+    "36459986",
+    "481447",
+    "3567313",
+    "2650367",
+    "62462",
+    "1540132",
+    "91492",
+    "58173",
+    "36180700",
+    "34482334",
+    "1622582",
+    "418463"
+   ],
+   "songs": {
+    "3053359": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=2, delta=0.012903225806451613, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=2, delta=0.0027419354838709668, detail='단서 강도 0.85', dropped=False)"
+     ],
+     "fused_score": 0.01564516129032258,
+     "retrieval_score": 0.07351401374933898
+    },
+    "2366783": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=4, delta=0.0125, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=3, delta=0.002698412698412698, detail='단서 강도 0.85', dropped=False)"
+     ],
+     "fused_score": 0.015198412698412699,
+     "retrieval_score": 0.0730672651574291
+    },
+    "534252": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=5, delta=0.012307692307692308, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=4, delta=0.0026562500000000006, detail='단서 강도 0.85', dropped=False)"
+     ],
+     "fused_score": 0.014963942307692308,
+     "retrieval_score": 0.0728327947667087
+    },
+    "2255158": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=6, delta=0.012121212121212121, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=5, delta=0.002615384615384615, detail='단서 강도 0.85', dropped=False)"
+     ],
+     "fused_score": 0.014736596736596736,
+     "retrieval_score": 0.07260544919561314
+    },
+    "732513": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=7, delta=0.011940298507462687, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=6, delta=0.0025757575757575767, detail='단서 강도 0.85', dropped=False)"
+     ],
+     "fused_score": 0.014516056083220263,
+     "retrieval_score": 0.07238490854223666
+    },
+    "91322": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=8, delta=0.011764705882352941, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=7, delta=0.002537313432835822, detail='단서 강도 0.85', dropped=False)"
+     ],
+     "fused_score": 0.014302019315188763,
+     "retrieval_score": 0.07217087177420516
+    },
+    "20951": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=11, delta=0.011267605633802818, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=8, delta=0.0025000000000000005, detail='단서 강도 0.85', dropped=False)"
+     ],
+     "fused_score": 0.013767605633802818,
+     "retrieval_score": 0.07163645809281921
+    },
+    "37885189": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=12, delta=0.011111111111111112, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=9, delta=0.00246376811594203, detail='단서 강도 0.85', dropped=False)"
+     ],
+     "fused_score": 0.013574879227053142,
+     "retrieval_score": 0.07144373168606954
+    },
+    "79953": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=13, delta=0.010958904109589041, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=10, delta=0.0024285714285714292, detail='단서 강도 0.85', dropped=False)"
+     ],
+     "fused_score": 0.01338747553816047,
+     "retrieval_score": 0.07125632799717686
+    },
+    "487515": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=15, delta=0.010666666666666668, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=11, delta=0.002394366197183098, detail='단서 강도 0.85', dropped=False)"
+     ],
+     "fused_score": 0.013061032863849766,
+     "retrieval_score": 0.07092988532286616
+    },
+    "602420891": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=16, delta=0.010526315789473684, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=12, delta=0.0023611111111111107, detail='단서 강도 0.85', dropped=False)"
+     ],
+     "fused_score": 0.012887426900584795,
+     "retrieval_score": 0.07075627935960119
+    },
+    "1137108": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=18, delta=0.010256410256410256, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=13, delta=0.0023287671232876724, detail='단서 강도 0.85', dropped=False)"
+     ],
+     "fused_score": 0.012585177379697929,
+     "retrieval_score": 0.07045402983871432
+    },
+    "601793420": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=19, delta=0.010126582278481013, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=14, delta=0.0022972972972972964, detail='단서 강도 0.85', dropped=False)"
+     ],
+     "fused_score": 0.01242387957577831,
+     "retrieval_score": 0.0702927320347947
+    },
+    "732514": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=25, delta=0.009411764705882354, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=15, delta=0.002266666666666667, detail='단서 강도 0.85', dropped=False)"
+     ],
+     "fused_score": 0.01167843137254902,
+     "retrieval_score": 0.06954728383156542
+    },
+    "2226049": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=26, delta=0.009302325581395349, detail='가중치 0.80', dropped=False)"
+     ],
+     "fused_score": 0.009302325581395349,
+     "retrieval_score": 0.06717117804041174
+    },
+    "3133396": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=27, delta=0.009195402298850575, detail='가중치 0.80', dropped=False)"
+     ],
+     "fused_score": 0.009195402298850575,
+     "retrieval_score": 0.06706425475786697
+    },
+    "3015998": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=30, delta=0.008888888888888889, detail='가중치 0.80', dropped=False)"
+     ],
+     "fused_score": 0.008888888888888889,
+     "retrieval_score": 0.06675774134790528
+    },
+    "600500273": {
+     "paths": [
+      "PathContribution(path='performance', rank=11, delta=0.003821596244131456, detail='단서 강도 0.62', dropped=False)"
+     ],
+     "fused_score": 0.003821596244131456,
+     "retrieval_score": 0.0626740552605249
+    },
+    "36459986": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=22, delta=0.00975609756097561, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=6, delta=0.004111111111111112, detail='단서 강도 0.62', dropped=False)"
+     ],
+     "fused_score": 0.013867208672086722,
+     "retrieval_score": 0.058785241458971974
+    },
+    "481447": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=23, delta=0.00963855421686747, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=10, delta=0.003876190476190476, detail='단서 강도 0.62', dropped=False)"
+     ],
+     "fused_score": 0.013514744693057947,
+     "retrieval_score": 0.0584327774799432
+    },
+    "3567313": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=1, delta=0.013114754098360656, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='metadata', rank=1, delta=0.0027868852459016387, detail='단서 강도 0.85', dropped=False)"
+     ],
+     "fused_score": 0.015901639344262294,
+     "retrieval_score": 0.05688524590163935
+    },
+    "2650367": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=10, delta=0.011428571428571429, detail='가중치 0.80', dropped=False)"
+     ],
+     "fused_score": 0.011428571428571429,
+     "retrieval_score": 0.05536299765807963
+    },
+    "62462": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=3, delta=0.012698412698412698, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=2, delta=0.004376344086021507, detail='단서 강도 0.62', dropped=False)"
+     ],
+     "fused_score": 0.017074756784434205,
+     "retrieval_score": 0.05482065842377847
+    },
+    "1540132": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=29, delta=0.008988764044943821, detail='가중치 0.80', dropped=False)"
+     ],
+     "fused_score": 0.008988764044943821,
+     "retrieval_score": 0.052923190274452026
+    },
+    "91492": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=21, delta=0.009876543209876543, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=9, delta=0.003932367149758455, detail='단서 강도 0.62', dropped=False)"
+     ],
+     "fused_score": 0.013808910359634998,
+     "retrieval_score": 0.051554811998979266
+    },
+    "58173": {
+     "paths": [
+      "PathContribution(path='performance', rank=8, delta=0.003990196078431373, detail='단서 강도 0.62', dropped=False)"
+     ],
+     "fused_score": 0.003990196078431373,
+     "retrieval_score": 0.05095740919318548
+    },
+    "36180700": {
+     "paths": [
+      "PathContribution(path='performance', rank=5, delta=0.004174358974358975, detail='단서 강도 0.62', dropped=False)"
+     ],
+     "fused_score": 0.004174358974358975,
+     "retrieval_score": 0.04909239176124422
+    },
+    "34482334": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=20, delta=0.01, detail='가중치 0.80', dropped=False)",
+      "PathContribution(path='performance', rank=1, delta=0.0044480874316939895, detail='단서 강도 0.62', dropped=False)"
+     ],
+     "fused_score": 0.01444808743169399,
+     "retrieval_score": 0.042972677595628415
+    },
+    "1622582": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=9, delta=0.011594202898550725, detail='가중치 0.80', dropped=False)"
+     ],
+     "fused_score": 0.011594202898550725,
+     "retrieval_score": 0.039135186505108104
+    },
+    "418463": {
+     "paths": [
+      "PathContribution(path='text_hybrid', rank=17, delta=0.01038961038961039, detail='가중치 0.80', dropped=False)"
+     ],
+     "fused_score": 0.01038961038961039,
+     "retrieval_score": 0.03793059399616777
+    }
+   },
+   "dense_total_returned": 5143,
+   "dense_rank_4990_5010": [
+    [
+     "602322596",
+     0.2706765088031542
+    ],
+    [
+     "8171206",
+     0.2705737702747322
+    ],
+    [
+     "1903050",
+     0.2704809052102899
+    ],
+    [
+     "30488202",
+     0.27018323784954273
+    ],
+    [
+     "5767424",
+     0.27013736468712723
+    ],
+    [
+     "33573963",
+     0.26989548059405805
+    ],
+    [
+     "5719286",
+     0.2696330134617323
+    ],
+    [
+     "8104509",
+     0.26948763403083087
+    ],
+    [
+     "32725022",
+     0.2694868848820918
+    ],
+    [
+     "33012877",
+     0.26934603174679395
+    ],
+    [
+     "602538539",
+     0.2689762659331273
+    ],
+    [
+     "8158031",
+     0.268892497404989
+    ],
+    [
+     "3847197",
+     0.2685945870518657
+    ],
+    [
+     "4478191",
+     0.2684551520692437
+    ],
+    [
+     "32647505",
+     0.26841010999754045
+    ],
+    [
+     "30809165",
+     0.26823469253299403
+    ],
+    [
+     "37693124",
+     0.26818792348578435
+    ],
+    [
+     "34801199",
+     0.26816041715690275
+    ],
+    [
+     "603274331",
+     0.26809512757640086
+    ],
+    [
+     "37058963",
+     0.2671750796621901
+    ],
+    [
+     "602369677",
+     0.2671561105241218
+    ]
+   ],
+   "dense_beyond_5000_ids": [
+    "1033779",
+    "1121540",
+    "1313657",
+    "1906673",
+    "1939100",
+    "2371262",
+    "2667293",
+    "2748528",
+    "30040813",
+    "30403590",
+    "3065249",
+    "30700708",
+    "30809165",
+    "30996736",
+    "30997649",
+    "3106066",
+    "31856953",
+    "31930276",
+    "32100582",
+    "32183386",
+    "32226461",
+    "32254292",
+    "32281723",
+    "32281724",
+    "32616054",
+    "32647505",
+    "33325607",
+    "33372781",
+    "33372783",
+    "33447280",
+    "34041586",
+    "3448185",
+    "34801199",
+    "34826873",
+    "34847379",
+    "35238220",
+    "35238221",
+    "35276188",
+    "35512332",
+    "35590340",
+    "35651589",
+    "3570725",
+    "35962512",
+    "36411344",
+    "36416114",
+    "36681074",
+    "3692955",
+    "36956630",
+    "37058963",
+    "37138464",
+    "37222942",
+    "37264967",
+    "37347911",
+    "37693124",
+    "37928380",
+    "38092614",
+    "3815739",
+    "38289453",
+    "3847197",
+    "38516958",
+    "38522799",
+    "38583705",
+    "39121279",
+    "4037314",
+    "4129672",
+    "4454382",
+    "4478191",
+    "49565",
+    "535139",
+    "5390701",
+    "5456521",
+    "5493729",
+    "5584641",
+    "5616999",
+    "5644620",
+    "5650996",
+    "600318353",
+    "600442746",
+    "600585712",
+    "600604303",
+    "600884835",
+    "601013502",
+    "601182945",
+    "601394753",
+    "601434578",
+    "601471384",
+    "601479673",
+    "601748209",
+    "601937270",
+    "602004756",
+    "602010541",
+    "602025754",
+    "602046370",
+    "602057422",
+    "602066108",
+    "602070462",
+    "602116201",
+    "602147569",
+    "602241245",
+    "602268303",
+    "602276747",
+    "602278708",
+    "602290015",
+    "602290302",
+    "602308395",
+    "602313596",
+    "602322595",
+    "602324379",
+    "602332770",
+    "602337922",
+    "602368960",
+    "602369265",
+    "602369677",
+    "602381013",
+    "602389065",
+    "602399222",
+    "602399233",
+    "602414481",
+    "602420890",
+    "602427117",
+    "602428644",
+    "602428660",
+    "602437191",
+    "602450152",
+    "602466728",
+    "602479420",
+    "602487396",
+    "602499539",
+    "602511528",
+    "602538535",
+    "602539198",
+    "602739381",
+    "603019498",
+    "603230284",
+    "603274331",
+    "603284413",
+    "631232",
+    "8077712",
+    "8094460",
+    "8158031",
+    "8171204",
+    "8172972",
+    "855659"
+   ],
+   "dense_top5000_set_sha": "265f56005523"
+  }
+ }
+}

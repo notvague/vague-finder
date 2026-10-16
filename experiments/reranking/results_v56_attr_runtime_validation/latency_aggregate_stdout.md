@@ -1,0 +1,56 @@
+requests=182 measured=180 warm=2 errors=0 timing_unmatched=0
+  warm A c601 client=1010.2 server=1008.52 search=999.0
+  warm D c601 client=988.8 server=987.16 search=979.1
+              category  arm             metric   n   median      p95      max
+                closed    A             client  30     79.7    179.1    561.9
+                closed    A       server_total  30     78.3    177.7    560.4
+                closed    A             search  30     76.0    173.8    557.7
+                closed    A           text_run  30     72.2    172.0    555.8
+                closed    A               fuse  30      0.6      1.8      3.1
+                closed    D             client  30     75.2    148.1    501.1
+                closed    D       server_total  30     73.8    146.7    499.6
+                closed    D             search  30     71.3    142.3    497.1
+                closed    D           text_run  30     70.1    138.2    491.1
+                closed    D               fuse  30      0.5      1.8      3.1
+                closed  D-A client_diff_per_query_median_of_3  10     -1.4      3.9      5.1
+                closed  D-A search_diff_per_query_median_of_3  10     -1.2      3.9      5.1
+             open_hits    A             client  30    125.6    287.7    337.5
+             open_hits    A       server_total  30    124.2    286.2    336.1
+             open_hits    A             search  30    118.8    281.6    330.1
+             open_hits    A           text_run  30    115.9    257.5    286.5
+             open_hits    A               fuse  30      2.9      4.3      4.4
+             open_hits    D             client  30    156.8    332.9    427.4
+             open_hits    D       server_total  30    155.3    331.4    425.9
+             open_hits    D             search  30    150.0    325.9    419.7
+             open_hits    D    attr_filter_run  30    139.3    237.7    328.1
+             open_hits    D           text_run  30    135.4    228.7    328.0
+             open_hits    D               fuse  30      3.2      5.0      5.4
+             open_hits  D-A client_diff_per_query_median_of_3  10     36.7     95.0    110.9
+             open_hits  D-A search_diff_per_query_median_of_3  10     36.8     94.9    110.5
+  open_empty_synthetic    A             client  30    116.5    307.1    379.0
+  open_empty_synthetic    A       server_total  30    115.0    305.5    377.5
+  open_empty_synthetic    A             search  30    109.8    300.3    371.6
+  open_empty_synthetic    A           text_run  30    106.4    283.0    309.1
+  open_empty_synthetic    A               fuse  30      2.6      4.1      4.2
+  open_empty_synthetic    D             client  30    153.3    370.8    409.1
+  open_empty_synthetic    D       server_total  30    151.8    369.3    407.6
+  open_empty_synthetic    D             search  30    146.4    363.5    401.6
+  open_empty_synthetic    D    attr_filter_run  30    134.1    307.9    325.4
+  open_empty_synthetic    D           text_run  30    123.9    304.8    313.7
+  open_empty_synthetic    D               fuse  30      3.0      4.7      5.0
+  open_empty_synthetic  D-A client_diff_per_query_median_of_3  10     40.8     49.9     51.3
+  open_empty_synthetic  D-A search_diff_per_query_median_of_3  10     40.7     50.2     51.6
+                   ALL    A             client  90    110.7    293.2    561.9
+                   ALL    A       server_total  90    109.2    291.7    560.4
+                   ALL    A             search  90    105.0    286.5    557.7
+                   ALL    A           text_run  90     94.8    269.7    555.8
+                   ALL    A               fuse  90      2.0      4.1      4.4
+                   ALL    D             client  90    138.7    338.8    501.1
+                   ALL    D       server_total  90    137.2    337.3    499.6
+                   ALL    D             search  90    131.6    331.9    497.1
+                   ALL    D    attr_filter_run  60    137.7    303.0    328.1
+                   ALL    D           text_run  90    115.1    283.0    491.1
+                   ALL    D               fuse  90      2.2      4.7      5.4
+                   ALL  D-A client_diff_per_query_median_of_3  30     30.6     64.7    110.9
+                   ALL  D-A search_diff_per_query_median_of_3  30     30.6     64.9    110.5
+candidate digest same A==D: 20/30; per-arm repeat-consistent: A 30/30, D 30/30

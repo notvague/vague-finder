@@ -1,0 +1,27 @@
+{
+  "machine": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "cpu": "Apple M4 Pro",
+    "ncpu": 12,
+    "mem_bytes": "25769803776"
+  },
+  "python": "3.14.7",
+  "qdrant_client": "Version: 1.19.1",
+  "qdrant_server": {
+    "title": "qdrant - vector search engine",
+    "version": "1.19.1",
+    "commit": "6ab21cac18ebb6f4ae29102c7f8f5cc11affd5de"
+  },
+  "docker": "Docker version 29.7.2, build a7dcaa6",
+  "container": "qdrant/qdrant:v1.19.1 running map[6333/tcp:[{127.0.0.1 6356}] 6334/tcp:[{127.0.0.1 6357}]]",
+  "git_head": "0237118caa143c91aca9729e189f6e30d2079e75",
+  "git_branch": "experiment/attr-runtime-validation",
+  "git_status_tracked": "",
+  "bm25_sha12": "bf606b19ab02",
+  "index_fingerprint_local_copy": "136034d81855 (= service artifacts/qdrant = v55 copy)",
+  "servers": {
+    "A": "127.0.0.1:8056 weight 0 always",
+    "D": "127.0.0.1:8057 weight 0.5 era_plus 30 genre 1 conditional"
+  }
+}

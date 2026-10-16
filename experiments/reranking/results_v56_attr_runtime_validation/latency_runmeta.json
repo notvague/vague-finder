@@ -1,0 +1,451 @@
+{
+  "started_at": "2026-10-16T12:39:32+0900",
+  "rounds": 3,
+  "body": {
+    "top_k": 15,
+    "candidate_k": 30,
+    "explain": true,
+    "defer_clarify": true,
+    "use_rerank": false
+  },
+  "plan_size": 30,
+  "health": {
+    "A": {
+      "status": "ok",
+      "service": "vague-finder-backend",
+      "warmup": {
+        "state": "ready",
+        "elapsed_ms": 370735.2,
+        "stages": {
+          "koe5": {
+            "ms": 7314.6,
+            "outcome": "ok"
+          },
+          "bm25": {
+            "ms": 1128.3,
+            "outcome": "ok"
+          },
+          "siglip2": {
+            "ms": 4964.8,
+            "outcome": "ok"
+          },
+          "clap": {
+            "ms": 1853.5,
+            "outcome": "ok"
+          },
+          "reranker": {
+            "ms": 6.7,
+            "outcome": "skipped: 로컬 CE가 아니다(GeminiListwiseReranker) — 원격 호출은 예열하지 않는다"
+          },
+          "lyrics": {
+            "ms": 354994.5,
+            "outcome": "ok"
+          },
+          "vector_db": {
+            "ms": 472.0,
+            "outcome": "ok"
+          }
+        }
+      },
+      "feedback": {
+        "collection": {
+          "enabled": false,
+          "ready": false,
+          "ttl": null,
+          "ttl_checked_at": null
+        },
+        "index_worker": {
+          "enabled": false,
+          "state": "disabled",
+          "cycles": 0,
+          "last_cycle_at": null,
+          "last_success_at": null,
+          "last_error": null,
+          "last_report": null
+        },
+        "retrieval": {
+          "enabled": false
+        }
+      }
+    },
+    "D": {
+      "status": "ok",
+      "service": "vague-finder-backend",
+      "warmup": {
+        "state": "ready",
+        "elapsed_ms": 366348.3,
+        "stages": {
+          "koe5": {
+            "ms": 7314.9,
+            "outcome": "ok"
+          },
+          "bm25": {
+            "ms": 1139.1,
+            "outcome": "ok"
+          },
+          "siglip2": {
+            "ms": 4926.4,
+            "outcome": "ok"
+          },
+          "clap": {
+            "ms": 1784.9,
+            "outcome": "ok"
+          },
+          "reranker": {
+            "ms": 10.8,
+            "outcome": "skipped: 로컬 CE가 아니다(GeminiListwiseReranker) — 원격 호출은 예열하지 않는다"
+          },
+          "lyrics": {
+            "ms": 350733.8,
+            "outcome": "ok"
+          },
+          "vector_db": {
+            "ms": 438.0,
+            "outcome": "ok"
+          }
+        }
+      },
+      "feedback": {
+        "collection": {
+          "enabled": false,
+          "ready": false,
+          "ttl": null,
+          "ttl_checked_at": null
+        },
+        "index_worker": {
+          "enabled": false,
+          "state": "disabled",
+          "cycles": 0,
+          "last_cycle_at": null,
+          "last_success_at": null,
+          "last_error": null,
+          "last_report": null
+        },
+        "retrieval": {
+          "enabled": false
+        }
+      }
+    }
+  },
+  "v56_status": {
+    "A": {
+      "guard": {
+        "make_genai_client": "blocked",
+        "google.genai.Client": "blocked"
+      },
+      "config": {
+        "env": {
+          "ATTR_FILTER_WEIGHT": "0",
+          "ATTR_FILTER_GATE": "era_plus",
+          "ATTR_FILTER_K": "30",
+          "ATTR_FILTER_USE_GENRE": "1",
+          "ATTR_FILTER_GENRE_POLICY": "always",
+          "QDRANT_URL": "http://127.0.0.1:6356",
+          "QDRANT_PATH": "artifacts/qdrant_eval_v56_local",
+          "CONTEXT_WEIGHT": "",
+          "SEARCH_REFERENCE_YEAR": "2026",
+          "RERANKER_BACKEND": "gemini_listwise",
+          "RERANKER_ENABLED": "",
+          "FEEDBACK_COLLECTION_ENABLED": "0",
+          "FEEDBACK_RETRIEVAL_ENABLED": "",
+          "LYRICS_CACHE_TTL_SECONDS": "",
+          "SEARCH_WARMUP": "",
+          "GEMINI_RERANK_TIMEOUT_SECONDS": "",
+          "GEMINI_RERANK_BUDGET_SECONDS": "",
+          "V56_FAKE_MODE_FILE": "experiments/reranking/results_v56_attr_runtime_validation/ctl/fake_mode_A.json",
+          "V56_FAKE_LOG": "experiments/reranking/results_v56_attr_runtime_validation/fake_calls_A.jsonl",
+          "SEARCH_TIMING_LOG": "experiments/reranking/results_v56_attr_runtime_validation/timing_A.jsonl"
+        },
+        "reranker": {
+          "model_name": "gemini-3.1-flash-lite",
+          "enabled": true,
+          "passes": 1,
+          "max_retries": 3,
+          "max_candidates": 30,
+          "request_timeout_seconds": 20.0,
+          "time_budget_seconds": 30.0,
+          "rerank_weight": 0.85,
+          "use_search_grounding": false,
+          "rare_fact_verification": false
+        }
+      },
+      "fake_calls": 0,
+      "analysis_cache_sources": [
+        {
+          "path": "/private/tmp/vague-finder-attr-runtime-validation/experiments/reranking/results_v49_vertex_baseline/analysis_cache_v06_dev_vertex.json",
+          "split": "dev",
+          "entries": 57,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        },
+        {
+          "path": "/private/tmp/vague-finder-attr-runtime-validation/experiments/reranking/results_v49_vertex_baseline/analysis_cache_v09_dev_vertex.json",
+          "split": "dev",
+          "entries": 59,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        },
+        {
+          "path": "/private/tmp/vague-finder-attr-runtime-validation/experiments/reranking/results_v49_vertex_baseline/analysis_cache_v10_dev_vertex.json",
+          "split": "dev",
+          "entries": 60,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        },
+        {
+          "path": "/private/tmp/vague-finder-attr-final-validation/experiments/reranking/results_v55_attr_final_validation/analysis_cache_v10_test_vertex.json",
+          "split": "test",
+          "entries": 42,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        }
+      ],
+      "analysis_misses": [],
+      "reranker_type": "GeminiListwiseReranker"
+    },
+    "D": {
+      "guard": {
+        "make_genai_client": "blocked",
+        "google.genai.Client": "blocked"
+      },
+      "config": {
+        "env": {
+          "ATTR_FILTER_WEIGHT": "0.5",
+          "ATTR_FILTER_GATE": "era_plus",
+          "ATTR_FILTER_K": "30",
+          "ATTR_FILTER_USE_GENRE": "1",
+          "ATTR_FILTER_GENRE_POLICY": "conditional",
+          "QDRANT_URL": "http://127.0.0.1:6356",
+          "QDRANT_PATH": "artifacts/qdrant_eval_v56_local",
+          "CONTEXT_WEIGHT": "",
+          "SEARCH_REFERENCE_YEAR": "2026",
+          "RERANKER_BACKEND": "gemini_listwise",
+          "RERANKER_ENABLED": "",
+          "FEEDBACK_COLLECTION_ENABLED": "0",
+          "FEEDBACK_RETRIEVAL_ENABLED": "",
+          "LYRICS_CACHE_TTL_SECONDS": "",
+          "SEARCH_WARMUP": "",
+          "GEMINI_RERANK_TIMEOUT_SECONDS": "",
+          "GEMINI_RERANK_BUDGET_SECONDS": "",
+          "V56_FAKE_MODE_FILE": "experiments/reranking/results_v56_attr_runtime_validation/ctl/fake_mode_D.json",
+          "V56_FAKE_LOG": "experiments/reranking/results_v56_attr_runtime_validation/fake_calls_D.jsonl",
+          "SEARCH_TIMING_LOG": "experiments/reranking/results_v56_attr_runtime_validation/timing_D.jsonl"
+        },
+        "reranker": {
+          "model_name": "gemini-3.1-flash-lite",
+          "enabled": true,
+          "passes": 1,
+          "max_retries": 3,
+          "max_candidates": 30,
+          "request_timeout_seconds": 20.0,
+          "time_budget_seconds": 30.0,
+          "rerank_weight": 0.85,
+          "use_search_grounding": false,
+          "rare_fact_verification": false
+        }
+      },
+      "fake_calls": 0,
+      "analysis_cache_sources": [
+        {
+          "path": "/private/tmp/vague-finder-attr-runtime-validation/experiments/reranking/results_v49_vertex_baseline/analysis_cache_v06_dev_vertex.json",
+          "split": "dev",
+          "entries": 57,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        },
+        {
+          "path": "/private/tmp/vague-finder-attr-runtime-validation/experiments/reranking/results_v49_vertex_baseline/analysis_cache_v09_dev_vertex.json",
+          "split": "dev",
+          "entries": 59,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        },
+        {
+          "path": "/private/tmp/vague-finder-attr-runtime-validation/experiments/reranking/results_v49_vertex_baseline/analysis_cache_v10_dev_vertex.json",
+          "split": "dev",
+          "entries": 60,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        },
+        {
+          "path": "/private/tmp/vague-finder-attr-final-validation/experiments/reranking/results_v55_attr_final_validation/analysis_cache_v10_test_vertex.json",
+          "split": "test",
+          "entries": 42,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        }
+      ],
+      "analysis_misses": [],
+      "reranker_type": "GeminiListwiseReranker"
+    }
+  },
+  "finished_at": "2026-10-16T12:39:59+0900",
+  "v56_status_after": {
+    "A": {
+      "guard": {
+        "make_genai_client": "blocked",
+        "google.genai.Client": "blocked"
+      },
+      "config": {
+        "env": {
+          "ATTR_FILTER_WEIGHT": "0",
+          "ATTR_FILTER_GATE": "era_plus",
+          "ATTR_FILTER_K": "30",
+          "ATTR_FILTER_USE_GENRE": "1",
+          "ATTR_FILTER_GENRE_POLICY": "always",
+          "QDRANT_URL": "http://127.0.0.1:6356",
+          "QDRANT_PATH": "artifacts/qdrant_eval_v56_local",
+          "CONTEXT_WEIGHT": "",
+          "SEARCH_REFERENCE_YEAR": "2026",
+          "RERANKER_BACKEND": "gemini_listwise",
+          "RERANKER_ENABLED": "",
+          "FEEDBACK_COLLECTION_ENABLED": "0",
+          "FEEDBACK_RETRIEVAL_ENABLED": "",
+          "LYRICS_CACHE_TTL_SECONDS": "",
+          "SEARCH_WARMUP": "",
+          "GEMINI_RERANK_TIMEOUT_SECONDS": "",
+          "GEMINI_RERANK_BUDGET_SECONDS": "",
+          "V56_FAKE_MODE_FILE": "experiments/reranking/results_v56_attr_runtime_validation/ctl/fake_mode_A.json",
+          "V56_FAKE_LOG": "experiments/reranking/results_v56_attr_runtime_validation/fake_calls_A.jsonl",
+          "SEARCH_TIMING_LOG": "experiments/reranking/results_v56_attr_runtime_validation/timing_A.jsonl"
+        },
+        "reranker": {
+          "model_name": "gemini-3.1-flash-lite",
+          "enabled": true,
+          "passes": 1,
+          "max_retries": 3,
+          "max_candidates": 30,
+          "request_timeout_seconds": 20.0,
+          "time_budget_seconds": 30.0,
+          "rerank_weight": 0.85,
+          "use_search_grounding": false,
+          "rare_fact_verification": false
+        }
+      },
+      "fake_calls": 0,
+      "analysis_cache_sources": [
+        {
+          "path": "/private/tmp/vague-finder-attr-runtime-validation/experiments/reranking/results_v49_vertex_baseline/analysis_cache_v06_dev_vertex.json",
+          "split": "dev",
+          "entries": 57,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        },
+        {
+          "path": "/private/tmp/vague-finder-attr-runtime-validation/experiments/reranking/results_v49_vertex_baseline/analysis_cache_v09_dev_vertex.json",
+          "split": "dev",
+          "entries": 59,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        },
+        {
+          "path": "/private/tmp/vague-finder-attr-runtime-validation/experiments/reranking/results_v49_vertex_baseline/analysis_cache_v10_dev_vertex.json",
+          "split": "dev",
+          "entries": 60,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        },
+        {
+          "path": "/private/tmp/vague-finder-attr-final-validation/experiments/reranking/results_v55_attr_final_validation/analysis_cache_v10_test_vertex.json",
+          "split": "test",
+          "entries": 42,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        }
+      ],
+      "analysis_misses": [],
+      "reranker_type": "GeminiListwiseReranker"
+    },
+    "D": {
+      "guard": {
+        "make_genai_client": "blocked",
+        "google.genai.Client": "blocked"
+      },
+      "config": {
+        "env": {
+          "ATTR_FILTER_WEIGHT": "0.5",
+          "ATTR_FILTER_GATE": "era_plus",
+          "ATTR_FILTER_K": "30",
+          "ATTR_FILTER_USE_GENRE": "1",
+          "ATTR_FILTER_GENRE_POLICY": "conditional",
+          "QDRANT_URL": "http://127.0.0.1:6356",
+          "QDRANT_PATH": "artifacts/qdrant_eval_v56_local",
+          "CONTEXT_WEIGHT": "",
+          "SEARCH_REFERENCE_YEAR": "2026",
+          "RERANKER_BACKEND": "gemini_listwise",
+          "RERANKER_ENABLED": "",
+          "FEEDBACK_COLLECTION_ENABLED": "0",
+          "FEEDBACK_RETRIEVAL_ENABLED": "",
+          "LYRICS_CACHE_TTL_SECONDS": "",
+          "SEARCH_WARMUP": "",
+          "GEMINI_RERANK_TIMEOUT_SECONDS": "",
+          "GEMINI_RERANK_BUDGET_SECONDS": "",
+          "V56_FAKE_MODE_FILE": "experiments/reranking/results_v56_attr_runtime_validation/ctl/fake_mode_D.json",
+          "V56_FAKE_LOG": "experiments/reranking/results_v56_attr_runtime_validation/fake_calls_D.jsonl",
+          "SEARCH_TIMING_LOG": "experiments/reranking/results_v56_attr_runtime_validation/timing_D.jsonl"
+        },
+        "reranker": {
+          "model_name": "gemini-3.1-flash-lite",
+          "enabled": true,
+          "passes": 1,
+          "max_retries": 3,
+          "max_candidates": 30,
+          "request_timeout_seconds": 20.0,
+          "time_budget_seconds": 30.0,
+          "rerank_weight": 0.85,
+          "use_search_grounding": false,
+          "rare_fact_verification": false
+        }
+      },
+      "fake_calls": 0,
+      "analysis_cache_sources": [
+        {
+          "path": "/private/tmp/vague-finder-attr-runtime-validation/experiments/reranking/results_v49_vertex_baseline/analysis_cache_v06_dev_vertex.json",
+          "split": "dev",
+          "entries": 57,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        },
+        {
+          "path": "/private/tmp/vague-finder-attr-runtime-validation/experiments/reranking/results_v49_vertex_baseline/analysis_cache_v09_dev_vertex.json",
+          "split": "dev",
+          "entries": 59,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        },
+        {
+          "path": "/private/tmp/vague-finder-attr-runtime-validation/experiments/reranking/results_v49_vertex_baseline/analysis_cache_v10_dev_vertex.json",
+          "split": "dev",
+          "entries": 60,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        },
+        {
+          "path": "/private/tmp/vague-finder-attr-final-validation/experiments/reranking/results_v55_attr_final_validation/analysis_cache_v10_test_vertex.json",
+          "split": "test",
+          "entries": 42,
+          "gemini_backend": "vertex",
+          "prompt_sha": "80c464515d9c",
+          "postprocess_sha": "f18778f8f94d"
+        }
+      ],
+      "analysis_misses": [],
+      "reranker_type": "GeminiListwiseReranker"
+    }
+  }
+}
