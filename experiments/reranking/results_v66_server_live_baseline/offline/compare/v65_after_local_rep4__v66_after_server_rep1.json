@@ -1,0 +1,1323 @@
+{
+ "pair": "after_local_rep4 vs after_server_rep1",
+ "a": "/private/tmp/vague-finder-deterministic-ties/experiments/reranking/results_v65_deterministic_ties/offline/after_local_rep4 (v65 기록, 그룹 번호 없음 — 프롬프트 열 비교 무효)",
+ "b": "experiments/reranking/results_v66_server_live_baseline/offline/stability/after_server_rep1",
+ "a_done": true,
+ "b_done": true,
+ "queries": 176,
+ "missing_either": [],
+ "fields_compared": [
+  "cand_ids",
+  "cand_scores",
+  "lyrics",
+  "protection",
+  "rerank_input",
+  "prompts",
+  "final"
+ ],
+ "input_identical": 20,
+ "input_diff_queries": [
+  "c601",
+  "c602",
+  "c603",
+  "c605",
+  "c607",
+  "c701",
+  "c705",
+  "c706",
+  "c707",
+  "m102",
+  "m103",
+  "m104",
+  "m201",
+  "m202",
+  "m203",
+  "m302",
+  "m303",
+  "m402",
+  "m403",
+  "n002",
+  "n006",
+  "n007",
+  "n009",
+  "n010",
+  "n011",
+  "n013",
+  "n014",
+  "n016",
+  "n017",
+  "n018",
+  "n019",
+  "n020",
+  "n021",
+  "n025",
+  "n029",
+  "n030",
+  "n031",
+  "n033",
+  "n034",
+  "n035",
+  "n038",
+  "n039",
+  "n040",
+  "n042",
+  "n043",
+  "n044",
+  "n045",
+  "n046",
+  "n048",
+  "n051",
+  "n054",
+  "n055",
+  "n057",
+  "n058",
+  "n061",
+  "n062",
+  "n064",
+  "n065",
+  "n071",
+  "n072",
+  "n081",
+  "n082",
+  "n086",
+  "n088",
+  "n089",
+  "n090",
+  "n093",
+  "n095",
+  "n096",
+  "n097",
+  "q101",
+  "q103",
+  "q104",
+  "q105",
+  "q106",
+  "q107",
+  "q108",
+  "q110",
+  "q112",
+  "q113",
+  "q114",
+  "q115",
+  "q202",
+  "q203",
+  "q205",
+  "q206",
+  "q207",
+  "q208",
+  "q209",
+  "q210",
+  "q211",
+  "q213",
+  "q215",
+  "q218",
+  "q219",
+  "q308",
+  "q310",
+  "q311",
+  "q312",
+  "q313",
+  "q314",
+  "q316",
+  "q318",
+  "t001",
+  "t003",
+  "t004",
+  "t007",
+  "t008",
+  "t009",
+  "t010",
+  "t011",
+  "t016",
+  "t018",
+  "t024",
+  "t025",
+  "t026",
+  "t029",
+  "t031",
+  "t032",
+  "t033",
+  "t036",
+  "t037",
+  "t038",
+  "t039",
+  "t040",
+  "t041",
+  "t042",
+  "t043",
+  "t044",
+  "t046",
+  "t053",
+  "t058",
+  "t060",
+  "t062",
+  "t063",
+  "t068",
+  "t070",
+  "t071",
+  "t073",
+  "t075",
+  "t077",
+  "t078",
+  "t079",
+  "t080",
+  "t083",
+  "t084",
+  "t085",
+  "t100",
+  "t101",
+  "t103",
+  "t104",
+  "t105",
+  "t107",
+  "t108",
+  "t110",
+  "t111"
+ ],
+ "diff_counts": {
+  "cand_ids": 2,
+  "cand_scores": 0,
+  "lyrics": 0,
+  "protection": 0,
+  "rerank_input": 1,
+  "prompts": 155,
+  "final": 2
+ },
+ "diff_queries": {
+  "cand_ids": [
+   "n071",
+   "q205"
+  ],
+  "rerank_input": [
+   "q205"
+  ],
+  "prompts": [
+   "c601",
+   "c602",
+   "c603",
+   "c605",
+   "c607",
+   "c701",
+   "c705",
+   "c706",
+   "c707",
+   "m102",
+   "m103",
+   "m104",
+   "m201",
+   "m202",
+   "m203",
+   "m302",
+   "m303",
+   "m402",
+   "m403",
+   "n002",
+   "n006",
+   "n007",
+   "n009",
+   "n010",
+   "n011",
+   "n013",
+   "n014",
+   "n016",
+   "n017",
+   "n018",
+   "n019",
+   "n020",
+   "n021",
+   "n025",
+   "n029",
+   "n030",
+   "n031",
+   "n033",
+   "n034",
+   "n035",
+   "n038",
+   "n039",
+   "n040",
+   "n042",
+   "n043",
+   "n044",
+   "n045",
+   "n046",
+   "n048",
+   "n051",
+   "n054",
+   "n055",
+   "n057",
+   "n058",
+   "n061",
+   "n062",
+   "n064",
+   "n065",
+   "n072",
+   "n081",
+   "n082",
+   "n086",
+   "n088",
+   "n089",
+   "n090",
+   "n093",
+   "n095",
+   "n096",
+   "n097",
+   "q101",
+   "q103",
+   "q104",
+   "q105",
+   "q106",
+   "q107",
+   "q108",
+   "q110",
+   "q112",
+   "q113",
+   "q114",
+   "q115",
+   "q202",
+   "q203",
+   "q205",
+   "q206",
+   "q207",
+   "q208",
+   "q209",
+   "q210",
+   "q211",
+   "q213",
+   "q215",
+   "q218",
+   "q219",
+   "q308",
+   "q310",
+   "q311",
+   "q312",
+   "q313",
+   "q314",
+   "q316",
+   "q318",
+   "t001",
+   "t003",
+   "t004",
+   "t007",
+   "t008",
+   "t009",
+   "t010",
+   "t011",
+   "t016",
+   "t018",
+   "t024",
+   "t025",
+   "t026",
+   "t029",
+   "t031",
+   "t032",
+   "t033",
+   "t036",
+   "t037",
+   "t038",
+   "t039",
+   "t040",
+   "t041",
+   "t042",
+   "t043",
+   "t044",
+   "t046",
+   "t053",
+   "t058",
+   "t060",
+   "t062",
+   "t063",
+   "t068",
+   "t070",
+   "t071",
+   "t073",
+   "t075",
+   "t077",
+   "t078",
+   "t079",
+   "t080",
+   "t083",
+   "t084",
+   "t085",
+   "t100",
+   "t101",
+   "t103",
+   "t104",
+   "t105",
+   "t107",
+   "t108",
+   "t110",
+   "t111"
+  ],
+  "final": [
+   "n071",
+   "q205"
+  ]
+ },
+ "cand_set_diff_queries": [],
+ "path_diff_query_ids": {
+  "context_profile:context-sparse-bm25": [
+   "c707"
+  ],
+  "index:image-768": [
+   "n071",
+   "q205"
+  ]
+ },
+ "groups_not_sent": {},
+ "retry_prompt_changed_queries": [
+  "n007",
+  "n064",
+  "q211",
+  "t003",
+  "t018",
+  "t025"
+ ],
+ "per_query": {
+  "c601": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "c602": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "c603": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "c605": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "c607": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "c701": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "c705": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "c706": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "c707": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": [
+    "context_profile:context-sparse-bm25"
+   ]
+  },
+  "m102": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "m103": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "m104": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "m201": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "m202": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "m203": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "m302": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "m303": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "m402": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "m403": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n002": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n006": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n007": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n009": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n010": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n011": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n013": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n014": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n016": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n017": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n018": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n019": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n020": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n021": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n025": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n029": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n030": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n031": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n033": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n034": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n035": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n038": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n039": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n040": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n042": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n043": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n044": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n045": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n046": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n048": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n051": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n054": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n055": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n057": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n058": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n061": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n062": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n064": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n065": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n071": {
+   "fields": [
+    "cand_ids",
+    "final"
+   ],
+   "paths": [
+    "index:image-768"
+   ]
+  },
+  "n072": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n081": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n082": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n086": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n088": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n089": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n090": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n093": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n095": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n096": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "n097": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q101": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q103": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q104": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q105": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q106": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q107": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q108": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q110": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q112": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q113": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q114": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q115": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q202": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q203": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q205": {
+   "fields": [
+    "cand_ids",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:image-768"
+   ]
+  },
+  "q206": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q207": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q208": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q209": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q210": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q211": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q213": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q215": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q218": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q219": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q308": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q310": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q311": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q312": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q313": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q314": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q316": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "q318": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t001": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t003": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t004": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t007": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t008": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t009": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t010": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t011": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t016": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t018": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t024": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t025": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t026": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t029": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t031": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t032": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t033": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t036": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t037": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t038": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t039": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t040": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t041": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t042": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t043": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t044": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t046": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t053": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t058": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t060": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t062": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t063": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t068": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t070": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t071": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t073": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t075": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t077": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t078": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t079": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t080": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t083": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t084": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t085": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t100": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t101": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t103": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t104": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t105": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t107": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t108": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t110": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  },
+  "t111": {
+   "fields": [
+    "prompts"
+   ],
+   "paths": []
+  }
+ }
+}
