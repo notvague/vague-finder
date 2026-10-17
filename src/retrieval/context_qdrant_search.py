@@ -45,6 +45,8 @@ from src.vector_db.qdrant_backend import (
     SPARSE_VECTOR,
     QdrantVectorClient,
     collection_name,
+    complete_top_points,
+    song_id_sort_key,
 )
 from src.vector_db.settings import (
     CONTEXT_DENSE_DIM,
@@ -182,6 +184,14 @@ class ContextQdrantSearch:
         expected_dense_dim: int = CONTEXT_DENSE_DIM,
     ) -> None:
         self.client = vector_client.client
+        # Server Qdrant may build HNSW once a segment passes the indexing
+        # threshold; ``complete_top_points`` needs exact top-N to prove that
+        # every boundary tie was returned. Local mode always scans and only
+        # warns about search_params, so request exact search on servers only
+        # (same rule as QdrantIndex and the feedback case index).
+        self._search_params = (
+            None if getattr(vector_client, "is_local", False) else models.SearchParams(exact=True)
+        )
         self.dense_alias = collection_name(CONTEXT_DENSE_INDEX_NAME, namespace)
         self.sparse_alias = collection_name(CONTEXT_SPARSE_INDEX_NAME, namespace)
         self.dense_dir = Path(dense_dir or (
@@ -404,6 +414,45 @@ class ContextQdrantSearch:
             raise RuntimeError("context Qdrant hit is incompatible with the active generation")
         return payload
 
+    def _complete(
+        self, search: Callable[[int], Any], limit: int, snapshot: _Snapshot, kind: str, record_field: str,
+    ) -> list:
+        """``complete_top_points`` with the old strictness kept to the top ``limit``.
+
+        Boundary checks also read the (k+1)-th point and any expansion. An
+        incompatible point there used to be invisible, so it must not fail the
+        whole Context path now. It fails only when it would have been inside
+        the result: its score is at least the k-th valid score (or fewer than
+        ``limit`` valid points exist). Non-finite scores count as inside.
+        """
+        invalid: list[float] = []
+
+        def identity(hit: models.ScoredPoint):
+            try:
+                return self._order_key(hit, snapshot, kind, record_field)
+            except RuntimeError:
+                score = float(hit.score)
+                invalid.append(score if math.isfinite(score) else math.inf)
+                return None
+
+        ranked = complete_top_points(search, limit, identity)
+        cutoff = float(ranked[-1][0].score) if len(ranked) >= limit else -math.inf
+        if any(score >= cutoff for score in invalid):
+            raise RuntimeError("context Qdrant hit is incompatible with the active generation")
+        return ranked
+
+    @classmethod
+    def _order_key(
+        cls, hit: models.ScoredPoint, snapshot: _Snapshot, kind: str, record_field: str,
+    ) -> tuple:
+        """Tie order: original song_id, then the persistent fact/profile ID.
+
+        Never the point ID, UUID, insertion order, or backend order. An
+        incompatible point raises as before; it is not silently skipped.
+        """
+        payload = cls._payload(hit, snapshot, kind)
+        return (song_id_sort_key(_required(payload, "song_id")), _required(payload, record_field))
+
     def _media_fact_ids(
         self, snapshot: _Snapshot, targets: tuple[str, ...],
     ) -> list[Any]:
@@ -466,17 +515,24 @@ class ContextQdrantSearch:
         # work name. It is separate from the router's unrestricted recollection
         # lookup; a text filter contributes no score or extra outer RRF vote.
         query_filter = models.Filter(must=[models.HasIdCondition(has_id=ids)]) if ids is not None else None
-        hits = self.client.query_points(
-            collection_name=snapshot.dense_collection,
-            query=vector[0].tolist(),
-            using=DENSE_VECTOR,
-            limit=limit,
-            with_payload=True,
-            with_vectors=False,
-            **({"query_filter": query_filter} if query_filter is not None else {}),
-        ).points
+        # Ties: score desc -> song_id -> persistent record_id, with every fact
+        # tied at the limit fetched first (qdrant_backend.complete_top_points).
+        # Backend return order differs between local and server Qdrant.
+        ranked = self._complete(
+            lambda size: self.client.query_points(
+                collection_name=snapshot.dense_collection,
+                query=vector[0].tolist(),
+                using=DENSE_VECTOR,
+                limit=size,
+                with_payload=True,
+                with_vectors=False,
+                search_params=self._search_params,
+                **({"query_filter": query_filter} if query_filter is not None else {}),
+            ).points,
+            limit, snapshot, "context_fact", "record_id",
+        )
         results = []
-        for hit in hits:
+        for hit, _key in ranked:
             payload = self._payload(hit, snapshot, "context_fact")
             indices = payload.get("source_fact_indices", [])
             if not isinstance(indices, list) or not all(type(i) is int for i in indices):
@@ -500,16 +556,20 @@ class ContextQdrantSearch:
         sparse = self._query_encoder(snapshot).encode(query)
         if not sparse["indices"]:
             return ()
-        hits = self.client.query_points(
-            collection_name=snapshot.sparse_collection,
-            query=models.SparseVector(**sparse),
-            using=SPARSE_VECTOR,
-            limit=limit,
-            with_payload=True,
-            with_vectors=False,
-        ).points
+        ranked = self._complete(
+            lambda size: self.client.query_points(
+                collection_name=snapshot.sparse_collection,
+                query=models.SparseVector(**sparse),
+                using=SPARSE_VECTOR,
+                limit=size,
+                with_payload=True,
+                with_vectors=False,
+                search_params=self._search_params,
+            ).points,
+            limit, snapshot, "context_song_profile", "profile_id",
+        )
         results = []
-        for hit in hits:
+        for hit, _key in ranked:
             payload = self._payload(hit, snapshot, "context_song_profile")
             terms = payload.get("sparse_terms", [])
             if not isinstance(terms, list) or any(not isinstance(term, str) for term in terms):

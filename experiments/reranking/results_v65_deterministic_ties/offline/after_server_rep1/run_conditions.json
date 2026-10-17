@@ -1,0 +1,178 @@
+{
+  "run": "after_server_rep1",
+  "code": "after",
+  "mode": "server",
+  "rep": 1,
+  "sets": [
+    "v06",
+    "v09",
+    "v10"
+  ],
+  "query_ids": "",
+  "started_at": "2026-10-17T11:44:59+0900",
+  "env": {
+    "ATTR_FILTER_WEIGHT": "0",
+    "AUDIO_FUSION_SCALE": "1",
+    "CONTEXT_WEIGHT": "0.5",
+    "FEEDBACK_COLLECTION_ENABLED": "0",
+    "FEEDBACK_INDEX_WORKER_ENABLED": "0",
+    "FEEDBACK_RETRIEVAL_ENABLED": "0",
+    "GCP_LOCATION": "global",
+    "GCP_PROJECT_ID": "v65-offline-no-calls",
+    "GEMINI_MODEL_NAME": "gemini-3.1-flash-lite",
+    "GEMINI_RERANK_RARE_FACT_VERIFY": "0",
+    "GEMINI_RETRIEVAL_BACKEND": "vertex",
+    "HF_HUB_OFFLINE": "1",
+    "RERANKER_BACKEND": "gemini_listwise",
+    "SEARCH_REFERENCE_YEAR": "2026",
+    "TOKENIZERS_PARALLELISM": "false",
+    "TRANSFORMERS_OFFLINE": "1",
+    "QDRANT_PATH": "",
+    "QDRANT_URL": "http://127.0.0.1:6366"
+  },
+  "git_head": "2a6481d",
+  "worktree_src_tests_changes": [
+    " M src/retrieval/context_qdrant_search.py",
+    " M src/vector_db/qdrant_backend.py",
+    " M tests/test_qdrant_backend.py",
+    " M tests/test_v62_hybrid_full_scan.py"
+  ],
+  "status": "complete",
+  "guard_before": {
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "lyrics_mongo_client": "blocked",
+    "make_genai_client": "blocked",
+    "reranker.make_genai_client": "blocked",
+    "adc_credentials": "blocked",
+    "google.genai.Client": "blocked",
+    "network": "blocked",
+    "QDRANT_HYBRID_SCAN_LIMIT": "unset"
+  },
+  "code_identity": {
+    "code": "after",
+    "code_root": ".",
+    "files": {
+      "src.vector_db.qdrant_backend": {
+        "path": "src/vector_db/qdrant_backend.py",
+        "sha256_16": "ae099db8ee4d1b2b"
+      },
+      "src.retrieval.context_qdrant_search": {
+        "path": "src/retrieval/context_qdrant_search.py",
+        "sha256_16": "4178dfe95199b4e5"
+      }
+    }
+  },
+  "lyrics_snapshot": {
+    "db": "vaguefinder",
+    "collection": "songs",
+    "document_count": 5143,
+    "full_lyrics_songs": 5143,
+    "full_lyrics_total_chars": 4076174,
+    "content_sha256_16": "e0d58f28f1f4a563",
+    "source": "v63_snapshot",
+    "snapshot_file_sha256_16": "295b7a508c12cc34"
+  },
+  "qdrant_open_seconds": 0.064,
+  "reference_build_seconds": 7.43,
+  "index_fingerprint": {
+    "collection": "vaguefinder-text-1024-koe5__dev",
+    "points": 5143,
+    "dense_dim": 1024,
+    "sparse_nnz": 1061090,
+    "sparse_vocab": 44486,
+    "content_sha256_16": "238299e6c8c17f2a"
+  },
+  "collections": {
+    "vaguefinder-audio-512__dev": 5143,
+    "vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf": 5054,
+    "vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf": 639,
+    "vaguefinder-image-768__dev": 5143,
+    "vaguefinder-text-1024-koe5__dev": 5143,
+    "vaguefinder-context-dense-1024-koe5__dev": 5054,
+    "vaguefinder-context-sparse-bm25__dev": 639
+  },
+  "sets_done": {
+    "v06": {
+      "seconds": 16.883,
+      "rows": 57,
+      "queries_recorded": 57,
+      "unattributed_rows": false,
+      "qdrant_logical_calls": 196,
+      "qdrant_classes": {
+        "context_fact:context-dense-1024-koe5:identical": 19,
+        "context_profile:context-sparse-bm25:identical": 19,
+        "index:audio-512:identical": 39,
+        "index:image-768:identical": 13,
+        "index:image-768:near_tie": 1,
+        "index:text-1024-koe5:identical": 105
+      },
+      "raw_outside_logical": {
+        "count": 1,
+        "retrieve": 8
+      },
+      "lyrics_errors": 0,
+      "offline_generate_calls": 53
+    },
+    "v09": {
+      "seconds": 7.921,
+      "rows": 59,
+      "queries_recorded": 59,
+      "unattributed_rows": false,
+      "qdrant_logical_calls": 183,
+      "qdrant_classes": {
+        "context_fact:context-dense-1024-koe5:identical": 11,
+        "context_fact:context-dense-1024-koe5:no_query": 2,
+        "context_profile:context-sparse-bm25:identical": 13,
+        "index:audio-512:identical": 39,
+        "index:image-768:identical": 15,
+        "index:image-768:near_tie": 1,
+        "index:text-1024-koe5:identical": 102
+      },
+      "raw_outside_logical": {
+        "count": 2,
+        "retrieve": 13
+      },
+      "lyrics_errors": 0,
+      "offline_generate_calls": 107
+    },
+    "v10": {
+      "seconds": 8.244,
+      "rows": 60,
+      "queries_recorded": 60,
+      "unattributed_rows": false,
+      "qdrant_logical_calls": 193,
+      "qdrant_classes": {
+        "context_fact:context-dense-1024-koe5:identical": 16,
+        "context_fact:context-dense-1024-koe5:no_query": 2,
+        "context_profile:context-sparse-bm25:identical": 18,
+        "index:audio-512:identical": 36,
+        "index:image-768:identical": 17,
+        "index:text-1024-koe5:identical": 104
+      },
+      "raw_outside_logical": {
+        "count": 3,
+        "retrieve": 19
+      },
+      "lyrics_errors": 0,
+      "offline_generate_calls": 163
+    }
+  },
+  "cold_before_first_query_seconds": 10.362,
+  "guard_after": {
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "lyrics_mongo_client": "blocked",
+    "make_genai_client": "blocked",
+    "reranker.make_genai_client": "blocked",
+    "adc_credentials": "blocked",
+    "google.genai.Client": "blocked",
+    "network": "blocked",
+    "QDRANT_HYBRID_SCAN_LIMIT": "unset"
+  },
+  "network_attempts": [],
+  "lyrics_source_reads": 1,
+  "finished_at": "2026-10-17T11:45:42+0900",
+  "total_seconds": 43.435,
+  "ru_maxrss_bytes": 4060315648
+}

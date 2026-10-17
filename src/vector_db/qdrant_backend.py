@@ -29,6 +29,22 @@ Qdrant 벡터 클라이언트.
 - 이미지·오디오: 저장된 벡터가 전부 L2 정규화되어 있어 cosine == dot이다.
 - 정확 검색(`exact=True`)을 쓴다. 근사 검색은 측정할 때마다 순위가 흔들릴 수 있다.
 
+동점 순서(2026-10-17, v65)
+---------------------------
+결과 순서는 **점수 내림차순 → 원래 곡 id(`song_id_sort_key`) 오름차순**이다. 백엔드 반환 순서·point id·UUID·삽입
+순서는 쓰지 않는다. 같은 표지라 이미지 벡터가 바이트까지 같은 곡이 1,395곡(495묶음) 있어서, 동점끼리의 반환 순서가
+로컬 파일 모드와 서버 모드에서 달랐고 dev 176 중 34질의의 후보가 갈렸다(v64 §7-①).
+- 동점은 백엔드가 돌려준 점수가 **정확히 같을 때만**이다. epsilon·반올림은 넣지 않는다.
+- 상위 k개를 자를 때 k번째 점수와 같은 점을 **모두** 받은 뒤 정렬해 자른다(`complete_top_points`). 반환된 k개만
+  다시 정렬하면 백엔드가 이미 잘라 낸 동점이 복구되지 않는다 — 경계 동점 묶음 중 어느 곡이 들어올지가 백엔드마다 다르다.
+  첫 조회는 k+1개다. (k+1)번째 점수가 k번째보다 낮으면 그것으로 끝이고(추가 비용 1점), 같으면 limit을 두 배씩 늘려
+  마지막 반환 점수가 k번째 점수보다 낮아질 때(또는 대상이 끝날 때)까지 다시 조회한다. 고정 상한은 없다.
+- 하이브리드는 v62부터 전수 조회라 집합은 이미 완전하다. 합산 정렬에 같은 키를 쓰고, 키를 얻으려고 **경계까지의 점**
+  (top_k + 경계 동점)만 payload를 읽는다.
+- 곡 id는 payload의 `song_id`(앞뒤 공백 제거)다. 그것이 없거나 빈 점은 후보가 아니다(조회당 경고 한 번 — point id로
+  대신하지 않는다). 같은 song_id의 점이 둘이면 앞자리만 남긴다(적재기는 `point_id(song_id)`로 점을 만들어 이런 점이 없다).
+  정렬·중복 제거 규칙은 `rank_unique` 하나다.
+
 로컬 모드(파일 경로)가 기본이다. QDRANT_URL을 주면 서버에 붙는다.
 """
 from __future__ import annotations
@@ -36,7 +52,7 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, TypeVar, Union
 
 from qdrant_client import QdrantClient, models
 
@@ -121,6 +137,84 @@ def point_id(song_id: str) -> int | str:
     import uuid
 
     return str(uuid.uuid5(uuid.NAMESPACE_URL, text))
+
+
+def song_id_sort_key(song_id: Any) -> Tuple[int, int, str]:
+    """동점일 때 쓰는 곡 id 순서 키. 앞뒤 공백을 뗀 문자열 `s`에 대해
+
+    - ASCII 숫자만이면 `(0, int(s), s)` — **숫자 값 순**(같은 값이면 문자열 순). 곡 id는 멜론 숫자 id이고 길이가
+      4~9자리로 섞여 있어(2026-10 색인) 문자열 순서("9999" > "10000")는 id의 뜻과 어긋난다.
+    - 그 밖은 `(1, 0, s)` — 숫자형 뒤, 유니코드 코드포인트 순(정규화하지 않는다).
+
+    자료의 형식만 보고 정한 규칙이다. 평가 결과가 좋아지는 쪽으로 고른 것이 아니다.
+    """
+    text = str(song_id).strip()
+    if text.isascii() and text.isdigit():
+        return (0, int(text), text)
+    return (1, 0, text)
+
+
+_K = TypeVar("_K")
+_T = TypeVar("_T")
+
+
+def rank_unique(
+    items: Sequence[_T],
+    score: Callable[[_T], float],
+    key: Callable[[_T], Any],
+    point: Callable[[_T], Any],
+) -> List[_T]:
+    """동점 순서 계약의 정렬·중복 제거를 한 곳에서 한다 — 단일 벡터·Context 조회(`complete_top_points`)와 하이브리드
+    (`QdrantIndex._hybrid_top`)가 같이 쓴다.
+
+    (점수 내림차순, 키 오름차순)으로 정렬하고 같은 키는 앞자리 하나만 남긴다. 같은 키·같은 점수의 점이 둘인 경우(적재기는
+    만들지 않는 자료 오류)에 어느 점의 payload를 쓸지만 point id 문자열로 정한다 — 곡 사이의 순서에는 point id를 쓰지 않는다.
+    """
+    ordered = sorted(items, key=lambda item: (-float(score(item)), key(item), str(point(item))))
+    seen = set()
+    unique: List[_T] = []
+    for item in ordered:
+        k = key(item)
+        if k in seen:
+            continue
+        seen.add(k)
+        unique.append(item)
+    return unique
+
+
+def complete_top_points(
+    search: Callable[[int], Sequence[models.ScoredPoint]],
+    top_k: int,
+    identity: Callable[[models.ScoredPoint], Optional[_K]],
+) -> List[Tuple[models.ScoredPoint, _K]]:
+    """정확 검색으로 상위 `top_k`개를 **경계 동점까지 빠짐없이** 받아 (점수 내림차순, `identity` 키 오름차순)으로 자른다.
+
+    `search(limit)`는 점수 내림차순 상위 `limit`개를 돌려주는 **정확 검색**이어야 한다(서버는 `SearchParams(exact=True)`,
+    로컬 모드는 원래 전수 비교). 근사 검색(HNSW)이면 아래 종료 조건의 전제가 성립하지 않는다.
+    `identity(hit)`는 정렬 키(원래 id에서 만든 값)를 돌려주고, 후보가 아닌 점이면 None을 돌려준다.
+
+    첫 조회는 `top_k + 1`개다. 반환이 limit보다 적으면 대상 전부를 받은 것이고, 마지막 반환 점수가 k번째 유효 점수보다
+    낮으면 그 점수 이상인 점은 전부 들어 있다(받지 않은 점은 마지막 반환 점수 이하이므로). 둘 다 아니면 limit을 두 배로
+    늘려 다시 조회한다. 동점은 점수가 정확히 같을 때만이다. 같은 키가 두 번 오면 앞자리만 남긴다(`rank_unique`).
+    """
+    if top_k < 1:
+        return []
+    limit = top_k + 1
+    while True:
+        hits = list(search(limit))
+        keyed: List[Tuple[models.ScoredPoint, _K]] = []
+        for hit in hits:
+            key = identity(hit)
+            if key is not None:
+                keyed.append((hit, key))
+        unique = rank_unique(keyed, lambda item: item[0].score, lambda item: item[1], lambda item: item[0].id)
+        if len(hits) < limit:
+            return unique[:top_k]
+        if len(unique) >= top_k:
+            cutoff = float(unique[top_k - 1][0].score)
+            if min(float(hit.score) for hit in hits) < cutoff:
+                return unique[:top_k]
+        limit *= 2
 
 
 _RANGE_OPS = {"$gt": "gt", "$gte": "gte", "$lt": "lt", "$lte": "lte"}
@@ -268,17 +362,43 @@ class QdrantIndex:
         collection = collection_name(self._index_name, namespace)
         query_filter = translate_filter(filter)
 
-        hybrid = sparse_vector is not None
-        if hybrid:
-            # 두 조회의 limit = 지금 이 요청의 대상 수(필터가 있으면 필터를 통과하는 점 수). 전수 합산의
-            # 조건이다. 요청마다 새로 센다(캐시 없음). count와 조회 사이의 동시 적재는 감지하지 못한다
-            # — 모듈 설명 "정확성의 전제". 실패는 다른 조회와 같이 기록하고 그대로 전파한다.
-            scan_limit = self._count(collection, query_filter)
-            if scan_limit <= 0:
-                # 대상이 없으면 조회할 것도, 읽을 페이로드도 없다
-                return {"matches": []}
-        else:
-            scan_limit = top_k
+        if sparse_vector is None:
+            # 단일 벡터 조회: k+1개부터 받아 경계 동점이 있으면 넓힌다(모듈 설명 "동점 순서"). 곡 id 키가 필요해
+            # 메타데이터를 안 받는 호출도 payload의 song_id만은 받는다.
+            dropped: Set[Any] = set()
+
+            def identity(hit: models.ScoredPoint) -> Optional[Tuple[Tuple[int, int, str], str]]:
+                key = self._song_identity(hit.payload)
+                if key is None:
+                    dropped.add(hit.id)
+                return key
+
+            ranked = complete_top_points(
+                lambda limit: self._search(
+                    collection,
+                    query=list(vector),
+                    using=DENSE_VECTOR,
+                    limit=limit,
+                    query_filter=query_filter,
+                    with_payload=True if include_metadata else ["song_id"],
+                ),
+                top_k,
+                identity,
+            )
+            self._warn_dropped(collection, dropped)
+            return {
+                "matches": [
+                    self._match(hit, include_metadata, song_id=key[1]) for hit, key in ranked
+                ]
+            }
+
+        # 두 조회의 limit = 지금 이 요청의 대상 수(필터가 있으면 필터를 통과하는 점 수). 전수 합산의
+        # 조건이다. 요청마다 새로 센다(캐시 없음). count와 조회 사이의 동시 적재는 감지하지 못한다
+        # — 모듈 설명 "정확성의 전제". 실패는 다른 조회와 같이 기록하고 그대로 전파한다.
+        scan_limit = self._count(collection, query_filter)
+        if scan_limit <= 0 or top_k < 1:
+            # 대상이 없으면 조회할 것도, 읽을 페이로드도 없다
+            return {"matches": []}
 
         dense_hits = self._search(
             collection,
@@ -286,12 +406,9 @@ class QdrantIndex:
             using=DENSE_VECTOR,
             limit=scan_limit,
             query_filter=query_filter,
-            # 전수 합산용 조회는 점수만 받는다. 페이로드는 아래에서 top_k만 읽는다
-            with_payload=include_metadata and not hybrid,
+            # 전수 합산용 조회는 점수만 받는다. 페이로드는 아래에서 경계까지의 점만 읽는다
+            with_payload=False,
         )
-
-        if not hybrid:
-            return {"matches": [self._match(hit, include_metadata) for hit in dense_hits[:top_k]]}
 
         sparse_hits = self._search(
             collection,
@@ -316,21 +433,67 @@ class QdrantIndex:
             else:
                 entry["score"] += float(hit.score)
 
-        ordered = sorted(merged.values(), key=lambda e: e["score"], reverse=True)[:top_k]
-        payloads = (
-            self._payloads(collection, [entry["hit"].id for entry in ordered])
-            if include_metadata
-            else {}
-        )
+        by_score = sorted(merged.values(), key=lambda e: e["score"], reverse=True)
+        ranked = self._hybrid_top(collection, by_score, top_k, include_metadata)
         return {
             "matches": [
                 self._match(
                     entry["hit"], include_metadata, score=entry["score"],
-                    payload=payloads.get(entry["hit"].id),
+                    payload=payload, song_id=key[1],
                 )
-                for entry in ordered
+                for entry, key, payload in ranked
             ]
         }
+
+    def _hybrid_top(
+        self,
+        collection: str,
+        by_score: List[Dict[str, Any]],
+        top_k: int,
+        include_metadata: bool,
+    ) -> List[Tuple[Dict[str, Any], Tuple[Tuple[int, int, str], str], Dict[str, Any]]]:
+        """전수 합산 목록(점수 내림차순)에서 경계 동점까지의 점만 payload를 읽어 (점수, 곡 id 키)로 top_k를 고른다.
+
+        읽을 범위 = 유효한 곡이 top_k개 될 때까지 + 마지막 점수와 같은 점 전부. payload가 없거나 곡 id가 맞지 않는 점은
+        후보가 아니므로, 그런 점이 섞여 모자라면 다음 점수 묶음까지 더 읽는다(실자료에서는 한 번에 끝난다).
+        """
+        fields = None if include_metadata else ["song_id"]
+        valid: List[Tuple[Dict[str, Any], Tuple[Tuple[int, int, str], str], Dict[str, Any]]] = []
+        keys: Set[Tuple[Tuple[int, int, str], str]] = set()
+        dropped: Set[Any] = set()
+        start = 0
+        # 종료는 **서로 다른 곡** 수로 판단한다 — 같은 song_id의 점이 섞여도 top_k개를 채운다(단일 벡터 경로와 같은 규칙)
+        while start < len(by_score) and len(keys) < top_k:
+            end = min(len(by_score), start + top_k - len(keys))
+            while end < len(by_score) and by_score[end]["score"] == by_score[end - 1]["score"]:
+                end += 1
+            chunk = by_score[start:end]
+            payloads = self._payloads(collection, [entry["hit"].id for entry in chunk], fields=fields)
+            for entry in chunk:
+                payload = payloads.get(entry["hit"].id)
+                key = self._song_identity(payload)
+                if key is None:
+                    dropped.add(entry["hit"].id)
+                    continue
+                valid.append((entry, key, payload or {}))
+                keys.add(key)
+            start = end
+        self._warn_dropped(collection, dropped)
+        unique = rank_unique(valid, lambda item: item[0]["score"], lambda item: item[1], lambda item: item[0]["hit"].id)
+        return unique[:top_k]
+
+    @staticmethod
+    def _song_identity(payload: Optional[Dict[str, Any]]) -> Optional[Tuple[Tuple[int, int, str], str]]:
+        """(정렬 키, 곡 id). payload의 song_id가 없거나 비면 None — 후보가 아니다(point id로 대신하지 않는다).
+
+        v65에서 바꾼 동작이다: 예전에는 point id를 곡 id로 대신 썼다. `qdrant_load`가 만든 색인은 모든 점에 song_id가
+        있다(2026-10 색인 5,143/5,143). song_id 없는 자료로 만든 컬렉션이면 결과가 비고, 경계 확인이 대상 전체까지
+        넓어진다 — 조용히 point id를 곡 id로 내보내는 대신 경고로 드러낸다(`_warn_dropped`, 조회당 한 번).
+        """
+        song_id = str((payload or {}).get("song_id", "")).strip()
+        if not song_id:
+            return None
+        return (song_id_sort_key(song_id), song_id)
 
     def fetch(
         self,
@@ -387,6 +550,15 @@ class QdrantIndex:
             ],
         }
 
+    @staticmethod
+    def _warn_dropped(collection: str, dropped: Set[Any]) -> None:
+        """payload song_id가 없어 뺀 점을 조회당 한 번만 알린다(점마다 찍지 않는다)."""
+        if dropped:
+            logger.warning(
+                "[Qdrant] %s: payload song_id가 없는 점 %d개를 결과에서 뺐습니다(예: %s)",
+                collection, len(dropped), sorted(map(str, dropped))[:3],
+            )
+
     def _payloads(
         self,
         collection: str,
@@ -442,7 +614,7 @@ class QdrantIndex:
         using: str,
         limit: int,
         query_filter: Optional[models.Filter],
-        with_payload: bool,
+        with_payload: Union[bool, Sequence[str]],
     ) -> List[models.ScoredPoint]:
         try:
             response = self._client.query_points(
@@ -465,9 +637,11 @@ class QdrantIndex:
         include_metadata: bool,
         score: Optional[float] = None,
         payload: Optional[Dict[str, Any]] = None,
+        song_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         payload = dict((hit.payload if payload is None else payload) or {})
-        song_id = str(payload.pop("song_id", hit.id))
+        stored = payload.pop("song_id", hit.id)
+        song_id = str(stored) if song_id is None else song_id
         return {
             "id": song_id,
             "score": float(hit.score if score is None else score),

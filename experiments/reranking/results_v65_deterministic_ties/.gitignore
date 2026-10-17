@@ -1,0 +1,20 @@
+# v65 — 로컬 재현 자료(커밋 제외). 보고서·도구·실행 조건·요약·비교표만 커밋한다.
+# 질의별 원기록(후보 30·점수·그룹·프롬프트 sha·Qdrant 논리 조회 — 실행당 수 MB)과 평가기 설명 기록
+**/v65_queries.jsonl
+**/v65_qdrant_calls.jsonl
+**/search_eval_*_explain.jsonl
+**/search_eval_*_detail.csv
+**/search_eval_*_lyric_boosts.csv
+**/search_eval_*_checkpoint*.json
+# HTTP 요청별 원기록(후보·결과·가짜 호출 sha·가사 호출) — 상태 요약 *_status.json은 커밋
+http/*.jsonl
+# 합성 백엔드 원결과(질의별 id 목록) — 대조 요약 synthetic_summary.json은 커밋
+synthetic/
+# 서버 로그·구간 기록·가짜 호출 기록·모드 파일·진행 기록·예산 장부 원본
+logs/
+ctl/
+budget/
+__pycache__/
+# 커밋할 경량 결과(저장소 .gitignore의 csv 제외를 이 폴더 깊이에서 되돌린다)
+!**/search_eval_*_summary.csv
+!**/search_eval_*_top10.csv

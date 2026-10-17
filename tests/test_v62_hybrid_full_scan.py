@@ -179,7 +179,8 @@ def test_dense_only_query_does_not_count_and_uses_top_k_as_limit():
     fake, index = _fake_index(_corpus())
     res = index.query(vector=DENSE_Q, top_k=2)
     assert fake.names() == ["query_points"]
-    assert fake.of("query_points")[0]["limit"] == 2
+    # v65: 단일 벡터 조회는 경계 동점을 보려고 top_k+1개를 받는다(동점이 없으면 그것으로 끝, count 없음)
+    assert fake.of("query_points")[0]["limit"] == 3
     assert fake.of("query_points")[0]["with_payload"] is True      # dense 전용은 조회에서 바로 payload를 받는다(기존 동작)
     assert [m["id"] for m in res["matches"]] == ["1", "2"]
 
@@ -206,7 +207,11 @@ def test_scores_are_only_read_and_payload_is_fetched_for_the_final_top_k_only():
 
     fake.calls.clear()
     res = index.query(vector=DENSE_Q, sparse_vector=SPARSE_Q, top_k=2, include_metadata=False)
-    assert fake.names() == ["count", "query_points", "query_points"]  # payload 조회 없음
+    # v65: 메타데이터를 안 받아도 곡 id(동점 순서 키)는 payload song_id에서 — 경계까지의 점만, song_id 필드만 읽는다
+    assert fake.names() == ["count", "query_points", "query_points", "retrieve"]
+    assert fake.of("retrieve")[0]["ids"] == [point_id("4"), point_id("5")]
+    assert fake.of("retrieve")[0]["with_payload"] == ["song_id"]
+    assert [m["id"] for m in res["matches"]] == ["4", "5"]
     assert res["matches"][0]["metadata"] == {}
 
 
@@ -342,7 +347,7 @@ def test_real_engine_dense_only_does_not_count(client, monkeypatch):
     _fill(client, _corpus())
     spy = _Spy(client.client, monkeypatch)
     res = client.Index(TEXT_HYBRID_INDEX_NAME).query(vector=DENSE_Q, top_k=2)
-    assert spy.count_filters == [] and spy.limits == [2]
+    assert spy.count_filters == [] and spy.limits == [3]   # v65: top_k+1(경계 동점 확인), count 없음
     assert [m["id"] for m in res["matches"]] == ["1", "2"]
 
 

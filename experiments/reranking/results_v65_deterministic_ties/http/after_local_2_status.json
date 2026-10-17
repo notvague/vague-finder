@@ -1,0 +1,261 @@
+{
+ "before": {
+  "guard": {
+   "pymongo.MongoClient": "blocked",
+   "src.common.mongodb": "blocked",
+   "lyrics_mongo_client": "blocked",
+   "make_genai_client": "blocked",
+   "adc_credentials": "blocked",
+   "google.genai.Client": "blocked",
+   "reranker.make_genai_client": "blocked",
+   "network": "blocked"
+  },
+  "network_attempts": [],
+  "blocked_client_calls": [],
+  "config": {
+   "env": {
+    "ATTR_FILTER_WEIGHT": "0",
+    "ATTR_FILTER_GATE": "",
+    "ATTR_FILTER_K": "",
+    "ATTR_FILTER_USE_GENRE": "",
+    "ATTR_FILTER_GENRE_POLICY": "",
+    "QDRANT_URL": "",
+    "QDRANT_PATH": "artifacts/qdrant_v65_src",
+    "QDRANT_HYBRID_SCAN_LIMIT": "",
+    "CONTEXT_WEIGHT": "0.5",
+    "SEARCH_REFERENCE_YEAR": "2026",
+    "RERANKER_BACKEND": "gemini_listwise",
+    "RERANKER_ENABLED": "",
+    "FEEDBACK_COLLECTION_ENABLED": "0",
+    "FEEDBACK_INDEX_WORKER_ENABLED": "0",
+    "FEEDBACK_RETRIEVAL_ENABLED": "0",
+    "LYRICS_CACHE_TTL_SECONDS": "",
+    "SEARCH_WARMUP": "",
+    "GEMINI_RERANK_TIMEOUT_SECONDS": "",
+    "GEMINI_RERANK_BUDGET_SECONDS": "",
+    "GEMINI_RERANK_MAX_RETRIES": "",
+    "HF_HUB_OFFLINE": "1",
+    "SEARCH_TIMING_LOG": "experiments/reranking/results_v65_deterministic_ties/logs/http_after_local_2/timing.jsonl",
+    "MONGO_URI": "unset",
+    "GOOGLE_APPLICATION_CREDENTIALS": "unset",
+    "GCP_PROJECT_ID": "set"
+   },
+   "reranker": {
+    "model_name": "gemini-3.1-flash-lite",
+    "enabled": true,
+    "passes": 1,
+    "max_retries": 3,
+    "max_candidates": 30,
+    "request_timeout_seconds": 20.0,
+    "time_budget_seconds": 30.0,
+    "rerank_weight": 0.85,
+    "use_search_grounding": false,
+    "rare_fact_verification": false
+   }
+  },
+  "fake_calls": 0,
+  "analysis_cache_sources": [
+   {
+    "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v06_dev_vertex.json",
+    "split": "dev",
+    "entries": 57,
+    "fallback_entries": 0,
+    "gemini_backend": "vertex",
+    "prompt_sha": "80c464515d9c",
+    "postprocess_sha": "f18778f8f94d",
+    "file_sha256_16": "36eab91ca92a233b"
+   },
+   {
+    "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v09_dev_vertex.json",
+    "split": "dev",
+    "entries": 59,
+    "fallback_entries": 0,
+    "gemini_backend": "vertex",
+    "prompt_sha": "80c464515d9c",
+    "postprocess_sha": "f18778f8f94d",
+    "file_sha256_16": "e1048ecff964004e"
+   },
+   {
+    "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v10_dev_vertex.json",
+    "split": "dev",
+    "entries": 60,
+    "fallback_entries": 0,
+    "gemini_backend": "vertex",
+    "prompt_sha": "80c464515d9c",
+    "postprocess_sha": "f18778f8f94d",
+    "file_sha256_16": "c6c2d9d844957011"
+   },
+   {
+    "path": "experiments/reranking/results_v55_attr_final_validation/analysis_cache_v10_test_vertex.json",
+    "split": "test",
+    "entries": 42,
+    "fallback_entries": 0,
+    "gemini_backend": "vertex",
+    "prompt_sha": "80c464515d9c",
+    "postprocess_sha": "f18778f8f94d",
+    "file_sha256_16": "7b1f7c0a84907ebc"
+   }
+  ],
+  "analysis_misses": 0,
+  "lyrics_source": {
+   "dir": "/private/tmp/vague-finder-hybrid-lyrics-validation/artifacts/lyrics_snapshot_v63/snapshot",
+   "documents": 5143,
+   "content_sha256_16": "e0d58f28f1f4a563",
+   "file_sha256_16": "295b7a508c12cc34",
+   "full_document_sha256_16": "e25da332c4a3f4a0",
+   "finished_at": "2026-10-17T01:25:56+09:00",
+   "reads": 1
+  },
+  "lyrics_calls": 1,
+  "reranker_type": "GeminiListwiseReranker",
+  "context_startup": {
+   "state": "verified",
+   "source": "startup",
+   "checked_at": "2026-10-17T02:54:17+00:00",
+   "note": "기동 시점의 결과다. 지금 연결 상태를 보장하지 않는다.",
+   "reason": "ok",
+   "publication": {
+    "dense_alias": "vaguefinder-context-dense-1024-koe5__dev",
+    "sparse_alias": "vaguefinder-context-sparse-bm25__dev",
+    "dense_collection": "vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf",
+    "sparse_collection": "vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf",
+    "context_build_id": "f6424b94621a28cf374e1460c94da29d56d15d0e7931732cf8da8cafc965f0bf",
+    "dense_dimension": 1024
+   }
+  },
+  "code": "after",
+  "backend_file": "/private/tmp/vague-finder-deterministic-ties/src/vector_db/qdrant_backend.py",
+  "process_started": 1792205652.889071,
+  "imported": 1792205655.641404
+ },
+ "after": {
+  "guard": {
+   "pymongo.MongoClient": "blocked",
+   "src.common.mongodb": "blocked",
+   "lyrics_mongo_client": "blocked",
+   "make_genai_client": "blocked",
+   "adc_credentials": "blocked",
+   "google.genai.Client": "blocked",
+   "reranker.make_genai_client": "blocked",
+   "network": "blocked"
+  },
+  "network_attempts": [],
+  "blocked_client_calls": [],
+  "config": {
+   "env": {
+    "ATTR_FILTER_WEIGHT": "0",
+    "ATTR_FILTER_GATE": "",
+    "ATTR_FILTER_K": "",
+    "ATTR_FILTER_USE_GENRE": "",
+    "ATTR_FILTER_GENRE_POLICY": "",
+    "QDRANT_URL": "",
+    "QDRANT_PATH": "artifacts/qdrant_v65_src",
+    "QDRANT_HYBRID_SCAN_LIMIT": "",
+    "CONTEXT_WEIGHT": "0.5",
+    "SEARCH_REFERENCE_YEAR": "2026",
+    "RERANKER_BACKEND": "gemini_listwise",
+    "RERANKER_ENABLED": "",
+    "FEEDBACK_COLLECTION_ENABLED": "0",
+    "FEEDBACK_INDEX_WORKER_ENABLED": "0",
+    "FEEDBACK_RETRIEVAL_ENABLED": "0",
+    "LYRICS_CACHE_TTL_SECONDS": "",
+    "SEARCH_WARMUP": "",
+    "GEMINI_RERANK_TIMEOUT_SECONDS": "",
+    "GEMINI_RERANK_BUDGET_SECONDS": "",
+    "GEMINI_RERANK_MAX_RETRIES": "",
+    "HF_HUB_OFFLINE": "1",
+    "SEARCH_TIMING_LOG": "experiments/reranking/results_v65_deterministic_ties/logs/http_after_local_2/timing.jsonl",
+    "MONGO_URI": "unset",
+    "GOOGLE_APPLICATION_CREDENTIALS": "unset",
+    "GCP_PROJECT_ID": "set"
+   },
+   "reranker": {
+    "model_name": "gemini-3.1-flash-lite",
+    "enabled": true,
+    "passes": 1,
+    "max_retries": 3,
+    "max_candidates": 30,
+    "request_timeout_seconds": 20.0,
+    "time_budget_seconds": 30.0,
+    "rerank_weight": 0.85,
+    "use_search_grounding": false,
+    "rare_fact_verification": false
+   }
+  },
+  "fake_calls": 161,
+  "analysis_cache_sources": [
+   {
+    "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v06_dev_vertex.json",
+    "split": "dev",
+    "entries": 57,
+    "fallback_entries": 0,
+    "gemini_backend": "vertex",
+    "prompt_sha": "80c464515d9c",
+    "postprocess_sha": "f18778f8f94d",
+    "file_sha256_16": "36eab91ca92a233b"
+   },
+   {
+    "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v09_dev_vertex.json",
+    "split": "dev",
+    "entries": 59,
+    "fallback_entries": 0,
+    "gemini_backend": "vertex",
+    "prompt_sha": "80c464515d9c",
+    "postprocess_sha": "f18778f8f94d",
+    "file_sha256_16": "e1048ecff964004e"
+   },
+   {
+    "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v10_dev_vertex.json",
+    "split": "dev",
+    "entries": 60,
+    "fallback_entries": 0,
+    "gemini_backend": "vertex",
+    "prompt_sha": "80c464515d9c",
+    "postprocess_sha": "f18778f8f94d",
+    "file_sha256_16": "c6c2d9d844957011"
+   },
+   {
+    "path": "experiments/reranking/results_v55_attr_final_validation/analysis_cache_v10_test_vertex.json",
+    "split": "test",
+    "entries": 42,
+    "fallback_entries": 0,
+    "gemini_backend": "vertex",
+    "prompt_sha": "80c464515d9c",
+    "postprocess_sha": "f18778f8f94d",
+    "file_sha256_16": "7b1f7c0a84907ebc"
+   }
+  ],
+  "analysis_misses": 0,
+  "lyrics_source": {
+   "dir": "/private/tmp/vague-finder-hybrid-lyrics-validation/artifacts/lyrics_snapshot_v63/snapshot",
+   "documents": 5143,
+   "content_sha256_16": "e0d58f28f1f4a563",
+   "file_sha256_16": "295b7a508c12cc34",
+   "full_document_sha256_16": "e25da332c4a3f4a0",
+   "finished_at": "2026-10-17T01:25:56+09:00",
+   "reads": 1
+  },
+  "lyrics_calls": 20,
+  "reranker_type": "GeminiListwiseReranker",
+  "context_startup": {
+   "state": "verified",
+   "source": "startup",
+   "checked_at": "2026-10-17T02:54:17+00:00",
+   "note": "기동 시점의 결과다. 지금 연결 상태를 보장하지 않는다.",
+   "reason": "ok",
+   "publication": {
+    "dense_alias": "vaguefinder-context-dense-1024-koe5__dev",
+    "sparse_alias": "vaguefinder-context-sparse-bm25__dev",
+    "dense_collection": "vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf",
+    "sparse_collection": "vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf",
+    "context_build_id": "f6424b94621a28cf374e1460c94da29d56d15d0e7931732cf8da8cafc965f0bf",
+    "dense_dimension": 1024
+   }
+  },
+  "code": "after",
+  "backend_file": "/private/tmp/vague-finder-deterministic-ties/src/vector_db/qdrant_backend.py",
+  "process_started": 1792205652.889071,
+  "imported": 1792205655.641404
+ },
+ "seconds": 93.3
+}

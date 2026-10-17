@@ -31,7 +31,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 from qdrant_client import models
 
 from src.feedback.review import CaseVersion, as_utc, point_uuid
-from src.vector_db.qdrant_backend import DENSE_VECTOR, INDEX_DISTANCE, collection_name
+from src.vector_db.qdrant_backend import DENSE_VECTOR, INDEX_DISTANCE, collection_name, complete_top_points
 from src.vector_db.settings import FEEDBACK_INDEX_NAME, NAMESPACE, TEXT_DENSE_DIM
 
 logger = logging.getLogger(__name__)
@@ -210,23 +210,33 @@ class FeedbackCaseIndex:
         acquired = self._lock.acquire(timeout=lock_timeout) if lock_timeout is not None else self._lock.acquire()
         if not acquired:
             raise CaseIndexBusy()
+        search_params = None if self._vector_client.is_local else models.SearchParams(exact=True)
+        query = [float(value) for value in vector]
+        by_point: Dict[Any, CaseHit] = {}
+
+        def identity(point: Any) -> Optional[str]:
+            hit = _hit(point.payload or {}, float(point.score))
+            # 문턱과 만료는 Qdrant 필터가 걸렀지만 한 번 더 본다 — 필터가 빠져도 넓은 사례가 새지 않게.
+            if hit is None or hit.similarity < min_similarity or hit.expires_at_ts <= now_ts:
+                return None
+            by_point[point.id] = hit
+            return hit.feedback_id
+
         try:
-            response = self._client.query_points(
-                collection_name=self.collection, query=[float(value) for value in vector], using=DENSE_VECTOR,
-                limit=max(1, top_k), query_filter=query_filter, with_payload=True,
-                score_threshold=min_similarity,
-                search_params=None if self._vector_client.is_local else models.SearchParams(exact=True),
+            # 동점 순서(v65): 유사도 내림차순 → feedback_id. limit에서 잘린 경계 동점까지 받은 뒤 자른다
+            # (`complete_top_points`) — 받은 top_k만 다시 정렬하면 로컬·서버가 경계에서 다른 사례를 고를 수 있다.
+            ranked = complete_top_points(
+                lambda limit: self._client.query_points(
+                    collection_name=self.collection, query=query, using=DENSE_VECTOR,
+                    limit=limit, query_filter=query_filter, with_payload=True,
+                    score_threshold=min_similarity, search_params=search_params,
+                ).points,
+                max(1, top_k),
+                identity,
             )
         finally:
             self._lock.release()
-        hits: List[CaseHit] = []
-        for point in response.points:
-            hit = _hit(point.payload or {}, float(point.score))
-            # 문턱과 만료는 Qdrant 필터가 걸렀지만 한 번 더 본다 — 필터가 빠져도 넓은 사례가 새지 않게.
-            if hit is not None and hit.similarity >= min_similarity and hit.expires_at_ts > now_ts:
-                hits.append(hit)
-        hits.sort(key=lambda hit: (-hit.similarity, hit.feedback_id))
-        return hits
+        return [by_point[point.id] for point, _key in ranked]
 
 
 def _hit(payload: Mapping[str, Any], score: float) -> Optional[CaseHit]:
