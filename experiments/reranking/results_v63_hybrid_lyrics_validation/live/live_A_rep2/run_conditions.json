@@ -1,0 +1,242 @@
+{
+  "run": "live_A_rep2",
+  "arm": "A",
+  "mode": "live",
+  "rep": 2,
+  "sets": [
+    "v06",
+    "v09",
+    "v10"
+  ],
+  "query_ids": "",
+  "started_at": "2026-10-17T02:19:26+0900",
+  "env": {
+    "QDRANT_PATH": "artifacts/qdrant_v63",
+    "CONTEXT_WEIGHT": "0.5",
+    "ATTR_FILTER_WEIGHT": "0",
+    "AUDIO_FUSION_SCALE": "1",
+    "SEARCH_REFERENCE_YEAR": "2026",
+    "RERANKER_BACKEND": "gemini_listwise",
+    "GEMINI_RERANK_RARE_FACT_VERIFY": "0",
+    "GEMINI_RETRIEVAL_BACKEND": "vertex",
+    "GCP_LOCATION": "global",
+    "GEMINI_MODEL_NAME": "gemini-3.1-flash-lite",
+    "FEEDBACK_COLLECTION_ENABLED": "0",
+    "FEEDBACK_INDEX_WORKER_ENABLED": "0",
+    "FEEDBACK_RETRIEVAL_ENABLED": "0",
+    "HF_HUB_OFFLINE": "1",
+    "TRANSFORMERS_OFFLINE": "1",
+    "TOKENIZERS_PARALLELISM": "false",
+    "GCP_PROJECT_ID": "project-0a71…",
+    "GOOGLE_APPLICATION_CREDENTIALS": "set"
+  },
+  "git": {
+    "head": "f43daf7",
+    "src_dirty_lines": 0
+  },
+  "status": "complete",
+  "budget_before": {
+    "attempts": 502,
+    "settled_calls": 502,
+    "failed_calls": 0,
+    "open_reservations": 0,
+    "settled_usd": 2.309013,
+    "unverified_usd": 0,
+    "committed_usd": 2.309013,
+    "halt": ""
+  },
+  "budget_limits": {
+    "cost_cap_usd": 10.0,
+    "attempt_cap": 1200,
+    "deadline": "2026-10-17T06:20:00+0900"
+  },
+  "guard_before": {
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "lyrics_mongo_client": "blocked",
+    "QDRANT_URL": "unset",
+    "QDRANT_HYBRID_SCAN_LIMIT": "unset",
+    "aiohttp": "absent"
+  },
+  "arm_impl": {
+    "arm": "A",
+    "current_backend_sha256_16": "18ab1b060866ad46",
+    "current_hybrid_scan_limit_const": null,
+    "query_impl": "fc20e86:src/vector_db/qdrant_backend.py QdrantIndex.query (HYBRID_SCAN_LIMIT=5000)",
+    "legacy_backend_sha256_16": "1400f37a501ca6d2",
+    "legacy_hybrid_scan_limit": 5000
+  },
+  "lyrics_snapshot": {
+    "db": "vaguefinder",
+    "collection": "songs",
+    "document_count": 5143,
+    "full_lyrics_songs": 5143,
+    "full_lyrics_total_chars": 4076174,
+    "content_sha256_16": "e0d58f28f1f4a563",
+    "source": "v63_snapshot",
+    "snapshot_full_document_sha256_16": "e25da332c4a3f4a0",
+    "snapshot_file_sha256_16": "295b7a508c12cc34",
+    "snapshot_finished_at": "2026-10-17T01:25:56+09:00"
+  },
+  "qdrant_open_seconds": 1.322,
+  "point_count": 5143,
+  "index_fingerprint": {
+    "collection": "vaguefinder-text-1024-koe5__dev",
+    "points": 5143,
+    "dense_dim": 1024,
+    "sparse_nnz": 1061090,
+    "sparse_vocab": 44486,
+    "content_sha256_16": "238299e6c8c17f2a",
+    "build_seconds": 1.38
+  },
+  "sets_done": {
+    "v06": {
+      "seconds": 290.118,
+      "rows": 57,
+      "queries_recorded": 57,
+      "unattributed_rows": false,
+      "hybrid_calls": 105,
+      "hybrid_calls_matching_reference": 105,
+      "hybrid_calls_with_missing": 0,
+      "hybrid_calls_with_score_mismatch": 0,
+      "lyrics_searches": 4,
+      "lyrics_errors": 0,
+      "lyrics_zero_results": 0,
+      "lyrics_snapshot_builds": [
+        {
+          "ts": 1792171280.288526,
+          "seconds": 0.521,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "search_worker_2"
+        }
+      ],
+      "offline_generate_calls": 0,
+      "generate_records": 53
+    },
+    "v09": {
+      "seconds": 281.966,
+      "rows": 59,
+      "queries_recorded": 59,
+      "unattributed_rows": false,
+      "hybrid_calls": 102,
+      "hybrid_calls_matching_reference": 101,
+      "hybrid_calls_with_missing": 0,
+      "hybrid_calls_with_score_mismatch": 1,
+      "lyrics_searches": 6,
+      "lyrics_errors": 0,
+      "lyrics_zero_results": 1,
+      "lyrics_snapshot_builds": [
+        {
+          "ts": 1792171280.288526,
+          "seconds": 0.521,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "search_worker_2"
+        },
+        {
+          "ts": 1792171582.990013,
+          "seconds": 0.53,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "lyrics_refresh"
+        }
+      ],
+      "offline_generate_calls": 0,
+      "generate_records": 54
+    },
+    "v10": {
+      "seconds": 296.866,
+      "rows": 60,
+      "queries_recorded": 60,
+      "unattributed_rows": false,
+      "hybrid_calls": 104,
+      "hybrid_calls_matching_reference": 101,
+      "hybrid_calls_with_missing": 0,
+      "hybrid_calls_with_score_mismatch": 3,
+      "lyrics_searches": 9,
+      "lyrics_errors": 0,
+      "lyrics_zero_results": 2,
+      "lyrics_snapshot_builds": [
+        {
+          "ts": 1792171280.288526,
+          "seconds": 0.521,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "search_worker_2"
+        },
+        {
+          "ts": 1792171582.990013,
+          "seconds": 0.53,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "lyrics_refresh"
+        },
+        {
+          "ts": 1792171905.74176,
+          "seconds": 0.533,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "lyrics_refresh"
+        }
+      ],
+      "offline_generate_calls": 0,
+      "generate_records": 56
+    }
+  },
+  "cold_before_first_query_seconds": 5.574,
+  "lyrics_source_reads": 3,
+  "lyrics_service_status": {
+    "state": "fresh",
+    "closed": false,
+    "documents": 5143,
+    "generation": 0,
+    "snapshot_generation": 0,
+    "age_seconds": 135.2,
+    "ttl_seconds": 300.0,
+    "last_success_epoch": 1792171905.7695801,
+    "refreshing": false,
+    "initial_loads_running": 0,
+    "refresh_running_seconds": null,
+    "refresh_successes": 2,
+    "refresh_failures": 0,
+    "refresh_cancelled": 0,
+    "refresh_discarded": 0,
+    "last_refresh_error": null,
+    "last_failure_age_seconds": null,
+    "retry_seconds": 60.0,
+    "retry_in_seconds": null,
+    "mongo_socket_timeout_seconds": 60.0,
+    "mongo_batch_size": 200,
+    "close_wait_seconds": 75.0
+  },
+  "guard_after": {
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "lyrics_mongo_client": "blocked",
+    "QDRANT_URL": "unset",
+    "QDRANT_HYBRID_SCAN_LIMIT": "unset",
+    "aiohttp": "absent"
+  },
+  "budget_local": {
+    "attempts": 166,
+    "settled": 166,
+    "failed": 0,
+    "blocked": 0,
+    "cost": 0.7660477499999995,
+    "unverified": 0.0
+  },
+  "budget_after": {
+    "attempts": 668,
+    "settled_calls": 668,
+    "failed_calls": 0,
+    "open_reservations": 0,
+    "settled_usd": 3.075061,
+    "unverified_usd": 0,
+    "committed_usd": 3.075061,
+    "halt": ""
+  },
+  "finished_at": "2026-10-17T02:34:00+0900",
+  "total_seconds": 874.587,
+  "ru_maxrss_bytes": 4623532032
+}

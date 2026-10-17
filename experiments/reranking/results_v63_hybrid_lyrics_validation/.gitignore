@@ -1,0 +1,17 @@
+# v63 — 로컬 재현 자료(커밋 제외). 요약·조건·top-10 경량본·비교표·장부 요약만 커밋한다.
+# 질의별 원기록(후보 30개·점수·그룹·프롬프트 sha — 질의당 수 KB, 실행당 3MB)과 평가기 설명 기록
+**/v63_queries.jsonl
+**/v63_hybrid_calls.jsonl
+**/search_eval_*_explain.jsonl
+**/search_eval_*_detail.csv
+**/search_eval_*_lyric_boosts.csv
+# 실험 프로세스가 git show로 떠 둔 옛 구현 사본(fc20e86에 있다)
+**/_legacy/
+# 실행 로그·예산 장부 원본(장부 요약 budget_summary.json은 커밋)
+logs/
+budget/
+# 커밋할 경량 결과(저장소 .gitignore의 csv 제외를 이 폴더 깊이에서 되돌린다)
+!**/search_eval_*_summary.csv
+!**/search_eval_*_top10.csv
+!*/compare/pair_*.csv
+!live_analysis/per_query.csv
