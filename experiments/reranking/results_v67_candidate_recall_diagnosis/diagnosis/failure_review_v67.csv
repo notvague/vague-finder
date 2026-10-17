@@ -1,0 +1,60 @@
+query_id,primary,secondary,confidence,lever,evidence,fields_checked
+q106,P,A,확인,depth_attr|title_rule,"전체 깊이 text 32·가산 뒤 25(밴드·남성·허스키). 질의 '같은 단어를 세 번씩 반복'인데 title_constraints 비어 있음 — 정답 payload title_repeated_word 필드가 있고 가사에도 반복 구절 있음",trace·분석 JSON·텍스트 payload·가사 스냅샷
+q110,P,A,확인,depth_attr|title_rule,"전체 깊이 text 44·가산 뒤 17. album_summary(sparse 색인)에 '인도 풍' 있음. '제목이 외국 사람 이름'은 title_meaning_clue 없음",trace·분석 JSON·album_summary
+q112,P,,확인,depth_attr,"전체 깊이 text 304·가산 뒤 4(시기 2004~2009·힙합·그룹·스트링). 2턴 q112 정책 문제와 별개로 1턴은 깊이",trace·분석 JSON
+c601,P,B,확인,depth_attr,"전체 깊이 text 35·가산 뒤 24. context_clues 2개(target 비어 있음)·정답 Context 사실 0. album_summary에 전 세계 유행·뮤비 서술 없음",trace·Context 사실 수·album_summary
+n002,P,A,확인,depth_attr|indirect_reference,"전체 깊이 가산 뒤 1(90년대 초·록·밴드). 보컬 사망 사연은 context_clues 없음. album_summary에 보컬 유작 서술(sparse) 있음",trace·분석 JSON·album_summary·Context 사실 0
+n030,P,A,확인,depth_attr,"전체 깊이 text 2453·가산 뒤 29(2019·밴드·남성). '2019 초 음원 1위·데뷔 몇 년 만' 단서는 context_clues 없음",trace·분석 JSON·Context 사실 0
+n040,P,A,확인,depth_attr|indirect_reference,"전체 깊이 text 95·가산 뒤 8. album_summary(sparse)에 원곡(가수·제목 명시)의 여자 버전 서술 있음 — 답가 관계가 자료에 있으나 질의는 원곡명을 말하지 않음. Context 사실 0",trace·album_summary·Context 사실 수
+n096,P,A,확인,depth_attr|indirect_reference|context_target_rule,"전체 깊이 가산 뒤 18. context target '대사로 그'(조각). album_summary에 영화명 있음. 질의 시기 90년대 후반·정답 2001",trace·분석 JSON·album_summary
+t001,P,B,확인,depth_attr,"전체 깊이 audio 136·가산 뒤 6(90년대 후반·발라드·남성·피아노). 가수를 무대 습관으로만 지칭 — 그 사실은 payload·album_summary·Context 어디에도 없음",trace·payload·album_summary·Context 사실 0
+t011,P,A,확인,depth_attr|title_rule,"전체 깊이 가산 뒤 2. '제목이 줄임말'을 title_constraints로 표현 못 함(confidence 0.5·필드 null)",trace·분석 JSON
+t031,P,U,확인,depth_attr,"가수명 추출됨. 전체 깊이 text 557·가산 뒤 28 — 같은 가수 곡이 많아 깊이 밖. '핑크' 분위기는 payload·Context 사실(9)에 없음(표지 색 가능성은 미확인)",trace·payload·Context 사실
+m402,F,R,확인,audio_crowding|image_crowding,"정답 4곡 중 1곡이 audio 29위로 융합 목록에 들었다가 RRF 절단(*). 나머지 3곡은 text 40~455. 가중 text 0.4·image 0.3·audio 0.3",trace(정답 4곡)
+n055,F,P,확인,audio_crowding,"text 39로 경로 안이지만 융합 절단(*). 가중 audio 0.6. 소리 끔(B)에서도 text 39가 융합 30 밖이라 후보 밖",trace A·B
+n072,F,,확인,image_crowding,"text 7인데 융합 절단(*) — image 가중 0.6이 표지 경로 상위 곡으로 RRF 30을 채움(정답 image 73)",trace
+t058,F,,확인,audio_crowding,"text 2 → 보정 뒤 46(소리 경로 후보·가산에 밀림). B에서 후보 16",trace A·B
+t077,F,,확인,audio_crowding,"text 82 융합 절단(*)·가중 audio 0.5. B에서 후보 21",trace A·B
+t078,F,,확인,audio_crowding,"text 17 → 보정 뒤 절단. 가중 audio 0.6. B에서 후보 11",trace A·B
+t100,F,,확인,audio_crowding,"image 16 융합 절단(*)·text 47. B에서 후보 7",trace A·B
+t111,F,,확인,audio_crowding,"text 25 → 보정 뒤 41. 이름 붙은 소리(사이렌) 질의지만 정답 audio 순위 344(곡 평균 벡터). B에서 후보 25",trace A·B
+q115,R,,확인,sound_generic,"피아노·오케스트라·남성 발라드 — payload sound_tags에 오케스트레이션·피아노 있음. text 386·audio 295. 같은 묘사가 맞는 곡이 많음",trace·payload
+q117,R,L,확인,cover_generic,"글씨만 있는 표지 — 정답 5곡 image 296~3022. 묘사가 일반적이라 다수 곡이 해당",trace(정답 5곡)
+m302,R,,확인,cover_generic,"얼굴 클로즈업 표지 — 정답 5곡 image 145~604",trace(정답 5곡)
+m303,R,,확인,cover_generic,"흑백·글자 없는 표지 — 정답 3곡 중 image 32·58(가산 뒤 42)",trace(정답 3곡)
+m403,R,L,추정,cover_generic,"알록달록 표지·피아노 발라드 — 정답 2곡 image 3711·4462",trace(정답 2곡)
+c602,R,A,확인,indirect_reference,"album_summary(sparse)에 '쇼미더머니3' 있음. 질의는 '힙합 경연 프로그램 우승자'로만 지칭·context_clues 없음. text 64",album_summary·분석 JSON·trace
+c603,R,A,확인,indirect_reference,"album_summary에 '슈퍼스타K2 본선'·원곡자 명시 있음. 질의는 '경연 프로그램'·context_clues 없음. text 57",album_summary·분석 JSON·trace
+c607,B,A,확인,indirect_reference,"정답 Context 사실 0·album_summary에 드라마명 없음(80년대 감성 재해석만). 질의도 드라마명을 말하지 않음",Context 사실·album_summary·payload
+c701,L,R,확인,indirect_reference,"질의 '남자가 부르는 발라드'·정답 vocal_gender 여성 → 가산 뒤 2836. album_summary에 드라마명 있음",payload·album_summary·trace
+n011,B,,확인,,"'데뷔 무대 덤블링·공중제비' — payload(tags·summary)·album_summary·Context(0) 어디에도 없음. 시기·성별 가산 뒤 45",payload·album_summary·Context 사실 0
+n016,A,L,확인,indirect_reference,"정답 Context 사실 29개 중 '3단 고음' 있음 — context_clues 미추출이라 Context 경로가 안 돎. 질의 장르 발라드·등록 댄스",Context 사실 본문·분석 JSON·payload
+n033,A,,확인,indirect_reference,"드라마 줄거리(재벌집 딸·시골 남편·2024 봄)만 말함. context target 빈 값. album_summary(sparse)에 드라마명 있음·Context 사실 0",분석 JSON·album_summary
+n043,A,,확인,indirect_reference,"'의사 다섯 명 밴드 드라마' → context_clues 없음. album_summary에 드라마명·원곡 그룹명 있음",분석 JSON·album_summary
+n046,R,,확인,sound_generic,"무거운 기타·샤우팅 랩·턴테이블 — sound_tags 일렉기타·샤우팅. text 153·audio 1383",payload·trace
+n048,B,R,확인,sound_generic,"구별 단서(노래 중간 혼잣말 대사·곡 길이)가 payload·album_summary에 없음. 나머지는 일반 묘사(여성 R&B·현악·피아노)",payload·album_summary·Context 사실 0
+n058,A,,확인,era_simile_rule,"'80년대 노래처럼'(비유)을 release_era 1980~1989(0.9)로 추출 — 정답 2022, 시기 가산이 반대로 작용",분석 JSON·payload
+n064,R,U,추정,sound_generic|lyric_surface,"'라라라' 가사 단서(verbatim)가 정답 가사에 그 표면으로 없음(다른 표기 여부 미확인). 펑크록 걸그룹 서술은 일반적. text 321",가사 스냅샷·분석 JSON·trace
+n065,L,R,확인,,"질의 '록·밴드 느낌'·정답 등록 장르 댄스(sound_tags 밴드사운드는 있음). genre 록 가산이 다른 곡으로",payload·분석 JSON
+n088,B,R,확인,cover_generic,"'의자 안무 유행'이 Context 사실 7개·album_summary에 없음. 표지 경로 image 42",Context 사실 본문·album_summary·trace
+n093,L,,확인,,"'신인 보이그룹'·정답은 여성 그룹(payload vocal_gender 여성)",payload
+n095,L,,확인,,"'한 명은 통기타만' — 정답 sound_tags·album_summary는 피아노·오케스트라",payload·album_summary
+t009,R,A,확인,indirect_reference,"album_summary에 '객원보컬로 참여'·프로젝트 앨범 서술 있음. 태그 '객원보컬'인데 text 1127 — 표면 형태(조사 결합) 불일치로 보이나 BM25 토큰은 미확인",album_summary·분석 JSON·trace
+t016,B,L,확인,lyric_surface,"가사 단서 '떴다 떴다'(verbatim) 추출됨 — 정답 가사 스냅샷에 그 구절 없음. 정답 type 혼성(질의 '남자 셋')",가사 스냅샷·payload·분석 JSON
+t029,L,A,확인,,"질의 '남자 가수'·정답 vocal_gender 여성 → text 45가 가산 뒤 3092. '흔한 남자 이름이 제목'은 제목 단서로 표현 안 됨",payload·trace·분석 JSON
+t038,R,A,확인,indirect_reference|context_target_rule,"album_summary에 '슈퍼스타K6'·원곡 가수 명시 있음. 질의는 '오디션 프로'. context target '나중'(부사)",album_summary·분석 JSON
+t040,A,B,확인,indirect_reference|context_target_rule,"context target '비행사 얘기 다룬'(조각)·album_summary에 영화명 있음·Context 사실 0",분석 JSON·album_summary·Context 사실
+t043,A,B,확인,indirect_reference,"'넷플릭스 애니' — 정답 payload genre '애니메이션/웹툰'인데 분석 genre 빈 값·context_clues 없음. album_summary는 정보 없음",payload·분석 JSON·album_summary
+t060,R,,확인,lyric_surface,"가사 단서 '에헤레이아'(verbatim) — 정답 가사에는 '에헤라'. 표면 불일치로 가사 경로가 못 잡음",가사 스냅샷·분석 JSON
+t068,B,R,추정,,"가수명 추출됨·text 96. '여자 보컬·남자 래퍼가 파트 이어받음' — 피처링 이름은 제목에만 있고 피처링 가수의 성별·역할 자료 없음",payload·trace
+t073,R,,확인,sound_generic,"콧소리 남자·피아노·짧은 말 반복 — sound_tags 어쿠스틱·담백함. 반복 구절은 가사 단서로 추출 안 됨. audio 156·text 858",payload·trace·분석 JSON
+t075,R,L,확인,sound_generic,"피아노·현악·중저음 남자 — 정답 sound_tags 하모니카·발라드. audio 233·text 651",payload·trace
+t079,R,,확인,sound_generic,"생목 고음 남자 발라드·피아노·현악 — 일반 묘사. audio 387·text 632",payload·trace
+t080,R,,확인,sound_generic,"기타 리프·남자 랩·여자 후렴 — album_summary에 래퍼·여성 보컬 협업 서술. 가산 뒤 58",payload·album_summary·trace
+t092,R,,확인,cover_generic,"흑백·남자 여러 명·빨간 붓글씨 제목 — image 122",trace
+t103,R,A,확인,cover_generic,"누런 배경 크레파스 표지 — image 45. '호구 노래' 단서는 분석 태그에만, 가사·Context(3) 연결 미확인",trace·Context 사실 수
+q203,K,,확인,indirect_reference,"Context 경로가 정답을 2위로 돌려줘 후보 25. v66 리랭킹이 10위 안으로 못 올림",trace·v66 detail
+q205,K,,확인,,"image 2위로 후보 9 → v66 리랭킹 뒤 10위 밖(정책 생략 아님)",trace·v66 detail·on_rep1 기록
+c705,K,L,확인,indirect_reference,"후보 28(text 14). 질의 '남자가 부르는'·정답 여성(성별 감점, 가산 뒤 2313). album_summary에 드라마명 있음",payload·trace·album_summary
+c707,K,L,확인,indirect_reference,"text 1위인데 후보 17(성별 가산·감점 — 정답 혼성, 질의 '여자 혼자'). album_summary에 드라마명 있음",payload·trace·album_summary
+t044,K,,확인,indirect_reference,"text 29·후보 29. album_summary에 '무한도전 가요제' 있음 — 리랭킹이 못 올림",trace·album_summary·v66 detail

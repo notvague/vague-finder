@@ -1,0 +1,768 @@
+{
+ "all": {
+  "queries": 176,
+  "hit@10": {
+   "A1": 116,
+   "B1": 119,
+   "B2": 120
+  },
+  "verdict": {
+   "same_hit": 113,
+   "same_miss": 55,
+   "failure_touched": 3,
+   "loss": 1,
+   "gain": 4
+  },
+  "position": {
+   "down": 9,
+   "up": 5
+  },
+  "cause_A1:B1": {
+   "input_change": 106,
+   "failure_fallback": 3,
+   "same": 67
+  },
+  "cause_A1:B2": {
+   "input_change": 108,
+   "same": 67,
+   "failure_fallback": 1
+  },
+  "cause_B1:B2": {
+   "same": 168,
+   "model_variation": 6,
+   "failure_fallback": 2
+  },
+  "gain_ids": [
+   "c707",
+   "t058",
+   "t078",
+   "t100"
+  ],
+  "loss_ids": [
+   "q215"
+  ],
+  "variation_ids": [],
+  "failure_touched_ids": [
+   "n019",
+   "q107",
+   "t107"
+  ],
+  "position_up_ids": [
+   "m201",
+   "n031",
+   "n057",
+   "n082",
+   "t026"
+  ],
+  "position_down_ids": [
+   "m203",
+   "n018",
+   "n020",
+   "n061",
+   "n097",
+   "q101",
+   "q218",
+   "q312",
+   "t042"
+  ]
+ },
+ "gained5": {
+  "queries": 5,
+  "hit@10": {
+   "A1": 0,
+   "B1": 3,
+   "B2": 3
+  },
+  "verdict": {
+   "gain": 3,
+   "same_miss": 2
+  },
+  "position": {},
+  "cause_A1:B1": {
+   "input_change": 5
+  },
+  "cause_A1:B2": {
+   "input_change": 5
+  },
+  "cause_B1:B2": {
+   "same": 5
+  },
+  "per_query": {
+   "t058": {
+    "hit": "gain",
+    "position": "none",
+    "ranks": {
+     "A1": null,
+     "B1": 4,
+     "B2": 4
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "",
+     "B1": "16"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "input_change",
+    "cause_A1:B2": "input_change",
+    "cause_B1:B2": "same",
+    "sound_type": "instrument"
+   },
+   "t077": {
+    "hit": "same_miss",
+    "position": "none",
+    "ranks": {
+     "A1": null,
+     "B1": null,
+     "B2": null
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "",
+     "B1": "21"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "input_change",
+    "cause_A1:B2": "input_change",
+    "cause_B1:B2": "same",
+    "sound_type": "instrument"
+   },
+   "t078": {
+    "hit": "gain",
+    "position": "none",
+    "ranks": {
+     "A1": null,
+     "B1": 9,
+     "B2": 9
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "",
+     "B1": "11"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "input_change",
+    "cause_A1:B2": "input_change",
+    "cause_B1:B2": "same",
+    "sound_type": "instrument"
+   },
+   "t100": {
+    "hit": "gain",
+    "position": "none",
+    "ranks": {
+     "A1": null,
+     "B1": 1,
+     "B2": 1
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "",
+     "B1": "7"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "input_change",
+    "cause_A1:B2": "input_change",
+    "cause_B1:B2": "same",
+    "sound_type": "vocal"
+   },
+   "t111": {
+    "hit": "same_miss",
+    "position": "none",
+    "ranks": {
+     "A1": null,
+     "B1": null,
+     "B2": null
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "",
+     "B1": "25"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "input_change",
+    "cause_A1:B2": "input_change",
+    "cause_B1:B2": "same",
+    "sound_type": "named_event"
+   }
+  }
+ },
+ "inpool_fail5": {
+  "queries": 5,
+  "hit@10": {
+   "A1": 0,
+   "B1": 1,
+   "B2": 1
+  },
+  "verdict": {
+   "same_miss": 4,
+   "gain": 1
+  },
+  "position": {},
+  "cause_A1:B1": {
+   "input_change": 4,
+   "same": 1
+  },
+  "cause_A1:B2": {
+   "input_change": 4,
+   "same": 1
+  },
+  "cause_B1:B2": {
+   "same": 4,
+   "model_variation": 1
+  },
+  "per_query": {
+   "q203": {
+    "hit": "same_miss",
+    "position": "none",
+    "ranks": {
+     "A1": null,
+     "B1": null,
+     "B2": null
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "25",
+     "B1": "22"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "input_change",
+    "cause_A1:B2": "input_change",
+    "cause_B1:B2": "same",
+    "sound_type": "instrument"
+   },
+   "q205": {
+    "hit": "same_miss",
+    "position": "none",
+    "ranks": {
+     "A1": null,
+     "B1": null,
+     "B2": null
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "9",
+     "B1": "9"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "input_change",
+    "cause_A1:B2": "input_change",
+    "cause_B1:B2": "same",
+    "sound_type": "genre_mood"
+   },
+   "c705": {
+    "hit": "same_miss",
+    "position": "none",
+    "ranks": {
+     "A1": null,
+     "B1": null,
+     "B2": null
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "28",
+     "B1": "28"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "input_change",
+    "cause_A1:B2": "input_change",
+    "cause_B1:B2": "model_variation",
+    "sound_type": "vocal"
+   },
+   "c707": {
+    "hit": "gain",
+    "position": "none",
+    "ranks": {
+     "A1": null,
+     "B1": 2,
+     "B2": 2
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "17",
+     "B1": "17"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "input_change",
+    "cause_A1:B2": "input_change",
+    "cause_B1:B2": "same",
+    "sound_type": "vocal"
+   },
+   "t044": {
+    "hit": "same_miss",
+    "position": "none",
+    "ranks": {
+     "A1": null,
+     "B1": null,
+     "B2": null
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "29",
+     "B1": "29"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "same",
+    "cause_A1:B2": "same",
+    "cause_B1:B2": "same",
+    "sound_type": "genre_mood"
+   }
+  }
+ },
+ "changed_inputs70": {
+  "queries": 70,
+  "hit@10": {
+   "A1": 69,
+   "B1": 68,
+   "B2": 69
+  },
+  "verdict": {
+   "same_hit": 66,
+   "failure_touched": 3,
+   "loss": 1
+  },
+  "position": {
+   "down": 9,
+   "up": 5
+  },
+  "cause_A1:B1": {
+   "input_change": 65,
+   "failure_fallback": 3,
+   "same": 2
+  },
+  "cause_A1:B2": {
+   "input_change": 67,
+   "same": 2,
+   "failure_fallback": 1
+  },
+  "cause_B1:B2": {
+   "same": 66,
+   "model_variation": 2,
+   "failure_fallback": 2
+  },
+  "gain_ids": [],
+  "loss_ids": [
+   "q215"
+  ],
+  "variation_ids": [],
+  "failure_touched_ids": [
+   "n019",
+   "q107",
+   "t107"
+  ],
+  "position_up_ids": [
+   "m201",
+   "n031",
+   "n057",
+   "n082",
+   "t026"
+  ],
+  "position_down_ids": [
+   "m203",
+   "n018",
+   "n020",
+   "n061",
+   "n097",
+   "q101",
+   "q218",
+   "q312",
+   "t042"
+  ]
+ },
+ "unchanged_inputs_others": {
+  "queries": 106,
+  "hit@10": {
+   "A1": 47,
+   "B1": 51,
+   "B2": 51
+  },
+  "verdict": {
+   "same_miss": 55,
+   "same_hit": 47,
+   "gain": 4
+  },
+  "position": {},
+  "cause_A1:B1": {
+   "input_change": 41,
+   "same": 65
+  },
+  "cause_A1:B2": {
+   "input_change": 41,
+   "same": 65
+  },
+  "cause_B1:B2": {
+   "model_variation": 4,
+   "same": 102
+  },
+  "gain_ids": [
+   "c707",
+   "t058",
+   "t078",
+   "t100"
+  ],
+  "loss_ids": [],
+  "variation_ids": [],
+  "failure_touched_ids": [],
+  "position_up_ids": [],
+  "position_down_ids": []
+ },
+ "rank_down6": {
+  "queries": 6,
+  "hit@10": {
+   "A1": 6,
+   "B1": 6,
+   "B2": 6
+  },
+  "verdict": {
+   "same_hit": 6
+  },
+  "position": {
+   "down": 2
+  },
+  "cause_A1:B1": {
+   "input_change": 6
+  },
+  "cause_A1:B2": {
+   "input_change": 6
+  },
+  "cause_B1:B2": {
+   "same": 6
+  },
+  "per_query": {
+   "n018": {
+    "hit": "same_hit",
+    "position": "down",
+    "ranks": {
+     "A1": 2,
+     "B1": 3,
+     "B2": 3
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "3",
+     "B1": "11"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "input_change",
+    "cause_A1:B2": "input_change",
+    "cause_B1:B2": "same",
+    "sound_type": "named_event"
+   },
+   "t010": {
+    "hit": "same_hit",
+    "position": "none",
+    "ranks": {
+     "A1": 1,
+     "B1": 1,
+     "B2": 1
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "9",
+     "B1": "11"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "input_change",
+    "cause_A1:B2": "input_change",
+    "cause_B1:B2": "same",
+    "sound_type": "genre_mood"
+   },
+   "t042": {
+    "hit": "same_hit",
+    "position": "down",
+    "ranks": {
+     "A1": 2,
+     "B1": 8,
+     "B2": 8
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "20",
+     "B1": "23"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "input_change",
+    "cause_A1:B2": "input_change",
+    "cause_B1:B2": "same",
+    "sound_type": "vocal"
+   },
+   "n045": {
+    "hit": "same_hit",
+    "position": "none",
+    "ranks": {
+     "A1": 1,
+     "B1": 1,
+     "B2": 1
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "2",
+     "B1": "4"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "input_change",
+    "cause_A1:B2": "input_change",
+    "cause_B1:B2": "same",
+    "sound_type": "instrument"
+   },
+   "t033": {
+    "hit": "same_hit",
+    "position": "none",
+    "ranks": {
+     "A1": 1,
+     "B1": 1,
+     "B2": 1
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "2",
+     "B1": "3"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "input_change",
+    "cause_A1:B2": "input_change",
+    "cause_B1:B2": "same",
+    "sound_type": "vocal"
+   },
+   "c706": {
+    "hit": "same_hit",
+    "position": "none",
+    "ranks": {
+     "A1": 1,
+     "B1": 1,
+     "B2": 1
+    },
+    "failed_in": [],
+    "a_repeat_missing": true,
+    "cand": {
+     "A1": "3",
+     "B1": "4"
+    },
+    "status": {
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cause_A1:B1": "input_change",
+    "cause_A1:B2": "input_change",
+    "cause_B1:B2": "same",
+    "sound_type": "vocal"
+   }
+  }
+ },
+ "by_sound_type": {
+  "(소리 경로 안 돎)": {
+   "queries": 62,
+   "hit@10": {
+    "A1": 47,
+    "B1": 47,
+    "B2": 47
+   },
+   "verdict": {
+    "same_miss": 15,
+    "same_hit": 47
+   },
+   "position": {},
+   "cause_A1:B1": {
+    "same": 62
+   },
+   "cause_A1:B2": {
+    "same": 62
+   },
+   "cause_B1:B2": {
+    "same": 62
+   }
+  },
+  "genre_mood": {
+   "queries": 21,
+   "hit@10": {
+    "A1": 11,
+    "B1": 10,
+    "B2": 11
+   },
+   "verdict": {
+    "same_miss": 10,
+    "same_hit": 10,
+    "failure_touched": 1
+   },
+   "position": {
+    "down": 1,
+    "up": 1
+   },
+   "cause_A1:B1": {
+    "input_change": 19,
+    "failure_fallback": 1,
+    "same": 1
+   },
+   "cause_A1:B2": {
+    "input_change": 20,
+    "same": 1
+   },
+   "cause_B1:B2": {
+    "same": 19,
+    "failure_fallback": 1,
+    "model_variation": 1
+   }
+  },
+  "instrument": {
+   "queries": 50,
+   "hit@10": {
+    "A1": 26,
+    "B1": 28,
+    "B2": 28
+   },
+   "verdict": {
+    "same_hit": 24,
+    "same_miss": 21,
+    "failure_touched": 2,
+    "loss": 1,
+    "gain": 2
+   },
+   "position": {
+    "down": 4,
+    "up": 3
+   },
+   "cause_A1:B1": {
+    "input_change": 46,
+    "failure_fallback": 2,
+    "same": 2
+   },
+   "cause_A1:B2": {
+    "input_change": 47,
+    "same": 2,
+    "failure_fallback": 1
+   },
+   "cause_B1:B2": {
+    "same": 47,
+    "model_variation": 2,
+    "failure_fallback": 1
+   }
+  },
+  "named_event": {
+   "queries": 4,
+   "hit@10": {
+    "A1": 2,
+    "B1": 2,
+    "B2": 2
+   },
+   "verdict": {
+    "same_hit": 2,
+    "same_miss": 2
+   },
+   "position": {
+    "down": 1
+   },
+   "cause_A1:B1": {
+    "input_change": 4
+   },
+   "cause_A1:B2": {
+    "input_change": 4
+   },
+   "cause_B1:B2": {
+    "same": 4
+   }
+  },
+  "vocal": {
+   "queries": 39,
+   "hit@10": {
+    "A1": 30,
+    "B1": 32,
+    "B2": 32
+   },
+   "verdict": {
+    "same_hit": 30,
+    "same_miss": 7,
+    "gain": 2
+   },
+   "position": {
+    "down": 3,
+    "up": 1
+   },
+   "cause_A1:B1": {
+    "input_change": 37,
+    "same": 2
+   },
+   "cause_A1:B2": {
+    "input_change": 37,
+    "same": 2
+   },
+   "cause_B1:B2": {
+    "same": 36,
+    "model_variation": 3
+   }
+  }
+ }
+}

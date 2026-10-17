@@ -1,0 +1,149 @@
+{
+ "ledger_rows": 1116,
+ "first_attempt_epoch": 1792244823.86,
+ "deadline_epoch": 1792250223.86,
+ "first_attempt_ts": "2026-10-17T22:47:03.859+09:00",
+ "last_event_ts": "2026-10-17T23:43:01.404+09:00",
+ "halts": [
+  {
+   "run": "live_on_server_rep2",
+   "ts": "2026-10-17T23:43:01.404+09:00",
+   "reason": "비용 상한 $4.0: 확정·미확인 $3.8903 + 진행 중 $0.0000 + 이번 예약 $0.1133"
+  }
+ ],
+ "prices_usd_per_1m": {
+  "input": 0.25,
+  "output": 1.5
+ },
+ "runs": {
+  "live_on_server_rep1": {
+   "attempts": 167,
+   "attempts_count_tokens": 3,
+   "attempts_generate": 164,
+   "cached_tokens": 0,
+   "candidates_tokens": 224930,
+   "cost_usd": 0.763175,
+   "fail_CancelledError_None": 1,
+   "fail_ServerError_504": 1,
+   "failed": 2,
+   "prompt_tokens": 1703121,
+   "reserve_usd_sum": 18.503432,
+   "settled": 165,
+   "thoughts_tokens": 0,
+   "tool_prompt_tokens": 0,
+   "unverified_usd": 0.22759,
+   "output_tokens_incl_thinking": 224930,
+   "generate_latency_ms_median": 4769.5,
+   "generate_latency_ms_p95": 5745.7,
+   "harness": {
+    "generate_calls": 164,
+    "retry_attempts": 1,
+    "generate_errors": 2,
+    "groups": 163,
+    "groups_without_call": 0
+   },
+   "sdk_level_retries": 0,
+   "reranker_retry_attempts": 1
+  },
+  "live_skip_server_rep1": {
+   "attempts": 174,
+   "attempts_count_tokens": 3,
+   "attempts_generate": 171,
+   "cached_tokens": 0,
+   "candidates_tokens": 221960,
+   "cost_usd": 0.75561,
+   "fail_CancelledError_None": 2,
+   "fail_ServerError_504": 8,
+   "failed": 10,
+   "prompt_tokens": 1690682,
+   "reserve_usd_sum": 19.297607,
+   "settled": 164,
+   "thoughts_tokens": 0,
+   "tool_prompt_tokens": 0,
+   "unverified_usd": 1.137961,
+   "output_tokens_incl_thinking": 221960,
+   "generate_latency_ms_median": 5111.4,
+   "generate_latency_ms_p95": 12445.7,
+   "harness": {
+    "generate_calls": 171,
+    "retry_attempts": 8,
+    "generate_errors": 10,
+    "groups": 163,
+    "groups_without_call": 0
+   },
+   "sdk_level_retries": 0,
+   "reranker_retry_attempts": 8
+  },
+  "live_skip_server_rep2": {
+   "attempts": 166,
+   "attempts_count_tokens": 3,
+   "attempts_generate": 163,
+   "cached_tokens": 0,
+   "candidates_tokens": 225358,
+   "cost_usd": 0.766223,
+   "prompt_tokens": 1712746,
+   "reserve_usd_sum": 18.387032,
+   "settled": 166,
+   "thoughts_tokens": 0,
+   "tool_prompt_tokens": 0,
+   "unverified_usd": 0.0,
+   "output_tokens_incl_thinking": 225358,
+   "generate_latency_ms_median": 4545.9,
+   "generate_latency_ms_p95": 5591.0,
+   "harness": {
+    "generate_calls": 163,
+    "retry_attempts": 0,
+    "generate_errors": 0,
+    "groups": 163,
+    "groups_without_call": 0
+   },
+   "sdk_level_retries": 0,
+   "reranker_retry_attempts": 0
+  },
+  "live_on_server_rep2": {
+   "attempts": 50,
+   "attempts_count_tokens": 1,
+   "attempts_generate": 49,
+   "cached_tokens": 0,
+   "candidates_tokens": 71519,
+   "cost_usd": 0.239729,
+   "prompt_tokens": 529801,
+   "reserve_usd_sum": 5.546989,
+   "settled": 50,
+   "thoughts_tokens": 0,
+   "tool_prompt_tokens": 0,
+   "unverified_usd": 0.0,
+   "output_tokens_incl_thinking": 71519,
+   "generate_latency_ms_median": 4388.3,
+   "generate_latency_ms_p95": 5198.5,
+   "harness": {
+    "generate_calls": 0,
+    "retry_attempts": 0,
+    "generate_errors": 0,
+    "groups": 0,
+    "groups_without_call": 0
+   },
+   "sdk_level_retries": 49,
+   "reranker_retry_attempts": 0
+  }
+ },
+ "total": {
+  "attempts": 557,
+  "attempts_count_tokens": 10,
+  "attempts_generate": 547,
+  "cached_tokens": 0,
+  "candidates_tokens": 743767,
+  "cost_usd": 2.524738,
+  "fail_CancelledError_None": 3,
+  "fail_ServerError_504": 9,
+  "failed": 12,
+  "prompt_tokens": 5636350,
+  "reserve_usd_sum": 61.73506,
+  "settled": 545,
+  "thoughts_tokens": 0,
+  "tool_prompt_tokens": 0,
+  "unverified_usd": 1.365551,
+  "committed_usd": 3.890289,
+  "output_tokens_incl_thinking": 743767
+ }
+}

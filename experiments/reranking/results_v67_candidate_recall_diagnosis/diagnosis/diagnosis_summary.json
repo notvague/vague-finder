@@ -1,0 +1,215 @@
+{
+ "failures": 59,
+ "out_of_pool": 54,
+ "in_pool": 5,
+ "multi_gold_failures": [
+  "m302",
+  "m303",
+  "m402",
+  "m403",
+  "q117"
+ ],
+ "primary_out_of_pool": {
+  "R": 18,
+  "P": 11,
+  "F": 8,
+  "B": 6,
+  "A": 6,
+  "L": 5
+ },
+ "primary_in_pool": {
+  "K": 5
+ },
+ "primary_queries": {
+  "A": [
+   "n016",
+   "n033",
+   "n043",
+   "n058",
+   "t040",
+   "t043"
+  ],
+  "B": [
+   "c607",
+   "n011",
+   "n048",
+   "n088",
+   "t016",
+   "t068"
+  ],
+  "F": [
+   "m402",
+   "n055",
+   "n072",
+   "t058",
+   "t077",
+   "t078",
+   "t100",
+   "t111"
+  ],
+  "K": [
+   "c705",
+   "c707",
+   "q203",
+   "q205",
+   "t044"
+  ],
+  "L": [
+   "c701",
+   "n065",
+   "n093",
+   "n095",
+   "t029"
+  ],
+  "P": [
+   "c601",
+   "n002",
+   "n030",
+   "n040",
+   "n096",
+   "q106",
+   "q110",
+   "q112",
+   "t001",
+   "t011",
+   "t031"
+  ],
+  "R": [
+   "c602",
+   "c603",
+   "m302",
+   "m303",
+   "m403",
+   "n046",
+   "n064",
+   "q115",
+   "q117",
+   "t009",
+   "t038",
+   "t060",
+   "t073",
+   "t075",
+   "t079",
+   "t080",
+   "t092",
+   "t103"
+  ],
+  "U": []
+ },
+ "secondary_counts_overlapping": {
+  "A": 14,
+  "L": 7,
+  "R": 6,
+  "B": 4,
+  "P": 1,
+  "U": 2
+ },
+ "confidence": {
+  "확인": 56,
+  "추정": 3
+ },
+ "levers_overlapping": {
+  "audio_crowding:out": 7,
+  "context_target_rule:out": 3,
+  "cover_generic:out": 7,
+  "depth_attr:out": 11,
+  "era_simile_rule:out": 1,
+  "image_crowding:out": 2,
+  "indirect_reference:in": 4,
+  "indirect_reference:out": 14,
+  "lyric_surface:out": 3,
+  "sound_generic:out": 8,
+  "title_rule:out": 3
+ },
+ "lever_queries": {
+  "audio_crowding": [
+   "m402",
+   "n055",
+   "t058",
+   "t077",
+   "t078",
+   "t100",
+   "t111"
+  ],
+  "context_target_rule": [
+   "n096",
+   "t038",
+   "t040"
+  ],
+  "cover_generic": [
+   "m302",
+   "m303",
+   "m403",
+   "n088",
+   "q117",
+   "t092",
+   "t103"
+  ],
+  "depth_attr": [
+   "c601",
+   "n002",
+   "n030",
+   "n040",
+   "n096",
+   "q106",
+   "q110",
+   "q112",
+   "t001",
+   "t011",
+   "t031"
+  ],
+  "era_simile_rule": [
+   "n058"
+  ],
+  "image_crowding": [
+   "m402",
+   "n072"
+  ],
+  "indirect_reference": [
+   "c602",
+   "c603",
+   "c607",
+   "c701",
+   "c705",
+   "c707",
+   "n002",
+   "n016",
+   "n033",
+   "n040",
+   "n043",
+   "n096",
+   "q203",
+   "t009",
+   "t038",
+   "t040",
+   "t043",
+   "t044"
+  ],
+  "lyric_surface": [
+   "n064",
+   "t016",
+   "t060"
+  ],
+  "sound_generic": [
+   "n046",
+   "n048",
+   "n064",
+   "q115",
+   "t073",
+   "t075",
+   "t079",
+   "t080"
+  ],
+  "title_rule": [
+   "q106",
+   "q110",
+   "t011"
+  ]
+ },
+ "unconfirmed_primary_U": [],
+ "v50_compare": {
+  "same": 59,
+  "new": [],
+  "resolved": []
+ }
+}

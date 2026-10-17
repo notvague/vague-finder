@@ -1,0 +1,35 @@
+{
+ "pair": "skip_server_rep3 vs pre_skip_rep1",
+ "a": "experiments/reranking/results_v68_audio_skip_live/offline/stability/skip_server_rep3",
+ "b": "experiments/reranking/results_v68_audio_skip_live/offline/live_fingerprints/pre_skip_rep1",
+ "a_done": true,
+ "b_done": true,
+ "queries": 176,
+ "missing_either": [],
+ "fields_compared": [
+  "cand_ids",
+  "cand_scores",
+  "lyrics",
+  "protection",
+  "rerank_input",
+  "prompts",
+  "final"
+ ],
+ "input_identical": 176,
+ "input_diff_queries": [],
+ "diff_counts": {
+  "cand_ids": 0,
+  "cand_scores": 0,
+  "lyrics": 0,
+  "protection": 0,
+  "rerank_input": 0,
+  "prompts": 0,
+  "final": 0
+ },
+ "diff_queries": {},
+ "cand_set_diff_queries": [],
+ "path_diff_query_ids": {},
+ "groups_not_sent": {},
+ "retry_prompt_changed_queries": [],
+ "per_query": {}
+}
