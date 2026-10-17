@@ -1,0 +1,82 @@
+{
+ "ledger_rows": 665,
+ "first_attempt_epoch": 1792251534.706,
+ "deadline_epoch": 1792256934.706,
+ "first_attempt_ts": "2026-10-18T00:38:54.706+09:00",
+ "last_event_ts": "2026-10-18T01:06:23.063+09:00",
+ "halts": [],
+ "prices_usd_per_1m": {
+  "input": 0.25,
+  "output": 1.5
+ },
+ "runs": {
+  "live_on_server_rep3": {
+   "attempts": 166,
+   "attempts_count_tokens": 3,
+   "attempts_generate": 163,
+   "cached_tokens": 0,
+   "candidates_tokens": 226290,
+   "cost_usd": 0.768013,
+   "prompt_tokens": 1714314,
+   "reserve_usd_sum": 18.389621,
+   "settled": 166,
+   "thoughts_tokens": 0,
+   "tool_prompt_tokens": 0,
+   "unverified_usd": 0.0,
+   "output_tokens_incl_thinking": 226290,
+   "generate_latency_ms_median": 4563.9,
+   "generate_latency_ms_p95": 5491.7,
+   "harness": {
+    "generate_calls": 163,
+    "retry_attempts": 0,
+    "generate_errors": 0,
+    "groups": 163,
+    "groups_without_call": 0
+   },
+   "sdk_level_retries": 0,
+   "reranker_retry_attempts": 0
+  },
+  "live_skip_server_rep3": {
+   "attempts": 166,
+   "attempts_count_tokens": 3,
+   "attempts_generate": 163,
+   "cached_tokens": 0,
+   "candidates_tokens": 225358,
+   "cost_usd": 0.766223,
+   "prompt_tokens": 1712746,
+   "reserve_usd_sum": 18.387032,
+   "settled": 166,
+   "thoughts_tokens": 0,
+   "tool_prompt_tokens": 0,
+   "unverified_usd": 0.0,
+   "output_tokens_incl_thinking": 225358,
+   "generate_latency_ms_median": 4535.5,
+   "generate_latency_ms_p95": 5427.1,
+   "harness": {
+    "generate_calls": 163,
+    "retry_attempts": 0,
+    "generate_errors": 0,
+    "groups": 163,
+    "groups_without_call": 0
+   },
+   "sdk_level_retries": 0,
+   "reranker_retry_attempts": 0
+  }
+ },
+ "total": {
+  "attempts": 332,
+  "attempts_count_tokens": 6,
+  "attempts_generate": 326,
+  "cached_tokens": 0,
+  "candidates_tokens": 451648,
+  "cost_usd": 1.534237,
+  "prompt_tokens": 3427060,
+  "reserve_usd_sum": 36.776653,
+  "settled": 332,
+  "thoughts_tokens": 0,
+  "tool_prompt_tokens": 0,
+  "unverified_usd": 0.0,
+  "committed_usd": 1.534237,
+  "output_tokens_incl_thinking": 451648
+ }
+}
