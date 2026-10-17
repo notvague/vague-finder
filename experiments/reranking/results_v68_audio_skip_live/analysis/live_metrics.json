@@ -1,0 +1,1497 @@
+{
+ "conditions": {
+  "same_keys": [
+   "env",
+   "index_fingerprint",
+   "lyrics_snapshot",
+   "analysis_caches",
+   "collections"
+  ],
+  "code": {
+   "on": [
+    [
+     "bb7e6f0c3da70d62440a50c80d0ece636138ae9d",
+     "e2cbb47a58b13dd1"
+    ]
+   ],
+   "skip": [
+    [
+     "bb7e6f0c3da70d62440a50c80d0ece636138ae9d",
+     "e2cbb47a58b13dd1"
+    ]
+   ]
+  }
+ },
+ "runs": {
+  "A1": {
+   "dir": "experiments/reranking/results_v68_audio_skip_live/live/live_on_server_rep1",
+   "code": "on",
+   "rep": 1,
+   "metrics": {
+    "all": {
+     "queries": 176,
+     "hit1": 80,
+     "hit5": 106,
+     "hit10": 116,
+     "mrr10": 0.527142,
+     "mrr10_numerator": 92.776984,
+     "mrr10_denominator": 176,
+     "recall30": 122,
+     "status": {
+      "applied": 154,
+      "failed": 1,
+      "policy_skipped": 21
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 162,
+      "failed": 1
+     }
+    },
+    "lyric": {
+     "queries": 19,
+     "hit1": 12,
+     "hit5": 15,
+     "hit10": 16,
+     "mrr10": 0.702256,
+     "mrr10_numerator": 13.342857,
+     "mrr10_denominator": 19,
+     "recall30": 16,
+     "status": {
+      "applied": 19
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 27
+     }
+    },
+    "nonlyric": {
+     "queries": 157,
+     "hit1": 68,
+     "hit5": 91,
+     "hit10": 100,
+     "mrr10": 0.50595,
+     "mrr10_numerator": 79.434127,
+     "mrr10_denominator": 157,
+     "recall30": 106,
+     "status": {
+      "applied": 135,
+      "failed": 1,
+      "policy_skipped": 21
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 135,
+      "failed": 1
+     }
+    },
+    "v06": {
+     "queries": 57,
+     "hit1": 30,
+     "hit5": 36,
+     "hit10": 39,
+     "mrr10": 0.566541,
+     "mrr10_numerator": 32.292857,
+     "mrr10_denominator": 57,
+     "recall30": 43,
+     "status": {
+      "applied": 52,
+      "policy_skipped": 5
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 53
+     }
+    },
+    "v09": {
+     "queries": 59,
+     "hit1": 27,
+     "hit5": 36,
+     "hit10": 41,
+     "mrr10": 0.540624,
+     "mrr10_numerator": 31.896825,
+     "mrr10_denominator": 59,
+     "recall30": 41,
+     "status": {
+      "applied": 50,
+      "policy_skipped": 9
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 54
+     }
+    },
+    "v10": {
+     "queries": 60,
+     "hit1": 23,
+     "hit5": 34,
+     "hit10": 36,
+     "mrr10": 0.476455,
+     "mrr10_numerator": 28.587302,
+     "mrr10_denominator": 60,
+     "recall30": 38,
+     "status": {
+      "applied": 52,
+      "failed": 1,
+      "policy_skipped": 7
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 55,
+      "failed": 1
+     }
+    }
+   },
+   "aux_excluding_failure_touched": {
+    "queries": 175,
+    "hit1": 80,
+    "hit5": 106,
+    "hit10": 116,
+    "mrr10": 0.530154,
+    "mrr10_numerator": 92.776984,
+    "mrr10_denominator": 175,
+    "recall30": 121,
+    "status": {
+     "applied": 154,
+     "policy_skipped": 21
+    },
+    "budget_exhausted_queries": 0,
+    "group_status": {
+     "applied": 162
+    },
+    "excluded": 1
+   }
+  },
+  "B1": {
+   "dir": "experiments/reranking/results_v68_audio_skip_live/live/live_skip_server_rep1",
+   "code": "skip",
+   "rep": 1,
+   "metrics": {
+    "all": {
+     "queries": 176,
+     "hit1": 79,
+     "hit5": 110,
+     "hit10": 119,
+     "mrr10": 0.531507,
+     "mrr10_numerator": 93.545238,
+     "mrr10_denominator": 176,
+     "recall30": 127,
+     "status": {
+      "applied": 153,
+      "failed": 2,
+      "policy_skipped": 21
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 161,
+      "failed": 2
+     }
+    },
+    "lyric": {
+     "queries": 19,
+     "hit1": 12,
+     "hit5": 15,
+     "hit10": 16,
+     "mrr10": 0.702256,
+     "mrr10_numerator": 13.342857,
+     "mrr10_denominator": 19,
+     "recall30": 16,
+     "status": {
+      "applied": 19
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 27
+     }
+    },
+    "nonlyric": {
+     "queries": 157,
+     "hit1": 67,
+     "hit5": 95,
+     "hit10": 103,
+     "mrr10": 0.510843,
+     "mrr10_numerator": 80.202381,
+     "mrr10_denominator": 157,
+     "recall30": 111,
+     "status": {
+      "applied": 134,
+      "failed": 2,
+      "policy_skipped": 21
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 134,
+      "failed": 2
+     }
+    },
+    "v06": {
+     "queries": 57,
+     "hit1": 27,
+     "hit5": 37,
+     "hit10": 39,
+     "mrr10": 0.547682,
+     "mrr10_numerator": 31.217857,
+     "mrr10_denominator": 57,
+     "recall30": 43,
+     "status": {
+      "applied": 51,
+      "failed": 1,
+      "policy_skipped": 5
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 52,
+      "failed": 1
+     }
+    },
+    "v09": {
+     "queries": 59,
+     "hit1": 27,
+     "hit5": 37,
+     "hit10": 40,
+     "mrr10": 0.541028,
+     "mrr10_numerator": 31.920635,
+     "mrr10_denominator": 59,
+     "recall30": 41,
+     "status": {
+      "applied": 49,
+      "failed": 1,
+      "policy_skipped": 9
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 53,
+      "failed": 1
+     }
+    },
+    "v10": {
+     "queries": 60,
+     "hit1": 25,
+     "hit5": 36,
+     "hit10": 40,
+     "mrr10": 0.506779,
+     "mrr10_numerator": 30.406746,
+     "mrr10_denominator": 60,
+     "recall30": 43,
+     "status": {
+      "applied": 53,
+      "policy_skipped": 7
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 56
+     }
+    }
+   },
+   "aux_excluding_failure_touched": {
+    "queries": 174,
+    "hit1": 78,
+    "hit5": 109,
+    "hit10": 118,
+    "mrr10": 0.531869,
+    "mrr10_numerator": 92.545238,
+    "mrr10_denominator": 174,
+    "recall30": 125,
+    "status": {
+     "applied": 153,
+     "policy_skipped": 21
+    },
+    "budget_exhausted_queries": 0,
+    "group_status": {
+     "applied": 161
+    },
+    "excluded": 2
+   }
+  },
+  "B2": {
+   "dir": "experiments/reranking/results_v68_audio_skip_live/live/live_skip_server_rep2",
+   "code": "skip",
+   "rep": 2,
+   "metrics": {
+    "all": {
+     "queries": 176,
+     "hit1": 79,
+     "hit5": 111,
+     "hit10": 120,
+     "mrr10": 0.534348,
+     "mrr10_numerator": 94.045238,
+     "mrr10_denominator": 176,
+     "recall30": 127,
+     "status": {
+      "applied": 155,
+      "policy_skipped": 21
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 163
+     }
+    },
+    "lyric": {
+     "queries": 19,
+     "hit1": 12,
+     "hit5": 15,
+     "hit10": 16,
+     "mrr10": 0.702256,
+     "mrr10_numerator": 13.342857,
+     "mrr10_denominator": 19,
+     "recall30": 16,
+     "status": {
+      "applied": 19
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 27
+     }
+    },
+    "nonlyric": {
+     "queries": 157,
+     "hit1": 67,
+     "hit5": 96,
+     "hit10": 104,
+     "mrr10": 0.514028,
+     "mrr10_numerator": 80.702381,
+     "mrr10_denominator": 157,
+     "recall30": 111,
+     "status": {
+      "applied": 136,
+      "policy_skipped": 21
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 136
+     }
+    },
+    "v06": {
+     "queries": 57,
+     "hit1": 27,
+     "hit5": 37,
+     "hit10": 39,
+     "mrr10": 0.547682,
+     "mrr10_numerator": 31.217857,
+     "mrr10_denominator": 57,
+     "recall30": 43,
+     "status": {
+      "applied": 52,
+      "policy_skipped": 5
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 53
+     }
+    },
+    "v09": {
+     "queries": 59,
+     "hit1": 27,
+     "hit5": 38,
+     "hit10": 41,
+     "mrr10": 0.549502,
+     "mrr10_numerator": 32.420635,
+     "mrr10_denominator": 59,
+     "recall30": 41,
+     "status": {
+      "applied": 50,
+      "policy_skipped": 9
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 54
+     }
+    },
+    "v10": {
+     "queries": 60,
+     "hit1": 25,
+     "hit5": 36,
+     "hit10": 40,
+     "mrr10": 0.506779,
+     "mrr10_numerator": 30.406746,
+     "mrr10_denominator": 60,
+     "recall30": 43,
+     "status": {
+      "applied": 53,
+      "policy_skipped": 7
+     },
+     "budget_exhausted_queries": 0,
+     "group_status": {
+      "applied": 56
+     }
+    }
+   },
+   "aux_excluding_failure_touched": {
+    "queries": 176,
+    "hit1": 79,
+    "hit5": 111,
+    "hit10": 120,
+    "mrr10": 0.534348,
+    "mrr10_numerator": 94.045238,
+    "mrr10_denominator": 176,
+    "recall30": 127,
+    "status": {
+     "applied": 155,
+     "policy_skipped": 21
+    },
+    "budget_exhausted_queries": 0,
+    "group_status": {
+     "applied": 163
+    },
+    "excluded": 0
+   }
+  }
+ },
+ "pairs": {
+  "A1:B1": {
+   "pair": "live_on_server_rep1 → live_skip_server_rep1",
+   "final_top10_identical": 67,
+   "final_order_diff_by_cause": {
+    "failure_fallback": 3,
+    "input_change": 106
+   },
+   "gold_rank_changed": 21,
+   "gains": [
+    "m201",
+    "c707",
+    "n031",
+    "n057",
+    "n082",
+    "t026",
+    "t058",
+    "t078",
+    "t100",
+    "t107"
+   ],
+   "losses": [
+    "q101",
+    "q215",
+    "q218",
+    "q312",
+    "m203",
+    "n018",
+    "n019",
+    "n020",
+    "n061",
+    "n097",
+    "t042"
+   ],
+   "gold_rank_changes_by_cause": {
+    "failure_fallback": 2,
+    "input_change": 19
+   },
+   "input_change_queries": [
+    "q101",
+    "q103",
+    "q104",
+    "q105",
+    "q106",
+    "q107",
+    "q108",
+    "q110",
+    "q112",
+    "q113",
+    "q114",
+    "q115",
+    "q203",
+    "q205",
+    "q206",
+    "q207",
+    "q210",
+    "q215",
+    "q218",
+    "q219",
+    "q308",
+    "q310",
+    "q311",
+    "q312",
+    "q313",
+    "q314",
+    "q316",
+    "m102",
+    "m103",
+    "m104",
+    "m201",
+    "m202",
+    "m203",
+    "m402",
+    "m403",
+    "c701",
+    "c705",
+    "c706",
+    "c707",
+    "n002",
+    "n006",
+    "n010",
+    "n016",
+    "n018",
+    "n019",
+    "n020",
+    "n021",
+    "n025",
+    "n029",
+    "n030",
+    "n031",
+    "n033",
+    "n034",
+    "n035",
+    "n038",
+    "n040",
+    "n042",
+    "n043",
+    "n045",
+    "n046",
+    "n048",
+    "n051",
+    "n054",
+    "n055",
+    "n057",
+    "n058",
+    "n061",
+    "n062",
+    "n065",
+    "n081",
+    "n082",
+    "n086",
+    "n088",
+    "n089",
+    "n090",
+    "n095",
+    "n096",
+    "n097",
+    "t001",
+    "t004",
+    "t007",
+    "t008",
+    "t009",
+    "t010",
+    "t011",
+    "t026",
+    "t029",
+    "t031",
+    "t033",
+    "t036",
+    "t037",
+    "t038",
+    "t039",
+    "t040",
+    "t041",
+    "t042",
+    "t043",
+    "t044",
+    "t046",
+    "t053",
+    "t058",
+    "t068",
+    "t070",
+    "t073",
+    "t075",
+    "t077",
+    "t078",
+    "t079",
+    "t080",
+    "t100",
+    "t101",
+    "t104",
+    "t107",
+    "t111"
+   ],
+   "input_change_detail_counts": {
+    "cand_order": 18,
+    "cand_score": 5,
+    "cand_set": 91,
+    "groups": 114,
+    "prompt": 109
+   },
+   "rank_changes": [
+    {
+     "query_id": "q101",
+     "set": "v06",
+     "lyric": false,
+     "rank_x": 1,
+     "rank_y": 2,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "q215",
+     "set": "v06",
+     "lyric": false,
+     "rank_x": 6,
+     "rank_y": null,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "q218",
+     "set": "v06",
+     "lyric": false,
+     "rank_x": 1,
+     "rank_y": 2,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "q312",
+     "set": "v06",
+     "lyric": false,
+     "rank_x": 6,
+     "rank_y": 8,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_order",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "m201",
+     "set": "v06",
+     "lyric": false,
+     "rank_x": 5,
+     "rank_y": 3,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "m203",
+     "set": "v06",
+     "lyric": false,
+     "rank_x": 1,
+     "rank_y": 2,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "c707",
+     "set": "v06",
+     "lyric": false,
+     "rank_x": null,
+     "rank_y": 2,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_order",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "n018",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": 2,
+     "rank_y": 3,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "n019",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": 2,
+     "rank_y": null,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "failed",
+     "order_diff": true,
+     "cause": "failure_fallback",
+     "input_change": [
+      "cand_order",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "n020",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": 1,
+     "rank_y": 2,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_order",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "n031",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": 3,
+     "rank_y": 1,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "n057",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": 7,
+     "rank_y": 2,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "n061",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": 1,
+     "rank_y": 2,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "n082",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": 6,
+     "rank_y": 1,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "n097",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": 2,
+     "rank_y": 3,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "t026",
+     "set": "v10",
+     "lyric": false,
+     "rank_x": 2,
+     "rank_y": 1,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "t042",
+     "set": "v10",
+     "lyric": false,
+     "rank_x": 2,
+     "rank_y": 8,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "t058",
+     "set": "v10",
+     "lyric": false,
+     "rank_x": null,
+     "rank_y": 4,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "t078",
+     "set": "v10",
+     "lyric": false,
+     "rank_x": null,
+     "rank_y": 9,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "t100",
+     "set": "v10",
+     "lyric": false,
+     "rank_x": null,
+     "rank_y": 1,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "t107",
+     "set": "v10",
+     "lyric": false,
+     "rank_x": null,
+     "rank_y": 3,
+     "change": "gain",
+     "status_x": "failed",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "failure_fallback",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    }
+   ]
+  },
+  "A1:B2": {
+   "pair": "live_on_server_rep1 → live_skip_server_rep2",
+   "final_top10_identical": 67,
+   "final_order_diff_by_cause": {
+    "failure_fallback": 1,
+    "input_change": 108
+   },
+   "gold_rank_changed": 20,
+   "gains": [
+    "m201",
+    "c707",
+    "n031",
+    "n057",
+    "n082",
+    "t026",
+    "t058",
+    "t078",
+    "t100",
+    "t107"
+   ],
+   "losses": [
+    "q101",
+    "q215",
+    "q218",
+    "q312",
+    "m203",
+    "n018",
+    "n020",
+    "n061",
+    "n097",
+    "t042"
+   ],
+   "gold_rank_changes_by_cause": {
+    "failure_fallback": 1,
+    "input_change": 19
+   },
+   "input_change_queries": [
+    "q101",
+    "q103",
+    "q104",
+    "q105",
+    "q106",
+    "q107",
+    "q108",
+    "q110",
+    "q112",
+    "q113",
+    "q114",
+    "q115",
+    "q203",
+    "q205",
+    "q206",
+    "q207",
+    "q210",
+    "q215",
+    "q218",
+    "q219",
+    "q308",
+    "q310",
+    "q311",
+    "q312",
+    "q313",
+    "q314",
+    "q316",
+    "m102",
+    "m103",
+    "m104",
+    "m201",
+    "m202",
+    "m203",
+    "m402",
+    "m403",
+    "c701",
+    "c705",
+    "c706",
+    "c707",
+    "n002",
+    "n006",
+    "n010",
+    "n016",
+    "n018",
+    "n019",
+    "n020",
+    "n021",
+    "n025",
+    "n029",
+    "n030",
+    "n031",
+    "n033",
+    "n034",
+    "n035",
+    "n038",
+    "n040",
+    "n042",
+    "n043",
+    "n045",
+    "n046",
+    "n048",
+    "n051",
+    "n054",
+    "n055",
+    "n057",
+    "n058",
+    "n061",
+    "n062",
+    "n065",
+    "n081",
+    "n082",
+    "n086",
+    "n088",
+    "n089",
+    "n090",
+    "n095",
+    "n096",
+    "n097",
+    "t001",
+    "t004",
+    "t007",
+    "t008",
+    "t009",
+    "t010",
+    "t011",
+    "t026",
+    "t029",
+    "t031",
+    "t033",
+    "t036",
+    "t037",
+    "t038",
+    "t039",
+    "t040",
+    "t041",
+    "t042",
+    "t043",
+    "t044",
+    "t046",
+    "t053",
+    "t058",
+    "t068",
+    "t070",
+    "t073",
+    "t075",
+    "t077",
+    "t078",
+    "t079",
+    "t080",
+    "t100",
+    "t101",
+    "t104",
+    "t107",
+    "t111"
+   ],
+   "input_change_detail_counts": {
+    "cand_order": 18,
+    "cand_score": 5,
+    "cand_set": 91,
+    "groups": 114,
+    "prompt": 109
+   },
+   "rank_changes": [
+    {
+     "query_id": "q101",
+     "set": "v06",
+     "lyric": false,
+     "rank_x": 1,
+     "rank_y": 2,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "q215",
+     "set": "v06",
+     "lyric": false,
+     "rank_x": 6,
+     "rank_y": null,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "q218",
+     "set": "v06",
+     "lyric": false,
+     "rank_x": 1,
+     "rank_y": 2,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "q312",
+     "set": "v06",
+     "lyric": false,
+     "rank_x": 6,
+     "rank_y": 8,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_order",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "m201",
+     "set": "v06",
+     "lyric": false,
+     "rank_x": 5,
+     "rank_y": 3,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "m203",
+     "set": "v06",
+     "lyric": false,
+     "rank_x": 1,
+     "rank_y": 2,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "c707",
+     "set": "v06",
+     "lyric": false,
+     "rank_x": null,
+     "rank_y": 2,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_order",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "n018",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": 2,
+     "rank_y": 3,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "n020",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": 1,
+     "rank_y": 2,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_order",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "n031",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": 3,
+     "rank_y": 1,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "n057",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": 7,
+     "rank_y": 2,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "n061",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": 1,
+     "rank_y": 2,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "n082",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": 6,
+     "rank_y": 1,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "n097",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": 2,
+     "rank_y": 3,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "t026",
+     "set": "v10",
+     "lyric": false,
+     "rank_x": 2,
+     "rank_y": 1,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "t042",
+     "set": "v10",
+     "lyric": false,
+     "rank_x": 2,
+     "rank_y": 8,
+     "change": "loss",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "t058",
+     "set": "v10",
+     "lyric": false,
+     "rank_x": null,
+     "rank_y": 4,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "t078",
+     "set": "v10",
+     "lyric": false,
+     "rank_x": null,
+     "rank_y": 9,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "t100",
+     "set": "v10",
+     "lyric": false,
+     "rank_x": null,
+     "rank_y": 1,
+     "change": "gain",
+     "status_x": "applied",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "input_change",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    },
+    {
+     "query_id": "t107",
+     "set": "v10",
+     "lyric": false,
+     "rank_x": null,
+     "rank_y": 3,
+     "change": "gain",
+     "status_x": "failed",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "failure_fallback",
+     "input_change": [
+      "cand_set",
+      "groups",
+      "prompt"
+     ]
+    }
+   ]
+  },
+  "B1:B2": {
+   "pair": "live_skip_server_rep1 → live_skip_server_rep2",
+   "final_top10_identical": 168,
+   "final_order_diff_by_cause": {
+    "failure_fallback": 2,
+    "model_variation": 6
+   },
+   "gold_rank_changed": 1,
+   "gains": [
+    "n019"
+   ],
+   "losses": [],
+   "gold_rank_changes_by_cause": {
+    "failure_fallback": 1
+   },
+   "input_change_queries": [],
+   "input_change_detail_counts": {},
+   "rank_changes": [
+    {
+     "query_id": "n019",
+     "set": "v09",
+     "lyric": false,
+     "rank_x": null,
+     "rank_y": 2,
+     "change": "gain",
+     "status_x": "failed",
+     "status_y": "applied",
+     "order_diff": true,
+     "cause": "failure_fallback",
+     "input_change": []
+    }
+   ]
+  }
+ }
+}
