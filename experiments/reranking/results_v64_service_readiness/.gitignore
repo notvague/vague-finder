@@ -1,0 +1,16 @@
+# v64 — 로컬 재현 자료(커밋 제외). 보고서·도구·경량 요약·표만 커밋한다.
+# 요청별 원기록(후보 30·결과·곡별 설명 요약)과 진단 덤프
+sweep_requests.jsonl
+fallback_requests.jsonl
+diagnose_paths_*.json
+# 서버 로그·구간 기록(JSONL)·가짜 호출 기록·외부 연결 기록·모드 파일·진행 기록
+logs/
+ctl/
+progress.txt
+__pycache__/
+# 커밋할 경량 표(저장소 .gitignore의 csv 제외를 이 폴더에서 되돌린다)
+!query_categories.csv
+!sweep_per_query.csv
+!latency_requests.csv
+!latency_joined.csv
+!fallback_table.csv
