@@ -1,0 +1,10 @@
+{
+ "mode": "server",
+ "arm": "after",
+ "rep": 1,
+ "process_to_setup_s": 2.76,
+ "router_ready_s": 0.07,
+ "first_search_ms": 5308.5,
+ "second_search_ms": 133.8,
+ "note": "첫 검색에는 가사 판 적재(스냅샷 재생)·모델 첫 추론·Qdrant 첫 조회가 들어 있다"
+}

@@ -1,0 +1,83 @@
+{
+ "keys": 120,
+ "codes": {
+  "before": {
+   "runs": [
+    "load:local_fwd",
+    "load:local_fwd_reopen",
+    "load:local_rev",
+    "load:local_rev_reopen",
+    "load:server_fwd",
+    "load:server_rev",
+    "reload:server_fwd",
+    "reload:server_rev",
+    "restart:server_fwd",
+    "restart:server_rev"
+   ],
+   "identical_to_reference": {
+    "load:local_fwd": 18,
+    "load:local_fwd_reopen": 18,
+    "load:local_rev": 19,
+    "load:local_rev_reopen": 19,
+    "load:server_fwd": 26,
+    "load:server_rev": 25,
+    "reload:server_fwd": 23,
+    "reload:server_rev": 29,
+    "restart:server_fwd": 23,
+    "restart:server_rev": 24
+   },
+   "same_set_as_reference": {
+    "load:local_fwd": 46,
+    "load:local_fwd_reopen": 46,
+    "load:local_rev": 52,
+    "load:local_rev_reopen": 52,
+    "load:server_fwd": 52,
+    "load:server_rev": 48,
+    "reload:server_fwd": 54,
+    "reload:server_rev": 56,
+    "restart:server_fwd": 54,
+    "restart:server_rev": 50
+   },
+   "keys_identical_across_all_runs": 16
+  },
+  "after": {
+   "runs": [
+    "load:local_fwd",
+    "load:local_fwd_reopen",
+    "load:local_rev",
+    "load:local_rev_reopen",
+    "load:server_fwd",
+    "load:server_rev",
+    "reload:server_fwd",
+    "reload:server_rev",
+    "restart:server_fwd",
+    "restart:server_rev"
+   ],
+   "identical_to_reference": {
+    "load:local_fwd": 120,
+    "load:local_fwd_reopen": 120,
+    "load:local_rev": 120,
+    "load:local_rev_reopen": 120,
+    "load:server_fwd": 120,
+    "load:server_rev": 120,
+    "reload:server_fwd": 120,
+    "reload:server_rev": 120,
+    "restart:server_fwd": 120,
+    "restart:server_rev": 120
+   },
+   "same_set_as_reference": {
+    "load:local_fwd": 120,
+    "load:local_fwd_reopen": 120,
+    "load:local_rev": 120,
+    "load:local_rev_reopen": 120,
+    "load:server_fwd": 120,
+    "load:server_rev": 120,
+    "reload:server_fwd": 120,
+    "reload:server_rev": 120,
+    "restart:server_fwd": 120,
+    "restart:server_rev": 120
+   },
+   "keys_identical_across_all_runs": 120
+  }
+ }
+}

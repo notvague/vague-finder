@@ -200,8 +200,11 @@ def test_hybrid_scans_scores_only_and_reads_payload_for_top_k(client, monkeypatc
     res = client.Index(TEXT_HYBRID_INDEX_NAME).query(
         vector=dense, top_k=2, sparse_vector=sparse, include_metadata=False,
     )
-    assert res["matches"] == _old_hybrid(client, dense, sparse, top_k=2, include_metadata=False)
-    assert calls["retrieve"] == []
+    # v65: 메타데이터를 안 받는 호출도 곡 id는 payload의 song_id다. 예전 방식은 payload가 없어 point id("2")를
+    # 곡 id로 냈다 — 동점 순서 키를 point id로 대신하지 않으려고 경계까지의 점(여기서는 2곡)의 song_id만 읽는다.
+    assert [(m["id"], m["metadata"]) for m in res["matches"]] == [(m["id"], {}) for m in expected]
+    assert [m["score"] for m in res["matches"]] == [m["score"] for m in expected]
+    assert calls["retrieve"] == [[2, 1]]
 
 
 def test_filter_and_metadata_flags(client):

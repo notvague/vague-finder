@@ -1,0 +1,206 @@
+{
+  "source_path": "artifacts/qdrant_v65_src",
+  "server_url": "http://127.0.0.1:6366",
+  "started_at": "2026-10-17T11:29:14+0900",
+  "collections": {
+    "vaguefinder-audio-512__dev": {
+      "points_source": 5143,
+      "points_server": 5143,
+      "vectors_source": {
+        "dense": {
+          "dense": {
+            "size": 512,
+            "distance": "Cosine"
+          }
+        },
+        "sparse": []
+      },
+      "vectors_server": {
+        "dense": {
+          "dense": {
+            "size": 512,
+            "distance": "Cosine"
+          }
+        },
+        "sparse": []
+      },
+      "payload_indexes_server": [],
+      "payload_mismatch": 0,
+      "server_extra_points": 0,
+      "vector_sample": 50,
+      "vector_sample_mismatch": 0,
+      "ok": true
+    },
+    "vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf": {
+      "points_source": 5054,
+      "points_server": 5054,
+      "vectors_source": {
+        "dense": {
+          "dense": {
+            "size": 1024,
+            "distance": "Dot"
+          }
+        },
+        "sparse": []
+      },
+      "vectors_server": {
+        "dense": {
+          "dense": {
+            "size": 1024,
+            "distance": "Dot"
+          }
+        },
+        "sparse": []
+      },
+      "payload_indexes_server": [
+        "category",
+        "context_build_id",
+        "song_id"
+      ],
+      "payload_mismatch": 0,
+      "server_extra_points": 0,
+      "vector_sample": 50,
+      "vector_sample_mismatch": 0,
+      "ok": true
+    },
+    "vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf": {
+      "points_source": 639,
+      "points_server": 639,
+      "vectors_source": {
+        "dense": {},
+        "sparse": [
+          "sparse"
+        ]
+      },
+      "vectors_server": {
+        "dense": {},
+        "sparse": [
+          "sparse"
+        ]
+      },
+      "payload_indexes_server": [
+        "context_build_id",
+        "song_id"
+      ],
+      "payload_mismatch": 0,
+      "server_extra_points": 0,
+      "vector_sample": 50,
+      "vector_sample_mismatch": 0,
+      "ok": true
+    },
+    "vaguefinder-image-768__dev": {
+      "points_source": 5143,
+      "points_server": 5143,
+      "vectors_source": {
+        "dense": {
+          "dense": {
+            "size": 768,
+            "distance": "Cosine"
+          }
+        },
+        "sparse": []
+      },
+      "vectors_server": {
+        "dense": {
+          "dense": {
+            "size": 768,
+            "distance": "Cosine"
+          }
+        },
+        "sparse": []
+      },
+      "payload_indexes_server": [],
+      "payload_mismatch": 0,
+      "server_extra_points": 0,
+      "vector_sample": 50,
+      "vector_sample_mismatch": 0,
+      "ok": true
+    },
+    "vaguefinder-text-1024-koe5__dev": {
+      "points_source": 5143,
+      "points_server": 5143,
+      "vectors_source": {
+        "dense": {
+          "dense": {
+            "size": 1024,
+            "distance": "Dot"
+          }
+        },
+        "sparse": [
+          "sparse"
+        ]
+      },
+      "vectors_server": {
+        "dense": {
+          "dense": {
+            "size": 1024,
+            "distance": "Dot"
+          }
+        },
+        "sparse": [
+          "sparse"
+        ]
+      },
+      "payload_indexes_server": [],
+      "payload_mismatch": 0,
+      "server_extra_points": 0,
+      "vector_sample": 50,
+      "vector_sample_mismatch": 0,
+      "ok": true
+    }
+  },
+  "server_version": "1.19.1",
+  "migrated": [
+    "vaguefinder-audio-512__dev",
+    "vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf",
+    "vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf",
+    "vaguefinder-image-768__dev",
+    "vaguefinder-text-1024-koe5__dev"
+  ],
+  "migrate_seconds": 7.5,
+  "text_fingerprint": {
+    "source": {
+      "collection": "vaguefinder-text-1024-koe5__dev",
+      "points": 5143,
+      "dense_dim": 1024,
+      "sparse_nnz": 1061090,
+      "sparse_vocab": 44486,
+      "content_sha256_16": "238299e6c8c17f2a"
+    },
+    "server": {
+      "collection": "vaguefinder-text-1024-koe5__dev",
+      "points": 5143,
+      "dense_dim": 1024,
+      "sparse_nnz": 1061090,
+      "sparse_vocab": 44486,
+      "content_sha256_16": "238299e6c8c17f2a"
+    },
+    "expected": "238299e6c8c17f2a",
+    "ok": true
+  },
+  "aliases_source": {
+    "vaguefinder-context-dense-1024-koe5__dev": "vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf",
+    "vaguefinder-context-sparse-bm25__dev": "vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf"
+  },
+  "aliases_server_before": {},
+  "aliases_server": {
+    "vaguefinder-context-dense-1024-koe5__dev": "vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf",
+    "vaguefinder-context-sparse-bm25__dev": "vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf"
+  },
+  "aliases_ok": true,
+  "context_manifest": {
+    "manifest_status": "ok",
+    "source_scope_complete": true,
+    "context_build_id_16": "f6424b94621a28cf",
+    "manifest_content_sha256_16": "6aa71df984cc3d11",
+    "dense_alias_target_ok": true,
+    "sparse_alias_target_ok": true,
+    "dense_count_ok": true,
+    "sparse_count_ok": true,
+    "ok": true
+  },
+  "bm25_sha256_12": "bf606b19ab02",
+  "bm25_ok": true,
+  "all_ok": true,
+  "finished_at": "2026-10-17T11:29:27+0900"
+}

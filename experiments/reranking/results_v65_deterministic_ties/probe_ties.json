@@ -1,0 +1,208 @@
+{
+ "source": "artifacts/qdrant_v65_src",
+ "collections": {
+  "vaguefinder-audio-512__dev": {
+   "dense": {
+    "points": 5143,
+    "distinct_vectors": 5119,
+    "points_in_duplicate_groups": 48,
+    "duplicate_groups": 24,
+    "largest_groups": [
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2
+    ],
+    "groups_larger_than_30": 0,
+    "groups_spanning_multiple_songs": 24
+   },
+   "song_id": {
+    "n": 5143,
+    "distinct": 5143,
+    "ascii_digit": 5143,
+    "non_digit_examples": [],
+    "leading_zero": 0,
+    "lengths": {
+     "4": 26,
+     "5": 154,
+     "6": 457,
+     "7": 1508,
+     "8": 1850,
+     "9": 1148
+    },
+    "stripped_differs": 0
+   },
+   "point_id_matches_song_id": 5143,
+   "missing_song_id_payload": 0
+  },
+  "vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf": {
+   "dense": {
+    "points": 5054,
+    "distinct_vectors": 5054,
+    "points_in_duplicate_groups": 0,
+    "duplicate_groups": 0,
+    "largest_groups": [],
+    "groups_larger_than_30": 0,
+    "groups_spanning_multiple_songs": 0
+   },
+   "song_id": {
+    "n": 5054,
+    "distinct": 639,
+    "ascii_digit": 5054,
+    "non_digit_examples": [],
+    "leading_zero": 0,
+    "lengths": {
+     "4": 16,
+     "5": 199,
+     "6": 480,
+     "7": 1744,
+     "8": 2252,
+     "9": 363
+    },
+    "stripped_differs": 0
+   },
+   "record_id": {
+    "n": 5054,
+    "distinct": 5054,
+    "ascii_digit": 0,
+    "non_digit_examples": [
+     "nw:1008495:06b5dc984b3a5492683b",
+     "nw:1008495:4174f695e0dcce061fe7",
+     "nw:1008495:56ca6308182adcf3b638"
+    ],
+    "leading_zero": 0,
+    "lengths": {},
+    "stripped_differs": 0
+   },
+   "facts_per_song": {
+    "songs": 639,
+    "max": 95,
+    "songs_with_multiple_facts": 565
+   },
+   "point_id_matches_record_id": 5054
+  },
+  "vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf": {
+   "sparse": {
+    "points": 639,
+    "distinct_vectors": 639,
+    "points_in_duplicate_groups": 0,
+    "duplicate_groups": 0,
+    "largest_groups": [],
+    "groups_larger_than_30": 0
+   },
+   "song_id": {
+    "n": 639,
+    "distinct": 639,
+    "ascii_digit": 639,
+    "non_digit_examples": [],
+    "leading_zero": 0,
+    "lengths": {
+     "4": 2,
+     "5": 25,
+     "6": 65,
+     "7": 230,
+     "8": 259,
+     "9": 58
+    },
+    "stripped_differs": 0
+   },
+   "profile_id": {
+    "n": 639,
+    "distinct": 639,
+    "ascii_digit": 0,
+    "non_digit_examples": [
+     "nws:1008495",
+     "nws:1009239",
+     "nws:10435"
+    ],
+    "leading_zero": 0,
+    "lengths": {},
+    "stripped_differs": 0
+   },
+   "point_id_matches_profile_id": 639
+  },
+  "vaguefinder-image-768__dev": {
+   "dense": {
+    "points": 5143,
+    "distinct_vectors": 4243,
+    "points_in_duplicate_groups": 1395,
+    "duplicate_groups": 495,
+    "largest_groups": [
+     11,
+     10,
+     10,
+     10,
+     9,
+     9,
+     9,
+     9,
+     8,
+     8
+    ],
+    "groups_larger_than_30": 0,
+    "groups_spanning_multiple_songs": 495
+   },
+   "song_id": {
+    "n": 5143,
+    "distinct": 5143,
+    "ascii_digit": 5143,
+    "non_digit_examples": [],
+    "leading_zero": 0,
+    "lengths": {
+     "4": 26,
+     "5": 154,
+     "6": 457,
+     "7": 1508,
+     "8": 1850,
+     "9": 1148
+    },
+    "stripped_differs": 0
+   },
+   "point_id_matches_song_id": 5143,
+   "missing_song_id_payload": 0
+  },
+  "vaguefinder-text-1024-koe5__dev": {
+   "dense": {
+    "points": 5143,
+    "distinct_vectors": 5143,
+    "points_in_duplicate_groups": 0,
+    "duplicate_groups": 0,
+    "largest_groups": [],
+    "groups_larger_than_30": 0,
+    "groups_spanning_multiple_songs": 0
+   },
+   "sparse": {
+    "points": 5143,
+    "distinct_vectors": 5143,
+    "points_in_duplicate_groups": 0,
+    "duplicate_groups": 0,
+    "largest_groups": [],
+    "groups_larger_than_30": 0
+   },
+   "song_id": {
+    "n": 5143,
+    "distinct": 5143,
+    "ascii_digit": 5143,
+    "non_digit_examples": [],
+    "leading_zero": 0,
+    "lengths": {
+     "4": 26,
+     "5": 154,
+     "6": 457,
+     "7": 1508,
+     "8": 1850,
+     "9": 1148
+    },
+    "stripped_differs": 0
+   },
+   "point_id_matches_song_id": 5143,
+   "missing_song_id_payload": 0
+  }
+ }
+}
