@@ -1,0 +1,228 @@
+{
+  "run": "before_server_rep2",
+  "code": "before",
+  "commit": "2a6481d18e3fc2de339ee95038617f25da86a3ec",
+  "mode": "server",
+  "model": "fake",
+  "rep": 2,
+  "sets": [
+    "v06",
+    "v09",
+    "v10"
+  ],
+  "query_ids": "",
+  "partial": false,
+  "started_at": "2026-10-17T18:53:29+0900",
+  "env": {
+    "ATTR_FILTER_WEIGHT": "0",
+    "AUDIO_FUSION_SCALE": "1",
+    "CONTEXT_WEIGHT": "0.5",
+    "FEEDBACK_COLLECTION_ENABLED": "0",
+    "FEEDBACK_INDEX_WORKER_ENABLED": "0",
+    "FEEDBACK_RETRIEVAL_ENABLED": "0",
+    "GCP_LOCATION": "global",
+    "GCP_PROJECT_ID": "v66-offline-no-calls",
+    "GEMINI_MODEL_NAME": "gemini-3.1-flash-lite",
+    "GEMINI_RERANK_RARE_FACT_VERIFY": "0",
+    "GEMINI_RETRIEVAL_BACKEND": "vertex",
+    "HF_HUB_OFFLINE": "1",
+    "RERANKER_BACKEND": "gemini_listwise",
+    "SEARCH_REFERENCE_YEAR": "2026",
+    "TOKENIZERS_PARALLELISM": "false",
+    "TRANSFORMERS_OFFLINE": "1",
+    "QDRANT_PATH": "",
+    "QDRANT_URL": "http://127.0.0.1:6368"
+  },
+  "worktree_head": "74763170648883037fa930a164e713f5f35f5390",
+  "worktree_src_tests_changes": [],
+  "status": "complete",
+  "server_state_before_matches_baseline": true,
+  "code_identity": {
+    "code": "before",
+    "commit": "2a6481d18e3fc2de339ee95038617f25da86a3ec",
+    "code_root": "artifacts/src_before_2a6481d",
+    "files": {
+      "src.vector_db.qdrant_backend": {
+        "path": "artifacts/src_before_2a6481d/src/vector_db/qdrant_backend.py",
+        "git_blob": "1312faf4513b3fb394497c9a8f3f810196632423"
+      },
+      "src.retrieval.context_qdrant_search": {
+        "path": "artifacts/src_before_2a6481d/src/retrieval/context_qdrant_search.py",
+        "git_blob": "f81017924feedd55241e517c69f396f7619bc230"
+      },
+      "src.feedback.case_index": {
+        "path": "artifacts/src_before_2a6481d/src/feedback/case_index.py",
+        "git_blob": "f38634754149592afe3394d65d1844d8734df444"
+      },
+      "src.retrieval.evaluate_search_accuracy": {
+        "path": "artifacts/src_before_2a6481d/src/retrieval/evaluate_search_accuracy.py",
+        "git_blob": "db0091ffb420782bb38d2f12b6e10b55548432ac"
+      },
+      "src.retrieval.search_router": {
+        "path": "artifacts/src_before_2a6481d/src/retrieval/search_router.py",
+        "git_blob": "bab3068907d720aa9b574ad49269c7788e9b95cf"
+      }
+    },
+    "src_py_files": 160,
+    "src_py_tree_sha16": "3a7ee4b04b66f399"
+  },
+  "analysis_caches": {
+    "v06": {
+      "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v06_dev_vertex.json",
+      "queries": 57,
+      "file_sha256_16": "36eab91ca92a233b",
+      "missing": 0,
+      "fallback": 0,
+      "drift": []
+    },
+    "v09": {
+      "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v09_dev_vertex.json",
+      "queries": 59,
+      "file_sha256_16": "e1048ecff964004e",
+      "missing": 0,
+      "fallback": 0,
+      "drift": []
+    },
+    "v10": {
+      "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v10_dev_vertex.json",
+      "queries": 60,
+      "file_sha256_16": "c6c2d9d844957011",
+      "missing": 0,
+      "fallback": 0,
+      "drift": []
+    }
+  },
+  "guard_before": {
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "lyrics_mongo_client": "blocked",
+    "make_genai_client": "blocked",
+    "reranker.make_genai_client": "blocked",
+    "adc_credentials": "blocked",
+    "google.genai.Client": "blocked",
+    "network": "blocked",
+    "QDRANT_HYBRID_SCAN_LIMIT": "unset"
+  },
+  "lyrics_snapshot": {
+    "db": "vaguefinder",
+    "collection": "songs",
+    "document_count": 5143,
+    "full_lyrics_songs": 5143,
+    "full_lyrics_total_chars": 4076174,
+    "content_sha256_16": "e0d58f28f1f4a563",
+    "source": "v63_snapshot",
+    "snapshot_file_sha256_16": "295b7a508c12cc34"
+  },
+  "qdrant_open_seconds": 0.064,
+  "reference_build_seconds": 7.308,
+  "index_fingerprint": {
+    "collection": "vaguefinder-text-1024-koe5__dev",
+    "points": 5143,
+    "dense_dim": 1024,
+    "sparse_nnz": 1061090,
+    "sparse_vocab": 44486,
+    "content_sha256_16": "238299e6c8c17f2a"
+  },
+  "collections": {
+    "vaguefinder-audio-512__dev": 5143,
+    "vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf": 5054,
+    "vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf": 639,
+    "vaguefinder-image-768__dev": 5143,
+    "vaguefinder-text-1024-koe5__dev": 5143,
+    "vaguefinder-context-dense-1024-koe5__dev": 5054,
+    "vaguefinder-context-sparse-bm25__dev": 639
+  },
+  "sets_done": {
+    "v06": {
+      "seconds": 17.299,
+      "rows": 57,
+      "queries_recorded": 57,
+      "unattributed_rows": false,
+      "qdrant_logical_calls": 196,
+      "qdrant_classes": {
+        "context_fact:context-dense-1024-koe5:identical": 19,
+        "context_profile:context-sparse-bm25:boundary_tie_set": 1,
+        "context_profile:context-sparse-bm25:tie_order_only": 18,
+        "index:audio-512:identical": 35,
+        "index:audio-512:tie_order_only": 4,
+        "index:image-768:boundary_tie_set": 3,
+        "index:image-768:tie_order_only": 11,
+        "index:text-1024-koe5:identical": 105
+      },
+      "raw_outside_logical": {
+        "count": 1,
+        "retrieve": 8
+      },
+      "lyrics_errors": 0,
+      "offline_generate_calls": 53
+    },
+    "v09": {
+      "seconds": 7.987,
+      "rows": 59,
+      "queries_recorded": 59,
+      "unattributed_rows": false,
+      "qdrant_logical_calls": 183,
+      "qdrant_classes": {
+        "context_fact:context-dense-1024-koe5:identical": 11,
+        "context_fact:context-dense-1024-koe5:no_query": 2,
+        "context_profile:context-sparse-bm25:boundary_tie_set": 2,
+        "context_profile:context-sparse-bm25:tie_order_only": 11,
+        "index:audio-512:identical": 32,
+        "index:audio-512:tie_order_only": 7,
+        "index:image-768:boundary_tie_set": 4,
+        "index:image-768:tie_order_only": 12,
+        "index:text-1024-koe5:identical": 102
+      },
+      "raw_outside_logical": {
+        "count": 2,
+        "retrieve": 13
+      },
+      "lyrics_errors": 0,
+      "offline_generate_calls": 107
+    },
+    "v10": {
+      "seconds": 8.376,
+      "rows": 60,
+      "queries_recorded": 60,
+      "unattributed_rows": false,
+      "qdrant_logical_calls": 193,
+      "qdrant_classes": {
+        "context_fact:context-dense-1024-koe5:identical": 16,
+        "context_fact:context-dense-1024-koe5:no_query": 2,
+        "context_profile:context-sparse-bm25:boundary_tie_set": 2,
+        "context_profile:context-sparse-bm25:identical": 1,
+        "context_profile:context-sparse-bm25:tie_order_only": 15,
+        "index:audio-512:identical": 31,
+        "index:audio-512:tie_order_only": 5,
+        "index:image-768:boundary_tie_set": 3,
+        "index:image-768:identical": 3,
+        "index:image-768:tie_order_only": 11,
+        "index:text-1024-koe5:identical": 104
+      },
+      "raw_outside_logical": {
+        "count": 3,
+        "retrieve": 19
+      },
+      "lyrics_errors": 0,
+      "offline_generate_calls": 163
+    }
+  },
+  "cold_before_first_query_seconds": 10.34,
+  "guard_after": {
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "lyrics_mongo_client": "blocked",
+    "make_genai_client": "blocked",
+    "reranker.make_genai_client": "blocked",
+    "adc_credentials": "blocked",
+    "google.genai.Client": "blocked",
+    "network": "blocked",
+    "QDRANT_HYBRID_SCAN_LIMIT": "unset"
+  },
+  "network_attempts": [],
+  "lyrics_source_reads": 1,
+  "server_state_after_matches_baseline": true,
+  "finished_at": "2026-10-17T18:54:13+0900",
+  "total_seconds": 44.186,
+  "ru_maxrss_bytes": 3899146240
+}
