@@ -1,0 +1,57 @@
+{
+  "snapshot_documents": 5143,
+  "snapshot_distinct_ids": 5143,
+  "snapshot_nonempty_lyrics": 5143,
+  "index_points_song_ids": 5143,
+  "intersection": 5143,
+  "only_in_snapshot": [],
+  "only_in_index": [],
+  "index_ids_without_lyrics_in_snapshot": [],
+  "manifest": {
+    "started_at": "2026-10-17T01:17:04+09:00",
+    "full_read_started_at": "2026-10-17T01:18:31+09:00",
+    "full_read_finished_at": "2026-10-17T01:24:27+09:00",
+    "finished_at": "2026-10-17T01:25:56+09:00",
+    "full_read_seconds": 355.98,
+    "count_documents_before": 5143,
+    "count_documents_after": 5143,
+    "light_fingerprint_before": {
+      "document_count": 5143,
+      "full_lyrics_songs": 5143,
+      "full_lyrics_total_chars": 4076174,
+      "content_sha256_16": "e0d58f28f1f4a563",
+      "seconds": 86.33
+    },
+    "light_fingerprint_after": {
+      "document_count": 5143,
+      "full_lyrics_songs": 5143,
+      "full_lyrics_total_chars": 4076174,
+      "content_sha256_16": "e0d58f28f1f4a563",
+      "seconds": 87.01
+    },
+    "content_from_full_read": {
+      "document_count": 5143,
+      "full_lyrics_songs": 5143,
+      "full_lyrics_total_chars": 4076174,
+      "content_sha256_16": "e0d58f28f1f4a563"
+    },
+    "full_document_sha256_16": "e25da332c4a3f4a0",
+    "distinct_song_ids": 5143,
+    "duplicate_song_ids": [],
+    "missing_song_id_docs": 0,
+    "empty_full_lyrics_song_ids": [],
+    "consistent_before_full_after": true,
+    "file": {
+      "name": "documents.pkl.gz",
+      "bytes": 9586163,
+      "sha256_16": "295b7a508c12cc34"
+    },
+    "read": {
+      "method": "LyricsExactSearchService._source_documents (서비스와 같은 find({}, projection))",
+      "socket_timeout_seconds": 60.0,
+      "batch_size": 200
+    },
+    "db_name": "vaguefinder",
+    "collection": "songs"
+  }
+}

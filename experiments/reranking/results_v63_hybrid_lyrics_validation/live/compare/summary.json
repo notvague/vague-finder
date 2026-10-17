@@ -1,0 +1,758 @@
+{
+  "mode": "live",
+  "runs": {
+    "A1": {
+      "dir": "experiments/reranking/results_v63_hybrid_lyrics_validation/live/live_A_rep1",
+      "all_176": {
+        "n": 176,
+        "candidate_recall@30": 122,
+        "baseline_hit@1": 41,
+        "baseline_hit@5": 76,
+        "baseline_hit@10": 102,
+        "baseline_mrr@10": 0.3304,
+        "hit@1": 81,
+        "hit@5": 107,
+        "hit@10": 117,
+        "mrr@10": 0.5318,
+        "outcomes": {
+          "applied": 155,
+          "policy_skipped": 21
+        },
+        "group_status": {
+          "applied": 163
+        },
+        "rerank_groups": 163,
+        "retrieval_ms_median": 564.4,
+        "retrieval_ms_p95": 895.8,
+        "rerank_ms_median": 4532.8,
+        "rerank_ms_p95": 5570.0,
+        "total_ms_median": 5112.3,
+        "total_ms_p95": 6576.2,
+        "hybrid_calls": 311,
+        "hybrid_calls_not_matching_reference": 4,
+        "hybrid_ref_missing_songs": 0,
+        "hybrid_ref_score_mismatch_songs": 4,
+        "queries_with_lyrics_search": 19,
+        "queries_with_protected": 13
+      },
+      "lyric_19": {
+        "n": 19,
+        "candidate_recall@30": 16,
+        "baseline_hit@1": 13,
+        "baseline_hit@5": 14,
+        "baseline_hit@10": 16,
+        "baseline_mrr@10": 0.7281,
+        "hit@1": 12,
+        "hit@5": 15,
+        "hit@10": 16,
+        "mrr@10": 0.7023,
+        "outcomes": {
+          "applied": 19
+        },
+        "group_status": {
+          "applied": 27
+        },
+        "rerank_groups": 27,
+        "retrieval_ms_median": 558.2,
+        "retrieval_ms_p95": 1261.7,
+        "rerank_ms_median": 5295.8,
+        "rerank_ms_p95": 7756.6,
+        "total_ms_median": 5839.0,
+        "total_ms_p95": 8375.3,
+        "hybrid_calls": 36,
+        "hybrid_calls_not_matching_reference": 4,
+        "hybrid_ref_missing_songs": 0,
+        "hybrid_ref_score_mismatch_songs": 4,
+        "queries_with_lyrics_search": 19,
+        "queries_with_protected": 13
+      },
+      "non_lyric_157": {
+        "n": 157,
+        "candidate_recall@30": 106,
+        "baseline_hit@1": 28,
+        "baseline_hit@5": 62,
+        "baseline_hit@10": 86,
+        "baseline_mrr@10": 0.2823,
+        "hit@1": 69,
+        "hit@5": 92,
+        "hit@10": 101,
+        "mrr@10": 0.5112,
+        "outcomes": {
+          "applied": 136,
+          "policy_skipped": 21
+        },
+        "group_status": {
+          "applied": 136
+        },
+        "rerank_groups": 136,
+        "retrieval_ms_median": 564.7,
+        "retrieval_ms_p95": 877.8,
+        "rerank_ms_median": 4473.8,
+        "rerank_ms_p95": 5427.5,
+        "total_ms_median": 5054.0,
+        "total_ms_p95": 6095.0,
+        "hybrid_calls": 275,
+        "hybrid_calls_not_matching_reference": 0,
+        "hybrid_ref_missing_songs": 0,
+        "hybrid_ref_score_mismatch_songs": 0,
+        "queries_with_lyrics_search": 0,
+        "queries_with_protected": 0
+      },
+      "cold_before_first_query_seconds": 5.043,
+      "qdrant_open_seconds": 1.377,
+      "total_seconds": 844.816,
+      "lyrics_snapshot_builds": [
+        {
+          "ts": 1792168668.5023491,
+          "seconds": 0.766,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "search_worker_3"
+        },
+        {
+          "ts": 1792168668.5023491,
+          "seconds": 0.766,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "search_worker_3"
+        },
+        {
+          "ts": 1792169040.560287,
+          "seconds": 0.515,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "lyrics_refresh"
+        },
+        {
+          "ts": 1792168668.5023491,
+          "seconds": 0.766,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "search_worker_3"
+        },
+        {
+          "ts": 1792169040.560287,
+          "seconds": 0.515,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "lyrics_refresh"
+        },
+        {
+          "ts": 1792169374.209376,
+          "seconds": 0.517,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "lyrics_refresh"
+        }
+      ],
+      "budget_local": {
+        "attempts": 166,
+        "settled": 166,
+        "failed": 0,
+        "blocked": 0,
+        "cost": 0.7660477499999995,
+        "unverified": 0.0
+      }
+    },
+    "A2": {
+      "dir": "experiments/reranking/results_v63_hybrid_lyrics_validation/live/live_A_rep2",
+      "all_176": {
+        "n": 176,
+        "candidate_recall@30": 122,
+        "baseline_hit@1": 41,
+        "baseline_hit@5": 76,
+        "baseline_hit@10": 102,
+        "baseline_mrr@10": 0.3304,
+        "hit@1": 81,
+        "hit@5": 107,
+        "hit@10": 117,
+        "mrr@10": 0.5318,
+        "outcomes": {
+          "applied": 155,
+          "policy_skipped": 21
+        },
+        "group_status": {
+          "applied": 163
+        },
+        "rerank_groups": 163,
+        "retrieval_ms_median": 561.2,
+        "retrieval_ms_p95": 903.1,
+        "rerank_ms_median": 4734.2,
+        "rerank_ms_p95": 6038.6,
+        "total_ms_median": 5344.7,
+        "total_ms_p95": 6948.2,
+        "hybrid_calls": 311,
+        "hybrid_calls_not_matching_reference": 4,
+        "hybrid_ref_missing_songs": 0,
+        "hybrid_ref_score_mismatch_songs": 4,
+        "queries_with_lyrics_search": 19,
+        "queries_with_protected": 13
+      },
+      "lyric_19": {
+        "n": 19,
+        "candidate_recall@30": 16,
+        "baseline_hit@1": 13,
+        "baseline_hit@5": 14,
+        "baseline_hit@10": 16,
+        "baseline_mrr@10": 0.7281,
+        "hit@1": 12,
+        "hit@5": 15,
+        "hit@10": 16,
+        "mrr@10": 0.7023,
+        "outcomes": {
+          "applied": 19
+        },
+        "group_status": {
+          "applied": 27
+        },
+        "rerank_groups": 27,
+        "retrieval_ms_median": 555.7,
+        "retrieval_ms_p95": 1027.9,
+        "rerank_ms_median": 5310.0,
+        "rerank_ms_p95": 7789.9,
+        "total_ms_median": 5785.4,
+        "total_ms_p95": 8360.3,
+        "hybrid_calls": 36,
+        "hybrid_calls_not_matching_reference": 4,
+        "hybrid_ref_missing_songs": 0,
+        "hybrid_ref_score_mismatch_songs": 4,
+        "queries_with_lyrics_search": 19,
+        "queries_with_protected": 13
+      },
+      "non_lyric_157": {
+        "n": 157,
+        "candidate_recall@30": 106,
+        "baseline_hit@1": 28,
+        "baseline_hit@5": 62,
+        "baseline_hit@10": 86,
+        "baseline_mrr@10": 0.2823,
+        "hit@1": 69,
+        "hit@5": 92,
+        "hit@10": 101,
+        "mrr@10": 0.5112,
+        "outcomes": {
+          "applied": 136,
+          "policy_skipped": 21
+        },
+        "group_status": {
+          "applied": 136
+        },
+        "rerank_groups": 136,
+        "retrieval_ms_median": 561.7,
+        "retrieval_ms_p95": 890.5,
+        "rerank_ms_median": 4670.6,
+        "rerank_ms_p95": 5715.8,
+        "total_ms_median": 5268.9,
+        "total_ms_p95": 6312.2,
+        "hybrid_calls": 275,
+        "hybrid_calls_not_matching_reference": 0,
+        "hybrid_ref_missing_songs": 0,
+        "hybrid_ref_score_mismatch_songs": 0,
+        "queries_with_lyrics_search": 0,
+        "queries_with_protected": 0
+      },
+      "cold_before_first_query_seconds": 5.574,
+      "qdrant_open_seconds": 1.322,
+      "total_seconds": 874.587,
+      "lyrics_snapshot_builds": [
+        {
+          "ts": 1792171280.288526,
+          "seconds": 0.521,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "search_worker_2"
+        },
+        {
+          "ts": 1792171280.288526,
+          "seconds": 0.521,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "search_worker_2"
+        },
+        {
+          "ts": 1792171582.990013,
+          "seconds": 0.53,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "lyrics_refresh"
+        },
+        {
+          "ts": 1792171280.288526,
+          "seconds": 0.521,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "search_worker_2"
+        },
+        {
+          "ts": 1792171582.990013,
+          "seconds": 0.53,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "lyrics_refresh"
+        },
+        {
+          "ts": 1792171905.74176,
+          "seconds": 0.533,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "lyrics_refresh"
+        }
+      ],
+      "budget_local": {
+        "attempts": 166,
+        "settled": 166,
+        "failed": 0,
+        "blocked": 0,
+        "cost": 0.7660477499999995,
+        "unverified": 0.0
+      }
+    },
+    "B1": {
+      "dir": "experiments/reranking/results_v63_hybrid_lyrics_validation/live/live_B_rep1",
+      "all_176": {
+        "n": 176,
+        "candidate_recall@30": 122,
+        "baseline_hit@1": 41,
+        "baseline_hit@5": 76,
+        "baseline_hit@10": 102,
+        "baseline_mrr@10": 0.3304,
+        "hit@1": 81,
+        "hit@5": 107,
+        "hit@10": 117,
+        "mrr@10": 0.5318,
+        "outcomes": {
+          "applied": 155,
+          "policy_skipped": 21
+        },
+        "group_status": {
+          "applied": 163
+        },
+        "rerank_groups": 163,
+        "retrieval_ms_median": 567.7,
+        "retrieval_ms_p95": 996.8,
+        "rerank_ms_median": 4859.7,
+        "rerank_ms_p95": 6774.1,
+        "total_ms_median": 5438.5,
+        "total_ms_p95": 7463.4,
+        "hybrid_calls": 311,
+        "hybrid_calls_not_matching_reference": 0,
+        "hybrid_ref_missing_songs": 0,
+        "hybrid_ref_score_mismatch_songs": 0,
+        "queries_with_lyrics_search": 19,
+        "queries_with_protected": 13
+      },
+      "lyric_19": {
+        "n": 19,
+        "candidate_recall@30": 16,
+        "baseline_hit@1": 13,
+        "baseline_hit@5": 14,
+        "baseline_hit@10": 16,
+        "baseline_mrr@10": 0.7281,
+        "hit@1": 12,
+        "hit@5": 15,
+        "hit@10": 16,
+        "mrr@10": 0.7023,
+        "outcomes": {
+          "applied": 19
+        },
+        "group_status": {
+          "applied": 27
+        },
+        "rerank_groups": 27,
+        "retrieval_ms_median": 565.0,
+        "retrieval_ms_p95": 1128.8,
+        "rerank_ms_median": 5886.0,
+        "rerank_ms_p95": 9987.1,
+        "total_ms_median": 6547.4,
+        "total_ms_p95": 10537.0,
+        "hybrid_calls": 36,
+        "hybrid_calls_not_matching_reference": 0,
+        "hybrid_ref_missing_songs": 0,
+        "hybrid_ref_score_mismatch_songs": 0,
+        "queries_with_lyrics_search": 19,
+        "queries_with_protected": 13
+      },
+      "non_lyric_157": {
+        "n": 157,
+        "candidate_recall@30": 106,
+        "baseline_hit@1": 28,
+        "baseline_hit@5": 62,
+        "baseline_hit@10": 86,
+        "baseline_mrr@10": 0.2823,
+        "hit@1": 69,
+        "hit@5": 92,
+        "hit@10": 101,
+        "mrr@10": 0.5112,
+        "outcomes": {
+          "applied": 136,
+          "policy_skipped": 21
+        },
+        "group_status": {
+          "applied": 136
+        },
+        "rerank_groups": 136,
+        "retrieval_ms_median": 568.4,
+        "retrieval_ms_p95": 893.4,
+        "rerank_ms_median": 4693.2,
+        "rerank_ms_p95": 5958.7,
+        "total_ms_median": 5348.6,
+        "total_ms_p95": 6762.0,
+        "hybrid_calls": 275,
+        "hybrid_calls_not_matching_reference": 0,
+        "hybrid_ref_missing_songs": 0,
+        "hybrid_ref_score_mismatch_songs": 0,
+        "queries_with_lyrics_search": 0,
+        "queries_with_protected": 0
+      },
+      "cold_before_first_query_seconds": 5.487,
+      "qdrant_open_seconds": 1.332,
+      "total_seconds": 907.859,
+      "lyrics_snapshot_builds": [
+        {
+          "ts": 1792169510.971754,
+          "seconds": 0.531,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "search_worker_1"
+        },
+        {
+          "ts": 1792169510.971754,
+          "seconds": 0.531,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "search_worker_1"
+        },
+        {
+          "ts": 1792169844.838548,
+          "seconds": 0.52,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "lyrics_refresh"
+        },
+        {
+          "ts": 1792169510.971754,
+          "seconds": 0.531,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "search_worker_1"
+        },
+        {
+          "ts": 1792169844.838548,
+          "seconds": 0.52,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "lyrics_refresh"
+        },
+        {
+          "ts": 1792170178.351959,
+          "seconds": 0.795,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "lyrics_refresh"
+        }
+      ],
+      "budget_local": {
+        "attempts": 166,
+        "settled": 166,
+        "failed": 0,
+        "blocked": 0,
+        "cost": 0.7660477499999995,
+        "unverified": 0.0
+      }
+    },
+    "B2": {
+      "dir": "experiments/reranking/results_v63_hybrid_lyrics_validation/live/live_B_rep2",
+      "all_176": {
+        "n": 176,
+        "candidate_recall@30": 122,
+        "baseline_hit@1": 41,
+        "baseline_hit@5": 76,
+        "baseline_hit@10": 102,
+        "baseline_mrr@10": 0.3304,
+        "hit@1": 81,
+        "hit@5": 107,
+        "hit@10": 117,
+        "mrr@10": 0.5318,
+        "outcomes": {
+          "applied": 155,
+          "policy_skipped": 21
+        },
+        "group_status": {
+          "applied": 163
+        },
+        "rerank_groups": 163,
+        "retrieval_ms_median": 565.5,
+        "retrieval_ms_p95": 989.8,
+        "rerank_ms_median": 4580.6,
+        "rerank_ms_p95": 5783.5,
+        "total_ms_median": 5211.9,
+        "total_ms_p95": 6443.7,
+        "hybrid_calls": 311,
+        "hybrid_calls_not_matching_reference": 0,
+        "hybrid_ref_missing_songs": 0,
+        "hybrid_ref_score_mismatch_songs": 0,
+        "queries_with_lyrics_search": 19,
+        "queries_with_protected": 13
+      },
+      "lyric_19": {
+        "n": 19,
+        "candidate_recall@30": 16,
+        "baseline_hit@1": 13,
+        "baseline_hit@5": 14,
+        "baseline_hit@10": 16,
+        "baseline_mrr@10": 0.7281,
+        "hit@1": 12,
+        "hit@5": 15,
+        "hit@10": 16,
+        "mrr@10": 0.7023,
+        "outcomes": {
+          "applied": 19
+        },
+        "group_status": {
+          "applied": 27
+        },
+        "rerank_groups": 27,
+        "retrieval_ms_median": 556.1,
+        "retrieval_ms_p95": 1057.1,
+        "rerank_ms_median": 5181.5,
+        "rerank_ms_p95": 7644.2,
+        "total_ms_median": 6101.1,
+        "total_ms_p95": 8262.0,
+        "hybrid_calls": 36,
+        "hybrid_calls_not_matching_reference": 0,
+        "hybrid_ref_missing_songs": 0,
+        "hybrid_ref_score_mismatch_songs": 0,
+        "queries_with_lyrics_search": 19,
+        "queries_with_protected": 13
+      },
+      "non_lyric_157": {
+        "n": 157,
+        "candidate_recall@30": 106,
+        "baseline_hit@1": 28,
+        "baseline_hit@5": 62,
+        "baseline_hit@10": 86,
+        "baseline_mrr@10": 0.2823,
+        "hit@1": 69,
+        "hit@5": 92,
+        "hit@10": 101,
+        "mrr@10": 0.5112,
+        "outcomes": {
+          "applied": 136,
+          "policy_skipped": 21
+        },
+        "group_status": {
+          "applied": 136
+        },
+        "rerank_groups": 136,
+        "retrieval_ms_median": 566.0,
+        "retrieval_ms_p95": 923.7,
+        "rerank_ms_median": 4514.3,
+        "rerank_ms_p95": 5526.2,
+        "total_ms_median": 5148.8,
+        "total_ms_p95": 6257.7,
+        "hybrid_calls": 275,
+        "hybrid_calls_not_matching_reference": 0,
+        "hybrid_ref_missing_songs": 0,
+        "hybrid_ref_score_mismatch_songs": 0,
+        "queries_with_lyrics_search": 0,
+        "queries_with_protected": 0
+      },
+      "cold_before_first_query_seconds": 5.561,
+      "qdrant_open_seconds": 1.347,
+      "total_seconds": 856.77,
+      "lyrics_snapshot_builds": [
+        {
+          "ts": 1792170421.854623,
+          "seconds": 0.523,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "search_worker_2"
+        },
+        {
+          "ts": 1792170421.854623,
+          "seconds": 0.523,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "search_worker_2"
+        },
+        {
+          "ts": 1792170800.669745,
+          "seconds": 0.52,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "lyrics_refresh"
+        },
+        {
+          "ts": 1792170421.854623,
+          "seconds": 0.523,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "search_worker_2"
+        },
+        {
+          "ts": 1792170800.669745,
+          "seconds": 0.52,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "lyrics_refresh"
+        },
+        {
+          "ts": 1792171138.472064,
+          "seconds": 0.519,
+          "documents": 5143,
+          "generation": 0,
+          "thread": "lyrics_refresh"
+        }
+      ],
+      "budget_local": {
+        "attempts": 166,
+        "settled": 166,
+        "failed": 0,
+        "blocked": 0,
+        "cost": 0.7660477499999995,
+        "unverified": 0.0
+      }
+    }
+  },
+  "pairs": {
+    "A1:B1": {
+      "pair": "A1:B1",
+      "queries_with_any_diff": 1,
+      "queries_with_input_diff": 1,
+      "field_diff_counts": {
+        "cand_ids": 0,
+        "cand_scores": 1,
+        "cand_lyric": 0,
+        "lyrics_results": 0,
+        "protected": 0,
+        "tiers": 0,
+        "policy_skip": 0,
+        "groups": 0,
+        "group_scores": 1,
+        "prompt_shas": 0,
+        "mixes": 0,
+        "order_notes": 0,
+        "final_ids": 0
+      },
+      "final_rank_diff_queries": [],
+      "hit10_gains_b_over_a": [],
+      "hit10_losses_b_vs_a": []
+    },
+    "A2:B2": {
+      "pair": "A2:B2",
+      "queries_with_any_diff": 1,
+      "queries_with_input_diff": 1,
+      "field_diff_counts": {
+        "cand_ids": 0,
+        "cand_scores": 1,
+        "cand_lyric": 0,
+        "lyrics_results": 0,
+        "protected": 0,
+        "tiers": 0,
+        "policy_skip": 0,
+        "groups": 0,
+        "group_scores": 1,
+        "prompt_shas": 0,
+        "mixes": 0,
+        "order_notes": 0,
+        "final_ids": 0
+      },
+      "final_rank_diff_queries": [],
+      "hit10_gains_b_over_a": [],
+      "hit10_losses_b_vs_a": []
+    },
+    "A1:A2": {
+      "pair": "A1:A2",
+      "queries_with_any_diff": 0,
+      "queries_with_input_diff": 0,
+      "field_diff_counts": {
+        "cand_ids": 0,
+        "cand_scores": 0,
+        "cand_lyric": 0,
+        "lyrics_results": 0,
+        "protected": 0,
+        "tiers": 0,
+        "policy_skip": 0,
+        "groups": 0,
+        "group_scores": 0,
+        "prompt_shas": 0,
+        "mixes": 0,
+        "order_notes": 0,
+        "final_ids": 0
+      },
+      "final_rank_diff_queries": [],
+      "hit10_gains_b_over_a": [],
+      "hit10_losses_b_vs_a": []
+    },
+    "B1:B2": {
+      "pair": "B1:B2",
+      "queries_with_any_diff": 0,
+      "queries_with_input_diff": 0,
+      "field_diff_counts": {
+        "cand_ids": 0,
+        "cand_scores": 0,
+        "cand_lyric": 0,
+        "lyrics_results": 0,
+        "protected": 0,
+        "tiers": 0,
+        "policy_skip": 0,
+        "groups": 0,
+        "group_scores": 0,
+        "prompt_shas": 0,
+        "mixes": 0,
+        "order_notes": 0,
+        "final_ids": 0
+      },
+      "final_rank_diff_queries": [],
+      "hit10_gains_b_over_a": [],
+      "hit10_losses_b_vs_a": []
+    },
+    "A1:B2": {
+      "pair": "A1:B2",
+      "queries_with_any_diff": 1,
+      "queries_with_input_diff": 1,
+      "field_diff_counts": {
+        "cand_ids": 0,
+        "cand_scores": 1,
+        "cand_lyric": 0,
+        "lyrics_results": 0,
+        "protected": 0,
+        "tiers": 0,
+        "policy_skip": 0,
+        "groups": 0,
+        "group_scores": 1,
+        "prompt_shas": 0,
+        "mixes": 0,
+        "order_notes": 0,
+        "final_ids": 0
+      },
+      "final_rank_diff_queries": [],
+      "hit10_gains_b_over_a": [],
+      "hit10_losses_b_vs_a": []
+    },
+    "A2:B1": {
+      "pair": "A2:B1",
+      "queries_with_any_diff": 1,
+      "queries_with_input_diff": 1,
+      "field_diff_counts": {
+        "cand_ids": 0,
+        "cand_scores": 1,
+        "cand_lyric": 0,
+        "lyrics_results": 0,
+        "protected": 0,
+        "tiers": 0,
+        "policy_skip": 0,
+        "groups": 0,
+        "group_scores": 1,
+        "prompt_shas": 0,
+        "mixes": 0,
+        "order_notes": 0,
+        "final_ids": 0
+      },
+      "final_rank_diff_queries": [],
+      "hit10_gains_b_over_a": [],
+      "hit10_losses_b_vs_a": []
+    }
+  },
+  "repeat_input_variation": []
+}

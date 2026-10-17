@@ -1,0 +1,428 @@
+{
+ "baseline": "/private/tmp/vague-finder-hybrid-full-scan/experiments/reranking/results_v62_hybrid_full_scan/cand_fixed/cand_A",
+ "run": "/private/tmp/vague-finder-hybrid-lyrics-validation/experiments/reranking/results_v63_hybrid_lyrics_validation/offline/offline_B_rep1",
+ "lyrics_search_calls": 19,
+ "lyrics_search_errors": 0,
+ "lyrics_zero_result_calls": 3,
+ "queries_with_candidates_changed_vs_lyrics_empty": [
+  "q209",
+  "q211",
+  "q219",
+  "n007",
+  "n013",
+  "n017",
+  "n039",
+  "n064",
+  "t018",
+  "t025",
+  "t063",
+  "t110"
+ ],
+ "non_lyric_queries_changed": [],
+ "lyric_queries": {
+  "q209": {
+   "lyrics_results": 1,
+   "lyrics_ms": 536.609,
+   "match_types_top30": {
+    "fuzzy": 1
+   },
+   "protected": 0,
+   "tiers": [],
+   "rerank_groups": [
+    [
+     30,
+     30
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": true,
+   "lyric_candidates_in_30": 1
+  },
+  "q211": {
+   "lyrics_results": 5,
+   "lyrics_ms": 5.527,
+   "match_types_top30": {
+    "exact": 5
+   },
+   "protected": 5,
+   "tiers": [
+    -2.0,
+    2.0
+   ],
+   "rerank_groups": [
+    [
+     4,
+     4
+    ],
+    [
+     25,
+     25
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": true,
+   "lyric_candidates_in_30": 5
+  },
+  "q213": {
+   "lyrics_results": 1,
+   "lyrics_ms": 15.293,
+   "match_types_top30": {
+    "exact": 1
+   },
+   "protected": 1,
+   "tiers": [
+    2.0
+   ],
+   "rerank_groups": [
+    [
+     29,
+     29
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": false,
+   "lyric_candidates_in_30": 1
+  },
+  "q219": {
+   "lyrics_results": 1,
+   "lyrics_ms": 46.405,
+   "match_types_top30": {
+    "phonetic": 1
+   },
+   "protected": 0,
+   "tiers": [],
+   "rerank_groups": [
+    [
+     30,
+     30
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": true,
+   "lyric_candidates_in_30": 1
+  },
+  "n007": {
+   "lyrics_results": 7,
+   "lyrics_ms": 5.599,
+   "match_types_top30": {
+    "exact": 7
+   },
+   "protected": 7,
+   "tiers": [
+    -2.0,
+    -1.0,
+    0.5,
+    2.0,
+    3.0
+   ],
+   "rerank_groups": [
+    [
+     2,
+     2
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     23,
+     23
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": true,
+   "lyric_candidates_in_30": 7
+  },
+  "n009": {
+   "lyrics_results": 0,
+   "lyrics_ms": 14.526,
+   "match_types_top30": {},
+   "protected": 0,
+   "tiers": [],
+   "rerank_groups": [
+    [
+     30,
+     30
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": false,
+   "lyric_candidates_in_30": 0
+  },
+  "n013": {
+   "lyrics_results": 1,
+   "lyrics_ms": 13.12,
+   "match_types_top30": {
+    "exact": 1
+   },
+   "protected": 1,
+   "tiers": [
+    2.0
+   ],
+   "rerank_groups": [
+    [
+     29,
+     29
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": true,
+   "lyric_candidates_in_30": 1
+  },
+  "n017": {
+   "lyrics_results": 2,
+   "lyrics_ms": 11.894,
+   "match_types_top30": {
+    "exact": 1,
+    "fuzzy": 1
+   },
+   "protected": 1,
+   "tiers": [
+    2.0
+   ],
+   "rerank_groups": [
+    [
+     29,
+     29
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": true,
+   "lyric_candidates_in_30": 2
+  },
+  "n039": {
+   "lyrics_results": 1,
+   "lyrics_ms": 11.577,
+   "match_types_top30": {
+    "exact": 1
+   },
+   "protected": 1,
+   "tiers": [
+    0.0
+   ],
+   "rerank_groups": [
+    [
+     29,
+     29
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": true,
+   "lyric_candidates_in_30": 1
+  },
+  "n064": {
+   "lyrics_results": 60,
+   "lyrics_ms": 6.479,
+   "match_types_top30": {
+    "exact": 30
+   },
+   "protected": 30,
+   "tiers": [
+    -2.0,
+    0.5,
+    2.0
+   ],
+   "rerank_groups": [
+    [
+     15,
+     15
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     13,
+     13
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": true,
+   "lyric_candidates_in_30": 30
+  },
+  "t003": {
+   "lyrics_results": 2,
+   "lyrics_ms": 10.915,
+   "match_types_top30": {
+    "exact": 2
+   },
+   "protected": 2,
+   "tiers": [
+    2.0
+   ],
+   "rerank_groups": [
+    [
+     2,
+     2
+    ],
+    [
+     28,
+     28
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": false,
+   "lyric_candidates_in_30": 2
+  },
+  "t016": {
+   "lyrics_results": 0,
+   "lyrics_ms": 5.572,
+   "match_types_top30": {},
+   "protected": 0,
+   "tiers": [],
+   "rerank_groups": [
+    [
+     30,
+     30
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": false,
+   "lyric_candidates_in_30": 0
+  },
+  "t018": {
+   "lyrics_results": 2,
+   "lyrics_ms": 13.146,
+   "match_types_top30": {
+    "exact": 2
+   },
+   "protected": 2,
+   "tiers": [
+    0.0
+   ],
+   "rerank_groups": [
+    [
+     2,
+     2
+    ],
+    [
+     28,
+     28
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": true,
+   "lyric_candidates_in_30": 2
+  },
+  "t025": {
+   "lyrics_results": 3,
+   "lyrics_ms": 23.333,
+   "match_types_top30": {
+    "exact": 3
+   },
+   "protected": 3,
+   "tiers": [
+    0.0,
+    2.0
+   ],
+   "rerank_groups": [
+    [
+     2,
+     2
+    ],
+    [
+     27,
+     27
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": true,
+   "lyric_candidates_in_30": 3
+  },
+  "t032": {
+   "lyrics_results": 1,
+   "lyrics_ms": 10.463,
+   "match_types_top30": {
+    "exact": 1
+   },
+   "protected": 1,
+   "tiers": [
+    3.0
+   ],
+   "rerank_groups": [
+    [
+     29,
+     29
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": false,
+   "lyric_candidates_in_30": 1
+  },
+  "t060": {
+   "lyrics_results": 0,
+   "lyrics_ms": 10.955,
+   "match_types_top30": {},
+   "protected": 0,
+   "tiers": [],
+   "rerank_groups": [
+    [
+     30,
+     30
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": false,
+   "lyric_candidates_in_30": 0
+  },
+  "t063": {
+   "lyrics_results": 110,
+   "lyrics_ms": 5.796,
+   "match_types_top30": {
+    "exact": 30
+   },
+   "protected": 30,
+   "tiers": [
+    2.0
+   ],
+   "rerank_groups": [
+    [
+     30,
+     30
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": true,
+   "lyric_candidates_in_30": 30
+  },
+  "t105": {
+   "lyrics_results": 1,
+   "lyrics_ms": 12.451,
+   "match_types_top30": {
+    "exact": 1
+   },
+   "protected": 1,
+   "tiers": [
+    0.0
+   ],
+   "rerank_groups": [
+    [
+     29,
+     29
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": false,
+   "lyric_candidates_in_30": 1
+  },
+  "t110": {
+   "lyrics_results": 25,
+   "lyrics_ms": 26.519,
+   "match_types_top30": {
+    "fuzzy": 19,
+    "phonetic": 6
+   },
+   "protected": 0,
+   "tiers": [],
+   "rerank_groups": [
+    [
+     30,
+     30
+    ]
+   ],
+   "policy_skip": "",
+   "candidates_changed_vs_lyrics_empty": true,
+   "lyric_candidates_in_30": 25
+  }
+ }
+}
