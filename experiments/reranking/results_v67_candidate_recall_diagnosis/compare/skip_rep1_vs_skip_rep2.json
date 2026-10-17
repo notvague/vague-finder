@@ -1,0 +1,45 @@
+{
+ "a": "experiments/reranking/results_v67_candidate_recall_diagnosis/runs/skip_rep1",
+ "b": "experiments/reranking/results_v67_candidate_recall_diagnosis/runs/skip_rep2",
+ "queries": 176,
+ "all_inputs_same": 176,
+ "differs": {
+  "candidate_set": {
+   "count": 0,
+   "query_ids": []
+  },
+  "candidate_ids": {
+   "count": 0,
+   "query_ids": []
+  },
+  "candidate_scores": {
+   "count": 0,
+   "query_ids": []
+  },
+  "lyrics": {
+   "count": 0,
+   "query_ids": []
+  },
+  "protected": {
+   "count": 0,
+   "query_ids": []
+  },
+  "tiers": {
+   "count": 0,
+   "query_ids": []
+  },
+  "policy_skip": {
+   "count": 0,
+   "query_ids": []
+  },
+  "group_inputs": {
+   "count": 0,
+   "query_ids": []
+  },
+  "prompts": {
+   "count": 0,
+   "query_ids": []
+  }
+ },
+ "max_abs_candidate_score_delta_when_order_same": 0.0
+}

@@ -262,3 +262,15 @@ experiments/reranking/results_v62_hybrid_full_scan/logs/
 !experiments/reranking/results_v62_hybrid_full_scan/cand_fixed/*/*/search_eval_*_summary.csv
 !experiments/reranking/results_v62_hybrid_full_scan/cand_fixed/*/*/search_eval_*_top10.csv
 experiments/reranking/results_v62_hybrid_full_scan/cand_fixed/*/*/*_explain.jsonl
+
+# v67(2026-10-17) 후보 탈락 진단·소리 경로 비교 — 경량 결과(곡 ID·순위·코드·지연)만 추적한다.
+# 질의별 원기록(v67_queries.jsonl)·평가기 detail/explain(질의 원문·분석)·사람 검토 자료 묶음(질의·정답 곡 자료)·로그·무효 실행은 제외
+experiments/reranking/results_v67_candidate_recall_diagnosis/runs/*/*/v67_queries.jsonl
+experiments/reranking/results_v67_candidate_recall_diagnosis/runs/*/*/*_explain.jsonl
+experiments/reranking/results_v67_candidate_recall_diagnosis/diagnosis_private/
+experiments/reranking/results_v67_candidate_recall_diagnosis/invalid/
+experiments/reranking/results_v67_candidate_recall_diagnosis/logs/
+!experiments/reranking/results_v67_candidate_recall_diagnosis/diagnosis/*.csv
+!experiments/reranking/results_v67_candidate_recall_diagnosis/analysis/*.csv
+!experiments/reranking/results_v67_candidate_recall_diagnosis/trace/*.csv
+# runs/의 평가기 summary·top10은 가짜 리랭커 순서로 계산된 값이라 품질 지표가 아니다 — 추적하지 않는다(*.csv 기본 제외 그대로)

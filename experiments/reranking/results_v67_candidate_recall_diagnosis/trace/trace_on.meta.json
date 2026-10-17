@@ -1,0 +1,11 @@
+{
+ "audio": {
+  "config": "on",
+  "AUDIO_FUSION_SCALE": "1",
+  "patched": []
+ },
+ "rows": 190,
+ "queries": 176,
+ "deep_k": 5143,
+ "network_attempts": []
+}
