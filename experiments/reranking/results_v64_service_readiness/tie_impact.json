@@ -1,0 +1,24 @@
+{
+ "queries": 176,
+ "labels": 176,
+ "recall30_local": 122,
+ "recall30_server_A": 122,
+ "hit1_local": 41,
+ "hit1_server_A": 40,
+ "hit10_local": 102,
+ "hit10_server_A": 102,
+ "gold_rank_changed": [
+  {
+   "query_id": "n066",
+   "local": 1,
+   "server": 2
+  },
+  {
+   "query_id": "t107",
+   "local": 19,
+   "server": 20
+  }
+ ],
+ "order_diff_queries": 34,
+ "note": "리랭킹 전 후보(boosted) 순서 기준. 로컬 = v63 offline B(f43daf7, 로컬 파일 모드) — 같은 후보 생성 코드이며 dd5cc3e는 src 변경 없음"
+}

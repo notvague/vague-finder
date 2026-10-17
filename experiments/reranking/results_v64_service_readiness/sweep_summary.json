@@ -1,0 +1,1485 @@
+{
+ "requests": 374,
+ "status": {
+  "A|cache_miss|500": 1,
+  "A|dev|200": 176,
+  "A|synthetic_empty|200": 10,
+  "D|cache_miss|500": 1,
+  "D|dev|200": 176,
+  "D|synthetic_empty|200": 10
+ },
+ "shape": {
+  "n_results_counter": {
+   "15": 372
+  },
+  "duplicates": 0,
+  "candidate_duplicates": 0,
+  "results_outside_candidates": 0,
+  "n_candidates_counter": {
+   "30": 372
+  },
+  "failed_paths_nonempty": [],
+  "analysis_fallback_true": 0,
+  "rerank_error_nonempty": 0
+ },
+ "stages": {
+  "A|dev|model_applied|": 155,
+  "A|dev|policy_skipped|image_dominant": 21,
+  "A|synthetic_empty|model_applied|": 10,
+  "D|dev|model_applied|": 155,
+  "D|dev|policy_skipped|image_dominant": 21,
+  "D|synthetic_empty|model_applied|": 10
+ },
+ "model_calls_vs_fake": {
+  "checked": 330,
+  "null": 42,
+  "mismatch": []
+ },
+ "policy_skipped_fake_calls": 0,
+ "fake_calls_total": {
+  "A": 171,
+  "D": 171
+ },
+ "lyric19": {
+  "searched_all": {
+   "A": true,
+   "D": true
+  },
+  "errors": {
+   "A": 0,
+   "D": 0
+  },
+  "lyrics_failed_path": {
+   "A": [],
+   "D": []
+  },
+  "zero_result_queries_A": [
+   "n009",
+   "t016",
+   "t060"
+  ],
+  "multi_group_queries": {
+   "A": [
+    "q211",
+    "n007",
+    "t003",
+    "t018",
+    "t025"
+   ],
+   "D": [
+    "q211",
+    "n007",
+    "t003",
+    "t018",
+    "t025"
+   ]
+  },
+  "multi_group_matches_v63_runs": {
+   "A": 18,
+   "D": 18
+  },
+  "v63_protected_queries": 13,
+  "per_query": {
+   "q209": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      1
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      30
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 0,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [],
+     "v63_protected": 0,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      1
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      1
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      30
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 0,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [],
+     "v63_protected": 0,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      1
+     ]
+    }
+   },
+   "q211": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      5
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 2,
+     "fake_calls": 2,
+     "fake_sizes": [
+      4,
+      25
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 5,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect",
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 5,
+     "v63_rerank_runs": 2,
+     "v63_lyrics_results": [
+      5
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      5
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 2,
+     "fake_calls": 2,
+     "fake_sizes": [
+      4,
+      25
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 5,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect",
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 5,
+     "v63_rerank_runs": 2,
+     "v63_lyrics_results": [
+      5
+     ]
+    }
+   },
+   "q213": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      1
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      29
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 1,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 1,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      1
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      1
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      29
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 1,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 1,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      1
+     ]
+    }
+   },
+   "q219": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      1
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      30
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 1,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect"
+     ],
+     "v63_protected": 0,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      1
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      1
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      30
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 1,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect"
+     ],
+     "v63_protected": 0,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      1
+     ]
+    }
+   },
+   "n007": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      7
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 3,
+     "fake_calls": 3,
+     "fake_sizes": [
+      2,
+      2,
+      23
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 7,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect",
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 7,
+     "v63_rerank_runs": 3,
+     "v63_lyrics_results": [
+      7
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      7
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 3,
+     "fake_calls": 3,
+     "fake_sizes": [
+      2,
+      2,
+      23
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 7,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect",
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 7,
+     "v63_rerank_runs": 3,
+     "v63_lyrics_results": [
+      7
+     ]
+    }
+   },
+   "n009": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      0
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      30
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 0,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [],
+     "v63_protected": 0,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      0
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      0
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      30
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 0,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [],
+     "v63_protected": 0,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      0
+     ]
+    }
+   },
+   "n013": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      1
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      29
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 1,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 1,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      1
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      1
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      29
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 1,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 1,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      1
+     ]
+    }
+   },
+   "n017": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      2
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      29
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 1,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 1,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      2
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      2
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      29
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 1,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 1,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      2
+     ]
+    }
+   },
+   "n039": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      1
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      29
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 1,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 1,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      1
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      1
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      29
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 1,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 1,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      1
+     ]
+    }
+   },
+   "n064": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      60
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      15
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 15,
+     "results_with_lyric_detail": 9,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect",
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 30,
+     "v63_rerank_runs": 3,
+     "v63_lyrics_results": [
+      60
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      60
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      15
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 15,
+     "results_with_lyric_detail": 9,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect",
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 30,
+     "v63_rerank_runs": 3,
+     "v63_lyrics_results": [
+      60
+     ]
+    }
+   },
+   "t003": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      2
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 2,
+     "fake_calls": 2,
+     "fake_sizes": [
+      2,
+      28
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 2,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect",
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 2,
+     "v63_rerank_runs": 2,
+     "v63_lyrics_results": [
+      2
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      2
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 2,
+     "fake_calls": 2,
+     "fake_sizes": [
+      2,
+      28
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 2,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect",
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 2,
+     "v63_rerank_runs": 2,
+     "v63_lyrics_results": [
+      2
+     ]
+    }
+   },
+   "t016": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      0
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      30
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 0,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [],
+     "v63_protected": 0,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      0
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      0
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      30
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 0,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [],
+     "v63_protected": 0,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      0
+     ]
+    }
+   },
+   "t018": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      2
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 2,
+     "fake_calls": 2,
+     "fake_sizes": [
+      2,
+      28
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 2,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect",
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 2,
+     "v63_rerank_runs": 2,
+     "v63_lyrics_results": [
+      2
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      2
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 2,
+     "fake_calls": 2,
+     "fake_sizes": [
+      2,
+      28
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 2,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect",
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 2,
+     "v63_rerank_runs": 2,
+     "v63_lyrics_results": [
+      2
+     ]
+    }
+   },
+   "t025": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      3
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 2,
+     "fake_calls": 2,
+     "fake_sizes": [
+      2,
+      27
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 3,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect",
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 3,
+     "v63_rerank_runs": 2,
+     "v63_lyrics_results": [
+      3
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      3
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 2,
+     "fake_calls": 2,
+     "fake_sizes": [
+      2,
+      27
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 3,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect",
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 3,
+     "v63_rerank_runs": 2,
+     "v63_lyrics_results": [
+      3
+     ]
+    }
+   },
+   "t032": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      1
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      29
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 1,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 1,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      1
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      1
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      29
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 1,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 1,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      1
+     ]
+    }
+   },
+   "t060": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      0
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      30
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 0,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [],
+     "v63_protected": 0,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      0
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      0
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      30
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 0,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [],
+     "v63_protected": 0,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      0
+     ]
+    }
+   },
+   "t063": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      110
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      30
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 15,
+     "results_with_lyric_detail": 12,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect",
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 30,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      110
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      110
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      30
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 15,
+     "results_with_lyric_detail": 12,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect",
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 30,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      110
+     ]
+    }
+   },
+   "t105": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      1
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      29
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 1,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 1,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      1
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      1
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      29
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 1,
+     "results_with_lyric_detail": 0,
+     "group_status_values": [
+      "",
+      "applied"
+     ],
+     "protect_rules": [
+      "lyrics_exact_priority"
+     ],
+     "v63_protected": 1,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      1
+     ]
+    }
+   },
+   "t110": {
+    "A": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      25
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      30
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 10,
+     "results_with_lyric_detail": 5,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect"
+     ],
+     "v63_protected": 0,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      25
+     ]
+    },
+    "D": {
+     "status": 200,
+     "lyrics_searches": 1,
+     "lyrics_ok": true,
+     "lyrics_errors": [],
+     "lyrics_results": [
+      25
+     ],
+     "lyrics_failed_path": false,
+     "rerank_groups": 1,
+     "fake_calls": 1,
+     "fake_sizes": [
+      30
+     ],
+     "stage": "model_applied",
+     "results_with_lyric_match": 10,
+     "results_with_lyric_detail": 5,
+     "group_status_values": [
+      "applied"
+     ],
+     "protect_rules": [
+      "gemini_lyric_anchor_protect"
+     ],
+     "v63_protected": 0,
+     "v63_rerank_runs": 1,
+     "v63_lyrics_results": [
+      25
+     ]
+    }
+   }
+  }
+ },
+ "lyrics_calls_nonlyric_with_search": 0,
+ "http_vs_v63_offline_B": {
+  "queries": 176,
+  "identical_order": 142,
+  "diffs": [
+   [
+    "q117",
+    "first_diff_at=1 len=30/30 same_set=True"
+   ],
+   [
+    "q202",
+    "first_diff_at=23 len=30/30 same_set=True"
+   ],
+   [
+    "q204",
+    "first_diff_at=12 len=30/30 same_set=True"
+   ],
+   [
+    "q205",
+    "first_diff_at=25 len=30/30 same_set=True"
+   ],
+   [
+    "q307",
+    "first_diff_at=9 len=30/30 same_set=False"
+   ],
+   [
+    "q312",
+    "first_diff_at=26 len=30/30 same_set=True"
+   ],
+   [
+    "q315",
+    "first_diff_at=13 len=30/30 same_set=False"
+   ],
+   [
+    "m302",
+    "first_diff_at=2 len=30/30 same_set=True"
+   ],
+   [
+    "m303",
+    "first_diff_at=1 len=30/30 same_set=True"
+   ],
+   [
+    "m403",
+    "first_diff_at=17 len=30/30 same_set=True"
+   ],
+   [
+    "c601",
+    "first_diff_at=24 len=30/30 same_set=True"
+   ],
+   [
+    "n066",
+    "first_diff_at=1 len=30/30 same_set=False"
+   ],
+   [
+    "n068",
+    "first_diff_at=11 len=30/30 same_set=False"
+   ],
+   [
+    "n071",
+    "first_diff_at=6 len=30/30 same_set=True"
+   ],
+   [
+    "n072",
+    "first_diff_at=9 len=30/30 same_set=False"
+   ],
+   [
+    "n073",
+    "first_diff_at=20 len=30/30 same_set=True"
+   ],
+   [
+    "n074",
+    "first_diff_at=3 len=30/30 same_set=False"
+   ],
+   [
+    "n075",
+    "first_diff_at=2 len=30/30 same_set=True"
+   ],
+   [
+    "n076",
+    "first_diff_at=25 len=30/30 same_set=True"
+   ],
+   [
+    "n077",
+    "first_diff_at=8 len=30/30 same_set=True"
+   ],
+   [
+    "n082",
+    "first_diff_at=26 len=30/30 same_set=False"
+   ],
+   [
+    "n086",
+    "first_diff_at=13 len=30/30 same_set=True"
+   ],
+   [
+    "n091",
+    "first_diff_at=16 len=30/30 same_set=True"
+   ],
+   [
+    "t082",
+    "first_diff_at=5 len=30/30 same_set=True"
+   ],
+   [
+    "t083",
+    "first_diff_at=10 len=30/30 same_set=True"
+   ],
+   [
+    "t085",
+    "first_diff_at=25 len=30/30 same_set=True"
+   ],
+   [
+    "t086",
+    "first_diff_at=10 len=30/30 same_set=True"
+   ],
+   [
+    "t092",
+    "first_diff_at=8 len=30/30 same_set=True"
+   ],
+   [
+    "t096",
+    "first_diff_at=5 len=30/30 same_set=True"
+   ],
+   [
+    "t097",
+    "first_diff_at=17 len=30/30 same_set=True"
+   ],
+   [
+    "t099",
+    "first_diff_at=19 len=30/30 same_set=True"
+   ],
+   [
+    "t105",
+    "first_diff_at=4 len=30/30 same_set=True"
+   ],
+   [
+    "t107",
+    "first_diff_at=19 len=30/30 same_set=True"
+   ],
+   [
+    "t108",
+    "first_diff_at=29 len=30/30 same_set=False"
+   ]
+  ]
+ },
+ "attr_path": {
+  "missing_timing": [],
+  "open_span_mismatch": [],
+  "D_attr_span_dev": 40,
+  "A_attr_span": 0,
+  "categories_dev": {
+   "closed": 136,
+   "open_hits": 40
+  },
+  "closed_A_ne_D": [],
+  "open_A_ne_D": 40,
+  "synthetic": {
+   "A": {
+    "attr_span": 0,
+    "n": 10,
+    "filtered_counts": 3
+   },
+   "D": {
+    "attr_span": 10,
+    "n": 10,
+    "filtered_counts": 13
+   }
+  },
+  "synthetic_candidates": {
+   "A": [
+    30,
+    30,
+    30,
+    30,
+    30,
+    30,
+    30,
+    30,
+    30,
+    30
+   ],
+   "D": [
+    30,
+    30,
+    30,
+    30,
+    30,
+    30,
+    30,
+    30,
+    30,
+    30
+   ]
+  },
+  "D_filtered_counts_per_open_request": {
+   "1": 42,
+   "2": 8
+  },
+  "unfiltered_counts_per_request": {
+   "1": 122,
+   "2": 242,
+   "3": 8
+  }
+ },
+ "cache_miss": [
+  {
+   "arm": "A",
+   "status": 500,
+   "fake_calls": 0,
+   "body": "{\"detail\":\"검색 중 서버 내부 오류가 발생했습니다: v64: 분석 캐시에 없는 질의 — 모델 호출 없이 중단\"}"
+  },
+  {
+   "arm": "D",
+   "status": 500,
+   "fake_calls": 0,
+   "body": "{\"detail\":\"검색 중 서버 내부 오류가 발생했습니다: v64: 분석 캐시에 없는 질의 — 모델 호출 없이 중단\"}"
+  }
+ ],
+ "status_after": {
+  "A": {
+   "network_attempts": 0,
+   "blocked_client_calls": [],
+   "analysis_misses": 1,
+   "lyrics_reads": 1,
+   "fake_calls": 171
+  },
+  "D": {
+   "network_attempts": 0,
+   "blocked_client_calls": [],
+   "analysis_misses": 1,
+   "lyrics_reads": 1,
+   "fake_calls": 171
+  }
+ }
+}

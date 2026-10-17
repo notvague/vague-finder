@@ -1,0 +1,645 @@
+{
+ "requests": 182,
+ "measured": 180,
+ "warm": [
+  {
+   "arm": "A",
+   "query_id": "c601",
+   "client": 168.3,
+   "server": 166.08,
+   "search": 162.81
+  },
+  {
+   "arm": "D",
+   "query_id": "c601",
+   "client": 161.2,
+   "server": 159.37,
+   "search": 155.97
+  }
+ ],
+ "non_200": 0,
+ "timing_unmatched": 0,
+ "categories": {
+  "closed": {
+   "request": {
+    "A": {
+     "client": {
+      "n": 30,
+      "median": 60.8,
+      "p95": 113.8,
+      "max": 268.9
+     },
+     "server": {
+      "n": 30,
+      "median": 59.3,
+      "p95": 112.3,
+      "max": 267.4
+     },
+     "search": {
+      "n": 30,
+      "median": 56.2,
+      "p95": 108.8,
+      "max": 262.1
+     },
+     "count_unfiltered": {
+      "n": 30,
+      "median": 2.4,
+      "p95": 5.9,
+      "max": 6.0
+     },
+     "count_filtered": {
+      "n": 30,
+      "median": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+     },
+     "attr_filter": null,
+     "text": {
+      "n": 30,
+      "median": 55.5,
+      "p95": 98.4,
+      "max": 258.5
+     }
+    },
+    "D": {
+     "client": {
+      "n": 30,
+      "median": 60.2,
+      "p95": 197.1,
+      "max": 289.6
+     },
+     "server": {
+      "n": 30,
+      "median": 58.8,
+      "p95": 195.6,
+      "max": 288.1
+     },
+     "search": {
+      "n": 30,
+      "median": 55.7,
+      "p95": 192.7,
+      "max": 284.6
+     },
+     "count_unfiltered": {
+      "n": 30,
+      "median": 2.4,
+      "p95": 5.8,
+      "max": 9.2
+     },
+     "count_filtered": {
+      "n": 30,
+      "median": 0.0,
+      "p95": 0.0,
+      "max": 0.0
+     },
+     "attr_filter": null,
+     "text": {
+      "n": 30,
+      "median": 55.0,
+      "p95": 177.4,
+      "max": 259.4
+     }
+    }
+   },
+   "query_diff": {
+    "client": {
+     "n": 10,
+     "median": -0.6,
+     "p95": 0.4,
+     "max": 0.8,
+     "min": -3.8
+    },
+    "server": {
+     "n": 10,
+     "median": -0.6,
+     "p95": 0.4,
+     "max": 0.7,
+     "min": -3.9
+    },
+    "search": {
+     "n": 10,
+     "median": -0.6,
+     "p95": 0.4,
+     "max": 0.7,
+     "min": -3.9
+    }
+   },
+   "pair_diff": {
+    "client": {
+     "n": 30,
+     "median": -0.9,
+     "p95": 92.6,
+     "max": 176.6
+    },
+    "server": {
+     "n": 30,
+     "median": -0.8,
+     "p95": 92.6,
+     "max": 176.5
+    },
+    "search": {
+     "n": 30,
+     "median": -0.9,
+     "p95": 92.6,
+     "max": 176.6
+    }
+   },
+   "count_calls": {
+    "A": {
+     "filtered_per_request": {
+      "0": 30
+     },
+     "unfiltered_per_request": {
+      "1": 21,
+      "2": 9
+     }
+    },
+    "D": {
+     "filtered_per_request": {
+      "0": 30
+     },
+     "unfiltered_per_request": {
+      "1": 21,
+      "2": 9
+     }
+    }
+   },
+   "candidate_digest_stable": 20,
+   "candidate_digest_groups": 20,
+   "A_eq_D_candidates": "10/10"
+  },
+  "open_hits": {
+   "request": {
+    "A": {
+     "client": {
+      "n": 30,
+      "median": 127.9,
+      "p95": 291.3,
+      "max": 365.2
+     },
+     "server": {
+      "n": 30,
+      "median": 126.3,
+      "p95": 289.8,
+      "max": 363.6
+     },
+     "search": {
+      "n": 30,
+      "median": 120.7,
+      "p95": 284.1,
+      "max": 357.1
+     },
+     "count_unfiltered": {
+      "n": 30,
+      "median": 4.7,
+      "p95": 8.1,
+      "max": 11.0
+     },
+     "count_filtered": {
+      "n": 30,
+      "median": 0.0,
+      "p95": 43.1,
+      "max": 170.9
+     },
+     "attr_filter": null,
+     "text": {
+      "n": 30,
+      "median": 113.6,
+      "p95": 281.2,
+      "max": 295.8
+     }
+    },
+    "D": {
+     "client": {
+      "n": 30,
+      "median": 217.9,
+      "p95": 302.6,
+      "max": 313.9
+     },
+     "server": {
+      "n": 30,
+      "median": 216.2,
+      "p95": 301.0,
+      "max": 312.3
+     },
+     "search": {
+      "n": 30,
+      "median": 210.2,
+      "p95": 296.5,
+      "max": 306.6
+     },
+     "count_unfiltered": {
+      "n": 30,
+      "median": 4.9,
+      "p95": 10.4,
+      "max": 13.6
+     },
+     "count_filtered": {
+      "n": 30,
+      "median": 96.4,
+      "p95": 153.7,
+      "max": 190.8
+     },
+     "attr_filter": {
+      "n": 30,
+      "median": 200.7,
+      "p95": 291.5,
+      "max": 302.8
+     },
+     "text": {
+      "n": 30,
+      "median": 124.0,
+      "p95": 270.7,
+      "max": 301.1
+     }
+    }
+   },
+   "query_diff": {
+    "client": {
+     "n": 10,
+     "median": 67.0,
+     "p95": 123.9,
+     "max": 131.5,
+     "min": 33.6
+    },
+    "server": {
+     "n": 10,
+     "median": 66.9,
+     "p95": 123.9,
+     "max": 131.3,
+     "min": 33.7
+    },
+    "search": {
+     "n": 10,
+     "median": 66.7,
+     "p95": 123.2,
+     "max": 130.4,
+     "min": 33.7
+    }
+   },
+   "pair_diff": {
+    "client": {
+     "n": 30,
+     "median": 65.3,
+     "p95": 199.1,
+     "max": 210.2
+    },
+    "server": {
+     "n": 30,
+     "median": 65.5,
+     "p95": 199.1,
+     "max": 210.2
+    },
+    "search": {
+     "n": 30,
+     "median": 65.6,
+     "p95": 199.0,
+     "max": 210.3
+    }
+   },
+   "count_calls": {
+    "A": {
+     "filtered_per_request": {
+      "0": 21,
+      "1": 9
+     },
+     "unfiltered_per_request": {
+      "1": 3,
+      "2": 24,
+      "3": 3
+     }
+    },
+    "D": {
+     "filtered_per_request": {
+      "1": 21,
+      "2": 9
+     },
+     "unfiltered_per_request": {
+      "1": 3,
+      "2": 24,
+      "3": 3
+     }
+    }
+   },
+   "candidate_digest_stable": 20,
+   "candidate_digest_groups": 20,
+   "A_eq_D_candidates": "0/10"
+  },
+  "open_empty": "없음",
+  "open_empty_synthetic": {
+   "request": {
+    "A": {
+     "client": {
+      "n": 30,
+      "median": 123.6,
+      "p95": 284.5,
+      "max": 310.9
+     },
+     "server": {
+      "n": 30,
+      "median": 122.0,
+      "p95": 282.8,
+      "max": 309.3
+     },
+     "search": {
+      "n": 30,
+      "median": 116.4,
+      "p95": 276.8,
+      "max": 303.7
+     },
+     "count_unfiltered": {
+      "n": 30,
+      "median": 4.4,
+      "p95": 7.6,
+      "max": 8.1
+     },
+     "count_filtered": {
+      "n": 30,
+      "median": 0.0,
+      "p95": 40.1,
+      "max": 46.0
+     },
+     "attr_filter": null,
+     "text": {
+      "n": 30,
+      "median": 110.7,
+      "p95": 273.4,
+      "max": 301.2
+     }
+    },
+    "D": {
+     "client": {
+      "n": 30,
+      "median": 218.2,
+      "p95": 364.6,
+      "max": 429.0
+     },
+     "server": {
+      "n": 30,
+      "median": 216.6,
+      "p95": 363.1,
+      "max": 427.4
+     },
+     "search": {
+      "n": 30,
+      "median": 210.9,
+      "p95": 357.4,
+      "max": 421.0
+     },
+     "count_unfiltered": {
+      "n": 30,
+      "median": 4.8,
+      "p95": 11.6,
+      "max": 24.7
+     },
+     "count_filtered": {
+      "n": 30,
+      "median": 144.2,
+      "p95": 224.5,
+      "max": 254.6
+     },
+     "attr_filter": {
+      "n": 30,
+      "median": 202.2,
+      "p95": 292.9,
+      "max": 304.0
+     },
+     "text": {
+      "n": 30,
+      "median": 121.3,
+      "p95": 136.8,
+      "max": 296.5
+     }
+    }
+   },
+   "query_diff": {
+    "client": {
+     "n": 10,
+     "median": 57.1,
+     "p95": 139.9,
+     "max": 140.8,
+     "min": 24.4
+    },
+    "server": {
+     "n": 10,
+     "median": 57.2,
+     "p95": 139.9,
+     "max": 140.8,
+     "min": 24.6
+    },
+    "search": {
+     "n": 10,
+     "median": 56.9,
+     "p95": 139.6,
+     "max": 140.5,
+     "min": 24.7
+    }
+   },
+   "pair_diff": {
+    "client": {
+     "n": 30,
+     "median": 56.5,
+     "p95": 212.8,
+     "max": 236.4
+    },
+    "server": {
+     "n": 30,
+     "median": 56.5,
+     "p95": 212.9,
+     "max": 236.5
+    },
+    "search": {
+     "n": 30,
+     "median": 56.3,
+     "p95": 213.0,
+     "max": 236.2
+    }
+   },
+   "count_calls": {
+    "A": {
+     "filtered_per_request": {
+      "0": 21,
+      "1": 9
+     },
+     "unfiltered_per_request": {
+      "1": 3,
+      "2": 24,
+      "3": 3
+     }
+    },
+    "D": {
+     "filtered_per_request": {
+      "1": 21,
+      "2": 9
+     },
+     "unfiltered_per_request": {
+      "1": 3,
+      "2": 24,
+      "3": 3
+     }
+    }
+   },
+   "candidate_digest_stable": 20,
+   "candidate_digest_groups": 20,
+   "A_eq_D_candidates": "10/10"
+  },
+  "all": {
+   "request": {
+    "A": {
+     "client": {
+      "n": 90,
+      "median": 106.2,
+      "p95": 282.6,
+      "max": 365.2
+     },
+     "server": {
+      "n": 90,
+      "median": 104.6,
+      "p95": 280.9,
+      "max": 363.6
+     },
+     "search": {
+      "n": 90,
+      "median": 98.2,
+      "p95": 275.2,
+      "max": 357.1
+     },
+     "count_unfiltered": {
+      "n": 90,
+      "median": 4.3,
+      "p95": 7.6,
+      "max": 11.0
+     },
+     "count_filtered": {
+      "n": 90,
+      "median": 0.0,
+      "p95": 40.8,
+      "max": 170.9
+     },
+     "attr_filter": null,
+     "text": {
+      "n": 90,
+      "median": 92.8,
+      "p95": 272.3,
+      "max": 301.2
+     }
+    },
+    "D": {
+     "client": {
+      "n": 90,
+      "median": 162.9,
+      "p95": 302.6,
+      "max": 429.0
+     },
+     "server": {
+      "n": 90,
+      "median": 161.4,
+      "p95": 301.0,
+      "max": 427.4
+     },
+     "search": {
+      "n": 90,
+      "median": 155.8,
+      "p95": 296.5,
+      "max": 421.0
+     },
+     "count_unfiltered": {
+      "n": 90,
+      "median": 4.6,
+      "p95": 10.4,
+      "max": 24.7
+     },
+     "count_filtered": {
+      "n": 90,
+      "median": 61.8,
+      "p95": 169.0,
+      "max": 254.6
+     },
+     "attr_filter": {
+      "n": 60,
+      "median": 201.2,
+      "p95": 292.0,
+      "max": 304.0
+     },
+     "text": {
+      "n": 90,
+      "median": 110.2,
+      "p95": 252.5,
+      "max": 301.1
+     }
+    }
+   },
+   "query_diff": {
+    "client": {
+     "n": 30,
+     "median": 50.7,
+     "p95": 135.5,
+     "max": 140.8,
+     "min": -3.8
+    },
+    "server": {
+     "n": 30,
+     "median": 50.9,
+     "p95": 135.4,
+     "max": 140.8,
+     "min": -3.9
+    },
+    "search": {
+     "n": 30,
+     "median": 51.0,
+     "p95": 134.8,
+     "max": 140.5,
+     "min": -3.9
+    }
+   },
+   "pair_diff": {
+    "client": {
+     "n": 90,
+     "median": 50.5,
+     "p95": 188.7,
+     "max": 236.4
+    },
+    "server": {
+     "n": 90,
+     "median": 50.5,
+     "p95": 188.8,
+     "max": 236.5
+    },
+    "search": {
+     "n": 90,
+     "median": 50.3,
+     "p95": 188.7,
+     "max": 236.2
+    }
+   },
+   "count_calls": {
+    "A": {
+     "filtered_per_request": {
+      "0": 72,
+      "1": 18
+     },
+     "unfiltered_per_request": {
+      "1": 27,
+      "2": 57,
+      "3": 6
+     }
+    },
+    "D": {
+     "filtered_per_request": {
+      "0": 30,
+      "1": 42,
+      "2": 18
+     },
+     "unfiltered_per_request": {
+      "1": 27,
+      "2": 57,
+      "3": 6
+     }
+    }
+   },
+   "candidate_digest_stable": 60,
+   "candidate_digest_groups": 60,
+   "A_eq_D_candidates": "20/30"
+  }
+ }
+}

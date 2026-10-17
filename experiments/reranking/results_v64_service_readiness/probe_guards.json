@@ -1,0 +1,77 @@
+{
+  "guard": {
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "lyrics_mongo_client": "blocked",
+    "make_genai_client": "blocked",
+    "adc_credentials": "blocked",
+    "google.genai.Client": "blocked",
+    "reranker.make_genai_client": "blocked",
+    "network": "blocked"
+  },
+  "checks": {
+    "verify_vertex_setup_real": {
+      "result": "raised",
+      "error": "BlockedExternalCall",
+      "message": "v64: adc_credentials 차단",
+      "ms": 0.0,
+      "where": [
+        "probe_guards.py:59",
+        "gemini_client.py:291",
+        "gemini_client.py:189",
+        "v64_runtime.py:131"
+      ]
+    },
+    "query_analyzer_sync": {
+      "result": "returned",
+      "value": {
+        "intent_type": "mixed",
+        "fallback_marker": null
+      },
+      "ms": 2012.8
+    },
+    "query_analyzer_async": {
+      "result": "returned",
+      "value": "mixed",
+      "ms": 2003.2
+    },
+    "query_analyzer_configured": true,
+    "lyrics_snapshot_without_patch": {
+      "result": "raised",
+      "error": "BlockedExternalCall",
+      "message": "v64: lyrics_mongo_client 차단",
+      "ms": 0.0,
+      "where": [
+        "lyrics_exact_search.py:505",
+        "lyrics_exact_search.py:458",
+        "lyrics_exact_search.py:482",
+        "v64_runtime.py:131"
+      ]
+    },
+    "lyrics_status_after": {
+      "state": "empty",
+      "documents": 0,
+      "refresh_failures": 0
+    },
+    "lifespan_with_real_verify": {
+      "result": "returned",
+      "value": {
+        "context": "disabled",
+        "warmup": "skipped"
+      },
+      "ms": 3028.3
+    }
+  },
+  "network_attempts": [],
+  "blocked_client_calls": [
+    "adc_credentials",
+    "make_genai_client",
+    "make_genai_client",
+    "make_genai_client",
+    "make_genai_client",
+    "make_genai_client",
+    "make_genai_client",
+    "lyrics_mongo_client",
+    "adc_credentials"
+  ]
+}
