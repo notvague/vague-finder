@@ -1,0 +1,74 @@
+{
+ "note": "평가기 경로·리랭킹 전 검색 단계·질의 순차. 서비스 HTTP 지연 아님",
+ "runs": {
+  "A3": {
+   "code": "on",
+   "queries": 176,
+   "search_ms_median": 184.6,
+   "search_ms_p90": 365.0,
+   "search_ms_p95": 401.6,
+   "search_ms_mean": 250.4,
+   "queries_with_clap_embed": 114,
+   "clap_embed_ms_median_when_used": 30.3,
+   "clap_embed_ms_sum": 4129.2,
+   "clap_load_ms": [
+    568.627
+   ],
+   "cold_before_first_query_seconds": 10.469
+  },
+  "B3": {
+   "code": "skip",
+   "queries": 176,
+   "search_ms_median": 184.4,
+   "search_ms_p90": 384.0,
+   "search_ms_p95": 417.9,
+   "search_ms_mean": 256.9,
+   "queries_with_clap_embed": 0,
+   "clap_embed_ms_median_when_used": 0.0,
+   "clap_embed_ms_sum": 0,
+   "clap_load_ms": [],
+   "cold_before_first_query_seconds": 10.533
+  },
+  "A1": {
+   "code": "on",
+   "queries": 176,
+   "search_ms_median": 180.1,
+   "search_ms_p90": 358.8,
+   "search_ms_p95": 391.1,
+   "search_ms_mean": 249.5,
+   "queries_with_clap_embed": 114,
+   "clap_embed_ms_median_when_used": 30.6,
+   "clap_embed_ms_sum": 4120.0,
+   "clap_load_ms": [
+    571.513
+   ],
+   "cold_before_first_query_seconds": 10.452
+  },
+  "B1": {
+   "code": "skip",
+   "queries": 176,
+   "search_ms_median": 175.0,
+   "search_ms_p90": 368.0,
+   "search_ms_p95": 387.4,
+   "search_ms_mean": 247.7,
+   "queries_with_clap_embed": 0,
+   "clap_embed_ms_median_when_used": 0.0,
+   "clap_embed_ms_sum": 0,
+   "clap_load_ms": [],
+   "cold_before_first_query_seconds": 10.536
+  },
+  "B2": {
+   "code": "skip",
+   "queries": 176,
+   "search_ms_median": 174.0,
+   "search_ms_p90": 345.8,
+   "search_ms_p95": 383.8,
+   "search_ms_mean": 242.2,
+   "queries_with_clap_embed": 0,
+   "clap_embed_ms_median_when_used": 0.0,
+   "clap_embed_ms_sum": 0,
+   "clap_load_ms": [],
+   "cold_before_first_query_seconds": 10.532
+  }
+ }
+}

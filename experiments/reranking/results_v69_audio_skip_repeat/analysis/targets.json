@@ -1,0 +1,2845 @@
+{
+ "rules": "analyze_periods.py 머리말(첫 Vertex 호출 전 작성)",
+ "all": {
+  "queries": 176,
+  "hit@10": {
+   "A3": 117,
+   "B3": 120,
+   "A1": 116,
+   "B1": 119,
+   "B2": 120
+  },
+  "hit@1": {
+   "A3": 80,
+   "B3": 79,
+   "A1": 80,
+   "B1": 79,
+   "B2": 79
+  },
+  "v69_verdict": {
+   "same_hit": 116,
+   "same_miss": 55,
+   "loss": 1,
+   "gain": 4
+  },
+  "v69_position": {
+   "down": 9,
+   "same": 101,
+   "up": 6
+  },
+  "v69_hit1": {
+   "loss": 5,
+   "same": 167,
+   "gain": 4
+  },
+  "v68_verdict": {
+   "same_hit": 113,
+   "same_miss": 55,
+   "failure_touched": 3,
+   "loss": 1,
+   "gain": 4
+  },
+  "side_by_side": {
+   "no_change_both": 168,
+   "undetermined": 3,
+   "same_direction": 5
+  },
+  "v69_gain_ids": [
+   "c707",
+   "t058",
+   "t078",
+   "t100"
+  ],
+  "v69_loss_ids": [
+   "q215"
+  ],
+  "v69_failure_touched_ids": [],
+  "v69_position_up_ids": [
+   "m201",
+   "n031",
+   "n057",
+   "n082",
+   "t026",
+   "t107"
+  ],
+  "v69_position_down_ids": [
+   "m203",
+   "n018",
+   "n020",
+   "n061",
+   "n097",
+   "q101",
+   "q218",
+   "q312",
+   "t042"
+  ],
+  "v69_hit1_gain_ids": [
+   "n031",
+   "n082",
+   "t026",
+   "t100"
+  ],
+  "v69_hit1_loss_ids": [
+   "m203",
+   "n020",
+   "n061",
+   "q101",
+   "q218"
+  ],
+  "v68_gain_ids": [
+   "c707",
+   "t058",
+   "t078",
+   "t100"
+  ],
+  "v68_loss_ids": [
+   "q215"
+  ],
+  "both_periods_same_direction_ids": [
+   "c707",
+   "q215",
+   "t058",
+   "t078",
+   "t100"
+  ],
+  "reversed_ids": [],
+  "v68_only_ids": [],
+  "v69_only_ids": [],
+  "undetermined_ids": [
+   "n019",
+   "q107",
+   "t107"
+  ]
+ },
+ "changed_inputs70": {
+  "queries": 70,
+  "hit@10": {
+   "A3": 70,
+   "B3": 69,
+   "A1": 69,
+   "B1": 68,
+   "B2": 69
+  },
+  "hit@1": {
+   "A3": 53,
+   "B3": 51,
+   "A1": 53,
+   "B1": 51,
+   "B2": 51
+  },
+  "v69_verdict": {
+   "same_hit": 69,
+   "loss": 1
+  },
+  "v69_position": {
+   "down": 9,
+   "same": 54,
+   "up": 6
+  },
+  "v69_hit1": {
+   "loss": 5,
+   "same": 62,
+   "gain": 3
+  },
+  "v68_verdict": {
+   "same_hit": 66,
+   "failure_touched": 3,
+   "loss": 1
+  },
+  "side_by_side": {
+   "no_change_both": 66,
+   "undetermined": 3,
+   "same_direction": 1
+  },
+  "v69_gain_ids": [],
+  "v69_loss_ids": [
+   "q215"
+  ],
+  "v69_failure_touched_ids": [],
+  "v69_position_up_ids": [
+   "m201",
+   "n031",
+   "n057",
+   "n082",
+   "t026",
+   "t107"
+  ],
+  "v69_position_down_ids": [
+   "m203",
+   "n018",
+   "n020",
+   "n061",
+   "n097",
+   "q101",
+   "q218",
+   "q312",
+   "t042"
+  ],
+  "v69_hit1_gain_ids": [
+   "n031",
+   "n082",
+   "t026"
+  ],
+  "v69_hit1_loss_ids": [
+   "m203",
+   "n020",
+   "n061",
+   "q101",
+   "q218"
+  ],
+  "v68_gain_ids": [],
+  "v68_loss_ids": [
+   "q215"
+  ],
+  "both_periods_same_direction_ids": [
+   "q215"
+  ],
+  "reversed_ids": [],
+  "v68_only_ids": [],
+  "v69_only_ids": [],
+  "undetermined_ids": [
+   "n019",
+   "q107",
+   "t107"
+  ]
+ },
+ "unchanged_inputs_others": {
+  "queries": 106,
+  "hit@10": {
+   "A3": 47,
+   "B3": 51,
+   "A1": 47,
+   "B1": 51,
+   "B2": 51
+  },
+  "hit@1": {
+   "A3": 27,
+   "B3": 28,
+   "A1": 27,
+   "B1": 28,
+   "B2": 28
+  },
+  "v69_verdict": {
+   "same_miss": 55,
+   "same_hit": 47,
+   "gain": 4
+  },
+  "v69_position": {
+   "same": 47
+  },
+  "v69_hit1": {
+   "same": 105,
+   "gain": 1
+  },
+  "v68_verdict": {
+   "same_miss": 55,
+   "same_hit": 47,
+   "gain": 4
+  },
+  "side_by_side": {
+   "no_change_both": 102,
+   "same_direction": 4
+  },
+  "v69_gain_ids": [
+   "c707",
+   "t058",
+   "t078",
+   "t100"
+  ],
+  "v69_loss_ids": [],
+  "v69_failure_touched_ids": [],
+  "v69_position_up_ids": [],
+  "v69_position_down_ids": [],
+  "v69_hit1_gain_ids": [
+   "t100"
+  ],
+  "v69_hit1_loss_ids": [],
+  "v68_gain_ids": [
+   "c707",
+   "t058",
+   "t078",
+   "t100"
+  ],
+  "v68_loss_ids": [],
+  "both_periods_same_direction_ids": [
+   "c707",
+   "t058",
+   "t078",
+   "t100"
+  ],
+  "reversed_ids": [],
+  "v68_only_ids": [],
+  "v69_only_ids": [],
+  "undetermined_ids": []
+ },
+ "v68_gains4": {
+  "queries": 4,
+  "hit@10": {
+   "A3": 0,
+   "B3": 4,
+   "A1": 0,
+   "B1": 4,
+   "B2": 4
+  },
+  "hit@1": {
+   "A3": 0,
+   "B3": 1,
+   "A1": 0,
+   "B1": 1,
+   "B2": 1
+  },
+  "v69_verdict": {
+   "gain": 4
+  },
+  "v69_position": {},
+  "v69_hit1": {
+   "same": 3,
+   "gain": 1
+  },
+  "v68_verdict": {
+   "gain": 4
+  },
+  "side_by_side": {
+   "same_direction": 4
+  },
+  "per_query": {
+   "t058": {
+    "ranks": {
+     "A3": null,
+     "B3": 4,
+     "A1": null,
+     "B1": 4,
+     "B2": 4
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": null,
+     "B3": 16
+    },
+    "v69": {
+     "hit": "gain",
+     "position": "none",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "gain",
+     "position": "none"
+    },
+    "side_by_side": "same_direction",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "t078": {
+    "ranks": {
+     "A3": null,
+     "B3": 9,
+     "A1": null,
+     "B1": 9,
+     "B2": 9
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": null,
+     "B3": 11
+    },
+    "v69": {
+     "hit": "gain",
+     "position": "none",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "gain",
+     "position": "none"
+    },
+    "side_by_side": "same_direction",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "t100": {
+    "ranks": {
+     "A3": null,
+     "B3": 1,
+     "A1": null,
+     "B1": 1,
+     "B2": 1
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": null,
+     "B3": 7
+    },
+    "v69": {
+     "hit": "gain",
+     "position": "none",
+     "hit1": "gain"
+    },
+    "v68": {
+     "hit": "gain",
+     "position": "none"
+    },
+    "side_by_side": "same_direction",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   },
+   "c707": {
+    "ranks": {
+     "A3": null,
+     "B3": 2,
+     "A1": null,
+     "B1": 2,
+     "B2": 2
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 17,
+     "B3": 17
+    },
+    "v69": {
+     "hit": "gain",
+     "position": "none",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "gain",
+     "position": "none"
+    },
+    "side_by_side": "same_direction",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_order|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   }
+  }
+ },
+ "v68_loss1": {
+  "queries": 1,
+  "hit@10": {
+   "A3": 1,
+   "B3": 0,
+   "A1": 1,
+   "B1": 0,
+   "B2": 0
+  },
+  "hit@1": {
+   "A3": 0,
+   "B3": 0,
+   "A1": 0,
+   "B1": 0,
+   "B2": 0
+  },
+  "v69_verdict": {
+   "loss": 1
+  },
+  "v69_position": {},
+  "v69_hit1": {
+   "same": 1
+  },
+  "v68_verdict": {
+   "loss": 1
+  },
+  "side_by_side": {
+   "same_direction": 1
+  },
+  "per_query": {
+   "q215": {
+    "ranks": {
+     "A3": 6,
+     "B3": null,
+     "A1": 6,
+     "B1": null,
+     "B2": null
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 11,
+     "B3": 11
+    },
+    "v69": {
+     "hit": "loss",
+     "position": "none",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "loss",
+     "position": "none"
+    },
+    "side_by_side": "same_direction",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   }
+  }
+ },
+ "v68_failure_touched3": {
+  "queries": 3,
+  "hit@10": {
+   "A3": 3,
+   "B3": 3,
+   "A1": 2,
+   "B1": 2,
+   "B2": 3
+  },
+  "hit@1": {
+   "A3": 1,
+   "B3": 1,
+   "A1": 1,
+   "B1": 1,
+   "B2": 1
+  },
+  "v69_verdict": {
+   "same_hit": 3
+  },
+  "v69_position": {
+   "up": 1,
+   "same": 2
+  },
+  "v69_hit1": {
+   "same": 3
+  },
+  "v68_verdict": {
+   "failure_touched": 3
+  },
+  "side_by_side": {
+   "undetermined": 3
+  },
+  "per_query": {
+   "t107": {
+    "ranks": {
+     "A3": 4,
+     "B3": 3,
+     "A1": null,
+     "B1": 3,
+     "B2": 3
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "failed",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 19,
+     "B3": 19
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "up",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "failure_touched",
+     "position": "none"
+    },
+    "side_by_side": "undetermined",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "failure_fallback",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "q107": {
+    "ranks": {
+     "A3": 1,
+     "B3": 1,
+     "A1": 1,
+     "B1": 1,
+     "B2": 1
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "failed",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 1,
+     "B3": 1
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "same",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "failure_touched",
+     "position": "none"
+    },
+    "side_by_side": "undetermined",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_order|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "failure_fallback",
+    "cause_B1:B3": "failure_fallback",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "n019": {
+    "ranks": {
+     "A3": 2,
+     "B3": 2,
+     "A1": 2,
+     "B1": null,
+     "B2": 2
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "failed",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 24,
+     "B3": 24
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "same",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "failure_touched",
+     "position": "none"
+    },
+    "side_by_side": "undetermined",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_order|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "failure_fallback",
+    "cause_B1:B3": "failure_fallback",
+    "cause_B2:B3": "same",
+    "sound_type": "genre_mood"
+   }
+  }
+ },
+ "gained5": {
+  "queries": 5,
+  "hit@10": {
+   "A3": 0,
+   "B3": 3,
+   "A1": 0,
+   "B1": 3,
+   "B2": 3
+  },
+  "hit@1": {
+   "A3": 0,
+   "B3": 1,
+   "A1": 0,
+   "B1": 1,
+   "B2": 1
+  },
+  "v69_verdict": {
+   "gain": 3,
+   "same_miss": 2
+  },
+  "v69_position": {},
+  "v69_hit1": {
+   "same": 4,
+   "gain": 1
+  },
+  "v68_verdict": {
+   "gain": 3,
+   "same_miss": 2
+  },
+  "side_by_side": {
+   "same_direction": 3,
+   "no_change_both": 2
+  },
+  "per_query": {
+   "t058": {
+    "ranks": {
+     "A3": null,
+     "B3": 4,
+     "A1": null,
+     "B1": 4,
+     "B2": 4
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": null,
+     "B3": 16
+    },
+    "v69": {
+     "hit": "gain",
+     "position": "none",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "gain",
+     "position": "none"
+    },
+    "side_by_side": "same_direction",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "t077": {
+    "ranks": {
+     "A3": null,
+     "B3": null,
+     "A1": null,
+     "B1": null,
+     "B2": null
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": null,
+     "B3": 21
+    },
+    "v69": {
+     "hit": "same_miss",
+     "position": "none",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_miss",
+     "position": "none"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "t078": {
+    "ranks": {
+     "A3": null,
+     "B3": 9,
+     "A1": null,
+     "B1": 9,
+     "B2": 9
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": null,
+     "B3": 11
+    },
+    "v69": {
+     "hit": "gain",
+     "position": "none",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "gain",
+     "position": "none"
+    },
+    "side_by_side": "same_direction",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "t100": {
+    "ranks": {
+     "A3": null,
+     "B3": 1,
+     "A1": null,
+     "B1": 1,
+     "B2": 1
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": null,
+     "B3": 7
+    },
+    "v69": {
+     "hit": "gain",
+     "position": "none",
+     "hit1": "gain"
+    },
+    "v68": {
+     "hit": "gain",
+     "position": "none"
+    },
+    "side_by_side": "same_direction",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   },
+   "t111": {
+    "ranks": {
+     "A3": null,
+     "B3": null,
+     "A1": null,
+     "B1": null,
+     "B2": null
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": null,
+     "B3": 25
+    },
+    "v69": {
+     "hit": "same_miss",
+     "position": "none",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_miss",
+     "position": "none"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "named_event"
+   }
+  }
+ },
+ "inpool_fail5": {
+  "queries": 5,
+  "hit@10": {
+   "A3": 0,
+   "B3": 1,
+   "A1": 0,
+   "B1": 1,
+   "B2": 1
+  },
+  "hit@1": {
+   "A3": 0,
+   "B3": 0,
+   "A1": 0,
+   "B1": 0,
+   "B2": 0
+  },
+  "v69_verdict": {
+   "same_miss": 4,
+   "gain": 1
+  },
+  "v69_position": {},
+  "v69_hit1": {
+   "same": 5
+  },
+  "v68_verdict": {
+   "same_miss": 4,
+   "gain": 1
+  },
+  "side_by_side": {
+   "no_change_both": 4,
+   "same_direction": 1
+  },
+  "per_query": {
+   "q203": {
+    "ranks": {
+     "A3": null,
+     "B3": null,
+     "A1": null,
+     "B1": null,
+     "B2": null
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 25,
+     "B3": 22
+    },
+    "v69": {
+     "hit": "same_miss",
+     "position": "none",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_miss",
+     "position": "none"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "q205": {
+    "ranks": {
+     "A3": null,
+     "B3": null,
+     "A1": null,
+     "B1": null,
+     "B2": null
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 9,
+     "B3": 9
+    },
+    "v69": {
+     "hit": "same_miss",
+     "position": "none",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_miss",
+     "position": "none"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_order|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "genre_mood"
+   },
+   "c705": {
+    "ranks": {
+     "A3": null,
+     "B3": null,
+     "A1": null,
+     "B1": null,
+     "B2": null
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 28,
+     "B3": 28
+    },
+    "v69": {
+     "hit": "same_miss",
+     "position": "none",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_miss",
+     "position": "none"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_order|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "model_variation",
+    "cause_B1:B3": "model_variation",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   },
+   "c707": {
+    "ranks": {
+     "A3": null,
+     "B3": 2,
+     "A1": null,
+     "B1": 2,
+     "B2": 2
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 17,
+     "B3": 17
+    },
+    "v69": {
+     "hit": "gain",
+     "position": "none",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "gain",
+     "position": "none"
+    },
+    "side_by_side": "same_direction",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_order|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   },
+   "t044": {
+    "ranks": {
+     "A3": null,
+     "B3": null,
+     "A1": null,
+     "B1": null,
+     "B2": null
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 29,
+     "B3": 29
+    },
+    "v69": {
+     "hit": "same_miss",
+     "position": "none",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_miss",
+     "position": "none"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "same",
+    "input_change_A3:B3": "cand_score|groups",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "genre_mood"
+   }
+  }
+ },
+ "rank_down6": {
+  "queries": 6,
+  "hit@10": {
+   "A3": 6,
+   "B3": 6,
+   "A1": 6,
+   "B1": 6,
+   "B2": 6
+  },
+  "hit@1": {
+   "A3": 4,
+   "B3": 4,
+   "A1": 4,
+   "B1": 4,
+   "B2": 4
+  },
+  "v69_verdict": {
+   "same_hit": 6
+  },
+  "v69_position": {
+   "down": 2,
+   "same": 4
+  },
+  "v69_hit1": {
+   "same": 6
+  },
+  "v68_verdict": {
+   "same_hit": 6
+  },
+  "side_by_side": {
+   "no_change_both": 6
+  },
+  "per_query": {
+   "n018": {
+    "ranks": {
+     "A3": 2,
+     "B3": 3,
+     "A1": 2,
+     "B1": 3,
+     "B2": 3
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 3,
+     "B3": 11
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "named_event"
+   },
+   "t010": {
+    "ranks": {
+     "A3": 1,
+     "B3": 1,
+     "A1": 1,
+     "B1": 1,
+     "B2": 1
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 9,
+     "B3": 11
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "same",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "same"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "genre_mood"
+   },
+   "t042": {
+    "ranks": {
+     "A3": 2,
+     "B3": 8,
+     "A1": 2,
+     "B1": 8,
+     "B2": 8
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 20,
+     "B3": 23
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   },
+   "n045": {
+    "ranks": {
+     "A3": 1,
+     "B3": 1,
+     "A1": 1,
+     "B1": 1,
+     "B2": 1
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 2,
+     "B3": 4
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "same",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "same"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "t033": {
+    "ranks": {
+     "A3": 1,
+     "B3": 1,
+     "A1": 1,
+     "B1": 1,
+     "B2": 1
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 2,
+     "B3": 3
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "same",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "same"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   },
+   "c706": {
+    "ranks": {
+     "A3": 1,
+     "B3": 1,
+     "A1": 1,
+     "B1": 1,
+     "B2": 1
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 3,
+     "B3": 4
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "same",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "same"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   }
+  }
+ },
+ "v68_hit1_lost5": {
+  "queries": 5,
+  "hit@10": {
+   "A3": 5,
+   "B3": 5,
+   "A1": 5,
+   "B1": 5,
+   "B2": 5
+  },
+  "hit@1": {
+   "A3": 5,
+   "B3": 0,
+   "A1": 5,
+   "B1": 0,
+   "B2": 0
+  },
+  "v69_verdict": {
+   "same_hit": 5
+  },
+  "v69_position": {
+   "down": 5
+  },
+  "v69_hit1": {
+   "loss": 5
+  },
+  "v68_verdict": {
+   "same_hit": 5
+  },
+  "side_by_side": {
+   "no_change_both": 5
+  },
+  "per_query": {
+   "q101": {
+    "ranks": {
+     "A3": 1,
+     "B3": 2,
+     "A1": 1,
+     "B1": 2,
+     "B2": 2
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 9,
+     "B3": 9
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "loss"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   },
+   "q218": {
+    "ranks": {
+     "A3": 1,
+     "B3": 2,
+     "A1": 1,
+     "B1": 2,
+     "B2": 2
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 5,
+     "B3": 5
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "loss"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "m203": {
+    "ranks": {
+     "A3": 1,
+     "B3": 2,
+     "A1": 1,
+     "B1": 2,
+     "B2": 2
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 1,
+     "B3": 1
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "loss"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "n020": {
+    "ranks": {
+     "A3": 1,
+     "B3": 2,
+     "A1": 1,
+     "B1": 2,
+     "B2": 2
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 2,
+     "B3": 2
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "loss"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_order|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "genre_mood"
+   },
+   "n061": {
+    "ranks": {
+     "A3": 1,
+     "B3": 2,
+     "A1": 1,
+     "B1": 2,
+     "B2": 2
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 3,
+     "B3": 2
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "loss"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   }
+  }
+ },
+ "v68_hit1_gained4": {
+  "queries": 4,
+  "hit@10": {
+   "A3": 3,
+   "B3": 4,
+   "A1": 3,
+   "B1": 4,
+   "B2": 4
+  },
+  "hit@1": {
+   "A3": 0,
+   "B3": 4,
+   "A1": 0,
+   "B1": 4,
+   "B2": 4
+  },
+  "v69_verdict": {
+   "same_hit": 3,
+   "gain": 1
+  },
+  "v69_position": {
+   "up": 3
+  },
+  "v69_hit1": {
+   "gain": 4
+  },
+  "v68_verdict": {
+   "same_hit": 3,
+   "gain": 1
+  },
+  "side_by_side": {
+   "no_change_both": 3,
+   "same_direction": 1
+  },
+  "per_query": {
+   "n031": {
+    "ranks": {
+     "A3": 3,
+     "B3": 1,
+     "A1": 3,
+     "B1": 1,
+     "B2": 1
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 2,
+     "B3": 1
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "up",
+     "hit1": "gain"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "up"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   },
+   "n082": {
+    "ranks": {
+     "A3": 6,
+     "B3": 1,
+     "A1": 6,
+     "B1": 1,
+     "B2": 1
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 13,
+     "B3": 10
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "up",
+     "hit1": "gain"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "up"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "t026": {
+    "ranks": {
+     "A3": 2,
+     "B3": 1,
+     "A1": 2,
+     "B1": 1,
+     "B2": 1
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 18,
+     "B3": 14
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "up",
+     "hit1": "gain"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "up"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "genre_mood"
+   },
+   "t100": {
+    "ranks": {
+     "A3": null,
+     "B3": 1,
+     "A1": null,
+     "B1": 1,
+     "B2": 1
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": null,
+     "B3": 7
+    },
+    "v69": {
+     "hit": "gain",
+     "position": "none",
+     "hit1": "gain"
+    },
+    "v68": {
+     "hit": "gain",
+     "position": "none"
+    },
+    "side_by_side": "same_direction",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   }
+  }
+ },
+ "v68_top10_down9": {
+  "queries": 9,
+  "hit@10": {
+   "A3": 9,
+   "B3": 9,
+   "A1": 9,
+   "B1": 9,
+   "B2": 9
+  },
+  "hit@1": {
+   "A3": 5,
+   "B3": 0,
+   "A1": 5,
+   "B1": 0,
+   "B2": 0
+  },
+  "v69_verdict": {
+   "same_hit": 9
+  },
+  "v69_position": {
+   "down": 9
+  },
+  "v69_hit1": {
+   "loss": 5,
+   "same": 4
+  },
+  "v68_verdict": {
+   "same_hit": 9
+  },
+  "side_by_side": {
+   "no_change_both": 9
+  },
+  "per_query": {
+   "m203": {
+    "ranks": {
+     "A3": 1,
+     "B3": 2,
+     "A1": 1,
+     "B1": 2,
+     "B2": 2
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 1,
+     "B3": 1
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "loss"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "n018": {
+    "ranks": {
+     "A3": 2,
+     "B3": 3,
+     "A1": 2,
+     "B1": 3,
+     "B2": 3
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 3,
+     "B3": 11
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "named_event"
+   },
+   "n020": {
+    "ranks": {
+     "A3": 1,
+     "B3": 2,
+     "A1": 1,
+     "B1": 2,
+     "B2": 2
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 2,
+     "B3": 2
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "loss"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_order|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "genre_mood"
+   },
+   "n061": {
+    "ranks": {
+     "A3": 1,
+     "B3": 2,
+     "A1": 1,
+     "B1": 2,
+     "B2": 2
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 3,
+     "B3": 2
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "loss"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "n097": {
+    "ranks": {
+     "A3": 2,
+     "B3": 3,
+     "A1": 2,
+     "B1": 3,
+     "B2": 3
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 7,
+     "B3": 5
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "q101": {
+    "ranks": {
+     "A3": 1,
+     "B3": 2,
+     "A1": 1,
+     "B1": 2,
+     "B2": 2
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 9,
+     "B3": 9
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "loss"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   },
+   "q218": {
+    "ranks": {
+     "A3": 1,
+     "B3": 2,
+     "A1": 1,
+     "B1": 2,
+     "B2": 2
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 5,
+     "B3": 5
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "loss"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "q312": {
+    "ranks": {
+     "A3": 6,
+     "B3": 8,
+     "A1": 6,
+     "B1": 8,
+     "B2": 8
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 3,
+     "B3": 2
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_order|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   },
+   "t042": {
+    "ranks": {
+     "A3": 2,
+     "B3": 8,
+     "A1": 2,
+     "B1": 8,
+     "B2": 8
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 20,
+     "B3": 23
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   }
+  }
+ },
+ "v68_top10_up5": {
+  "queries": 5,
+  "hit@10": {
+   "A3": 5,
+   "B3": 5,
+   "A1": 5,
+   "B1": 5,
+   "B2": 5
+  },
+  "hit@1": {
+   "A3": 0,
+   "B3": 3,
+   "A1": 0,
+   "B1": 3,
+   "B2": 3
+  },
+  "v69_verdict": {
+   "same_hit": 5
+  },
+  "v69_position": {
+   "up": 5
+  },
+  "v69_hit1": {
+   "same": 2,
+   "gain": 3
+  },
+  "v68_verdict": {
+   "same_hit": 5
+  },
+  "side_by_side": {
+   "no_change_both": 5
+  },
+  "per_query": {
+   "m201": {
+    "ranks": {
+     "A3": 5,
+     "B3": 3,
+     "A1": 5,
+     "B1": 3,
+     "B2": 3
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 10,
+     "B3": 9
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "up",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "up"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "n031": {
+    "ranks": {
+     "A3": 3,
+     "B3": 1,
+     "A1": 3,
+     "B1": 1,
+     "B2": 1
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 2,
+     "B3": 1
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "up",
+     "hit1": "gain"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "up"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   },
+   "n057": {
+    "ranks": {
+     "A3": 7,
+     "B3": 2,
+     "A1": 7,
+     "B1": 2,
+     "B2": 2
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 16,
+     "B3": 10
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "up",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "up"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "n082": {
+    "ranks": {
+     "A3": 6,
+     "B3": 1,
+     "A1": 6,
+     "B1": 1,
+     "B2": 1
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 13,
+     "B3": 10
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "up",
+     "hit1": "gain"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "up"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "instrument"
+   },
+   "t026": {
+    "ranks": {
+     "A3": 2,
+     "B3": 1,
+     "A1": 2,
+     "B1": 1,
+     "B2": 1
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 18,
+     "B3": 14
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "up",
+     "hit1": "gain"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "up"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "genre_mood"
+   }
+  }
+ },
+ "risk_n018_t042": {
+  "queries": 2,
+  "hit@10": {
+   "A3": 2,
+   "B3": 2,
+   "A1": 2,
+   "B1": 2,
+   "B2": 2
+  },
+  "hit@1": {
+   "A3": 0,
+   "B3": 0,
+   "A1": 0,
+   "B1": 0,
+   "B2": 0
+  },
+  "v69_verdict": {
+   "same_hit": 2
+  },
+  "v69_position": {
+   "down": 2
+  },
+  "v69_hit1": {
+   "same": 2
+  },
+  "v68_verdict": {
+   "same_hit": 2
+  },
+  "side_by_side": {
+   "no_change_both": 2
+  },
+  "per_query": {
+   "n018": {
+    "ranks": {
+     "A3": 2,
+     "B3": 3,
+     "A1": 2,
+     "B1": 3,
+     "B2": 3
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 3,
+     "B3": 11
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "named_event"
+   },
+   "t042": {
+    "ranks": {
+     "A3": 2,
+     "B3": 8,
+     "A1": 2,
+     "B1": 8,
+     "B2": 8
+    },
+    "status": {
+     "A3": "applied",
+     "B3": "applied",
+     "A1": "applied",
+     "B1": "applied",
+     "B2": "applied"
+    },
+    "cand_rank": {
+     "A3": 20,
+     "B3": 23
+    },
+    "v69": {
+     "hit": "same_hit",
+     "position": "down",
+     "hit1": "same"
+    },
+    "v68": {
+     "hit": "same_hit",
+     "position": "down"
+    },
+    "side_by_side": "no_change_both",
+    "cause_A3:B3": "input_change",
+    "input_change_A3:B3": "cand_set|groups|prompt",
+    "cause_A1:A3": "same",
+    "cause_B1:B2": "same",
+    "cause_B1:B3": "same",
+    "cause_B2:B3": "same",
+    "sound_type": "vocal"
+   }
+  }
+ },
+ "by_sound_type": {
+  "(소리 경로 안 돎)": {
+   "queries": 62,
+   "hit@10": {
+    "A3": 47,
+    "B3": 47,
+    "A1": 47,
+    "B1": 47,
+    "B2": 47
+   },
+   "hit@1": {
+    "A3": 27,
+    "B3": 27,
+    "A1": 27,
+    "B1": 27,
+    "B2": 27
+   },
+   "v69_verdict": {
+    "same_miss": 15,
+    "same_hit": 47
+   },
+   "v69_position": {
+    "same": 47
+   },
+   "v69_hit1": {
+    "same": 62
+   },
+   "v68_verdict": {
+    "same_miss": 15,
+    "same_hit": 47
+   },
+   "side_by_side": {
+    "no_change_both": 62
+   },
+   "v69_gain_ids": [],
+   "v69_loss_ids": [],
+   "v69_failure_touched_ids": [],
+   "v69_position_up_ids": [],
+   "v69_position_down_ids": [],
+   "v69_hit1_gain_ids": [],
+   "v69_hit1_loss_ids": [],
+   "v68_gain_ids": [],
+   "v68_loss_ids": [],
+   "both_periods_same_direction_ids": [],
+   "reversed_ids": [],
+   "v68_only_ids": [],
+   "v69_only_ids": [],
+   "undetermined_ids": []
+  },
+  "genre_mood": {
+   "queries": 21,
+   "hit@10": {
+    "A3": 11,
+    "B3": 11,
+    "A1": 11,
+    "B1": 10,
+    "B2": 11
+   },
+   "hit@1": {
+    "A3": 9,
+    "B3": 9,
+    "A1": 9,
+    "B1": 9,
+    "B2": 9
+   },
+   "v69_verdict": {
+    "same_miss": 10,
+    "same_hit": 11
+   },
+   "v69_position": {
+    "same": 9,
+    "down": 1,
+    "up": 1
+   },
+   "v69_hit1": {
+    "same": 19,
+    "loss": 1,
+    "gain": 1
+   },
+   "v68_verdict": {
+    "same_miss": 10,
+    "same_hit": 10,
+    "failure_touched": 1
+   },
+   "side_by_side": {
+    "no_change_both": 20,
+    "undetermined": 1
+   },
+   "v69_gain_ids": [],
+   "v69_loss_ids": [],
+   "v69_failure_touched_ids": [],
+   "v69_position_up_ids": [
+    "t026"
+   ],
+   "v69_position_down_ids": [
+    "n020"
+   ],
+   "v69_hit1_gain_ids": [
+    "t026"
+   ],
+   "v69_hit1_loss_ids": [
+    "n020"
+   ],
+   "v68_gain_ids": [],
+   "v68_loss_ids": [],
+   "both_periods_same_direction_ids": [],
+   "reversed_ids": [],
+   "v68_only_ids": [],
+   "v69_only_ids": [],
+   "undetermined_ids": [
+    "n019"
+   ]
+  },
+  "instrument": {
+   "queries": 50,
+   "hit@10": {
+    "A3": 27,
+    "B3": 28,
+    "A1": 26,
+    "B1": 28,
+    "B2": 28
+   },
+   "hit@1": {
+    "A3": 20,
+    "B3": 18,
+    "A1": 20,
+    "B1": 18,
+    "B2": 18
+   },
+   "v69_verdict": {
+    "same_hit": 26,
+    "same_miss": 21,
+    "loss": 1,
+    "gain": 2
+   },
+   "v69_position": {
+    "same": 18,
+    "down": 4,
+    "up": 4
+   },
+   "v69_hit1": {
+    "same": 46,
+    "loss": 3,
+    "gain": 1
+   },
+   "v68_verdict": {
+    "same_hit": 24,
+    "same_miss": 21,
+    "failure_touched": 2,
+    "loss": 1,
+    "gain": 2
+   },
+   "side_by_side": {
+    "no_change_both": 45,
+    "undetermined": 2,
+    "same_direction": 3
+   },
+   "v69_gain_ids": [
+    "t058",
+    "t078"
+   ],
+   "v69_loss_ids": [
+    "q215"
+   ],
+   "v69_failure_touched_ids": [],
+   "v69_position_up_ids": [
+    "m201",
+    "n057",
+    "n082",
+    "t107"
+   ],
+   "v69_position_down_ids": [
+    "m203",
+    "n061",
+    "n097",
+    "q218"
+   ],
+   "v69_hit1_gain_ids": [
+    "n082"
+   ],
+   "v69_hit1_loss_ids": [
+    "m203",
+    "n061",
+    "q218"
+   ],
+   "v68_gain_ids": [
+    "t058",
+    "t078"
+   ],
+   "v68_loss_ids": [
+    "q215"
+   ],
+   "both_periods_same_direction_ids": [
+    "q215",
+    "t058",
+    "t078"
+   ],
+   "reversed_ids": [],
+   "v68_only_ids": [],
+   "v69_only_ids": [],
+   "undetermined_ids": [
+    "q107",
+    "t107"
+   ]
+  },
+  "named_event": {
+   "queries": 4,
+   "hit@10": {
+    "A3": 2,
+    "B3": 2,
+    "A1": 2,
+    "B1": 2,
+    "B2": 2
+   },
+   "hit@1": {
+    "A3": 1,
+    "B3": 1,
+    "A1": 1,
+    "B1": 1,
+    "B2": 1
+   },
+   "v69_verdict": {
+    "same_hit": 2,
+    "same_miss": 2
+   },
+   "v69_position": {
+    "same": 1,
+    "down": 1
+   },
+   "v69_hit1": {
+    "same": 4
+   },
+   "v68_verdict": {
+    "same_hit": 2,
+    "same_miss": 2
+   },
+   "side_by_side": {
+    "no_change_both": 4
+   },
+   "v69_gain_ids": [],
+   "v69_loss_ids": [],
+   "v69_failure_touched_ids": [],
+   "v69_position_up_ids": [],
+   "v69_position_down_ids": [
+    "n018"
+   ],
+   "v69_hit1_gain_ids": [],
+   "v69_hit1_loss_ids": [],
+   "v68_gain_ids": [],
+   "v68_loss_ids": [],
+   "both_periods_same_direction_ids": [],
+   "reversed_ids": [],
+   "v68_only_ids": [],
+   "v69_only_ids": [],
+   "undetermined_ids": []
+  },
+  "vocal": {
+   "queries": 39,
+   "hit@10": {
+    "A3": 30,
+    "B3": 32,
+    "A1": 30,
+    "B1": 32,
+    "B2": 32
+   },
+   "hit@1": {
+    "A3": 23,
+    "B3": 24,
+    "A1": 23,
+    "B1": 24,
+    "B2": 24
+   },
+   "v69_verdict": {
+    "same_hit": 30,
+    "same_miss": 7,
+    "gain": 2
+   },
+   "v69_position": {
+    "down": 3,
+    "same": 26,
+    "up": 1
+   },
+   "v69_hit1": {
+    "loss": 1,
+    "same": 36,
+    "gain": 2
+   },
+   "v68_verdict": {
+    "same_hit": 30,
+    "same_miss": 7,
+    "gain": 2
+   },
+   "side_by_side": {
+    "no_change_both": 37,
+    "same_direction": 2
+   },
+   "v69_gain_ids": [
+    "c707",
+    "t100"
+   ],
+   "v69_loss_ids": [],
+   "v69_failure_touched_ids": [],
+   "v69_position_up_ids": [
+    "n031"
+   ],
+   "v69_position_down_ids": [
+    "q101",
+    "q312",
+    "t042"
+   ],
+   "v69_hit1_gain_ids": [
+    "n031",
+    "t100"
+   ],
+   "v69_hit1_loss_ids": [
+    "q101"
+   ],
+   "v68_gain_ids": [
+    "c707",
+    "t100"
+   ],
+   "v68_loss_ids": [],
+   "both_periods_same_direction_ids": [
+    "c707",
+    "t100"
+   ],
+   "reversed_ids": [],
+   "v68_only_ids": [],
+   "v69_only_ids": [],
+   "undetermined_ids": []
+  }
+ },
+ "repeats": {
+  "A1:A3": {
+   "final_top10_identical": 175,
+   "order_diff_by_cause": {
+    "failure_fallback": 1
+   },
+   "gold_rank_changed": [
+    "t107"
+   ],
+   "gold_rank_changed_without_failure": [],
+   "hit10_flip_without_failure": []
+  },
+  "B1:B2": {
+   "final_top10_identical": 168,
+   "order_diff_by_cause": {
+    "failure_fallback": 2,
+    "model_variation": 6
+   },
+   "gold_rank_changed": [
+    "n019"
+   ],
+   "gold_rank_changed_without_failure": [],
+   "hit10_flip_without_failure": []
+  },
+  "B1:B3": {
+   "final_top10_identical": 168,
+   "order_diff_by_cause": {
+    "failure_fallback": 2,
+    "model_variation": 6
+   },
+   "gold_rank_changed": [
+    "n019"
+   ],
+   "gold_rank_changed_without_failure": [],
+   "hit10_flip_without_failure": []
+  },
+  "B2:B3": {
+   "final_top10_identical": 176,
+   "order_diff_by_cause": {},
+   "gold_rank_changed": [],
+   "gold_rank_changed_without_failure": [],
+   "hit10_flip_without_failure": []
+  }
+ }
+}
