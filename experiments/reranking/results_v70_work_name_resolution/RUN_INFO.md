@@ -9,7 +9,7 @@
 | 항목 | 상태 |
 |---|---|
 | origin/main | `e5841c9` — PR #82 **squash 병합**(2026-10-17 16:14 UTC). 병합 내용은 v67·v68 두 커밋(`2af461e`·`8e99da2`)의 트리와 같다 |
-| v69 | 커밋 `d86b9d8`이 원격 브랜치 `experiment/v67-candidate-recall-diagnosis`에 push됐지만 **병합 2분 뒤 커밋이라 main에 없다**(`results_v69_audio_skip_repeat/` 123파일). PR #82 본문에는 v69 후속 설명이 이미 붙어 있다 → v69 파일을 main에 넣으려면 **새 PR**이 필요하다. 초안은 `PR_V69_DRAFT.md`(이번에 PR 생성 안 함) |
+| v69 | 커밋 `d86b9d8`이 원격 브랜치 `experiment/v67-candidate-recall-diagnosis`에 push됐지만 **병합 2분 뒤 커밋이라 main에 없다**(`results_v69_audio_skip_repeat/` 123파일). PR #82 본문에는 v69 후속 설명이 이미 붙어 있다 → v69 파일을 main에 넣으려면 **새 PR**이 필요하다. 초안을 `PR_V69_DRAFT.md`로 만들었고, 이후 사용자가 **PR #83으로 병합**했다. 초안 파일은 병합 뒤 이 결과 폴더에서 뺐다 |
 | 열린 PR | 없음 |
 | 로컬 main 체크아웃 | `bb7e6f0`(pull 안 함, 건드리지 않음) |
 
@@ -264,7 +264,7 @@ v67 `oracle_work_name.py`에 이미 있는 사람 작성 작품명(13질의, 대
 
 | 경로 | 내용 | Git |
 |---|---|---|
-| `RUN_INFO.md` · `WORK_NAME_RESOLUTION_DESIGN.md` · `NEW_DATA_PLAN.md` · `PR_DRAFT.md` · `PR_V69_DRAFT.md` | 문서 | 추적 |
+| `RUN_INFO.md` · `WORK_NAME_RESOLUTION_DESIGN.md` · `NEW_DATA_PLAN.md` · `PR_DRAFT.md` | 문서 | 추적 |
 | `run_offline.py` · `analyze_offline.py` · `build_resolution_cache.py` · `selftest_resolution_cache.py` · `server_state.py` | 하네스·분석·캐시 빌더·자체 검사 | 추적 |
 | `new_data/collection_template_v70.csv` · `work_label_check.py` · `selftest_work_label.py` | 양식(열 머리만)·점검 | 추적 |
 | `analysis/offline_summary.json` · `analysis/offline_per_query.csv` | 집계·질의별 순위/상태(질의 원문·작품명 없음) | 추적 |
