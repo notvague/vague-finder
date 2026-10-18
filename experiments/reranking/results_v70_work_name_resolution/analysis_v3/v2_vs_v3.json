@@ -1,0 +1,96 @@
+{
+ "note": "a = offline_v2/, b = offline_v3/ (v1 리뷰 반영 전 · v2 반영 후 · v3 리뷰 5 반영). dev 176 · 리랭킹 전 후보 30 · 모델 0회",
+ "off": {
+  "identical_candidates_and_scores": 176,
+  "candidate_mismatch_qids": [],
+  "gate_reason_changes": {},
+  "status_changes": {},
+  "work_verdicts": {
+   "a": {},
+   "b": {}
+  },
+  "name_in_query_b": 0
+ },
+ "gate_abstain": {
+  "identical_candidates_and_scores": 176,
+  "candidate_mismatch_qids": [],
+  "gate_reason_changes": {},
+  "status_changes": {},
+  "work_verdicts": {
+   "a": {},
+   "b": {}
+  },
+  "name_in_query_b": 0
+ },
+ "oracle": {
+  "identical_candidates_and_scores": 176,
+  "candidate_mismatch_qids": [],
+  "gate_reason_changes": {},
+  "status_changes": {},
+  "work_verdicts": {
+   "a": {
+    "accepted": 10
+   },
+   "b": {
+    "accepted": 10
+   }
+  },
+  "name_in_query_b": 0
+ },
+ "oracle_nogate": {
+  "identical_candidates_and_scores": 176,
+  "candidate_mismatch_qids": [],
+  "gate_reason_changes": {},
+  "status_changes": {},
+  "work_verdicts": {
+   "a": {
+    "accepted": 13
+   },
+   "b": {
+    "accepted": 13
+   }
+  },
+  "name_in_query_b": 0
+ },
+ "wrong": {
+  "identical_candidates_and_scores": 176,
+  "candidate_mismatch_qids": [],
+  "gate_reason_changes": {},
+  "status_changes": {},
+  "work_verdicts": {
+   "a": {
+    "accepted": 22
+   },
+   "b": {
+    "accepted": 22
+   }
+  },
+  "name_in_query_b": 0
+ },
+ "oracle_rep2": {
+  "identical_candidates_and_scores": 176,
+  "candidate_mismatch_qids": [],
+  "gate_reason_changes": {},
+  "status_changes": {},
+  "work_verdicts": {
+   "a": {
+    "accepted": 10
+   },
+   "b": {
+    "accepted": 10
+   }
+  },
+  "name_in_query_b": 0
+ },
+ "env_cache": {
+  "identical_candidates_and_scores": 176,
+  "candidate_mismatch_qids": [],
+  "gate_reason_changes": {},
+  "status_changes": {},
+  "work_verdicts": {
+   "a": {},
+   "b": {}
+  },
+  "name_in_query_b": 0
+ }
+}

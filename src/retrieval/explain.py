@@ -53,6 +53,9 @@ PATH_LABELS: Dict[str, str] = {
     # 승인된 피드백 사례가 이 곡을 후보로 보충했다. **출처만 말한다** — 제보 내용이 사실이라는 뜻도,
     # 이 곡이 정답이라는 뜻도 아니다. 최종 순위는 리랭커가 곡 정보로 정한다.
     "feedback_case": "이전 사용자 제보 참고",
+    # 간접 지칭 작품명 해석(실험 스위치 WORK_NAME_RESOLUTION_ENABLED)이 추정한 작품명으로 찾은 보조 후보. **추정이다** —
+    # 사용자가 그 작품을 말했다는 뜻도, 곡이 그 작품에 쓰였다는 확인도 아니다. 작품명은 요청 기록에만 남는다.
+    "work_name_aux": "작품명 추정 보조",
 }
 
 FEEDBACK_PATH = "feedback_case"
@@ -510,6 +513,9 @@ class SearchExplain:
     # {policy, use_genre, reason, had_genre_condition, answered_genre, gender}. 기본 정책·꺼짐·v53 스위치에서는 None —
     # 기존 기록을 바꾸지 않는다.
     attr_filter_genre: Optional[Dict[str, Any]] = None
+    # 간접 지칭 작품명 해석의 요청 기록(`work_name_resolution.WorkResolution.as_dict`). 주입하지 않은 라우터에서는 None —
+    # 기존 기록 모양을 바꾸지 않는다. 추정 작품명은 내부 기록이며 사용자 문장에 쓰지 않는다.
+    work_resolution: Optional[Dict[str, Any]] = None
 
     @property
     def rerank_runs_applied(self) -> int:
@@ -625,6 +631,10 @@ class ExplainRecorder:
     def set_attr_filter_genre(self, decision: Dict[str, Any]) -> None:
         """속성 조건 보조 필터의 장르 축 판정(v54 실험 정책). 라우터는 conditional 정책이 실제로 필터를 만들었을 때만 부른다."""
         self.record.attr_filter_genre = dict(decision)
+
+    def set_work_resolution(self, record: Dict[str, Any]) -> None:
+        """작품명 해석 기록. 라우터는 해석기가 주입됐을 때만 부른다(판정 미통과도 남긴다)."""
+        self.record.work_resolution = dict(record)
 
     def note_rerank_run(
         self,
@@ -836,6 +846,9 @@ class _NullRecorder(ExplainRecorder):
         return
 
     def note_order_rules_applied(self) -> None:
+        return
+
+    def set_work_resolution(self, record) -> None:
         return
 
     def set_attr_filter_genre(self, decision) -> None:

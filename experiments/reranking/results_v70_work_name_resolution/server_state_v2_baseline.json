@@ -1,0 +1,67 @@
+{
+ "captured_at": "2026-10-18T11:21:45+0900",
+ "container": {
+  "name": "vague-finder-qdrant-v70",
+  "id": "6d47ed8e8a6be183b29df1bcb7efc3c2e32b589b1e9f765cad84b76645d6007c",
+  "image": "qdrant/qdrant:v1.19.1",
+  "status": "running",
+  "started_at": "2026-10-18T02:21:29.728371958Z",
+  "restart_count": 0,
+  "ports": {
+   "6333/tcp": [
+    "127.0.0.1:6376"
+   ],
+   "6334/tcp": [
+    "127.0.0.1:6377"
+   ]
+  }
+ },
+ "server_version": "1.19.1",
+ "collections": {
+  "vaguefinder-audio-512__dev": {
+   "status": "green",
+   "optimizer_status": "ok",
+   "points_count": 5143,
+   "indexed_vectors_count": 0,
+   "segments_count": 6
+  },
+  "vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf": {
+   "status": "green",
+   "optimizer_status": "ok",
+   "points_count": 5054,
+   "indexed_vectors_count": 0,
+   "segments_count": 6
+  },
+  "vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf": {
+   "status": "green",
+   "optimizer_status": "ok",
+   "points_count": 639,
+   "indexed_vectors_count": 639,
+   "segments_count": 6
+  },
+  "vaguefinder-image-768__dev": {
+   "status": "green",
+   "optimizer_status": "ok",
+   "points_count": 5143,
+   "indexed_vectors_count": 0,
+   "segments_count": 6
+  },
+  "vaguefinder-text-1024-koe5__dev": {
+   "status": "green",
+   "optimizer_status": "ok",
+   "points_count": 5143,
+   "indexed_vectors_count": 5143,
+   "segments_count": 6
+  }
+ },
+ "aliases": [
+  [
+   "vaguefinder-context-dense-1024-koe5__dev",
+   "vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf"
+  ],
+  [
+   "vaguefinder-context-sparse-bm25__dev",
+   "vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf"
+  ]
+ ]
+}

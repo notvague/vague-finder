@@ -1,0 +1,565 @@
+{
+ "note": "리랭킹 전 후보 30 · 외부 모델 0회 · dev 176(개발 자료, 독립 평가 아님)",
+ "off_vs_v69_A_offline_rep1": {
+  "identical_queries": 176,
+  "mismatched": []
+ },
+ "gate_v1_dev176": {
+  "triggered": 22,
+  "reasons": {
+   "explicit_work_named": 11,
+   "no_media_word": 142,
+   "indirect_description": 22,
+   "quoted_work_name": 1
+  },
+  "known_out_of_pool_14": {
+   "c602": "indirect_description",
+   "c603": "indirect_description",
+   "c607": "indirect_description",
+   "c701": "indirect_description",
+   "n002": "no_media_word",
+   "n016": "no_media_word",
+   "n033": "indirect_description",
+   "n040": "no_media_word",
+   "n043": "indirect_description",
+   "n096": "indirect_description",
+   "t009": "no_media_word",
+   "t038": "explicit_work_named",
+   "t040": "explicit_work_named",
+   "t043": "indirect_description"
+  },
+  "known_in_pool_4": {
+   "q203": "explicit_work_named",
+   "c705": "indirect_description",
+   "c707": "indirect_description",
+   "t044": "no_media_word"
+  },
+  "triggered_outside_known_18": 12
+ },
+ "latency_off": {
+  "n": 176,
+  "median_ms": 105.2,
+  "p90_ms": 235.7
+ },
+ "gate_abstain": {
+  "recall_at_30": {
+   "off": 122,
+   "config": 122
+  },
+  "pre_rerank_rank_le_10_reference_only": {
+   "off": 102,
+   "config": 102
+  },
+  "gained": [],
+  "lost": [],
+  "rank_up": [],
+  "rank_down": [],
+  "queries_with_identical_pool": 176,
+  "entered_songs_total": 0,
+  "displaced_songs_total": 0,
+  "queries_where_a_correct_song_was_displaced": [],
+  "statuses": {
+   "not_triggered": 154,
+   "abstained": 22
+  },
+  "latency": {
+   "n": 176,
+   "median_ms": 111.8,
+   "p90_ms": 222.0
+  },
+  "latency_triggered_only": {
+   "config": {
+    "n": 22,
+    "median_ms": 129.0,
+    "p90_ms": 222.0
+   },
+   "off": {
+    "n": 22,
+    "median_ms": 121.7,
+    "p90_ms": 148.8
+   }
+  },
+  "identical_candidates_and_scores_to_off": 176
+ },
+ "oracle": {
+  "recall_at_30": {
+   "off": 122,
+   "config": 126
+  },
+  "pre_rerank_rank_le_10_reference_only": {
+   "off": 102,
+   "config": 103
+  },
+  "gained": [
+   {
+    "qid": "c603",
+    "rank": 30
+   },
+   {
+    "qid": "n033",
+    "rank": 13
+   },
+   {
+    "qid": "n043",
+    "rank": 25
+   },
+   {
+    "qid": "n096",
+    "rank": 3
+   }
+  ],
+  "lost": [],
+  "rank_up": [
+   {
+    "qid": "c705",
+    "before": 28,
+    "after": 22
+   }
+  ],
+  "rank_down": [
+   {
+    "qid": "c707",
+    "before": 17,
+    "after": 18
+   }
+  ],
+  "queries_with_identical_pool": 166,
+  "entered_songs_total": 15,
+  "displaced_songs_total": 15,
+  "queries_where_a_correct_song_was_displaced": [],
+  "statuses": {
+   "not_triggered": 154,
+   "abstained": 12,
+   "applied": 10
+  },
+  "latency": {
+   "n": 176,
+   "median_ms": 113.1,
+   "p90_ms": 238.8
+  },
+  "latency_triggered_only": {
+   "config": {
+    "n": 22,
+    "median_ms": 171.2,
+    "p90_ms": 221.5
+   },
+   "off": {
+    "n": 22,
+    "median_ms": 121.7,
+    "p90_ms": 148.8
+   }
+  },
+  "oracle_queries_with_works": [
+   "c602",
+   "c603",
+   "c607",
+   "c701",
+   "c705",
+   "c707",
+   "n033",
+   "n043",
+   "n096",
+   "t043"
+  ],
+  "per_oracle_query": {
+   "c602": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     48
+    ],
+    "aux": 10,
+    "entered": 3,
+    "rank_off": null,
+    "rank_config": null
+   },
+   "c603": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     20
+    ],
+    "aux": 10,
+    "entered": 1,
+    "rank_off": null,
+    "rank_config": 30
+   },
+   "c607": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     8
+    ],
+    "aux": 8,
+    "entered": 0,
+    "rank_off": null,
+    "rank_config": null
+   },
+   "c701": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     9
+    ],
+    "aux": 9,
+    "entered": 3,
+    "rank_off": null,
+    "rank_config": null
+   },
+   "c705": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     2
+    ],
+    "aux": 2,
+    "entered": 1,
+    "rank_off": 28,
+    "rank_config": 22
+   },
+   "c707": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     4
+    ],
+    "aux": 4,
+    "entered": 1,
+    "rank_off": 17,
+    "rank_config": 18
+   },
+   "n033": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     6
+    ],
+    "aux": 6,
+    "entered": 2,
+    "rank_off": null,
+    "rank_config": 13
+   },
+   "n043": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     13
+    ],
+    "aux": 10,
+    "entered": 2,
+    "rank_off": null,
+    "rank_config": 25
+   },
+   "n096": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     1
+    ],
+    "aux": 1,
+    "entered": 1,
+    "rank_off": null,
+    "rank_config": 3
+   },
+   "t043": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     1
+    ],
+    "aux": 1,
+    "entered": 1,
+    "rank_off": null,
+    "rank_config": null
+   }
+  }
+ },
+ "oracle_nogate": {
+  "recall_at_30": {
+   "off": 122,
+   "config": 126
+  },
+  "pre_rerank_rank_le_10_reference_only": {
+   "off": 102,
+   "config": 103
+  },
+  "gained": [
+   {
+    "qid": "c603",
+    "rank": 30
+   },
+   {
+    "qid": "n033",
+    "rank": 13
+   },
+   {
+    "qid": "n043",
+    "rank": 25
+   },
+   {
+    "qid": "n096",
+    "rank": 3
+   }
+  ],
+  "lost": [],
+  "rank_up": [
+   {
+    "qid": "c705",
+    "before": 28,
+    "after": 22
+   }
+  ],
+  "rank_down": [
+   {
+    "qid": "c707",
+    "before": 17,
+    "after": 18
+   }
+  ],
+  "queries_with_identical_pool": 164,
+  "entered_songs_total": 20,
+  "displaced_songs_total": 20,
+  "queries_where_a_correct_song_was_displaced": [],
+  "statuses": {
+   "not_triggered": 163,
+   "applied": 13
+  },
+  "latency": {
+   "n": 176,
+   "median_ms": 115.6,
+   "p90_ms": 243.1
+  },
+  "latency_triggered_only": {
+   "config": {
+    "n": 22,
+    "median_ms": 165.9,
+    "p90_ms": 231.0
+   },
+   "off": {
+    "n": 22,
+    "median_ms": 121.7,
+    "p90_ms": 148.8
+   }
+  },
+  "oracle_queries_with_works": [
+   "c602",
+   "c603",
+   "c607",
+   "c701",
+   "c705",
+   "c707",
+   "n033",
+   "n040",
+   "n043",
+   "n096",
+   "t038",
+   "t040",
+   "t043"
+  ],
+  "per_oracle_query": {
+   "c602": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     48
+    ],
+    "aux": 10,
+    "entered": 3,
+    "rank_off": null,
+    "rank_config": null
+   },
+   "c603": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     20
+    ],
+    "aux": 10,
+    "entered": 1,
+    "rank_off": null,
+    "rank_config": 30
+   },
+   "c607": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     8
+    ],
+    "aux": 8,
+    "entered": 0,
+    "rank_off": null,
+    "rank_config": null
+   },
+   "c701": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     9
+    ],
+    "aux": 9,
+    "entered": 3,
+    "rank_off": null,
+    "rank_config": null
+   },
+   "c705": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     2
+    ],
+    "aux": 2,
+    "entered": 1,
+    "rank_off": 28,
+    "rank_config": 22
+   },
+   "c707": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     4
+    ],
+    "aux": 4,
+    "entered": 1,
+    "rank_off": 17,
+    "rank_config": 18
+   },
+   "n033": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     6
+    ],
+    "aux": 6,
+    "entered": 2,
+    "rank_off": null,
+    "rank_config": 13
+   },
+   "n040": {
+    "gate": "no_media_word",
+    "status": "applied",
+    "mention_songs": [
+     3
+    ],
+    "aux": 3,
+    "entered": 0,
+    "rank_off": null,
+    "rank_config": null
+   },
+   "n043": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     13
+    ],
+    "aux": 10,
+    "entered": 2,
+    "rank_off": null,
+    "rank_config": 25
+   },
+   "n096": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     1
+    ],
+    "aux": 1,
+    "entered": 1,
+    "rank_off": null,
+    "rank_config": 3
+   },
+   "t038": {
+    "gate": "explicit_work_named",
+    "status": "applied",
+    "mention_songs": [
+     20
+    ],
+    "aux": 10,
+    "entered": 4,
+    "rank_off": null,
+    "rank_config": null
+   },
+   "t040": {
+    "gate": "explicit_work_named",
+    "status": "applied",
+    "mention_songs": [
+     6
+    ],
+    "aux": 6,
+    "entered": 1,
+    "rank_off": null,
+    "rank_config": null
+   },
+   "t043": {
+    "gate": "indirect_description",
+    "status": "applied",
+    "mention_songs": [
+     1
+    ],
+    "aux": 1,
+    "entered": 1,
+    "rank_off": null,
+    "rank_config": null
+   }
+  }
+ },
+ "wrong": {
+  "recall_at_30": {
+   "off": 122,
+   "config": 121
+  },
+  "pre_rerank_rank_le_10_reference_only": {
+   "off": 102,
+   "config": 102
+  },
+  "gained": [],
+  "lost": [
+   {
+    "qid": "c705",
+    "rank_before": 28
+   }
+  ],
+  "rank_up": [],
+  "rank_down": [
+   {
+    "qid": "c707",
+    "before": 17,
+    "after": 18
+   }
+  ],
+  "queries_with_identical_pool": 160,
+  "entered_songs_total": 20,
+  "displaced_songs_total": 20,
+  "queries_where_a_correct_song_was_displaced": [
+   "c705"
+  ],
+  "statuses": {
+   "not_triggered": 154,
+   "applied": 22
+  },
+  "latency": {
+   "n": 176,
+   "median_ms": 114.8,
+   "p90_ms": 249.3
+  },
+  "latency_triggered_only": {
+   "config": {
+    "n": 22,
+    "median_ms": 205.6,
+    "p90_ms": 231.9
+   },
+   "off": {
+    "n": 22,
+    "median_ms": 121.7,
+    "p90_ms": 148.8
+   }
+  }
+ },
+ "repeat_and_wiring": {
+  "oracle_rep1_vs_rep2_identical": 176,
+  "env_cache_candidates_identical_to_off": 176,
+  "env_cache_statuses": {
+   "not_triggered": 154,
+   "abstained": 22
+  }
+ }
+}

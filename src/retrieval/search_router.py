@@ -16,7 +16,7 @@ import re
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from functools import partial
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
@@ -81,6 +81,14 @@ from src.retrieval.clarify import (
     canonical_artist_types as _canonical_artist_types,
 )
 from src.retrieval.search_service import SearchService
+from src.retrieval.work_name_resolution import (
+    STATUS_APPLIED as WORK_STATUS_APPLIED,
+    STATUS_FAILED_PREFIX as WORK_STATUS_FAILED_PREFIX,
+    STATUS_NOT_TRIGGERED as WORK_STATUS_NOT_TRIGGERED,
+    WorkNameRuntime,
+    WorkResolution,
+    gate_indirect_work_reference,
+)
 from src.common.title_features import (
     build_title_meaning_metadata_filter,
     build_title_metadata_filter,
@@ -747,6 +755,20 @@ def _reject_and_trim(
     return ranked[:candidates]
 
 
+# 작품명 해석 마감 = 해석기 시간 제한 + 이 여유(로컬 보조 조회). 넘으면 결과를 쓰지 않는다.
+_WORK_LOOKUP_MARGIN_SECONDS = 2.0
+WORK_NAME_AUX_PATH = "work_name_aux"
+
+
+@dataclass
+class _WorkNameJob:
+    runtime: WorkNameRuntime
+    gate: Any
+    future: Optional["asyncio.Future"]
+    deadline: Optional[float]
+    start_error: str = ""
+
+
 @dataclass
 class _FeedbackJob:
     """한 요청의 피드백 사례 조회. `future`가 None이면 시작하지 못한 것이다."""
@@ -1376,6 +1398,9 @@ class SearchRouter:
     # 이 기본값으로 기존 경로만 돈다.
     _feedback: Optional[Any] = None
     _feedback_pool: Optional[ThreadPoolExecutor] = None
+    # 간접 지칭 작품명 해석(실험, 기본 꺼짐). 주입하지 않으면 판정도 하지 않는다 — 기존 경로·기록이 그대로다.
+    _work_names: Optional[WorkNameRuntime] = None
+    _work_pool: Optional[ThreadPoolExecutor] = None
 
     def __init__(
         self,
@@ -1393,6 +1418,7 @@ class SearchRouter:
         context_named_media_multiplier: float = 1.0,
         default_candidate_k: int = 30,
         feedback_retriever: Optional[Any] = None,
+        work_name_runtime: Optional[WorkNameRuntime] = None,
     ):
         if not math.isfinite(context_weight) or context_weight < 0:
             raise ValueError("context_weight must be finite and nonnegative")
@@ -1432,6 +1458,13 @@ class SearchRouter:
             if feedback_retriever is not None
             else None
         )
+        # 작품명 해석(모델 호출 + 보조 조회)은 기존 경로와 스레드를 다투지 않게 전용 풀을 쓴다.
+        self._work_names = work_name_runtime
+        self._work_pool = (
+            ThreadPoolExecutor(max_workers=2, thread_name_prefix="work_name")
+            if work_name_runtime is not None
+            else None
+        )
 
     def shutdown(self, wait: bool = True) -> None:
         """FastAPI lifespan 종료 시 스레드풀을 정리한다.
@@ -1447,6 +1480,9 @@ class SearchRouter:
         # 피드백 사례 조회도 벡터 클라이언트를 쓴다. 같이 기다려야 닫힌 클라이언트를 만지지 않는다.
         if self._feedback_pool is not None:
             self._feedback_pool.shutdown(wait=wait, cancel_futures=True)
+        # 보조 조회도 텍스트 색인 클라이언트를 쓴다
+        if self._work_pool is not None:
+            self._work_pool.shutdown(wait=wait, cancel_futures=True)
 
     # ------------------------------------------------------------------
     # Public
@@ -1474,6 +1510,7 @@ class SearchRouter:
         path_k: Optional[int] = None,
         rerank_skip_out: Optional[List[str]] = None,
         feedback_out: Optional[List[FeedbackExplain]] = None,
+        work_resolution_out: Optional[List[WorkResolution]] = None,
     ) -> List[MatchingTrack]:
         """
         QueryAnalysis를 받아 3개 경로를 병렬 실행하고
@@ -1517,6 +1554,8 @@ class SearchRouter:
             보조 신호(metadata·performance)는 원래 깊이의 목록만 본다.
         feedback_out: 리스트를 넘기면 피드백 후보 보충을 **조회한 요청에서** 그 실행 기록이 담긴다
             (설명 기록을 끈 요청에서도 받을 수 있는 통로). 스위치가 꺼져 있으면 비어 있다.
+        work_resolution_out: 작품명 해석을 주입한 라우터에서 요청 기록(`WorkResolution`)이 담긴다 — 판정 미통과도
+            남는다. 주입하지 않았으면 비어 있다. 추정 작품명은 이 기록·설명 기록에만 있고 응답 문장에는 없다.
         """
         """
         1) 세 모달리티 병렬 후보 검색
@@ -1802,6 +1841,12 @@ class SearchRouter:
         # 실행은 경로 기여만 떼어 보는 측정이라 넣지 않는다. 스위치가 꺼져 있으면 None이다.
         feedback_job = (
             self._start_feedback_lookup(loop, analysis, answers, timer)
+            if force_weights is None and not disable_boost
+            else None
+        )
+        # 작품명 해석도 기존 경로와 나란히 시작한다(모델 지연이 경로 시간과 겹친다). 판정은 규칙이라 여기서 바로 한다.
+        work_job = (
+            self._start_work_name_job(loop, analysis, timer)
             if force_weights is None and not disable_boost
             else None
         )
@@ -2331,6 +2376,14 @@ class SearchRouter:
                 reverse=True,
             )
 
+        # 작품명 보조 후보 — 다른 보조 경로와 같은 자리에서 RRF 기여만 더한다(분석·기존 경로는 그대로). 판정 미통과·보류·
+        # 실패·시간 초과면 fused는 손대지 않은 그대로다. 아래 보정·거절 제외·절단·가사 보호·리랭킹은 기존과 같다.
+        if work_job is not None:
+            fused = await self._apply_work_name_aux(
+                work_job, analysis, fused, meta_cache, excluded, candidates, disable_boost,
+                recorder, work_resolution_out,
+            )
+
         if not fused:
             logger.error(
                 "[SearchRouter] 전체 경로 결과 없음 — 빈 리스트 반환 (query='%s')",
@@ -2697,6 +2750,103 @@ class SearchRouter:
             final = candidate_tracks[:top_k]
         recorder.set_rank_after([t.id for t in final])
         return final
+
+    def _start_work_name_job(
+        self,
+        loop: asyncio.AbstractEventLoop,
+        analysis: QueryAnalysis,
+        timer: Any,
+    ) -> Optional["_WorkNameJob"]:
+        """판정(규칙)을 하고, 통과하면 해석·검증·보조 조회를 전용 스레드에 건다. 주입되지 않았으면 None."""
+        runtime = self._work_names
+        if runtime is None or self._work_pool is None:
+            return None
+        gate = gate_indirect_work_reference(analysis)
+        if not gate.triggered:
+            return _WorkNameJob(runtime, gate, None, None)
+
+        def search_text_fn(sparse_query: str, metadata_filter: Dict[str, Any], k: int) -> List[MatchingTrack]:
+            # 언급 곡 안에서만: dense = 기존 검색 문장, sparse = 작품명·별칭, alpha = 분석의 text_alpha
+            return self._text_svc.search_text(
+                analysis.search_text, top_k=k, alpha=analysis.text_alpha,
+                sparse_query=sparse_query, metadata_filter=metadata_filter,
+            )
+
+        # 해석 마감 = 지금 + 해석기 제한(풀 대기 포함). 작업은 시작할 때 이 마감을 보고, 지났으면 해석기를 부르지 않는다.
+        resolve_by = time.monotonic() + runtime.timeout_seconds
+        deadline = resolve_by + _WORK_LOOKUP_MARGIN_SECONDS
+        try:
+            future = loop.run_in_executor(
+                self._work_pool,
+                timer.job("path.work_name", partial(runtime.run, resolve_by=resolve_by), analysis, gate, search_text_fn),
+            )
+        except Exception as exc:
+            logger.warning("[SearchRouter] 작품명 해석을 시작하지 못했다: %s", type(exc).__name__)
+            return _WorkNameJob(runtime, gate, None, deadline, start_error=type(exc).__name__)
+        future.add_done_callback(lambda done: done.cancelled() or done.exception())
+        return _WorkNameJob(runtime, gate, future, deadline)
+
+    async def _apply_work_name_aux(
+        self,
+        job: "_WorkNameJob",
+        analysis: QueryAnalysis,
+        fused: List[Tuple[str, float]],
+        meta_cache: Dict[str, MatchingTrack],
+        excluded: Optional[Set[str]],
+        candidates: int,
+        disable_boost: bool,
+        recorder: ExplainRecorder,
+        work_resolution_out: Optional[List[WorkResolution]],
+    ) -> List[Tuple[str, float]]:
+        """보조 목록을 융합 목록에 더한다. 들어온/밀려난 곡은 같은 보정·거절 제외·절단을 보조 없이 한 결과와 비교한다."""
+        record = WorkResolution(status=WORK_STATUS_NOT_TRIGGERED, gate=asdict(job.gate), versions=job.runtime.versions())
+        aux_tracks: List[MatchingTrack] = []
+        if job.start_error:
+            record.status = WORK_STATUS_FAILED_PREFIX + "start:" + job.start_error
+        elif job.future is not None:
+            remaining = max(0.0, (job.deadline or 0.0) - time.monotonic())
+            try:
+                record, aux_tracks = await asyncio.wait_for(asyncio.shield(job.future), timeout=remaining)
+            except asyncio.TimeoutError:
+                # 아직 풀에서 줄을 서 있으면 취소해 해석기 호출이 나가지 않게 한다. 이미 돌고 있는 스레드는 멈출 수
+                # 없다 — 결과를 쓰지 않을 뿐이다(그 작업도 시작 때 마감을 봤으므로 마감 뒤에 새로 부르지는 않는다).
+                job.future.cancel()
+                record.status = WORK_STATUS_FAILED_PREFIX + "timeout"
+            except Exception as exc:  # noqa: BLE001 - 해석 실패는 검색을 막지 않는다
+                record.status = WORK_STATUS_FAILED_PREFIX + f"error:{type(exc).__name__}"
+        if record.status == WORK_STATUS_APPLIED and fused:
+            weight = job.runtime.weight
+            baseline = _reject_and_trim(
+                self._apply_explicit_boosts(analysis, fused, meta_cache, disable_boost=disable_boost),
+                excluded, candidates,
+            )
+            for track in aux_tracks:
+                current = meta_cache.get(track.id)
+                if current is None or current.title == "Unknown":
+                    meta_cache[track.id] = track
+            fused_scores = dict(fused)
+            for rank, track in enumerate(aux_tracks, start=1):
+                # 작품명은 기록 detail에 쓰지 않는다(설명 화면에 이름이 사실처럼 보이지 않게) — 요청 기록에만 있다
+                _fuse_add(
+                    fused_scores, track.id, weight / (_RRF_K + rank),
+                    recorder, WORK_NAME_AUX_PATH, rank, f"가중치 {weight:.2f}",
+                )
+            fused = sorted(fused_scores.items(), key=lambda item: item[1], reverse=True)
+            with_aux = _reject_and_trim(
+                self._apply_explicit_boosts(analysis, fused, meta_cache, disable_boost=disable_boost),
+                excluded, candidates,
+            )
+            base_ids = [song_id for song_id, _ in baseline]
+            new_ids = [song_id for song_id, _ in with_aux]
+            base_set, new_set = set(base_ids), set(new_ids)
+            record.entered_ids = [song_id for song_id in new_ids if song_id not in base_set]
+            record.displaced_ids = [song_id for song_id in base_ids if song_id not in new_set]
+        elif record.status == WORK_STATUS_APPLIED:
+            record.status = "no_base_candidates"
+        recorder.set_work_resolution(record.as_dict())
+        if work_resolution_out is not None:
+            work_resolution_out.append(record)
+        return fused
 
     def _start_feedback_lookup(
         self,

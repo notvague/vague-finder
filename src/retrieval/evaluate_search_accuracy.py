@@ -534,6 +534,22 @@ def collect_run_info(args, *, reranker, analysis_source: dict) -> dict:
     return info
 
 
+def _work_name_switches() -> dict:
+    from src.retrieval import work_name_resolution as wnr
+    from src.retrieval.work_mentions import manifest_path
+
+    if not wnr.resolution_enabled():
+        return {"enabled": False}
+    out: dict = {"enabled": True, **wnr.versions(), "resolver": os.getenv("WORK_NAME_RESOLVER", "vertex").strip(),
+                 "aux_weight": wnr.aux_weight(), "timeout_seconds": wnr.resolver_timeout_seconds(),
+                 "per_work_k": wnr.PER_WORK_K, "aux_max_songs": wnr.AUX_MAX_SONGS,
+                 "store_file": wnr.mention_store_path().name}
+    mpath = manifest_path(wnr.mention_store_path())
+    if mpath.is_file():
+        out["store_sha256_16"] = str(json.loads(mpath.read_text(encoding="utf-8")).get("store_sha256", ""))[:16]
+    return out
+
+
 def _ranking_switches(config: Any) -> dict:
     """순위를 바꾸는 스위치의 **실제 적용값**. 환경 변수 문자열이 아니라 search_router가 읽는 함수를 부른다.
 
@@ -548,6 +564,8 @@ def _ranking_switches(config: Any) -> dict:
         "genre_match_scale": _search_router._genre_match_scale(),
         "genre_answer_scale": _search_router._genre_answer_scale(),
         "audio_fusion_scale": _search_router._audio_fusion_scale(),
+        # 간접 지칭 작품명 해석(v70 실험, 기본 꺼짐). 켠 실행은 판정·검증·프롬프트 버전과 저장소 지문·해석기 종류를 남긴다
+        "work_name_resolution": _work_name_switches(),
         # 속성 조건 보조 후보(experiments/reranking/results_v51_attr_filter — 실험 스위치, 기본 가중 0 = 경로 없음 = v50 B 조건)
         "attr_filter_weight": _search_router._attr_filter_weight(),
         "attr_filter_k": _search_router._attr_filter_k(),
@@ -771,6 +789,9 @@ def build_explain_payload(
     if record.attr_filter_genre is not None:
         # v54 실험 정책(conditional)이 필터를 만든 요청에만 있다 — 기본 경로의 기록 모양은 그대로다
         row["attr_filter_genre"] = dict(record.attr_filter_genre)
+    if record.work_resolution is not None:
+        # 작품명 해석을 켠 실행에만 있다(v70 실험) — 꺼진 실행의 기록 모양은 그대로다
+        row["work_resolution"] = dict(record.work_resolution)
     return row
 
 

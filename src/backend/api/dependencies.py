@@ -333,6 +333,19 @@ async def close_gemini_clients() -> None:
 
 
 @singleton
+def load_work_name_runtime() -> Optional[Any]:
+    """`WORK_NAME_RESOLUTION_ENABLED=1`일 때만 작품명 해석 묶음을 만든다. 꺼져 있으면 None(저장소도 읽지 않는다).
+
+    서버는 기동(`main.lifespan`)에서 미리 부른다 — 켰는데 저장소가 없거나 sha가 다르거나 값이 0/1이 아니면 서버가
+    뜨지 않는다. 라우터는 첫 검색 요청에서 만들어지므로 여기에만 맡기면 /health는 정상인 채 검색마다 500이 된다(리뷰).
+    벡터 클라이언트를 쥐지 않아 `_vector_client_dependents`에 넣지 않는다.
+    """
+    from src.retrieval.work_name_resolution import load_runtime_from_env
+
+    return load_runtime_from_env()
+
+
+@singleton
 def get_search_router() -> SearchRouter:
     context_settings = load_context_settings()
     return SearchRouter(
@@ -351,4 +364,6 @@ def get_search_router() -> SearchRouter:
         context_named_media_multiplier=context_settings.named_media_multiplier,
         default_candidate_k=context_settings.candidate_k,
         feedback_retriever=get_feedback_retriever(),
+        # 간접 지칭 작품명 해석(실험, 기본 꺼짐). 켜면 저장소·해석기를 여기서 불러오고, 못 하면 기동 오류다.
+        work_name_runtime=load_work_name_runtime(),
     )
