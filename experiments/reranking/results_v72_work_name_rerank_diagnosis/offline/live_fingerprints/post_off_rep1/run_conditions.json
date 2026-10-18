@@ -1,0 +1,272 @@
+{
+  "run": "post_off_rep1",
+  "code": "off",
+  "commit": "5c2d43ec09982f579db3b14b9767723c6571ae29",
+  "mode": "server",
+  "model": "fake",
+  "rep": 1,
+  "sets": [
+    "v06",
+    "v09",
+    "v10"
+  ],
+  "query_ids": "",
+  "partial": false,
+  "subset_file": "rerank_input_changed.json",
+  "subset_sha16": "7004bca4e3f7deb1",
+  "subset_query_ids": {
+    "v06": [
+      "c602",
+      "c607",
+      "c701",
+      "c705",
+      "c707",
+      "m103"
+    ],
+    "v09": [
+      "n031",
+      "n033",
+      "n038",
+      "n043",
+      "n096"
+    ],
+    "v10": [
+      "t037",
+      "t046"
+    ]
+  },
+  "work_inputs": {
+    "mentions_sha16": "bfd522ebe9da7590"
+  },
+  "started_at": "2026-10-18T14:00:45+0900",
+  "env": {
+    "ATTR_FILTER_WEIGHT": "0",
+    "AUDIO_FUSION_SCALE": "1",
+    "CONTEXT_WEIGHT": "0.5",
+    "FEEDBACK_COLLECTION_ENABLED": "0",
+    "FEEDBACK_INDEX_WORKER_ENABLED": "0",
+    "FEEDBACK_RETRIEVAL_ENABLED": "0",
+    "GCP_LOCATION": "global",
+    "GCP_PROJECT_ID": "v72-offline-no-calls",
+    "GEMINI_MODEL_NAME": "gemini-3.1-flash-lite",
+    "GEMINI_RERANK_RARE_FACT_VERIFY": "0",
+    "GEMINI_RETRIEVAL_BACKEND": "vertex",
+    "HF_HUB_OFFLINE": "1",
+    "RERANKER_BACKEND": "gemini_listwise",
+    "SEARCH_REFERENCE_YEAR": "2026",
+    "TOKENIZERS_PARALLELISM": "false",
+    "TRANSFORMERS_OFFLINE": "1",
+    "WORK_MENTIONS_PATH": "/private/tmp/vague-finder-v72-work-name-rerank/artifacts/work_names/work_mentions_v1.json.gz",
+    "WORK_NAME_RESOLUTION_ENABLED": "0",
+    "QDRANT_PATH": "",
+    "QDRANT_URL": "http://127.0.0.1:6380"
+  },
+  "worktree_head": "5c2d43ec09982f579db3b14b9767723c6571ae29",
+  "worktree_src_tests_changes": [],
+  "status": "complete",
+  "server_state_before_matches_baseline": true,
+  "code_identity": {
+    "code": "off",
+    "commit": "5c2d43ec09982f579db3b14b9767723c6571ae29",
+    "code_root": "artifacts/src_main_5c2d43e",
+    "files": {
+      "src.vector_db.qdrant_backend": {
+        "path": "artifacts/src_main_5c2d43e/src/vector_db/qdrant_backend.py",
+        "git_blob": "74685cdf66e24d935f93153b9b9e2028480f47c6"
+      },
+      "src.retrieval.context_qdrant_search": {
+        "path": "artifacts/src_main_5c2d43e/src/retrieval/context_qdrant_search.py",
+        "git_blob": "f81ffec9a6a41b1cefa4a5f8fa587b4ed5c67c17"
+      },
+      "src.feedback.case_index": {
+        "path": "artifacts/src_main_5c2d43e/src/feedback/case_index.py",
+        "git_blob": "2f164721fc2a98acfc0ed4cdd88b3a13bc74ab5c"
+      },
+      "src.retrieval.evaluate_search_accuracy": {
+        "path": "artifacts/src_main_5c2d43e/src/retrieval/evaluate_search_accuracy.py",
+        "git_blob": "a4b320c8d59ccf26c6f4f2b951c720f72d493716"
+      },
+      "src.retrieval.search_router": {
+        "path": "artifacts/src_main_5c2d43e/src/retrieval/search_router.py",
+        "git_blob": "91685819efd6789af1a1fa41d8ad94845c0c977a"
+      },
+      "src.retrieval.work_name_resolution": {
+        "path": "artifacts/src_main_5c2d43e/src/retrieval/work_name_resolution.py",
+        "git_blob": "5777d7f9cfeec59ec6be26df0f1542e96190766b"
+      },
+      "src.retrieval.work_mentions": {
+        "path": "artifacts/src_main_5c2d43e/src/retrieval/work_mentions.py",
+        "git_blob": "1c0eda766cbfde1a9b8fc27f3cbdf32e175664c3"
+      },
+      "src.retrieval.gemini_listwise_reranker": {
+        "path": "artifacts/src_main_5c2d43e/src/retrieval/gemini_listwise_reranker.py",
+        "git_blob": "ae81a62b0e2f3f162b2669b5c5143a711174fc93"
+      }
+    },
+    "src_py_files": 162,
+    "src_py_tree_sha16": "eaf159683c73e5d5"
+  },
+  "analysis_caches": {
+    "v06": {
+      "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v06_dev_vertex.json",
+      "queries": 6,
+      "file_sha256_16": "36eab91ca92a233b",
+      "missing": 0,
+      "fallback": 0,
+      "drift": []
+    },
+    "v09": {
+      "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v09_dev_vertex.json",
+      "queries": 5,
+      "file_sha256_16": "e1048ecff964004e",
+      "missing": 0,
+      "fallback": 0,
+      "drift": []
+    },
+    "v10": {
+      "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v10_dev_vertex.json",
+      "queries": 2,
+      "file_sha256_16": "c6c2d9d844957011",
+      "missing": 0,
+      "fallback": 0,
+      "drift": []
+    }
+  },
+  "guard_before": {
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "lyrics_mongo_client": "blocked",
+    "make_genai_client": "blocked",
+    "reranker.make_genai_client": "blocked",
+    "adc_credentials": "blocked",
+    "google.genai.Client": "blocked",
+    "network": "blocked",
+    "QDRANT_HYBRID_SCAN_LIMIT": "unset"
+  },
+  "lyrics_snapshot": {
+    "db": "vaguefinder",
+    "collection": "songs",
+    "document_count": 5143,
+    "full_lyrics_songs": 5143,
+    "full_lyrics_total_chars": 4076174,
+    "content_sha256_16": "e0d58f28f1f4a563",
+    "source": "v63_snapshot",
+    "snapshot_file_sha256_16": "295b7a508c12cc34"
+  },
+  "qdrant_open_seconds": 0.045,
+  "reference_build_seconds": 7.174,
+  "index_fingerprint": {
+    "collection": "vaguefinder-text-1024-koe5__dev",
+    "points": 5143,
+    "dense_dim": 1024,
+    "sparse_nnz": 1061090,
+    "sparse_vocab": 44486,
+    "content_sha256_16": "238299e6c8c17f2a"
+  },
+  "collections": {
+    "vaguefinder-audio-512__dev": 5143,
+    "vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf": 5054,
+    "vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf": 639,
+    "vaguefinder-image-768__dev": 5143,
+    "vaguefinder-text-1024-koe5__dev": 5143,
+    "vaguefinder-context-dense-1024-koe5__dev": 5054,
+    "vaguefinder-context-sparse-bm25__dev": 639
+  },
+  "warmup": {
+    "query_id": "q105",
+    "set": "v06",
+    "seconds": 2.781,
+    "work_status": "(none)"
+  },
+  "work_resolver": "(none)",
+  "sets_done": {
+    "v06": {
+      "seconds": 1.892,
+      "rows": 6,
+      "queries_recorded": 6,
+      "unattributed_rows": false,
+      "qdrant_logical_calls": 26,
+      "qdrant_classes": {
+        "context_fact:context-dense-1024-koe5:identical": 6,
+        "context_profile:context-sparse-bm25:identical": 5,
+        "context_profile:context-sparse-bm25:tie_order_only": 1,
+        "index:audio-512:identical": 4,
+        "index:text-1024-koe5:identical": 10
+      },
+      "raw_outside_logical": {
+        "count": 1
+      },
+      "lyrics_errors": 0,
+      "audio_collection_queries": 4,
+      "queries_with_clap_embed": 4,
+      "path_failures": [],
+      "offline_generate_calls": 6
+    },
+    "v09": {
+      "seconds": 0.884,
+      "rows": 5,
+      "queries_recorded": 5,
+      "unattributed_rows": false,
+      "qdrant_logical_calls": 21,
+      "qdrant_classes": {
+        "context_fact:context-dense-1024-koe5:identical": 3,
+        "context_profile:context-sparse-bm25:identical": 3,
+        "index:audio-512:identical": 5,
+        "index:text-1024-koe5:identical": 10
+      },
+      "raw_outside_logical": {
+        "count": 2
+      },
+      "lyrics_errors": 0,
+      "audio_collection_queries": 5,
+      "queries_with_clap_embed": 5,
+      "path_failures": [],
+      "offline_generate_calls": 11
+    },
+    "v10": {
+      "seconds": 0.385,
+      "rows": 2,
+      "queries_recorded": 2,
+      "unattributed_rows": false,
+      "qdrant_logical_calls": 10,
+      "qdrant_classes": {
+        "context_fact:context-dense-1024-koe5:identical": 2,
+        "context_profile:context-sparse-bm25:identical": 2,
+        "index:audio-512:identical": 2,
+        "index:text-1024-koe5:identical": 4
+      },
+      "raw_outside_logical": {
+        "count": 3,
+        "retrieve": 1
+      },
+      "lyrics_errors": 0,
+      "audio_collection_queries": 2,
+      "queries_with_clap_embed": 2,
+      "path_failures": [],
+      "offline_generate_calls": 13
+    }
+  },
+  "cold_before_first_query_seconds": 12.586,
+  "guard_after": {
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "lyrics_mongo_client": "blocked",
+    "make_genai_client": "blocked",
+    "reranker.make_genai_client": "blocked",
+    "adc_credentials": "blocked",
+    "google.genai.Client": "blocked",
+    "network": "blocked",
+    "QDRANT_HYBRID_SCAN_LIMIT": "unset"
+  },
+  "network_attempts": [],
+  "clap": {
+    "load_calls": 0,
+    "load_ms": [],
+    "embed_calls": 11
+  },
+  "lyrics_source_reads": 0,
+  "server_state_after_matches_baseline": true,
+  "finished_at": "2026-10-18T14:01:01+0900",
+  "total_seconds": 15.855,
+  "ru_maxrss_bytes": 3457843200
+}

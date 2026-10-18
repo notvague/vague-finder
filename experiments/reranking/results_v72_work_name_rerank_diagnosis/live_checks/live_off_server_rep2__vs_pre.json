@@ -1,0 +1,33 @@
+{
+ "pair": "pre_off_rep2 vs live_off_server_rep2",
+ "a": "experiments/reranking/results_v72_work_name_rerank_diagnosis/offline/live_fingerprints/pre_off_rep2",
+ "b": "experiments/reranking/results_v72_work_name_rerank_diagnosis/live/live_off_server_rep2",
+ "a_done": true,
+ "b_done": true,
+ "queries": 13,
+ "missing_either": [],
+ "fields_compared": [
+  "cand_ids",
+  "cand_scores",
+  "lyrics",
+  "protection",
+  "rerank_input",
+  "prompts"
+ ],
+ "input_identical": 13,
+ "input_diff_queries": [],
+ "diff_counts": {
+  "cand_ids": 0,
+  "cand_scores": 0,
+  "lyrics": 0,
+  "protection": 0,
+  "rerank_input": 0,
+  "prompts": 0
+ },
+ "diff_queries": {},
+ "cand_set_diff_queries": [],
+ "path_diff_query_ids": {},
+ "groups_not_sent": {},
+ "retry_prompt_changed_queries": [],
+ "per_query": {}
+}

@@ -1,5 +1,7 @@
 # PR 초안 — v71(PR 생성·commit·push는 사용자가 한다)
 
+> **정정(2026-10-18, v72):** 아래 본문의 "리랭커 입력이 바뀌는 질의는 채택 16건, 나머지 160건"은 틀렸다. 바른 값은 **13 / 163**이다(n045·q105·t024는 입력이 A와 같음). 근거는 `../results_v72_work_name_rerank_diagnosis/RUN_INFO.md` §2-3이다. 이 초안은 PR #85로 병합된 본문이라 그대로 두었다.
+
 브랜치 `experiment/v71-work-name-resolution-live`(기준 `a55e498` = v70 PR #84 병합). 평가 PR이며 제품 코드 변경은 없다.
 
 **제목**
