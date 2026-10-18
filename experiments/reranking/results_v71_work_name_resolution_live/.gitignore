@@ -1,0 +1,11 @@
+# 질의 원문·모델 원출력·작품명·장부·로그는 Git에서 뺀다
+labels/work_label_queue_private.csv
+live/*/raw.jsonl
+resolution_cache/
+offline/*/records.jsonl
+logs/
+__pycache__/
+# 루트의 *.csv 제외에서 되살린다 — 질의 원문·작품명 없는 표
+!labels/work_label_queue.csv
+!analysis/*.csv
+analysis_private/
