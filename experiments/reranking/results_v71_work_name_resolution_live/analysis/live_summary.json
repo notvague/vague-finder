@@ -1,0 +1,129 @@
+{
+ "rep1": {
+  "rows": 22,
+  "status": {
+   "ok:abstain": 5,
+   "ok:candidates": 17
+  },
+  "works_returned": 24,
+  "queries_with_2plus_works": 5,
+  "truncated_over_3": 0,
+  "finish_reasons": [
+   "FinishReason.STOP"
+  ],
+  "thoughts_tokens": [
+   "None"
+  ],
+  "candidates_tokens_max": 183,
+  "prompt_tokens_range": [
+   332,
+   364
+  ],
+  "latency_ms": {
+   "median": 1084.6,
+   "max": 1317.7
+  },
+  "model_versions": [
+   "gemini-3.1-flash-lite"
+  ],
+  "ledger_after": {
+   "attempts": 23,
+   "attempts_by_kind": {
+    "count_tokens": 1,
+    "generate": 22
+   },
+   "settled_usd": 0.004685,
+   "unverified_usd": 0,
+   "open_reserve_usd": 0,
+   "committed_usd": 0.004685,
+   "failed_calls": 0,
+   "halt": ""
+  },
+  "transport_requests": {
+   "vertex": 23,
+   "oauth": 1,
+   "other": 0
+  },
+  "preflight": {
+   "done": true,
+   "total_tokens": 349
+  },
+  "stopped": "",
+  "elapsed_seconds": 24.2,
+  "input_fingerprint16": "79105e7da214ed0a",
+  "cache_sha16": "03ad094834c986e5",
+  "leak_check": {
+   "checked": 22,
+   "relevant_ids_known": 300,
+   "v67_names_known": 13,
+   "problems": 0
+  }
+ },
+ "rep2": {
+  "rows": 22,
+  "status": {
+   "ok:abstain": 5,
+   "ok:candidates": 17
+  },
+  "works_returned": 24,
+  "queries_with_2plus_works": 5,
+  "truncated_over_3": 0,
+  "finish_reasons": [
+   "FinishReason.STOP"
+  ],
+  "thoughts_tokens": [
+   "None"
+  ],
+  "candidates_tokens_max": 183,
+  "prompt_tokens_range": [
+   332,
+   364
+  ],
+  "latency_ms": {
+   "median": 1007.5,
+   "max": 1344.2
+  },
+  "model_versions": [
+   "gemini-3.1-flash-lite"
+  ],
+  "ledger_after": {
+   "attempts": 46,
+   "attempts_by_kind": {
+    "count_tokens": 2,
+    "generate": 44
+   },
+   "settled_usd": 0.009369,
+   "unverified_usd": 0,
+   "open_reserve_usd": 0,
+   "committed_usd": 0.009369,
+   "failed_calls": 0,
+   "halt": ""
+  },
+  "transport_requests": {
+   "vertex": 23,
+   "oauth": 1,
+   "other": 0
+  },
+  "preflight": {
+   "done": true,
+   "total_tokens": 349
+  },
+  "stopped": "",
+  "elapsed_seconds": 22.4,
+  "input_fingerprint16": "79105e7da214ed0a",
+  "cache_sha16": "d34349ba48134890",
+  "leak_check": {
+   "checked": 22,
+   "relevant_ids_known": 300,
+   "v67_names_known": 13,
+   "problems": 0
+  }
+ },
+ "rep1_vs_rep2": {
+  "raw_text_identical": 22,
+  "request_sha_identical": 22,
+  "parsed_status_identical": 22,
+  "normalized_work_names_identical": 22,
+  "of": 22
+ }
+}

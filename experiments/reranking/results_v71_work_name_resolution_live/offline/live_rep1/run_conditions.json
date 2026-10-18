@@ -1,0 +1,55 @@
+{
+ "config": "live_rep1",
+ "guards": {
+  "genai": "blocked",
+  "make_genai_client": "blocked",
+  "mongo": "blocked",
+  "network": "blocked"
+ },
+ "lyrics": {
+  "document_count": 5143,
+  "full_lyrics_songs": 5143,
+  "full_lyrics_total_chars": 4076174,
+  "content_sha256_16": "e0d58f28f1f4a563"
+ },
+ "fixed_env": {
+  "CONTEXT_WEIGHT": "0.5",
+  "ATTR_FILTER_WEIGHT": "0",
+  "AUDIO_FUSION_SCALE": "1",
+  "SEARCH_REFERENCE_YEAR": "2026",
+  "RERANKER_BACKEND": "gemini_listwise",
+  "GEMINI_RERANK_RARE_FACT_VERIFY": "0",
+  "GEMINI_RETRIEVAL_BACKEND": "vertex",
+  "GCP_LOCATION": "global",
+  "GEMINI_MODEL_NAME": "gemini-3.1-flash-lite",
+  "GCP_PROJECT_ID": "v71-offline-no-calls",
+  "FEEDBACK_COLLECTION_ENABLED": "0",
+  "FEEDBACK_INDEX_WORKER_ENABLED": "0",
+  "FEEDBACK_RETRIEVAL_ENABLED": "0",
+  "HF_HUB_OFFLINE": "1",
+  "TRANSFORMERS_OFFLINE": "1",
+  "TOKENIZERS_PARALLELISM": "false",
+  "QDRANT_URL": "http://127.0.0.1:6378",
+  "WORK_NAME_RESOLUTION_ENABLED": "0"
+ },
+ "store": {
+  "schema_version": "work_mentions_v1",
+  "rule_version": "marker_sentence_v1",
+  "store_sha256_16": "bfd522ebe9da7590"
+ },
+ "versions": {
+  "gate": "gate_v2",
+  "validation": "validate_v3",
+  "prompt": "resolver_prompt_v2",
+  "prompt_sha16": "31494c3f69f77481",
+  "store_schema_version": "work_mentions_v1",
+  "store_rule_version": "marker_sentence_v1",
+  "store_store_sha256_16": "bfd522ebe9da7590"
+ },
+ "live_cache": "resolution_cache/rep1.json",
+ "live_cache_sha16": "03ad094834c986e5",
+ "resolver_name": "cache:gemini-3.1-flash-lite",
+ "net_attempts": 0,
+ "src_tree": "a55e49889df3919ba2ca722fc036a7d127291ae5",
+ "src_diff_sha16": "e3b0c44298fc1c14"
+}

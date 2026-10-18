@@ -1,0 +1,131 @@
+{
+ "rep": 2,
+ "model": "gemini-3.1-flash-lite",
+ "route": {
+  "backend": "vertex",
+  "location": "global",
+  "setting": "vertex"
+ },
+ "sdk": "google-genai 2.23.0",
+ "timeout_seconds": 4.0,
+ "max_output_tokens": 512,
+ "versions": {
+  "gate": "gate_v2",
+  "validation": "validate_v3",
+  "prompt": "resolver_prompt_v2",
+  "prompt_sha16": "31494c3f69f77481",
+  "store_schema_version": "work_mentions_v1",
+  "store_rule_version": "marker_sentence_v1",
+  "store_store_sha256_16": "bfd522ebe9da7590"
+ },
+ "store": {
+  "schema_version": "work_mentions_v1",
+  "rule_version": "marker_sentence_v1",
+  "store_sha256_16": "bfd522ebe9da7590"
+ },
+ "input_fingerprint16": "79105e7da214ed0a",
+ "qids": [
+  "q105",
+  "m103",
+  "c602",
+  "c603",
+  "c607",
+  "c701",
+  "c705",
+  "c707",
+  "n010",
+  "n031",
+  "n033",
+  "n038",
+  "n043",
+  "n045",
+  "n096",
+  "t024",
+  "t036",
+  "t037",
+  "t041",
+  "t043",
+  "t046",
+  "t098"
+ ],
+ "leak_check": {
+  "checked": 22,
+  "relevant_ids_known": 300,
+  "v67_names_known": 13,
+  "problems": 0
+ },
+ "preflight": {
+  "done": true,
+  "total_tokens": 349
+ },
+ "stopped": "",
+ "elapsed_seconds": 22.4,
+ "status_counts": {
+  "ok:candidates": 17,
+  "ok:abstain": 5
+ },
+ "guard_local": {
+  "attempts": 23,
+  "generate": 22,
+  "count_tokens": 1,
+  "other": 0,
+  "settled": 23,
+  "failed": 0,
+  "blocked": 0,
+  "cost": 0.004684499999999999,
+  "unverified": 0.0
+ },
+ "ledger_before": {
+  "attempts": 23,
+  "attempts_by_kind": {
+   "count_tokens": 1,
+   "generate": 22
+  },
+  "settled_calls": 23,
+  "failed_calls": 0,
+  "open_reservations": 0,
+  "settled_usd": 0.004685,
+  "unverified_usd": 0,
+  "open_reserve_usd": 0,
+  "committed_usd": 0.004685,
+  "deadline_epoch": 1792298344.514,
+  "first_attempt_epoch": 1792297144.514,
+  "halt": "",
+  "consecutive_failures_since_success": 0,
+  "consecutive_504_since_success": 0,
+  "fail_504_epochs": []
+ },
+ "ledger_after": {
+  "attempts": 46,
+  "attempts_by_kind": {
+   "count_tokens": 2,
+   "generate": 44
+  },
+  "settled_calls": 46,
+  "failed_calls": 0,
+  "open_reservations": 0,
+  "settled_usd": 0.009369,
+  "unverified_usd": 0,
+  "open_reserve_usd": 0,
+  "committed_usd": 0.009369,
+  "deadline_epoch": 1792298344.514,
+  "first_attempt_epoch": 1792297144.514,
+  "halt": "",
+  "consecutive_failures_since_success": 0,
+  "consecutive_504_since_success": 0,
+  "fail_504_epochs": []
+ },
+ "transport_requests": {
+  "vertex": 23,
+  "oauth": 1,
+  "other": 0
+ },
+ "caps": {
+  "cost_usd": 0.25,
+  "attempts": 60,
+  "window_seconds": 1200
+ },
+ "cache_sha16": "d34349ba48134890",
+ "src_head": "a55e49889df3919ba2ca722fc036a7d127291ae5",
+ "src_diff_sha16": "e3b0c44298fc1c14"
+}

@@ -1,0 +1,169 @@
+{
+ "denominator": 176,
+ "A": {
+  "recall_at_30": 122,
+  "search_ms_median_triggered": 114.6
+ },
+ "B1": {
+  "recall_at_30": 125,
+  "gained": [
+   {
+    "qid": "n033",
+    "rank": 13
+   },
+   {
+    "qid": "n043",
+    "rank": 25
+   },
+   {
+    "qid": "n096",
+    "rank": 3
+   }
+  ],
+  "lost": [],
+  "rank_up": [
+   {
+    "qid": "c705",
+    "A": 28,
+    "B": 22
+   },
+   {
+    "qid": "n031",
+    "A": 2,
+    "B": 1
+   },
+   {
+    "qid": "n038",
+    "A": 4,
+    "B": 1
+   },
+   {
+    "qid": "t037",
+    "A": 3,
+    "B": 2
+   }
+  ],
+  "rank_down": [
+   {
+    "qid": "c707",
+    "A": 17,
+    "B": 18
+   }
+  ],
+  "status_counts": {
+   "not_triggered": 154,
+   "applied": 16,
+   "abstained": 5,
+   "no_usable_work": 1
+  },
+  "reject_reasons": {
+   "no_local_data": 4
+  },
+  "accepted_works": 20,
+  "name_in_query_works": 2,
+  "explicit_work_named_rejects": 0,
+  "entered_total": 24,
+  "displaced_total": 24,
+  "gold_displaced": 0,
+  "aux_songs_total": 89,
+  "aux_songs_outside_final_30": 39,
+  "checks": {
+   "non_triggered_identical": 154,
+   "non_triggered": 154,
+   "not_applied_identical": 6,
+   "not_applied": 6,
+   "applied_size_kept": 16,
+   "applied": 16,
+   "entered_eq_displaced": 16,
+   "lyric_protection_kept": 13,
+   "lyric_protected_queries": 13
+  },
+  "search_ms_median_triggered": 198.6,
+  "search_ms_median_applied": 213.3,
+  "search_ms_median_non_triggered": 104.7
+ },
+ "B2": {
+  "recall_at_30": 125,
+  "gained": [
+   {
+    "qid": "n033",
+    "rank": 13
+   },
+   {
+    "qid": "n043",
+    "rank": 25
+   },
+   {
+    "qid": "n096",
+    "rank": 3
+   }
+  ],
+  "lost": [],
+  "rank_up": [
+   {
+    "qid": "c705",
+    "A": 28,
+    "B": 22
+   },
+   {
+    "qid": "n031",
+    "A": 2,
+    "B": 1
+   },
+   {
+    "qid": "n038",
+    "A": 4,
+    "B": 1
+   },
+   {
+    "qid": "t037",
+    "A": 3,
+    "B": 2
+   }
+  ],
+  "rank_down": [
+   {
+    "qid": "c707",
+    "A": 17,
+    "B": 18
+   }
+  ],
+  "status_counts": {
+   "not_triggered": 154,
+   "applied": 16,
+   "abstained": 5,
+   "no_usable_work": 1
+  },
+  "reject_reasons": {
+   "no_local_data": 4
+  },
+  "accepted_works": 20,
+  "name_in_query_works": 2,
+  "explicit_work_named_rejects": 0,
+  "entered_total": 24,
+  "displaced_total": 24,
+  "gold_displaced": 0,
+  "aux_songs_total": 89,
+  "aux_songs_outside_final_30": 39,
+  "checks": {
+   "non_triggered_identical": 154,
+   "non_triggered": 154,
+   "not_applied_identical": 6,
+   "not_applied": 6,
+   "applied_size_kept": 16,
+   "applied": 16,
+   "entered_eq_displaced": 16,
+   "lyric_protection_kept": 13,
+   "lyric_protected_queries": 13
+  },
+  "search_ms_median_triggered": 206.8,
+  "search_ms_median_applied": 223.6,
+  "search_ms_median_non_triggered": 105.5
+ },
+ "B1_vs_B2": {
+  "candidates_identical": 176,
+  "work_resolution_identical": 176,
+  "of": 176
+ },
+ "A_search_ms_median_non_triggered": 100.2
+}
