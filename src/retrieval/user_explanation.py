@@ -158,6 +158,8 @@ _PATH_SEARCH_NAMES: Dict[str, str] = {
     "performance_metadata": "편성 메타데이터 검색",
     "metadata": "메타데이터 검색",
     "feedback_case": "이전 사용자 제보",
+    # 작품명은 말하지 않는다 — 추정한 이름을 사실처럼 보이게 하지 않는다
+    "work_name_aux": "작품명 추정 보조 검색",
 }
 
 # 사실 일치 규칙 — "직접 확인한 것은 아니다"를 붙이지 않는다(제목·가수·형태는 등록 정보와 맞춘 것이다).

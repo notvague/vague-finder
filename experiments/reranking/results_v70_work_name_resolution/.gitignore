@@ -1,0 +1,12 @@
+# 원기록(작품명·근거 구절 = 질의 원문 포함) · 로그 · 해석 캐시(응답 원문)는 Git에서 뺀다
+offline/*/records.jsonl
+offline_v2/*/records.jsonl
+offline_v3/*/records.jsonl
+logs/
+resolution_cache/
+__pycache__/
+# 루트의 *.csv 제외에서 되살린다 — 질의 원문·작품명 없는 집계표와 열 머리만 있는 양식
+!analysis/offline_per_query.csv
+!analysis_v2/offline_per_query.csv
+!analysis_v3/offline_per_query.csv
+!new_data/collection_template_v70.csv

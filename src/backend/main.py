@@ -11,6 +11,7 @@ from src.backend.api.dependencies import (
     close_lyrics_exact_search_service,
     close_vector_client,
     get_vector_client,
+    load_work_name_runtime,
     lyrics_cache_status,
     reranker_backend,
 )
@@ -96,6 +97,10 @@ async def lifespan(app: FastAPI):
     # 닫는다 — 어떤 이유로든 기동이 여기서 끊기면 클라이언트는 남지 않아야 한다. 원래 예외를 그대로 다시 올린다.
     try:
         context_startup.run(vector_client)
+        # 간접 지칭 작품명 해석(실험, 기본 꺼짐) — 켰으면 저장소·해석기를 여기서 불러온다. 저장소 없음·sha 불일치·
+        # 설정값 오류는 다시 시도해도 낫지 않으므로 기동 실패다(꺼져 있으면 아무것도 읽지 않는다). 기동마다 환경을 다시 읽는다.
+        load_work_name_runtime.cache_clear()  # type: ignore[attr-defined]
+        load_work_name_runtime()
     except Exception:
         await asyncio.to_thread(close_vector_client)
         raise

@@ -1,0 +1,89 @@
+{
+ "note": "v1 = 리뷰 반영 전 코드(offline/), v2 = 반영 후(offline_v2/). dev 176 · 리랭킹 전 후보 30 · 모델 0회",
+ "off": {
+  "identical_candidates_and_scores": 176,
+  "candidate_mismatch_qids": [],
+  "gate_reason_changes": {},
+  "status_changes": {},
+  "work_verdicts": {
+   "v1": {},
+   "v2": {}
+  }
+ },
+ "gate_abstain": {
+  "identical_candidates_and_scores": 176,
+  "candidate_mismatch_qids": [],
+  "gate_reason_changes": {},
+  "status_changes": {},
+  "work_verdicts": {
+   "v1": {},
+   "v2": {}
+  }
+ },
+ "oracle": {
+  "identical_candidates_and_scores": 176,
+  "candidate_mismatch_qids": [],
+  "gate_reason_changes": {},
+  "status_changes": {},
+  "work_verdicts": {
+   "v1": {
+    "accepted": 10
+   },
+   "v2": {
+    "accepted": 10
+   }
+  }
+ },
+ "oracle_nogate": {
+  "identical_candidates_and_scores": 176,
+  "candidate_mismatch_qids": [],
+  "gate_reason_changes": {},
+  "status_changes": {},
+  "work_verdicts": {
+   "v1": {
+    "accepted": 13
+   },
+   "v2": {
+    "accepted": 13
+   }
+  }
+ },
+ "wrong": {
+  "identical_candidates_and_scores": 176,
+  "candidate_mismatch_qids": [],
+  "gate_reason_changes": {},
+  "status_changes": {},
+  "work_verdicts": {
+   "v1": {
+    "accepted": 22
+   },
+   "v2": {
+    "accepted": 22
+   }
+  }
+ },
+ "oracle_rep2": {
+  "identical_candidates_and_scores": 176,
+  "candidate_mismatch_qids": [],
+  "gate_reason_changes": {},
+  "status_changes": {},
+  "work_verdicts": {
+   "v1": {
+    "accepted": 10
+   },
+   "v2": {
+    "accepted": 10
+   }
+  }
+ },
+ "env_cache": {
+  "identical_candidates_and_scores": 176,
+  "candidate_mismatch_qids": [],
+  "gate_reason_changes": {},
+  "status_changes": {},
+  "work_verdicts": {
+   "v1": {},
+   "v2": {}
+  }
+ }
+}
