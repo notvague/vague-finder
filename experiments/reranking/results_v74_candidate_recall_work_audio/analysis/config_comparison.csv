@@ -1,0 +1,5 @@
+config,candidate_recall@30,v06,v09,v10,gained_vs_work_on,lost_vs_work_on,rank_up,rank_down,cand_set_changed,cand_order_or_score_changed,rerank_internal_input_changed,v73B_hits_internal_input_changed,v73B_hits_internal_input_same,sent_prompt_changed,v73B_hits_prompt_changed,internal_only_changed(score),v73B_hits_lost_from_pool,v73B_hits_rank_down,clap_embed_queries,audio_qdrant_calls,audio_top_k_sum,text_qdrant_calls,text_top_k_sum,qdrant_logical_calls,search_ms_median,search_ms_p95
+work_on,125,43,44,38,(기준),,,,,,,,,,,,,,114,114,9480,331,17510,592,136.2,361.4
+off_on,122,43,41,38,,n033|n043|n096,1,4,11,13,13,9,112,13,9,,n033|n043|n096,n031:1>2|n038:1>4|t037:2>3,114,114,9480,311,17310,572,130.0,372.6
+off_skip,127,43,41,43,t058|t077|t078|t100|t111,n033|n043|n096,23,8,94,116,116,74,47,111,72,n002|q210|t041|t043|t044,n033|n043|n096,c706:3>4|n018:3>11|n038:1>4|n045:2>4|t010:9>11|t033:2>3|t042:20>23,0,0,0,311,17310,458,117.3,339.6
+work_skip,130,43,44,43,t058|t077|t078|t100|t111,,24,9,91,114,114,74,47,109,72,n002|q210|t041|t043|t044,,c706:3>4|n018:3>11|n038:1>2|n043:25>28|n045:2>4|n096:3>8|t010:9>11|t033:2>3|t042:20>23,0,0,0,331,17510,478,121.0,389.2

@@ -1,0 +1,331 @@
+{
+ "pair": "work_on_server_rep1 vs off_on_server_rep1",
+ "a": "/private/tmp/vague-finder-v74-candidate-recall/experiments/reranking/results_v74_candidate_recall_work_audio/runs/work_on_server_rep1",
+ "b": "/private/tmp/vague-finder-v74-candidate-recall/experiments/reranking/results_v74_candidate_recall_work_audio/runs/off_on_server_rep1",
+ "a_done": true,
+ "b_done": true,
+ "queries": 176,
+ "missing_either": [],
+ "fields_compared": [
+  "cand_ids",
+  "cand_scores",
+  "lyrics",
+  "protection",
+  "rerank_input",
+  "prompts",
+  "final"
+ ],
+ "input_identical": 163,
+ "input_diff_queries": [
+  "c602",
+  "c607",
+  "c701",
+  "c705",
+  "c707",
+  "m103",
+  "n031",
+  "n033",
+  "n038",
+  "n043",
+  "n096",
+  "t037",
+  "t046"
+ ],
+ "diff_counts": {
+  "cand_ids": 13,
+  "cand_scores": 13,
+  "lyrics": 0,
+  "protection": 0,
+  "rerank_input": 13,
+  "prompts": 13,
+  "final": 13
+ },
+ "diff_queries": {
+  "cand_ids": [
+   "c602",
+   "c607",
+   "c701",
+   "c705",
+   "c707",
+   "m103",
+   "n031",
+   "n033",
+   "n038",
+   "n043",
+   "n096",
+   "t037",
+   "t046"
+  ],
+  "cand_scores": [
+   "c602",
+   "c607",
+   "c701",
+   "c705",
+   "c707",
+   "m103",
+   "n031",
+   "n033",
+   "n038",
+   "n043",
+   "n096",
+   "t037",
+   "t046"
+  ],
+  "rerank_input": [
+   "c602",
+   "c607",
+   "c701",
+   "c705",
+   "c707",
+   "m103",
+   "n031",
+   "n033",
+   "n038",
+   "n043",
+   "n096",
+   "t037",
+   "t046"
+  ],
+  "prompts": [
+   "c602",
+   "c607",
+   "c701",
+   "c705",
+   "c707",
+   "m103",
+   "n031",
+   "n033",
+   "n038",
+   "n043",
+   "n096",
+   "t037",
+   "t046"
+  ],
+  "final": [
+   "c602",
+   "c607",
+   "c701",
+   "c705",
+   "c707",
+   "m103",
+   "n031",
+   "n033",
+   "n038",
+   "n043",
+   "n096",
+   "t037",
+   "t046"
+  ]
+ },
+ "cand_set_diff_queries": [
+  "c602",
+  "c701",
+  "c705",
+  "c707",
+  "m103",
+  "n031",
+  "n033",
+  "n043",
+  "n096",
+  "t037",
+  "t046"
+ ],
+ "path_diff_query_ids": {
+  "index:text-1024-koe5": [
+   "c602",
+   "c607",
+   "c701",
+   "c705",
+   "c707",
+   "m103",
+   "n031",
+   "n033",
+   "n038",
+   "n043",
+   "n045",
+   "n096",
+   "q105",
+   "t024",
+   "t037",
+   "t046"
+  ]
+ },
+ "groups_not_sent": {},
+ "retry_prompt_changed_queries": [],
+ "per_query": {
+  "c602": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "c607": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "c701": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "c705": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "c707": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "m103": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n031": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n033": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n038": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n043": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n045": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n096": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q105": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t024": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t037": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t046": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  }
+ }
+}

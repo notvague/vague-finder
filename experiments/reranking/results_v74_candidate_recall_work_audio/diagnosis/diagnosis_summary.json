@@ -1,0 +1,125 @@
+{
+ "failures": 55,
+ "out_of_pool": 51,
+ "in_pool": 4,
+ "primary_counts_out_of_pool": {
+  "R": 18,
+  "P": 10,
+  "F": 10,
+  "B": 5,
+  "A": 4,
+  "L": 4
+ },
+ "primary_by_code": {
+  "A": [
+   "n016",
+   "n058",
+   "t040",
+   "t043"
+  ],
+  "B": [
+   "n011",
+   "n048",
+   "n088",
+   "t016",
+   "t068"
+  ],
+  "F": [
+   "c607",
+   "c701",
+   "m402",
+   "n055",
+   "n072",
+   "t058",
+   "t077",
+   "t078",
+   "t100",
+   "t111"
+  ],
+  "L": [
+   "n065",
+   "n093",
+   "n095",
+   "t029"
+  ],
+  "P": [
+   "c601",
+   "n002",
+   "n030",
+   "n040",
+   "q106",
+   "q110",
+   "q112",
+   "t001",
+   "t011",
+   "t031"
+  ],
+  "R": [
+   "c602",
+   "c603",
+   "m302",
+   "m303",
+   "m403",
+   "n046",
+   "n064",
+   "q115",
+   "q117",
+   "t009",
+   "t038",
+   "t060",
+   "t073",
+   "t075",
+   "t079",
+   "t080",
+   "t092",
+   "t103"
+  ]
+ },
+ "primary_source": {
+  "auto": 18,
+  "inherited_v67": 30,
+  "reviewed_v74": 3
+ },
+ "stage_changed_vs_v67": [
+  "c607",
+  "c701"
+ ],
+ "primary_changed_vs_v67": [
+  "c607",
+  "c701"
+ ],
+ "overlap_tags_out_of_pool(겹침 — 합계에 더하지 않음)": {
+  "audio_path_ran": 36,
+  "indirect_reference": 11,
+  "depth_attr": 10,
+  "sound_generic": 8,
+  "cover_generic": 7,
+  "audio_crowding": 7,
+  "pool_in_work_skip": 5,
+  "title_rule": 3,
+  "work_input_changed": 3,
+  "work_status=applied": 3,
+  "lyric_surface": 3,
+  "image_crowding": 2,
+  "work_aux_cut": 2,
+  "context_target_rule": 2,
+  "work_mention_digit_boundary": 1,
+  "work_status=abstained": 1,
+  "era_simile_rule": 1,
+  "work_status=no_usable_work": 1
+ },
+ "in_pool_fail": {
+  "q203": "25",
+  "q205": "9",
+  "c705": "22",
+  "t044": "29"
+ },
+ "out_of_pool_now_in_pool_under_work_skip": [
+  "t058",
+  "t077",
+  "t078",
+  "t100",
+  "t111"
+ ],
+ "problems": []
+}
