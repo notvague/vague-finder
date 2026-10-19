@@ -1,0 +1,252 @@
+{
+  "run": "live_work_server_rep1",
+  "code": "work",
+  "commit": "d8c3878370aab1efdd2175cae86c6f37cdde663a",
+  "mode": "server",
+  "model": "live",
+  "rep": 1,
+  "sets": [
+    "v06",
+    "v09",
+    "v10"
+  ],
+  "query_ids": "",
+  "partial": false,
+  "expect_work_status_file": "expected_work_status.json",
+  "expect_work_status_sha16": "1fb2f754366de693",
+  "work_inputs": {
+    "mentions_sha16": "bfd522ebe9da7590",
+    "cache_sha16": "03ad094834c986e5"
+  },
+  "started_at": "2026-10-18T18:04:04+0900",
+  "env": {
+    "ATTR_FILTER_WEIGHT": "0",
+    "AUDIO_FUSION_SCALE": "1",
+    "CONTEXT_WEIGHT": "0.5",
+    "FEEDBACK_COLLECTION_ENABLED": "0",
+    "FEEDBACK_INDEX_WORKER_ENABLED": "0",
+    "FEEDBACK_RETRIEVAL_ENABLED": "0",
+    "GCP_LOCATION": "global",
+    "GCP_PROJECT_ID": "(운영 .env에서 넘김 — 값 기록 안 함)",
+    "GEMINI_MODEL_NAME": "gemini-3.1-flash-lite",
+    "GEMINI_RERANK_RARE_FACT_VERIFY": "0",
+    "GEMINI_RETRIEVAL_BACKEND": "vertex",
+    "HF_HUB_OFFLINE": "1",
+    "RERANKER_BACKEND": "gemini_listwise",
+    "SEARCH_REFERENCE_YEAR": "2026",
+    "TOKENIZERS_PARALLELISM": "false",
+    "TRANSFORMERS_OFFLINE": "1",
+    "WORK_MENTIONS_PATH": "/private/tmp/vague-finder-v73-work-name-full-ab/artifacts/work_names/work_mentions_v1.json.gz",
+    "WORK_NAME_RESOLUTION_ENABLED": "1",
+    "WORK_NAME_RESOLVER": "cache:/private/tmp/vague-finder-v73-work-name-full-ab/experiments/reranking/results_v73_work_name_full_ab/resolution_cache/v71_rep1.json",
+    "QDRANT_PATH": "",
+    "QDRANT_URL": "http://127.0.0.1:6382"
+  },
+  "worktree_head": "d8c3878370aab1efdd2175cae86c6f37cdde663a",
+  "worktree_src_tests_changes": [],
+  "status": "failed",
+  "server_state_before_matches_baseline": true,
+  "budget_before": {
+    "attempts": 167,
+    "attempts_by_kind": {
+      "count_tokens": 3,
+      "generate": 164
+    },
+    "settled_calls": 166,
+    "failed_calls": 1,
+    "open_reservations": 0,
+    "settled_usd": 0.767948,
+    "unverified_usd": 0.114007,
+    "open_reserve_usd": 0,
+    "committed_usd": 0.881954,
+    "deadline_epoch": 1792324168.446,
+    "first_attempt_epoch": 1792313368.446,
+    "halt": "",
+    "consecutive_failures_since_success": 0,
+    "consecutive_504_since_success": 0,
+    "fail_504_epochs": [
+      1792314077.083
+    ]
+  },
+  "budget_limits": {
+    "cost_cap_usd": 8.0,
+    "attempt_cap": 1000,
+    "deadline_window_seconds": 10800.0
+  },
+  "code_identity": {
+    "code": "work",
+    "commit": "d8c3878370aab1efdd2175cae86c6f37cdde663a",
+    "code_root": "artifacts/src_main_d8c3878",
+    "files": {
+      "src.vector_db.qdrant_backend": {
+        "path": "artifacts/src_main_d8c3878/src/vector_db/qdrant_backend.py",
+        "git_blob": "74685cdf66e24d935f93153b9b9e2028480f47c6"
+      },
+      "src.retrieval.context_qdrant_search": {
+        "path": "artifacts/src_main_d8c3878/src/retrieval/context_qdrant_search.py",
+        "git_blob": "f81ffec9a6a41b1cefa4a5f8fa587b4ed5c67c17"
+      },
+      "src.feedback.case_index": {
+        "path": "artifacts/src_main_d8c3878/src/feedback/case_index.py",
+        "git_blob": "2f164721fc2a98acfc0ed4cdd88b3a13bc74ab5c"
+      },
+      "src.retrieval.evaluate_search_accuracy": {
+        "path": "artifacts/src_main_d8c3878/src/retrieval/evaluate_search_accuracy.py",
+        "git_blob": "a4b320c8d59ccf26c6f4f2b951c720f72d493716"
+      },
+      "src.retrieval.search_router": {
+        "path": "artifacts/src_main_d8c3878/src/retrieval/search_router.py",
+        "git_blob": "91685819efd6789af1a1fa41d8ad94845c0c977a"
+      },
+      "src.retrieval.work_name_resolution": {
+        "path": "artifacts/src_main_d8c3878/src/retrieval/work_name_resolution.py",
+        "git_blob": "5777d7f9cfeec59ec6be26df0f1542e96190766b"
+      },
+      "src.retrieval.work_mentions": {
+        "path": "artifacts/src_main_d8c3878/src/retrieval/work_mentions.py",
+        "git_blob": "1c0eda766cbfde1a9b8fc27f3cbdf32e175664c3"
+      },
+      "src.retrieval.gemini_listwise_reranker": {
+        "path": "artifacts/src_main_d8c3878/src/retrieval/gemini_listwise_reranker.py",
+        "git_blob": "ae81a62b0e2f3f162b2669b5c5143a711174fc93"
+      }
+    },
+    "src_py_files": 162,
+    "src_py_tree_sha16": "eaf159683c73e5d5"
+  },
+  "analysis_caches": {
+    "v06": {
+      "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v06_dev_vertex.json",
+      "queries": 57,
+      "file_sha256_16": "36eab91ca92a233b",
+      "missing": 0,
+      "fallback": 0,
+      "drift": []
+    },
+    "v09": {
+      "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v09_dev_vertex.json",
+      "queries": 59,
+      "file_sha256_16": "e1048ecff964004e",
+      "missing": 0,
+      "fallback": 0,
+      "drift": []
+    },
+    "v10": {
+      "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v10_dev_vertex.json",
+      "queries": 60,
+      "file_sha256_16": "c6c2d9d844957011",
+      "missing": 0,
+      "fallback": 0,
+      "drift": []
+    }
+  },
+  "guard_before": {
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "lyrics_mongo_client": "blocked",
+    "QDRANT_HYBRID_SCAN_LIMIT": "unset"
+  },
+  "lyrics_snapshot": {
+    "db": "vaguefinder",
+    "collection": "songs",
+    "document_count": 5143,
+    "full_lyrics_songs": 5143,
+    "full_lyrics_total_chars": 4076174,
+    "content_sha256_16": "e0d58f28f1f4a563",
+    "source": "v63_snapshot",
+    "snapshot_file_sha256_16": "295b7a508c12cc34"
+  },
+  "qdrant_open_seconds": 0.063,
+  "reference_build_seconds": 7.397,
+  "index_fingerprint": {
+    "collection": "vaguefinder-text-1024-koe5__dev",
+    "points": 5143,
+    "dense_dim": 1024,
+    "sparse_nnz": 1061090,
+    "sparse_vocab": 44486,
+    "content_sha256_16": "238299e6c8c17f2a"
+  },
+  "collections": {
+    "vaguefinder-audio-512__dev": 5143,
+    "vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf": 5054,
+    "vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf": 639,
+    "vaguefinder-image-768__dev": 5143,
+    "vaguefinder-text-1024-koe5__dev": 5143,
+    "vaguefinder-context-dense-1024-koe5__dev": 5054,
+    "vaguefinder-context-sparse-bm25__dev": 639
+  },
+  "warmup": {
+    "query_id": "q105",
+    "set": "v06",
+    "seconds": 4.865,
+    "work_status": "applied",
+    "rule": "v72 부분집합 밖·판정 통과·dev 순서 첫 질의(고정)"
+  },
+  "work_resolver": "cache:gemini-3.1-flash-lite",
+  "work_cache_entries": 22,
+  "budget_before_first_set": {
+    "attempts": 167,
+    "attempts_by_kind": {
+      "count_tokens": 3,
+      "generate": 164
+    },
+    "settled_calls": 166,
+    "failed_calls": 1,
+    "open_reservations": 0,
+    "settled_usd": 0.767948,
+    "unverified_usd": 0.114007,
+    "open_reserve_usd": 0,
+    "committed_usd": 0.881954,
+    "deadline_epoch": 1792324168.446,
+    "first_attempt_epoch": 1792313368.446,
+    "halt": "",
+    "consecutive_failures_since_success": 0,
+    "consecutive_504_since_success": 0,
+    "fail_504_epochs": [
+      1792314077.083
+    ]
+  },
+  "sets_done": {},
+  "cold_before_first_query_seconds": 15.402,
+  "error": "RunAborted: 예산 통제 정지: 연속 실패 5회",
+  "traceback_tail": "rk-name-full-ab/experiments/reranking/results_v73_work_name_full_ab/run_eval.py\", line 331, in main\n    asyncio.run(esa.evaluate(eval_args))\n    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"~/.local/share/mise/installs/python/3.14.7/lib/python3.14/asyncio/runners.py\", line 205, in run\n    return runner.run(main)\n           ~~~~~~~~~~^^^^^^\n  File \"~/.local/share/mise/installs/python/3.14.7/lib/python3.14/asyncio/runners.py\", line 128, in run\n    return self._loop.run_until_complete(task)\n           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^\n  File \"~/.local/share/mise/installs/python/3.14.7/lib/python3.14/asyncio/base_events.py\", line 720, in run_until_complete\n    return future.result()\n           ~~~~~~~~~~~~~^^\n  File \"/private/tmp/vague-finder-v73-work-name-full-ab/artifacts/src_main_d8c3878/src/retrieval/evaluate_search_accuracy.py\", line 987, in evaluate\n    reranked_all = rerank_preserving_exact_lyrics(\n        reranker,\n    ...<6 lines>...\n        skips=rerank_skips,\n    )\n  File \"/private/tmp/vague-finder-v73-work-name-full-ab/experiments/reranking/results_v73_work_name_full_ab/v73_eval_runtime.py\", line 727, in rpel\n    final = orig_rpel(reranker, analysis, candidates, top_k, answers=answers, recorder=recorder, errors=errors,\n                      statuses=statuses, fallback_candidates=fallback_candidates, skips=skips)\n  File \"/private/tmp/vague-finder-v73-work-name-full-ab/artifacts/src_main_d8c3878/src/retrieval/evaluate_search_accuracy.py\", line 247, in rerank_preserving_exact_lyrics\n    return _rerank_with_lyric_protection(\n        reranker, analysis, candidates, top_k, answers, recorder, statuses, fallback_candidates\n    )\n  File \"/private/tmp/vague-finder-v73-work-name-full-ab/artifacts/src_main_d8c3878/src/retrieval/evaluate_search_accuracy.py\", line 295, in _rerank_with_lyric_protection\n    reranked = call_reranker(\n        reranker, analysis.original_query, candidates, top_k, answers, recorder,\n        runs_out=statuses, deadline=deadline,\n    )\n  File \"/private/tmp/vague-finder-v73-work-name-full-ab/artifacts/src_main_d8c3878/src/retrieval/search_router.py\", line 985, in call_reranker\n    run = detailed(query, tracks, top_k, **kwargs)\n  File \"/private/tmp/vague-finder-v73-work-name-full-ab/experiments/reranking/results_v73_work_name_full_ab/v73_eval_runtime.py\", line 748, in rerank_run\n    run = orig_run(reranker_self, query_text, tracks, top_k, answers, deadline=deadline)\n  File \"/private/tmp/vague-finder-v73-work-name-full-ab/artifacts/src_main_d8c3878/src/retrieval/gemini_listwise_reranker.py\", line 1287, in rerank_run\n    response = self._generate(\n        contents=prompt + correction,\n    ...<6 lines>...\n        tally=tally,\n    )\n  File \"/private/tmp/vague-finder-v73-work-name-full-ab/experiments/reranking/results_v73_work_name_full_ab/v73_eval_runtime.py\", line 795, in generate_live\n    raise RunAborted(f\"예산 통제 정지: {reason}\") from exc\nv73_eval_runtime.RunAborted: 예산 통제 정지: 연속 실패 5회\n",
+  "work_status_violations": [],
+  "budget_local": {
+    "attempts": 19,
+    "generate": 18,
+    "count_tokens": 1,
+    "other": 0,
+    "settled": 12,
+    "failed": 7,
+    "blocked": 0,
+    "cost": 0.054924749999999994,
+    "unverified": 0.79320175
+  },
+  "budget_after": {
+    "attempts": 186,
+    "attempts_by_kind": {
+      "count_tokens": 4,
+      "generate": 182
+    },
+    "settled_calls": 178,
+    "failed_calls": 8,
+    "open_reservations": 0,
+    "settled_usd": 0.822872,
+    "unverified_usd": 0.907208,
+    "open_reserve_usd": 0,
+    "committed_usd": 1.73008,
+    "deadline_epoch": 1792324168.446,
+    "first_attempt_epoch": 1792313368.446,
+    "halt": "연속 실패 5회",
+    "consecutive_failures_since_success": 5,
+    "consecutive_504_since_success": 2,
+    "fail_504_epochs": [
+      1792314077.083,
+      1792314370.682,
+      1792314422.58,
+      1792314445.437
+    ]
+  },
+  "server_state_after_matches_baseline": true,
+  "redaction_note": "traceback_tail의 사용자 홈 경로를 ~로 바꿨다(v73 추적 파일 검사, 그 밖의 값은 그대로)"
+}

@@ -1,0 +1,104 @@
+{
+ "ledger_rows": 374,
+ "first_attempt_epoch": 1792313368.446,
+ "deadline_epoch": 1792324168.446,
+ "first_attempt_ts": "2026-10-18T17:49:28.446+09:00",
+ "last_event_ts": "2026-10-18T18:07:25.440+09:00",
+ "halts": [
+  {
+   "run": "live_work_server_rep1",
+   "ts": "2026-10-18T18:07:25.440+09:00",
+   "reason": "연속 실패 5회"
+  }
+ ],
+ "prices_usd_per_1m": {
+  "input": 0.25,
+  "output": 1.5
+ },
+ "runs": {
+  "live_off_server_rep1": {
+   "attempts": 167,
+   "attempts_count_tokens": 3,
+   "attempts_generate": 164,
+   "cached_tokens": 0,
+   "candidates_tokens": 226242,
+   "cost_usd": 0.767947,
+   "fail_504": 1,
+   "fail_ServerError_504": 1,
+   "failed": 1,
+   "prompt_tokens": 1714338,
+   "reserve_usd_sum": 18.50366,
+   "settled": 166,
+   "thoughts_tokens": 0,
+   "thoughts_unreported_calls": 163,
+   "tool_prompt_tokens": 0,
+   "unverified_usd": 0.114007,
+   "output_tokens_incl_thinking": 226242,
+   "generate_latency_ms_median": 4582.6,
+   "generate_latency_ms_p95": 5466.4,
+   "harness": {
+    "generate_calls": 164,
+    "retry_attempts": 1,
+    "generate_errors": 1,
+    "groups": 163,
+    "groups_without_call": 0
+   },
+   "sdk_level_retries": 0,
+   "reranker_retry_attempts": 1
+  },
+  "live_work_server_rep1": {
+   "attempts": 19,
+   "attempts_count_tokens": 1,
+   "attempts_generate": 18,
+   "cached_tokens": 0,
+   "candidates_tokens": 16530,
+   "cost_usd": 0.054925,
+   "fail_504": 3,
+   "fail_CancelledError_None": 1,
+   "fail_ClientError_429": 3,
+   "fail_ServerError_504": 3,
+   "failed": 7,
+   "prompt_tokens": 120519,
+   "reserve_usd_sum": 2.040259,
+   "settled": 12,
+   "thoughts_tokens": 0,
+   "thoughts_unreported_calls": 11,
+   "tool_prompt_tokens": 0,
+   "unverified_usd": 0.793201,
+   "output_tokens_incl_thinking": 16530,
+   "generate_latency_ms_median": 6916.3,
+   "generate_latency_ms_p95": 16483.9,
+   "harness": {
+    "generate_calls": 0,
+    "retry_attempts": 0,
+    "generate_errors": 0,
+    "groups": 0,
+    "groups_without_call": 0
+   },
+   "sdk_level_retries": 18,
+   "reranker_retry_attempts": 0
+  }
+ },
+ "total": {
+  "attempts": 186,
+  "attempts_count_tokens": 4,
+  "attempts_generate": 182,
+  "cached_tokens": 0,
+  "candidates_tokens": 242772,
+  "cost_usd": 0.822872,
+  "fail_504": 4,
+  "fail_CancelledError_None": 1,
+  "fail_ClientError_429": 3,
+  "fail_ServerError_504": 4,
+  "failed": 8,
+  "prompt_tokens": 1834857,
+  "reserve_usd_sum": 20.543919,
+  "settled": 178,
+  "thoughts_tokens": 0,
+  "thoughts_unreported_calls": 174,
+  "tool_prompt_tokens": 0,
+  "unverified_usd": 0.907208,
+  "committed_usd": 1.73008,
+  "output_tokens_incl_thinking": 242772
+ }
+}

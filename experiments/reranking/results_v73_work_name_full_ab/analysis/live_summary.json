@@ -1,0 +1,187 @@
+{
+ "runs_complete": {
+  "A1": true,
+  "B1": false,
+  "B2": false,
+  "A2": false
+ },
+ "group_sizes": {
+  "all176": 176,
+  "changed13": 13,
+  "same163": 163,
+  "lyrics19": 19,
+  "other157": 157,
+  "v06": 57,
+  "v09": 59,
+  "v10": 60
+ },
+ "runs": {
+  "A1": {
+   "name": "live_off_server_rep1",
+   "done": true,
+   "complete": true,
+   "conditions_status": "complete",
+   "error": null,
+   "queries_recorded": 176,
+   "metrics": {
+    "all176": {
+     "n": 176,
+     "hit1": 80,
+     "hit5": 107,
+     "hit10": 117,
+     "mrr10": 0.5286,
+     "hit10_rate": 0.6648,
+     "candidate_recall30": 122
+    },
+    "changed13": {
+     "n": 13,
+     "hit1": 3,
+     "hit5": 5,
+     "hit10": 5,
+     "mrr10": 0.2949,
+     "hit10_rate": 0.3846,
+     "candidate_recall30": 7
+    },
+    "same163": {
+     "n": 163,
+     "hit1": 77,
+     "hit5": 102,
+     "hit10": 112,
+     "mrr10": 0.5472,
+     "hit10_rate": 0.6871,
+     "candidate_recall30": 115
+    },
+    "lyrics19": {
+     "n": 19,
+     "hit1": 12,
+     "hit5": 15,
+     "hit10": 16,
+     "mrr10": 0.7023,
+     "hit10_rate": 0.8421,
+     "candidate_recall30": 16
+    },
+    "other157": {
+     "n": 157,
+     "hit1": 68,
+     "hit5": 92,
+     "hit10": 101,
+     "mrr10": 0.5075,
+     "hit10_rate": 0.6433,
+     "candidate_recall30": 106
+    },
+    "v06": {
+     "n": 57,
+     "hit1": 30,
+     "hit5": 36,
+     "hit10": 39,
+     "mrr10": 0.5665,
+     "hit10_rate": 0.6842,
+     "candidate_recall30": 43
+    },
+    "v09": {
+     "n": 59,
+     "hit1": 27,
+     "hit5": 36,
+     "hit10": 41,
+     "mrr10": 0.5406,
+     "hit10_rate": 0.6949,
+     "candidate_recall30": 41
+    },
+    "v10": {
+     "n": 60,
+     "hit1": 23,
+     "hit5": 35,
+     "hit10": 37,
+     "mrr10": 0.4806,
+     "hit10_rate": 0.6167,
+     "candidate_recall30": 38
+    }
+   },
+   "rerank_status": {
+    "applied": 155,
+    "policy_skipped": 21
+   },
+   "work_status": {
+    "(none)": 176
+   },
+   "generate_calls": 164,
+   "retries": 1,
+   "generate_errors": 1,
+   "rerank_ms_median_called": 4675.9,
+   "rerank_ms_p95_called": 5838.6,
+   "search_ms_median": 176.6,
+   "warmup": {
+    "query_id": "q105",
+    "set": "v06",
+    "seconds": 3.742,
+    "work_status": "(none)",
+    "rule": "v72 부분집합 밖·판정 통과·dev 순서 첫 질의(고정)"
+   },
+   "total_seconds": 797.365
+  },
+  "B1": {
+   "name": "live_work_server_rep1",
+   "done": false,
+   "complete": false,
+   "conditions_status": "failed",
+   "error": "RunAborted: 예산 통제 정지: 연속 실패 5회",
+   "queries_recorded": 0,
+   "metrics": null,
+   "rerank_status": {},
+   "work_status": {},
+   "generate_calls": 0,
+   "retries": 0,
+   "generate_errors": 0,
+   "rerank_ms_median_called": null,
+   "rerank_ms_p95_called": null,
+   "search_ms_median": null,
+   "warmup": {
+    "query_id": "q105",
+    "set": "v06",
+    "seconds": 4.865,
+    "work_status": "applied",
+    "rule": "v72 부분집합 밖·판정 통과·dev 순서 첫 질의(고정)"
+   },
+   "total_seconds": null
+  },
+  "B2": {
+   "name": "live_work_server_rep2",
+   "done": false,
+   "complete": false,
+   "conditions_status": null,
+   "error": null,
+   "queries_recorded": 0,
+   "metrics": null,
+   "rerank_status": {},
+   "work_status": {},
+   "generate_calls": 0,
+   "retries": 0,
+   "generate_errors": 0,
+   "rerank_ms_median_called": null,
+   "rerank_ms_p95_called": null,
+   "search_ms_median": null,
+   "warmup": null,
+   "total_seconds": null
+  },
+  "A2": {
+   "name": "live_off_server_rep2",
+   "done": false,
+   "complete": false,
+   "conditions_status": null,
+   "error": null,
+   "queries_recorded": 0,
+   "metrics": null,
+   "rerank_status": {},
+   "work_status": {},
+   "generate_calls": 0,
+   "retries": 0,
+   "generate_errors": 0,
+   "rerank_ms_median_called": null,
+   "rerank_ms_p95_called": null,
+   "search_ms_median": null,
+   "warmup": null,
+   "total_seconds": null
+  }
+ },
+ "note": "완료되지 않은 실행이 있어 비교·분류·판정을 하지 않았다(부분 실행을 이어 붙이지 않음)"
+}
