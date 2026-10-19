@@ -1,0 +1,224 @@
+{
+ "v72_offline_reproduction": {
+  "off_vs_v72_off_full_warm": {
+   "input_identical": 176,
+   "diff_counts": {
+    "cand_ids": 0,
+    "cand_scores": 0,
+    "lyrics": 0,
+    "protection": 0,
+    "rerank_input": 0,
+    "prompts": 0,
+    "final": 0
+   },
+   "path_diff": {},
+   "fields_compared": [
+    "cand_ids",
+    "cand_scores",
+    "lyrics",
+    "protection",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "identical_all": true
+  },
+  "off_vs_v72_off_full_fake": {
+   "input_identical": 176,
+   "diff_counts": {
+    "cand_ids": 0,
+    "cand_scores": 0,
+    "lyrics": 0,
+    "protection": 0,
+    "rerank_input": 0,
+    "prompts": 0,
+    "final": 0
+   },
+   "path_diff": {},
+   "fields_compared": [
+    "cand_ids",
+    "cand_scores",
+    "lyrics",
+    "protection",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "identical_all": true
+  },
+  "work_vs_v72_work_full_warm": {
+   "input_identical": 176,
+   "diff_counts": {
+    "cand_ids": 0,
+    "cand_scores": 0,
+    "lyrics": 0,
+    "protection": 0,
+    "rerank_input": 0,
+    "prompts": 0,
+    "final": 0
+   },
+   "path_diff": {},
+   "fields_compared": [
+    "cand_ids",
+    "cand_scores",
+    "lyrics",
+    "protection",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "identical_all": true
+  },
+  "work_vs_v72_work_full_fake": {
+   "input_identical": 176,
+   "diff_counts": {
+    "cand_ids": 0,
+    "cand_scores": 0,
+    "lyrics": 0,
+    "protection": 0,
+    "rerank_input": 0,
+    "prompts": 0,
+    "final": 0
+   },
+   "path_diff": {},
+   "fields_compared": [
+    "cand_ids",
+    "cand_scores",
+    "lyrics",
+    "protection",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "identical_all": true
+  }
+ },
+ "v71_reproduction": {
+  "off": {
+   "queries": 176,
+   "candidates_identical": 176,
+   "protected_identical": 176
+  },
+  "work": {
+   "queries": 176,
+   "candidates_identical": 176,
+   "protected_identical": 176
+  }
+ },
+ "ab_input": {
+  "input_identical": 163,
+  "diff_counts": {
+   "cand_ids": 13,
+   "cand_scores": 13,
+   "lyrics": 0,
+   "protection": 0,
+   "rerank_input": 13,
+   "prompts": 13,
+   "final": 13
+  },
+  "cand_set_diff_queries": [
+   "c602",
+   "c701",
+   "c705",
+   "c707",
+   "m103",
+   "n031",
+   "n033",
+   "n043",
+   "n096",
+   "t037",
+   "t046"
+  ],
+  "path_diff_queries": {
+   "index:text-1024-koe5": [
+    "c602",
+    "c607",
+    "c701",
+    "c705",
+    "c707",
+    "m103",
+    "n031",
+    "n033",
+    "n038",
+    "n043",
+    "n045",
+    "n096",
+    "q105",
+    "t024",
+    "t037",
+    "t046"
+   ]
+  }
+ },
+ "input_changed": [
+  "c602",
+  "c607",
+  "c701",
+  "c705",
+  "c707",
+  "m103",
+  "n031",
+  "n033",
+  "n038",
+  "n043",
+  "n096",
+  "t037",
+  "t046"
+ ],
+ "input_changed_count": 13,
+ "equals_v72_subset": true,
+ "unchanged_count": 163,
+ "unchanged_composition_b": {
+  "not_triggered": 154,
+  "abstained": 5,
+  "applied_input_identical": 3,
+  "no_usable_work": 1
+ },
+ "applied_but_input_identical": [
+  "n045",
+  "q105",
+  "t024"
+ ],
+ "work_status_counts_b": {
+  "not_triggered": 154,
+  "applied": 16,
+  "abstained": 5,
+  "no_usable_work": 1
+ },
+ "changed_but_no_model_call": [],
+ "policy_skipped_in_changed": [],
+ "candidate_recall30": {
+  "A": 122,
+  "B": 125,
+  "gained": [
+   "n033",
+   "n043",
+   "n096"
+  ],
+  "lost": []
+ },
+ "calls_fake": {
+  "off": {
+   "groups": 163,
+   "generate_calls_fake": 163,
+   "queries_with_model_call": 155,
+   "policy_skipped": 21,
+   "not_eligible": 0,
+   "prompt_chars_total": 3989852,
+   "prompt_chars_max": 26318,
+   "max_groups_per_query": 3
+  },
+  "work": {
+   "groups": 163,
+   "generate_calls_fake": 163,
+   "queries_with_model_call": 155,
+   "policy_skipped": 21,
+   "not_eligible": 0,
+   "prompt_chars_total": 3989953,
+   "prompt_chars_max": 26318,
+   "max_groups_per_query": 3
+  }
+ },
+ "problems": [],
+ "ok": true
+}

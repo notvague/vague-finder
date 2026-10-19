@@ -1,0 +1,14 @@
+﻿metric,baseline,rerank,delta
+Hit@1,0.183333,0.383333,0.2
+Hit@5,0.366667,0.583333,0.216667
+Hit@10,0.483333,0.616667,0.133333
+Recall@10,0.483333,0.616667,0.133333
+MRR@10,0.270972,0.480622,0.209649
+nDCG@10,0.320694,0.514572,0.193878
+Candidate Recall@30,0.633333,,
+Improved query count,,19,
+Unchanged query count,,41,
+Worsened query count,,0,
+Rerank fallback query count,,0,
+Rerank partial failure query count,,0,
+Rerank outcome distribution,,applied=53 policy_skipped=7,

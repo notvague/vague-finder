@@ -1,0 +1,54 @@
+{
+  "pass": false,
+  "criteria": {
+    "S1_auth_errors_0": true,
+    "S2_only_window_halt": true,
+    "S3_fails_le_2_no_consecutive": true,
+    "S4_rerank_fallbacks_0": true,
+    "S5_span_ge_900s": true,
+    "S6_latency_stable": false
+  },
+  "observed": {
+    "attempts": 231,
+    "settled_generate": 226,
+    "failed_attempts": 0,
+    "fail_detail": [],
+    "max_consecutive_fails": 0,
+    "auth_errors": 0,
+    "halts": [
+      "신규 호출 마감(첫 시도 + 창) 이후"
+    ],
+    "rerank_fallbacks": 0,
+    "first_attempt": "2026-10-18T21:02:06.719+09:00",
+    "span_seconds": 1198.1,
+    "median_first5_ms": 4490,
+    "median_last5_ms": 5138,
+    "generate_over_10s": 5,
+    "generate_over_20s": 0,
+    "max_generate_ms": 19684,
+    "per_5min": {
+      "0-5분": {
+        "n": 61,
+        "median_ms": 4490,
+        "max_ms": 19684
+      },
+      "5-10분": {
+        "n": 65,
+        "median_ms": 4496,
+        "max_ms": 9750
+      },
+      "10-15분": {
+        "n": 49,
+        "median_ms": 5069,
+        "max_ms": 11725
+      },
+      "15-20분": {
+        "n": 51,
+        "median_ms": 5138,
+        "max_ms": 15785
+      }
+    },
+    "settled_usd": 1.065613,
+    "unverified_usd": 0
+  }
+}
