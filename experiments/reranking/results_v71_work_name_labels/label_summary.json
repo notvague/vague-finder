@@ -1,0 +1,1621 @@
+{
+ "made_at": "2026-10-20 14:04 KST",
+ "labeler_revision": 5,
+ "labeler_sha256": "031e49012bf7e3b7c46970614ae677f4bd86dcf431220e6bc500d3d3a7557111",
+ "labeler_kind": "human_adjusted",
+ "labeler_ai_assisted": true,
+ "freeze_log_sha256": "fbdb36decb97c4d83ecb1fe8a9d3c3002b71c05139a218a47681f0cdf9f9cbdb",
+ "checker": false,
+ "checker_independent": false,
+ "name_pairs_sha256": "956d6fa3bc06442ea5df99082bbd0b40c5d5400deb1ca1a2e9d752f623389e16",
+ "stage2_opened_at": "2026-10-19 18:02 KST",
+ "model_outputs_sha256": "ec7bf3a6b2e8ce85ddca7c304608647cfa97262f61351ae278ebfa5b446afe56",
+ "v73_per_query_sha256": "27634825b668245d18837b710e9934c0a8d48997298f79c08b80c6df132373e6",
+ "unit": "query (v71 반복 1 = 반복 2 응답 원문 22/22 동일 — 44건으로 세지 않음)",
+ "valid_rows__human_pairs": {
+  "all_22": {
+   "items": 22,
+   "outcomes": {
+    "correct": 13,
+    "correct_abstain": 2,
+    "label_undeterminable": 3,
+    "missed_rejected": 1,
+    "partial": 1,
+    "wrong_link": 2
+   },
+   "model_linked": 16,
+   "linked_judgeable": 16,
+   "correct_of_judgeable": "13/16",
+   "partial_of_judgeable": "1/16",
+   "wrong_of_judgeable": "2/16",
+   "wrong_work_link_yes": 3,
+   "model_abstain_or_rejected": "6/22",
+   "correct_abstain": 2,
+   "missed": 1,
+   "not_counted": {
+    "label_undeterminable": 3
+   }
+  },
+  "self_reported_independent_rows": {
+   "items": 22,
+   "outcomes": {
+    "correct": 13,
+    "correct_abstain": 2,
+    "label_undeterminable": 3,
+    "missed_rejected": 1,
+    "partial": 1,
+    "wrong_link": 2
+   },
+   "model_linked": 16,
+   "linked_judgeable": 16,
+   "correct_of_judgeable": "13/16",
+   "partial_of_judgeable": "1/16",
+   "wrong_of_judgeable": "2/16",
+   "wrong_work_link_yes": 3,
+   "model_abstain_or_rejected": "6/22",
+   "correct_abstain": 2,
+   "missed": 1,
+   "not_counted": {
+    "label_undeterminable": 3
+   }
+  },
+  "known_10": {
+   "items": 10,
+   "outcomes": {
+    "correct": 7,
+    "label_undeterminable": 1,
+    "missed_rejected": 1,
+    "partial": 1
+   },
+   "model_linked": 8,
+   "linked_judgeable": 8,
+   "correct_of_judgeable": "7/8",
+   "partial_of_judgeable": "1/8",
+   "wrong_of_judgeable": "0/8",
+   "wrong_work_link_yes": 1,
+   "model_abstain_or_rejected": "2/10",
+   "correct_abstain": 0,
+   "missed": 1,
+   "not_counted": {
+    "label_undeterminable": 1
+   }
+  },
+  "other_12_not_negatives": {
+   "items": 12,
+   "outcomes": {
+    "correct": 6,
+    "correct_abstain": 2,
+    "label_undeterminable": 2,
+    "wrong_link": 2
+   },
+   "model_linked": 8,
+   "linked_judgeable": 8,
+   "correct_of_judgeable": "6/8",
+   "partial_of_judgeable": "0/8",
+   "wrong_of_judgeable": "2/8",
+   "wrong_work_link_yes": 2,
+   "model_abstain_or_rejected": "4/12",
+   "correct_abstain": 2,
+   "missed": 0,
+   "not_counted": {
+    "label_undeterminable": 2
+   }
+  },
+  "outcome_by_label_status": {
+   "multiple": {
+    "correct": 3,
+    "missed_rejected": 1,
+    "partial": 1
+   },
+   "not_work": {
+    "correct_abstain": 2,
+    "wrong_link": 2
+   },
+   "single": {
+    "correct": 10
+   },
+   "undeterminable": {
+    "label_undeterminable": 3
+   }
+  }
+ },
+ "valid_rows__agent_assisted_pairs": {
+  "all_22": {
+   "items": 22,
+   "outcomes": {
+    "correct": 13,
+    "correct_abstain": 2,
+    "label_undeterminable": 3,
+    "missed_rejected": 1,
+    "partial": 1,
+    "wrong_link": 2
+   },
+   "model_linked": 16,
+   "linked_judgeable": 16,
+   "correct_of_judgeable": "13/16",
+   "partial_of_judgeable": "1/16",
+   "wrong_of_judgeable": "2/16",
+   "wrong_work_link_yes": 3,
+   "model_abstain_or_rejected": "6/22",
+   "correct_abstain": 2,
+   "missed": 1,
+   "not_counted": {
+    "label_undeterminable": 3
+   }
+  },
+  "self_reported_independent_rows": {
+   "items": 22,
+   "outcomes": {
+    "correct": 13,
+    "correct_abstain": 2,
+    "label_undeterminable": 3,
+    "missed_rejected": 1,
+    "partial": 1,
+    "wrong_link": 2
+   },
+   "model_linked": 16,
+   "linked_judgeable": 16,
+   "correct_of_judgeable": "13/16",
+   "partial_of_judgeable": "1/16",
+   "wrong_of_judgeable": "2/16",
+   "wrong_work_link_yes": 3,
+   "model_abstain_or_rejected": "6/22",
+   "correct_abstain": 2,
+   "missed": 1,
+   "not_counted": {
+    "label_undeterminable": 3
+   }
+  },
+  "known_10": {
+   "items": 10,
+   "outcomes": {
+    "correct": 7,
+    "label_undeterminable": 1,
+    "missed_rejected": 1,
+    "partial": 1
+   },
+   "model_linked": 8,
+   "linked_judgeable": 8,
+   "correct_of_judgeable": "7/8",
+   "partial_of_judgeable": "1/8",
+   "wrong_of_judgeable": "0/8",
+   "wrong_work_link_yes": 1,
+   "model_abstain_or_rejected": "2/10",
+   "correct_abstain": 0,
+   "missed": 1,
+   "not_counted": {
+    "label_undeterminable": 1
+   }
+  },
+  "other_12_not_negatives": {
+   "items": 12,
+   "outcomes": {
+    "correct": 6,
+    "correct_abstain": 2,
+    "label_undeterminable": 2,
+    "wrong_link": 2
+   },
+   "model_linked": 8,
+   "linked_judgeable": 8,
+   "correct_of_judgeable": "6/8",
+   "partial_of_judgeable": "0/8",
+   "wrong_of_judgeable": "2/8",
+   "wrong_work_link_yes": 2,
+   "model_abstain_or_rejected": "4/12",
+   "correct_abstain": 2,
+   "missed": 0,
+   "not_counted": {
+    "label_undeterminable": 2
+   }
+  },
+  "outcome_by_label_status": {
+   "multiple": {
+    "correct": 3,
+    "missed_rejected": 1,
+    "partial": 1
+   },
+   "not_work": {
+    "correct_abstain": 2,
+    "wrong_link": 2
+   },
+   "single": {
+    "correct": 10
+   },
+   "undeterminable": {
+    "label_undeterminable": 3
+   }
+  }
+ },
+ "as_written__human_pairs": {
+  "all_22": {
+   "items": 22,
+   "outcomes": {
+    "correct": 13,
+    "correct_abstain": 2,
+    "label_undeterminable": 3,
+    "missed_rejected": 1,
+    "partial": 1,
+    "wrong_link": 2
+   },
+   "model_linked": 16,
+   "linked_judgeable": 16,
+   "correct_of_judgeable": "13/16",
+   "partial_of_judgeable": "1/16",
+   "wrong_of_judgeable": "2/16",
+   "wrong_work_link_yes": 3,
+   "model_abstain_or_rejected": "6/22",
+   "correct_abstain": 2,
+   "missed": 1,
+   "not_counted": {
+    "label_undeterminable": 3
+   }
+  },
+  "self_reported_independent_rows": {
+   "items": 22,
+   "outcomes": {
+    "correct": 13,
+    "correct_abstain": 2,
+    "label_undeterminable": 3,
+    "missed_rejected": 1,
+    "partial": 1,
+    "wrong_link": 2
+   },
+   "model_linked": 16,
+   "linked_judgeable": 16,
+   "correct_of_judgeable": "13/16",
+   "partial_of_judgeable": "1/16",
+   "wrong_of_judgeable": "2/16",
+   "wrong_work_link_yes": 3,
+   "model_abstain_or_rejected": "6/22",
+   "correct_abstain": 2,
+   "missed": 1,
+   "not_counted": {
+    "label_undeterminable": 3
+   }
+  },
+  "known_10": {
+   "items": 10,
+   "outcomes": {
+    "correct": 7,
+    "label_undeterminable": 1,
+    "missed_rejected": 1,
+    "partial": 1
+   },
+   "model_linked": 8,
+   "linked_judgeable": 8,
+   "correct_of_judgeable": "7/8",
+   "partial_of_judgeable": "1/8",
+   "wrong_of_judgeable": "0/8",
+   "wrong_work_link_yes": 1,
+   "model_abstain_or_rejected": "2/10",
+   "correct_abstain": 0,
+   "missed": 1,
+   "not_counted": {
+    "label_undeterminable": 1
+   }
+  },
+  "other_12_not_negatives": {
+   "items": 12,
+   "outcomes": {
+    "correct": 6,
+    "correct_abstain": 2,
+    "label_undeterminable": 2,
+    "wrong_link": 2
+   },
+   "model_linked": 8,
+   "linked_judgeable": 8,
+   "correct_of_judgeable": "6/8",
+   "partial_of_judgeable": "0/8",
+   "wrong_of_judgeable": "2/8",
+   "wrong_work_link_yes": 2,
+   "model_abstain_or_rejected": "4/12",
+   "correct_abstain": 2,
+   "missed": 0,
+   "not_counted": {
+    "label_undeterminable": 2
+   }
+  },
+  "outcome_by_label_status": {
+   "multiple": {
+    "correct": 3,
+    "missed_rejected": 1,
+    "partial": 1
+   },
+   "not_work": {
+    "correct_abstain": 2,
+    "wrong_link": 2
+   },
+   "single": {
+    "correct": 10
+   },
+   "undeterminable": {
+    "label_undeterminable": 3
+   }
+  }
+ },
+ "as_written__agent_assisted_pairs": {
+  "all_22": {
+   "items": 22,
+   "outcomes": {
+    "correct": 13,
+    "correct_abstain": 2,
+    "label_undeterminable": 3,
+    "missed_rejected": 1,
+    "partial": 1,
+    "wrong_link": 2
+   },
+   "model_linked": 16,
+   "linked_judgeable": 16,
+   "correct_of_judgeable": "13/16",
+   "partial_of_judgeable": "1/16",
+   "wrong_of_judgeable": "2/16",
+   "wrong_work_link_yes": 3,
+   "model_abstain_or_rejected": "6/22",
+   "correct_abstain": 2,
+   "missed": 1,
+   "not_counted": {
+    "label_undeterminable": 3
+   }
+  },
+  "self_reported_independent_rows": {
+   "items": 22,
+   "outcomes": {
+    "correct": 13,
+    "correct_abstain": 2,
+    "label_undeterminable": 3,
+    "missed_rejected": 1,
+    "partial": 1,
+    "wrong_link": 2
+   },
+   "model_linked": 16,
+   "linked_judgeable": 16,
+   "correct_of_judgeable": "13/16",
+   "partial_of_judgeable": "1/16",
+   "wrong_of_judgeable": "2/16",
+   "wrong_work_link_yes": 3,
+   "model_abstain_or_rejected": "6/22",
+   "correct_abstain": 2,
+   "missed": 1,
+   "not_counted": {
+    "label_undeterminable": 3
+   }
+  },
+  "known_10": {
+   "items": 10,
+   "outcomes": {
+    "correct": 7,
+    "label_undeterminable": 1,
+    "missed_rejected": 1,
+    "partial": 1
+   },
+   "model_linked": 8,
+   "linked_judgeable": 8,
+   "correct_of_judgeable": "7/8",
+   "partial_of_judgeable": "1/8",
+   "wrong_of_judgeable": "0/8",
+   "wrong_work_link_yes": 1,
+   "model_abstain_or_rejected": "2/10",
+   "correct_abstain": 0,
+   "missed": 1,
+   "not_counted": {
+    "label_undeterminable": 1
+   }
+  },
+  "other_12_not_negatives": {
+   "items": 12,
+   "outcomes": {
+    "correct": 6,
+    "correct_abstain": 2,
+    "label_undeterminable": 2,
+    "wrong_link": 2
+   },
+   "model_linked": 8,
+   "linked_judgeable": 8,
+   "correct_of_judgeable": "6/8",
+   "partial_of_judgeable": "0/8",
+   "wrong_of_judgeable": "2/8",
+   "wrong_work_link_yes": 2,
+   "model_abstain_or_rejected": "4/12",
+   "correct_abstain": 2,
+   "missed": 0,
+   "not_counted": {
+    "label_undeterminable": 2
+   }
+  },
+  "outcome_by_label_status": {
+   "multiple": {
+    "correct": 3,
+    "missed_rejected": 1,
+    "partial": 1
+   },
+   "not_work": {
+    "correct_abstain": 2,
+    "wrong_link": 2
+   },
+   "single": {
+    "correct": 10
+   },
+   "undeterminable": {
+    "label_undeterminable": 3
+   }
+  }
+ },
+ "row_states": {
+  "valid": 22
+ },
+ "special_checks": {
+  "q105": {
+   "flag": "name_in_query",
+   "valid_rows__human_pairs": {
+    "outcome": "wrong_link",
+    "wrong_work_link": "yes",
+    "label_status": "not_work"
+   },
+   "valid_rows__agent_assisted_pairs": {
+    "outcome": "wrong_link",
+    "wrong_work_link": "yes",
+    "label_status": "not_work"
+   },
+   "as_written__human_pairs": {
+    "outcome": "wrong_link",
+    "wrong_work_link": "yes",
+    "label_status": "not_work"
+   },
+   "as_written__agent_assisted_pairs": {
+    "outcome": "wrong_link",
+    "wrong_work_link": "yes",
+    "label_status": "not_work"
+   }
+  },
+  "n031": {
+   "flag": "name_in_query",
+   "valid_rows__human_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single"
+   },
+   "valid_rows__agent_assisted_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single"
+   },
+   "as_written__human_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single"
+   },
+   "as_written__agent_assisted_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single"
+   }
+  },
+  "n096": {
+   "flag": "work_name_equals_song_title",
+   "valid_rows__human_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single"
+   },
+   "valid_rows__agent_assisted_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single"
+   },
+   "as_written__human_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single"
+   },
+   "as_written__agent_assisted_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single"
+   }
+  },
+  "n045": {
+   "flag": "applied_input_identical",
+   "valid_rows__human_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single"
+   },
+   "valid_rows__agent_assisted_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single"
+   },
+   "as_written__human_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single"
+   },
+   "as_written__agent_assisted_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single"
+   }
+  },
+  "t024": {
+   "flag": "applied_input_identical",
+   "valid_rows__human_pairs": {
+    "outcome": "wrong_link",
+    "wrong_work_link": "yes",
+    "label_status": "not_work"
+   },
+   "valid_rows__agent_assisted_pairs": {
+    "outcome": "wrong_link",
+    "wrong_work_link": "yes",
+    "label_status": "not_work"
+   },
+   "as_written__human_pairs": {
+    "outcome": "wrong_link",
+    "wrong_work_link": "yes",
+    "label_status": "not_work"
+   },
+   "as_written__agent_assisted_pairs": {
+    "outcome": "wrong_link",
+    "wrong_work_link": "yes",
+    "label_status": "not_work"
+   }
+  },
+  "c603": {
+   "flag": "abstained",
+   "valid_rows__human_pairs": {
+    "outcome": "label_undeterminable",
+    "wrong_work_link": "undeterminable",
+    "label_status": "undeterminable"
+   },
+   "valid_rows__agent_assisted_pairs": {
+    "outcome": "label_undeterminable",
+    "wrong_work_link": "undeterminable",
+    "label_status": "undeterminable"
+   },
+   "as_written__human_pairs": {
+    "outcome": "label_undeterminable",
+    "wrong_work_link": "undeterminable",
+    "label_status": "undeterminable"
+   },
+   "as_written__agent_assisted_pairs": {
+    "outcome": "label_undeterminable",
+    "wrong_work_link": "undeterminable",
+    "label_status": "undeterminable"
+   }
+  },
+  "n010": {
+   "flag": "abstained",
+   "valid_rows__human_pairs": {
+    "outcome": "correct_abstain",
+    "wrong_work_link": "no",
+    "label_status": "not_work"
+   },
+   "valid_rows__agent_assisted_pairs": {
+    "outcome": "correct_abstain",
+    "wrong_work_link": "no",
+    "label_status": "not_work"
+   },
+   "as_written__human_pairs": {
+    "outcome": "correct_abstain",
+    "wrong_work_link": "no",
+    "label_status": "not_work"
+   },
+   "as_written__agent_assisted_pairs": {
+    "outcome": "correct_abstain",
+    "wrong_work_link": "no",
+    "label_status": "not_work"
+   }
+  },
+  "t036": {
+   "flag": "abstained",
+   "valid_rows__human_pairs": {
+    "outcome": "label_undeterminable",
+    "wrong_work_link": "undeterminable",
+    "label_status": "undeterminable"
+   },
+   "valid_rows__agent_assisted_pairs": {
+    "outcome": "label_undeterminable",
+    "wrong_work_link": "undeterminable",
+    "label_status": "undeterminable"
+   },
+   "as_written__human_pairs": {
+    "outcome": "label_undeterminable",
+    "wrong_work_link": "undeterminable",
+    "label_status": "undeterminable"
+   },
+   "as_written__agent_assisted_pairs": {
+    "outcome": "label_undeterminable",
+    "wrong_work_link": "undeterminable",
+    "label_status": "undeterminable"
+   }
+  },
+  "t041": {
+   "flag": "abstained",
+   "valid_rows__human_pairs": {
+    "outcome": "label_undeterminable",
+    "wrong_work_link": "undeterminable",
+    "label_status": "undeterminable"
+   },
+   "valid_rows__agent_assisted_pairs": {
+    "outcome": "label_undeterminable",
+    "wrong_work_link": "undeterminable",
+    "label_status": "undeterminable"
+   },
+   "as_written__human_pairs": {
+    "outcome": "label_undeterminable",
+    "wrong_work_link": "undeterminable",
+    "label_status": "undeterminable"
+   },
+   "as_written__agent_assisted_pairs": {
+    "outcome": "label_undeterminable",
+    "wrong_work_link": "undeterminable",
+    "label_status": "undeterminable"
+   }
+  },
+  "t098": {
+   "flag": "abstained",
+   "valid_rows__human_pairs": {
+    "outcome": "correct_abstain",
+    "wrong_work_link": "no",
+    "label_status": "not_work"
+   },
+   "valid_rows__agent_assisted_pairs": {
+    "outcome": "correct_abstain",
+    "wrong_work_link": "no",
+    "label_status": "not_work"
+   },
+   "as_written__human_pairs": {
+    "outcome": "correct_abstain",
+    "wrong_work_link": "no",
+    "label_status": "not_work"
+   },
+   "as_written__agent_assisted_pairs": {
+    "outcome": "correct_abstain",
+    "wrong_work_link": "no",
+    "label_status": "not_work"
+   }
+  },
+  "t043": {
+   "flag": "validation_rejected",
+   "valid_rows__human_pairs": {
+    "outcome": "missed_rejected",
+    "wrong_work_link": "no",
+    "label_status": "multiple"
+   },
+   "valid_rows__agent_assisted_pairs": {
+    "outcome": "missed_rejected",
+    "wrong_work_link": "no",
+    "label_status": "multiple"
+   },
+   "as_written__human_pairs": {
+    "outcome": "missed_rejected",
+    "wrong_work_link": "no",
+    "label_status": "multiple"
+   },
+   "as_written__agent_assisted_pairs": {
+    "outcome": "missed_rejected",
+    "wrong_work_link": "no",
+    "label_status": "multiple"
+   }
+  }
+ },
+ "v72_v73_stable_gains": {
+  "n033": {
+   "valid_rows__human_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   },
+   "valid_rows__agent_assisted_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   },
+   "as_written__human_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   },
+   "as_written__agent_assisted_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   }
+  },
+  "n043": {
+   "valid_rows__human_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   },
+   "valid_rows__agent_assisted_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   },
+   "as_written__human_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   },
+   "as_written__agent_assisted_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   }
+  },
+  "n096": {
+   "valid_rows__human_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   },
+   "valid_rows__agent_assisted_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   },
+   "as_written__human_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   },
+   "as_written__agent_assisted_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   }
+  },
+  "c707": {
+   "valid_rows__human_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   },
+   "valid_rows__agent_assisted_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   },
+   "as_written__human_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   },
+   "as_written__agent_assisted_pairs": {
+    "outcome": "correct",
+    "wrong_work_link": "no",
+    "label_status": "single",
+    "counts_as_interpretation_evidence": "yes"
+   }
+  }
+ },
+ "pending_name_pair_items": {
+  "valid_rows__human_pairs": [],
+  "valid_rows__agent_assisted_pairs": [],
+  "as_written__human_pairs": [],
+  "as_written__agent_assisted_pairs": []
+ },
+ "model_stages": {
+  "queries": 22,
+  "decision_candidates": 17,
+  "decision_abstain": 5,
+  "queries_with_accepted_work": 16,
+  "queries_all_rejected": 1,
+  "works_generated": 24,
+  "works_accepted_used_in_aux": 20,
+  "works_rejected": 4,
+  "reject_reasons": {
+   "no_local_data": 4
+  },
+  "queries_name_in_query": [
+   "n031",
+   "q105"
+  ]
+ },
+ "search_cross": {
+  "valid_rows__human_pairs": {
+   "interpretation_x_candidate": {
+    "abstain_correct": {
+     "kept_in": 2
+    },
+    "abstain_missed": {
+     "kept_out": 1
+    },
+    "correct": {
+     "gain": 3,
+     "kept_in": 8,
+     "kept_out": 2
+    },
+    "undetermined": {
+     "kept_in": 2,
+     "kept_out": 1
+    },
+    "wrong_included": {
+     "kept_in": 2,
+     "kept_out": 1
+    }
+   },
+   "interpretation_x_hit10": {
+    "abstain_correct": {
+     "same_hit": 2
+    },
+    "abstain_missed": {
+     "same_miss": 1
+    },
+    "correct": {
+     "same_hit": 6,
+     "same_miss": 3,
+     "stable_gain": 4
+    },
+    "undetermined": {
+     "same_hit": 2,
+     "same_miss": 1
+    },
+    "wrong_included": {
+     "same_hit": 2,
+     "same_miss": 1
+    }
+   },
+   "interpretation_x_rerank_input": {
+    "abstain_correct": {
+     "same163": 2
+    },
+    "abstain_missed": {
+     "same163": 1
+    },
+    "correct": {
+     "changed13": 12,
+     "same163": 1
+    },
+    "undetermined": {
+     "same163": 3
+    },
+    "wrong_included": {
+     "changed13": 1,
+     "same163": 2
+    }
+   },
+   "per_query": {
+    "c602": {
+     "interpretation": "wrong_included",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c603": {
+     "interpretation": "undetermined",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "same163"
+    },
+    "c607": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c701": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c705": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c707": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "m103": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "n010": {
+     "interpretation": "abstain_correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "n031": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "n033": {
+     "interpretation": "correct",
+     "candidate_recall": "gain",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "n038": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "n043": {
+     "interpretation": "correct",
+     "candidate_recall": "gain",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "n045": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "n096": {
+     "interpretation": "correct",
+     "candidate_recall": "gain",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "q105": {
+     "interpretation": "wrong_included",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t024": {
+     "interpretation": "wrong_included",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t036": {
+     "interpretation": "undetermined",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t037": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "t041": {
+     "interpretation": "undetermined",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t043": {
+     "interpretation": "abstain_missed",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "same163"
+    },
+    "t046": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "t098": {
+     "interpretation": "abstain_correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    }
+   }
+  },
+  "valid_rows__agent_assisted_pairs": {
+   "interpretation_x_candidate": {
+    "abstain_correct": {
+     "kept_in": 2
+    },
+    "abstain_missed": {
+     "kept_out": 1
+    },
+    "correct": {
+     "gain": 3,
+     "kept_in": 8,
+     "kept_out": 2
+    },
+    "undetermined": {
+     "kept_in": 2,
+     "kept_out": 1
+    },
+    "wrong_included": {
+     "kept_in": 2,
+     "kept_out": 1
+    }
+   },
+   "interpretation_x_hit10": {
+    "abstain_correct": {
+     "same_hit": 2
+    },
+    "abstain_missed": {
+     "same_miss": 1
+    },
+    "correct": {
+     "same_hit": 6,
+     "same_miss": 3,
+     "stable_gain": 4
+    },
+    "undetermined": {
+     "same_hit": 2,
+     "same_miss": 1
+    },
+    "wrong_included": {
+     "same_hit": 2,
+     "same_miss": 1
+    }
+   },
+   "interpretation_x_rerank_input": {
+    "abstain_correct": {
+     "same163": 2
+    },
+    "abstain_missed": {
+     "same163": 1
+    },
+    "correct": {
+     "changed13": 12,
+     "same163": 1
+    },
+    "undetermined": {
+     "same163": 3
+    },
+    "wrong_included": {
+     "changed13": 1,
+     "same163": 2
+    }
+   },
+   "per_query": {
+    "c602": {
+     "interpretation": "wrong_included",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c603": {
+     "interpretation": "undetermined",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "same163"
+    },
+    "c607": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c701": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c705": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c707": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "m103": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "n010": {
+     "interpretation": "abstain_correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "n031": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "n033": {
+     "interpretation": "correct",
+     "candidate_recall": "gain",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "n038": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "n043": {
+     "interpretation": "correct",
+     "candidate_recall": "gain",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "n045": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "n096": {
+     "interpretation": "correct",
+     "candidate_recall": "gain",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "q105": {
+     "interpretation": "wrong_included",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t024": {
+     "interpretation": "wrong_included",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t036": {
+     "interpretation": "undetermined",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t037": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "t041": {
+     "interpretation": "undetermined",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t043": {
+     "interpretation": "abstain_missed",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "same163"
+    },
+    "t046": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "t098": {
+     "interpretation": "abstain_correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    }
+   }
+  },
+  "as_written__human_pairs": {
+   "interpretation_x_candidate": {
+    "abstain_correct": {
+     "kept_in": 2
+    },
+    "abstain_missed": {
+     "kept_out": 1
+    },
+    "correct": {
+     "gain": 3,
+     "kept_in": 8,
+     "kept_out": 2
+    },
+    "undetermined": {
+     "kept_in": 2,
+     "kept_out": 1
+    },
+    "wrong_included": {
+     "kept_in": 2,
+     "kept_out": 1
+    }
+   },
+   "interpretation_x_hit10": {
+    "abstain_correct": {
+     "same_hit": 2
+    },
+    "abstain_missed": {
+     "same_miss": 1
+    },
+    "correct": {
+     "same_hit": 6,
+     "same_miss": 3,
+     "stable_gain": 4
+    },
+    "undetermined": {
+     "same_hit": 2,
+     "same_miss": 1
+    },
+    "wrong_included": {
+     "same_hit": 2,
+     "same_miss": 1
+    }
+   },
+   "interpretation_x_rerank_input": {
+    "abstain_correct": {
+     "same163": 2
+    },
+    "abstain_missed": {
+     "same163": 1
+    },
+    "correct": {
+     "changed13": 12,
+     "same163": 1
+    },
+    "undetermined": {
+     "same163": 3
+    },
+    "wrong_included": {
+     "changed13": 1,
+     "same163": 2
+    }
+   },
+   "per_query": {
+    "c602": {
+     "interpretation": "wrong_included",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c603": {
+     "interpretation": "undetermined",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "same163"
+    },
+    "c607": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c701": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c705": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c707": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "m103": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "n010": {
+     "interpretation": "abstain_correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "n031": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "n033": {
+     "interpretation": "correct",
+     "candidate_recall": "gain",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "n038": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "n043": {
+     "interpretation": "correct",
+     "candidate_recall": "gain",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "n045": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "n096": {
+     "interpretation": "correct",
+     "candidate_recall": "gain",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "q105": {
+     "interpretation": "wrong_included",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t024": {
+     "interpretation": "wrong_included",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t036": {
+     "interpretation": "undetermined",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t037": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "t041": {
+     "interpretation": "undetermined",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t043": {
+     "interpretation": "abstain_missed",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "same163"
+    },
+    "t046": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "t098": {
+     "interpretation": "abstain_correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    }
+   }
+  },
+  "as_written__agent_assisted_pairs": {
+   "interpretation_x_candidate": {
+    "abstain_correct": {
+     "kept_in": 2
+    },
+    "abstain_missed": {
+     "kept_out": 1
+    },
+    "correct": {
+     "gain": 3,
+     "kept_in": 8,
+     "kept_out": 2
+    },
+    "undetermined": {
+     "kept_in": 2,
+     "kept_out": 1
+    },
+    "wrong_included": {
+     "kept_in": 2,
+     "kept_out": 1
+    }
+   },
+   "interpretation_x_hit10": {
+    "abstain_correct": {
+     "same_hit": 2
+    },
+    "abstain_missed": {
+     "same_miss": 1
+    },
+    "correct": {
+     "same_hit": 6,
+     "same_miss": 3,
+     "stable_gain": 4
+    },
+    "undetermined": {
+     "same_hit": 2,
+     "same_miss": 1
+    },
+    "wrong_included": {
+     "same_hit": 2,
+     "same_miss": 1
+    }
+   },
+   "interpretation_x_rerank_input": {
+    "abstain_correct": {
+     "same163": 2
+    },
+    "abstain_missed": {
+     "same163": 1
+    },
+    "correct": {
+     "changed13": 12,
+     "same163": 1
+    },
+    "undetermined": {
+     "same163": 3
+    },
+    "wrong_included": {
+     "changed13": 1,
+     "same163": 2
+    }
+   },
+   "per_query": {
+    "c602": {
+     "interpretation": "wrong_included",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c603": {
+     "interpretation": "undetermined",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "same163"
+    },
+    "c607": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c701": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c705": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_miss",
+     "rerank_input": "changed13"
+    },
+    "c707": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "m103": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "n010": {
+     "interpretation": "abstain_correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "n031": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "n033": {
+     "interpretation": "correct",
+     "candidate_recall": "gain",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "n038": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "n043": {
+     "interpretation": "correct",
+     "candidate_recall": "gain",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "n045": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "n096": {
+     "interpretation": "correct",
+     "candidate_recall": "gain",
+     "hit10": "stable_gain",
+     "rerank_input": "changed13"
+    },
+    "q105": {
+     "interpretation": "wrong_included",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t024": {
+     "interpretation": "wrong_included",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t036": {
+     "interpretation": "undetermined",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t037": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "t041": {
+     "interpretation": "undetermined",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    },
+    "t043": {
+     "interpretation": "abstain_missed",
+     "candidate_recall": "kept_out",
+     "hit10": "same_miss",
+     "rerank_input": "same163"
+    },
+    "t046": {
+     "interpretation": "correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "changed13"
+    },
+    "t098": {
+     "interpretation": "abstain_correct",
+     "candidate_recall": "kept_in",
+     "hit10": "same_hit",
+     "rerank_input": "same163"
+    }
+   }
+  }
+ },
+ "pending_name_pairs_added": 0
+}

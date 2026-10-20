@@ -1,0 +1,5 @@
+# 질의 원문·라벨러 표·항목 번호 대응표·고정본·모델 출력 사본·이름 쌍 판정은 Git에서 뺀다(보관자 로컬)
+private/
+# NEXT_WORK 반영용 요약(로컬 전용 문서의 초안)
+NEXT_WORK_SUMMARY.md
+__pycache__/
