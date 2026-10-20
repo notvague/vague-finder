@@ -67,7 +67,7 @@ def fig_configs() -> str:
     base = top + plot_h
     out = [f"<svg xmlns='http://www.w3.org/2000/svg' width='{w}' height='{h}' viewBox='0 0 {w} {h}'>",
            f"<rect width='{w}' height='{h}' fill='#ffffff'/>",
-           text(16, 26, "구성별 정답 건수 — dev 176 · 실제 Vertex 리랭킹 · 평가기 60/120초", 15, INK, "start", "bold")]
+           text(16, 26, "구성별 정답 건수 — dev 176 · 실제 Google Cloud(Vertex AI) 리랭킹 · 평가기 60/120초", 15, INK, "start", "bold")]
     # 목표선
     for v, lab in ((124, "70% = 124"), (141, "80% = 141")):
         yy = base - v * scale

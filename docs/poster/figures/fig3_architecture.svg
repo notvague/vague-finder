@@ -9,13 +9,14 @@
 <text x='26' y='126' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>+ 거절한 곡 · 출생 연도</text>
 <rect x='196' y='60' width='200' height='150' rx='8' fill='#e8f0fb' stroke='#2a78d6' stroke-width='1.2'/>
 <text x='206' y='79' font-size='12.5' fill='#0b0b0b' text-anchor='start' font-weight='bold' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>② 질의 분석</text>
-<text x='206' y='96' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>Gemini 3.1 flash-lite (Vertex AI)</text>
-<text x='206' y='111' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>→ 단서 구조(JSON 스키마)</text>
-<text x='206' y='126' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>가사 구절/음차 · 한국어 태그 ·</text>
-<text x='206' y='141' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>표지 영어 질의 · 소리 영어 질의 ·</text>
-<text x='206' y='156' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>성별·장르·시기·제목 구조·배경 사실</text>
-<text x='206' y='171' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>실패 시 규칙 폴백(confidence 0)</text>
-<text x='206' y='186' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>시간 제한 20초</text>
+<text x='206' y='96' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>Gemini 3.1 flash-lite</text>
+<text x='206' y='111' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>Google Cloud(Vertex AI)</text>
+<text x='206' y='126' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>→ 단서 구조(JSON 스키마)</text>
+<text x='206' y='141' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>가사 구절/음차 · 한국어 태그 ·</text>
+<text x='206' y='156' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>표지 영어 질의 · 소리 영어 질의 ·</text>
+<text x='206' y='171' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>성별·장르·시기·제목 구조·배경 사실</text>
+<text x='206' y='186' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>실패 시 규칙 폴백(confidence 0)</text>
+<text x='206' y='201' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>시간 제한 20초</text>
 <line x1='166' y1='100' x2='196' y2='100' stroke='#8a8984' stroke-width='1.4' marker-end='url(#ah)'/>
 <rect x='426' y='60' width='250' height='58' rx='8' fill='#e8f0fb' stroke='#2a78d6' stroke-width='1.2'/>
 <text x='436' y='79' font-size='12.5' fill='#0b0b0b' text-anchor='start' font-weight='bold' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>가사 표면 일치</text>
@@ -106,7 +107,7 @@
 <text x='26' y='628' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>곡 레코드 data/all_songs.jsonl: 멜론 메타(제목·가수·앨범·발매일·장르·보컬 성별·앨범 소개·플레이리스트 태그) · 가사 원문 · LLM 태그(분위기·장소·색·소리·심상) · 댓글 요약·인기도 · 나무위키 사실</text>
 <text x='26' y='643' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>임베딩 artifacts/embeddings: 텍스트 KoE5 dense + BM25 sparse(5,143) · 표지 SigLIP2(5,143) · 음원 CLAP 평균(5,143, 센터링) · Context KoE5 dense(사실 5,054) + BM25 sparse(639곡)</text>
 <text x='26' y='658' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>저장소: Qdrant 컬렉션 5개(text 1024 Dot · image 768 Cos · audio 512 Cos · context dense/sparse, 별칭 세대 f6424b94) · MongoDB(가사 원문) · 평가 질의 CSV(v06·v09·v10)</text>
-<text x='26' y='673' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>분석·리랭킹: Vertex AI Gemini(리랭킹은 후보 묶음별, 정책 생략 시 호출 없음). 수집 정제·댓글 선별·Context 추출은 gemini-3.5-flash-lite(오프라인)</text>
+<text x='26' y='673' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>분석·리랭킹: Google Cloud(Vertex AI) Gemini(리랭킹은 후보 묶음별, 정책 생략 시 호출 없음). 수집 정제·댓글 선별·Context 추출은 gemini-3.5-flash-lite(오프라인)</text>
 <rect x='16' y='732' width='14' height='14' rx='3' fill='#e8f0fb' stroke='#2a78d6'/>
 <text x='36' y='743' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>요청 경로(서비스 기본 구성: 작품명 OFF · 소리 ON · Context 0.5 · 속성/피드백 OFF)</text>
 <rect x='16' y='754' width='14' height='14' rx='3' fill='#ffffff' stroke='#eb6834' stroke-dasharray='4 3'/>
