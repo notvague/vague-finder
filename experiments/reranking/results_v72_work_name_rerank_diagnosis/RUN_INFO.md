@@ -245,7 +245,7 @@ dev 개선을 새 자료의 성능 개선으로 쓰지 않는다. 채택 판단�
 
 | 경로 | 내용 | Git |
 |---|---|---|
-| `RUN_INFO.md` · `FULL_AB_PLAN.md` · `PR_DRAFT.md` · `labels/LABEL_STATUS.md` | 문서 | 추적 |
+| `RUN_INFO.md` · `FULL_AB_PLAN.md` · `labels/LABEL_STATUS.md` | 문서 | 추적 |
 | `run_eval.py` · `v72_eval_runtime.py` · `v72_budget.py` · `run_live.sh` · `compare_inputs.py` · `qdrant_reference.py` · `server_state.py` · `with_env.py` · `freeze_subset.py` · `check_subset_vs_full.py` · `analyze_v72.py` · `budget_summary.py` · `selftest_budget.py` · `selftest_runner.sh` | 실행기·검사·집계 | 추적 |
 | `subset/rerank_input_changed.json` | 고정 부분집합(질의 id 13, sha16 `7004bca4e3f7deb1`) | 추적 |
 | `analysis/precheck_*.json` · `analysis/live_summary.json` · `analysis/per_query.csv` · `budget_summary.json` · `labels/review_after_labels.csv` | 사전 검증·결과 요약·질의별 표·장부 요약·라벨 뒤 대조표(질의 원문·작품명·모델 원출력 없음) | 추적 |

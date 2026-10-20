@@ -1,7 +1,7 @@
 # Context 코드 리뷰 보완과 새 분석 재검증
 
 이 회귀 수정 릴리스의 실행 명령과 실패 분석은
-[상세 Context 단서 보존 수정](context_media_specificity_fix_20261006.md)을 먼저 참고한다.
+[상세 Context 단서 보존 수정](2026-10-06_media_specificity_fix.md)을 먼저 참고한다.
 
 이 패키지는 현재 프로젝트의 병합된 파일을 읽고 필요한 부분만 수정한다.
 기존 `search_router.py`, `qdrant_backend.py`를 옛 버전 파일로 교체하지 않는다.

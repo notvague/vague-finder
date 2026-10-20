@@ -250,7 +250,7 @@ venv/bin/python $R/analyze_periods.py --v67 experiments/reranking/results_v67_ca
 
 | 파일 | 내용 | Git |
 |---|---|---|
-| `RUN_INFO.md` · `NEW_DATA_PLAN.md`(v68 판 보완) · `PR_FOLLOWUP.md` | 보고서 · 새 자료 계획 보완 · PR #82 후속 설명 초안 | 추적 |
+| `RUN_INFO.md` · `NEW_DATA_PLAN.md`(v68 판 보완) | 보고서 · 새 자료 계획 보완 | 추적 |
 | `v69_eval_runtime.py` · `run_eval.py` · `run_live.sh` · `with_env.py` · `server_state.py` · `qdrant_reference.py` · `v69_budget.py` | 하네스·실행기·예산 통제(v68 사본 + §2 수정 · 장애 집중 정지 · fault 모드) | 추적 |
 | `compare_inputs.py` · `aggregate_live.py` · `budget_summary.py` · `analyze_periods.py` · `latency_summary.py` | 입력 대조·집계·시간대별 분석·지연 | 추적 |
 | `selftest_runner.sh`(47) · `selftest_aggregate.py`(37) · `selftest_budget.py`(36) | 자체 검사 | 추적 |

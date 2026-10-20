@@ -259,7 +259,7 @@ v70 코드는 리뷰를 마쳤으므로 다시 전부 보지 않았다. 실제 �
 
 | 경로 | 내용 | Git |
 |---|---|---|
-| `RUN_INFO.md` · `FOLLOWUP_AB_PLAN.md` · `PR_DRAFT.md` · `labels/LABEL_GUIDE.md` | 문서 | 추적 |
+| `RUN_INFO.md` · `FOLLOWUP_AB_PLAN.md` · `labels/LABEL_GUIDE.md` | 문서 | 추적 |
 | `run_live.py` · `v71_budget.py` · `run_offline.py` · `analyze_v71.py` · `server_state.py` · `with_env.py` · `selftest_live.py` · `selftest_budget.py` | 실행기·예산·오프라인·집계·자체 검사 | 추적 |
 | `labels/work_label_queue.csv` | 라벨 대기표(질의 id만) | 추적 |
 | `analysis/live_summary.json` · `analysis/offline_summary.json` · `analysis/per_query.csv` | 반복 요약·후보 비교·질의별 표(질의 원문·작품명·근거 없음) | 추적 |

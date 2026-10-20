@@ -70,7 +70,7 @@
 
 | 파일 | Git | 내용 |
 |---|---|---|
-| `README.md` · `DATA_SPEC.md` · `HUMAN_TASKS.md` · `SELFTEST.md` · `COLLECTION_STATUS.md` · `PR_DRAFT.md` | 추적 | 문서 · 명세 · 사람 할 일 · 합성 검사 결과 · 익명 집계 · PR 본문 초안 |
+| `README.md` · `DATA_SPEC.md` · `HUMAN_TASKS.md` · `SELFTEST.md` · `COLLECTION_STATUS.md` | 추적 | 문서 · 명세 · 사람 할 일 · 합성 검사 결과 · 익명 집계 |
 | `collection_tool.py` · `selftest_collection_tool.py` | 추적 | 보관자 도구 · 합성 검사 |
 | `packets/writer/` · `packets/checker/` · `packets/keeper/` · `packets/CONSENT_PRIVACY.md` | 추적(빈 양식만) | 역할별 안내와 빈 표 |
 | 보관자 폴더(`$K`) | **저장소 밖** | 원본·salt·분할 장부·내보내기·대응표. 도구가 Git 작업 트리·/tmp 안 경로를 거부한다 |

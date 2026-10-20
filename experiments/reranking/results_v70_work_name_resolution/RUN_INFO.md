@@ -264,7 +264,7 @@ v67 `oracle_work_name.py`에 이미 있는 사람 작성 작품명(13질의, 대
 
 | 경로 | 내용 | Git |
 |---|---|---|
-| `RUN_INFO.md` · `WORK_NAME_RESOLUTION_DESIGN.md` · `NEW_DATA_PLAN.md` · `PR_DRAFT.md` | 문서 | 추적 |
+| `RUN_INFO.md` · `WORK_NAME_RESOLUTION_DESIGN.md` · `NEW_DATA_PLAN.md` | 문서 | 추적 |
 | `run_offline.py` · `analyze_offline.py` · `build_resolution_cache.py` · `selftest_resolution_cache.py` · `server_state.py` | 하네스·분석·캐시 빌더·자체 검사 | 추적 |
 | `new_data/collection_template_v70.csv` · `work_label_check.py` · `selftest_work_label.py` | 양식(열 머리만)·점검 | 추적 |
 | `analysis/offline_summary.json` · `analysis/offline_per_query.csv` | 집계·질의별 순위/상태(질의 원문·작품명 없음) | 추적 |
