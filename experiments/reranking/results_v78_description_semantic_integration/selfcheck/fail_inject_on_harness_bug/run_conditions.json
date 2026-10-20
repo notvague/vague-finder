@@ -1,0 +1,197 @@
+{
+  "run": "fail_inject_on",
+  "code": "sem_on",
+  "commit": "3660083038f666aa2b69892e76db7d07ca6d8024",
+  "mode": "server",
+  "model": "fake",
+  "rep": 1,
+  "sets": [
+    "v06"
+  ],
+  "query_ids": "q101,q103",
+  "partial": true,
+  "expect_work_status_file": "expected_work_status.json",
+  "expect_work_status_sha16": "1fb2f754366de693",
+  "work_inputs": {
+    "mentions_sha16": "bfd522ebe9da7590",
+    "cache_sha16": "03ad094834c986e5",
+    "description_semantic_sha16": {
+      "structure.json.gz": "466bf366afafc862",
+      "member_dense.npy": "01a1ef1970e69b38",
+      "vectors.npy": "50fb9fd3964d7fb0",
+      "manifest.json": "1e49ccec2f20a8c7"
+    }
+  },
+  "started_at": "2026-10-20T13:55:10+0900",
+  "env": {
+    "ATTR_FILTER_WEIGHT": "0",
+    "AUDIO_FUSION_SCALE": "1",
+    "CONTEXT_WEIGHT": "0.5",
+    "DESCRIPTION_SEMANTIC_AUX_PATH": "/private/tmp/vague-finder-v78-desc-semantic-integration/artifacts/description_semantic/desc_semantic_v1_runtime",
+    "DESCRIPTION_SEMANTIC_AUX_WEIGHT": "0.5",
+    "FEEDBACK_COLLECTION_ENABLED": "0",
+    "FEEDBACK_INDEX_WORKER_ENABLED": "0",
+    "FEEDBACK_RETRIEVAL_ENABLED": "0",
+    "GCP_LOCATION": "global",
+    "GCP_PROJECT_ID": "v78-offline-no-calls",
+    "GEMINI_MODEL_NAME": "gemini-3.1-flash-lite",
+    "GEMINI_RERANK_BUDGET_SECONDS": "120",
+    "GEMINI_RERANK_RARE_FACT_VERIFY": "0",
+    "GEMINI_RERANK_TIMEOUT_SECONDS": "60",
+    "GEMINI_RETRIEVAL_BACKEND": "vertex",
+    "HF_HUB_OFFLINE": "1",
+    "RERANKER_BACKEND": "gemini_listwise",
+    "SEARCH_REFERENCE_YEAR": "2026",
+    "TOKENIZERS_PARALLELISM": "false",
+    "TRANSFORMERS_OFFLINE": "1",
+    "WORK_MENTIONS_PATH": "/private/tmp/vague-finder-v78-desc-semantic-integration/artifacts/work_names/work_mentions_v1.json.gz",
+    "WORK_NAME_RESOLUTION_ENABLED": "1",
+    "WORK_NAME_RESOLVER": "cache:/private/tmp/vague-finder-v78-desc-semantic-integration/experiments/reranking/results_v78_description_semantic_integration/resolution_cache/v71_rep1.json",
+    "QDRANT_PATH": "",
+    "QDRANT_URL": "http://127.0.0.1:6392"
+  },
+  "worktree_head": "3660083038f666aa2b69892e76db7d07ca6d8024",
+  "worktree_src_tests_changes": [
+    " M src/backend/api/dependencies.py",
+    " M src/backend/main.py",
+    " M src/retrieval/evaluate_search_accuracy.py",
+    " M src/retrieval/explain.py",
+    " M src/retrieval/search_router.py",
+    " M src/retrieval/search_service.py",
+    " M src/retrieval/user_explanation.py",
+    "?? src/retrieval/description_semantic_aux.py",
+    "?? tests/test_description_semantic_aux.py"
+  ],
+  "status": "failed",
+  "server_state_before_matches_baseline": true,
+  "code_identity": {
+    "code": "sem_on",
+    "commit": "3660083038f666aa2b69892e76db7d07ca6d8024",
+    "profile": "t60",
+    "patched_blobs": {
+      "src/backend/api/dependencies.py": "326c83e0d4cbd02fc6eefe9971b2e78be14ac748",
+      "src/backend/main.py": "e2a6b308e507fdc027d36324d310b86008480b26",
+      "src/retrieval/evaluate_search_accuracy.py": "7b03b9749fc62ddf42ebfd83915b4c87ee630c12",
+      "src/retrieval/explain.py": "470dcf220e13309a73fff2223a81f309c35dcb2a",
+      "src/retrieval/search_router.py": "ac7b20417375b9aba3c901f26a27409cfccdb4ff",
+      "src/retrieval/search_service.py": "663511e3b7f03db9766a9f7d19bfcd8b05a6dd2d",
+      "src/retrieval/user_explanation.py": "b3cd31f1d64de0ee4b31395628d1d37afeb8f339"
+    },
+    "added_blobs": {
+      "src/retrieval/description_semantic_aux.py": "d463b0399a11dc775bc4c89c04b62e6a46731291"
+    },
+    "code_root": "artifacts/src_v78_b4131c16124861eb",
+    "files": {
+      "src.vector_db.qdrant_backend": {
+        "path": "artifacts/src_v78_b4131c16124861eb/src/vector_db/qdrant_backend.py",
+        "git_blob": "74685cdf66e24d935f93153b9b9e2028480f47c6"
+      },
+      "src.retrieval.context_qdrant_search": {
+        "path": "artifacts/src_v78_b4131c16124861eb/src/retrieval/context_qdrant_search.py",
+        "git_blob": "f81ffec9a6a41b1cefa4a5f8fa587b4ed5c67c17"
+      },
+      "src.feedback.case_index": {
+        "path": "artifacts/src_v78_b4131c16124861eb/src/feedback/case_index.py",
+        "git_blob": "2f164721fc2a98acfc0ed4cdd88b3a13bc74ab5c"
+      },
+      "src.retrieval.evaluate_search_accuracy": {
+        "path": "artifacts/src_v78_b4131c16124861eb/src/retrieval/evaluate_search_accuracy.py",
+        "git_blob": "7b03b9749fc62ddf42ebfd83915b4c87ee630c12"
+      },
+      "src.retrieval.search_router": {
+        "path": "artifacts/src_v78_b4131c16124861eb/src/retrieval/search_router.py",
+        "git_blob": "ac7b20417375b9aba3c901f26a27409cfccdb4ff"
+      },
+      "src.retrieval.work_name_resolution": {
+        "path": "artifacts/src_v78_b4131c16124861eb/src/retrieval/work_name_resolution.py",
+        "git_blob": "5777d7f9cfeec59ec6be26df0f1542e96190766b"
+      },
+      "src.retrieval.work_mentions": {
+        "path": "artifacts/src_v78_b4131c16124861eb/src/retrieval/work_mentions.py",
+        "git_blob": "1c0eda766cbfde1a9b8fc27f3cbdf32e175664c3"
+      },
+      "src.retrieval.gemini_listwise_reranker": {
+        "path": "artifacts/src_v78_b4131c16124861eb/src/retrieval/gemini_listwise_reranker.py",
+        "git_blob": "423bd6772c6ff87112976cbfefdb3621514181fc"
+      },
+      "src.retrieval.description_semantic_aux": {
+        "path": "artifacts/src_v78_b4131c16124861eb/src/retrieval/description_semantic_aux.py",
+        "git_blob": "d463b0399a11dc775bc4c89c04b62e6a46731291"
+      },
+      "src.retrieval.search_service": {
+        "path": "artifacts/src_v78_b4131c16124861eb/src/retrieval/search_service.py",
+        "git_blob": "663511e3b7f03db9766a9f7d19bfcd8b05a6dd2d"
+      }
+    },
+    "src_py_files": 163,
+    "src_py_tree_sha16": "b4131c16124861eb"
+  },
+  "analysis_caches": {
+    "v06": {
+      "path": "experiments/reranking/results_v49_vertex_baseline/analysis_cache_v06_dev_vertex.json",
+      "queries": 2,
+      "file_sha256_16": "36eab91ca92a233b",
+      "missing": 0,
+      "fallback": 0,
+      "drift": []
+    }
+  },
+  "guard_before": {
+    "pymongo.MongoClient": "blocked",
+    "src.common.mongodb": "blocked",
+    "lyrics_mongo_client": "blocked",
+    "make_genai_client": "blocked",
+    "reranker.make_genai_client": "blocked",
+    "adc_credentials": "blocked",
+    "google.genai.Client": "blocked",
+    "network": "blocked",
+    "QDRANT_HYBRID_SCAN_LIMIT": "unset"
+  },
+  "lyrics_snapshot": {
+    "db": "vaguefinder",
+    "collection": "songs",
+    "document_count": 5143,
+    "full_lyrics_songs": 5143,
+    "full_lyrics_total_chars": 4076174,
+    "content_sha256_16": "e0d58f28f1f4a563",
+    "source": "v63_snapshot",
+    "snapshot_file_sha256_16": "295b7a508c12cc34"
+  },
+  "qdrant_open_seconds": 0.046,
+  "reference_build_seconds": 7.631,
+  "index_fingerprint": {
+    "collection": "vaguefinder-text-1024-koe5__dev",
+    "points": 5143,
+    "dense_dim": 1024,
+    "sparse_nnz": 1061090,
+    "sparse_vocab": 44486,
+    "content_sha256_16": "238299e6c8c17f2a"
+  },
+  "collections": {
+    "vaguefinder-audio-512__dev": 5143,
+    "vaguefinder-context-dense-1024-koe5__dev__generation_f6424b94621a28cf": 5054,
+    "vaguefinder-context-sparse-bm25__dev__generation_f6424b94621a28cf": 639,
+    "vaguefinder-image-768__dev": 5143,
+    "vaguefinder-text-1024-koe5__dev": 5143,
+    "vaguefinder-context-dense-1024-koe5__dev": 5054,
+    "vaguefinder-context-sparse-bm25__dev": 639
+  },
+  "warmup": {
+    "query_id": "q105",
+    "set": "v06",
+    "seconds": 5.335,
+    "work_status": "applied",
+    "rule": "v72 부분집합 밖·판정 통과·dev 순서 첫 질의(고정)"
+  },
+  "work_resolver": "cache:gemini-3.1-flash-lite",
+  "work_cache_entries": 22,
+  "sets_done": {},
+  "cold_before_first_query_seconds": 15.596,
+  "error": "RunAborted: v78: q101 소개 의미 보조 상태 'failed:TypeError' — 모델 호출 전에 멈춘다",
+  "traceback_tail": "Traceback (most recent call last):\n  File \"/private/tmp/vague-finder-v78-desc-semantic-integration/experiments/reranking/results_v78_description_semantic_integration/run_eval.py\", line 340, in main\n    asyncio.run(esa.evaluate(eval_args))\n    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"~/.local/share/mise/installs/python/3.14.7/lib/python3.14/asyncio/runners.py\", line 205, in run\n    return runner.run(main)\n           ~~~~~~~~~~^^^^^^\n  File \"~/.local/share/mise/installs/python/3.14.7/lib/python3.14/asyncio/runners.py\", line 128, in run\n    return self._loop.run_until_complete(task)\n           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^\n  File \"~/.local/share/mise/installs/python/3.14.7/lib/python3.14/asyncio/base_events.py\", line 720, in run_until_complete\n    return future.result()\n           ~~~~~~~~~~~~~^^\n  File \"/private/tmp/vague-finder-v78-desc-semantic-integration/artifacts/src_v78_b4131c16124861eb/src/retrieval/evaluate_search_accuracy.py\", line 976, in evaluate\n    candidates = await router.search(\n                 ^^^^^^^^^^^^^^^^^^^^\n    ...<6 lines>...\n    )\n    ^\n  File \"/private/tmp/vague-finder-v78-desc-semantic-integration/experiments/reranking/results_v78_description_semantic_integration/v78_eval_runtime.py\", line 696, in router_search\n    raise RunAborted(f\"v78: {rec.current} {bad} — 모델 호출 전에 멈춘다\")\nv78_eval_runtime.RunAborted: v78: q101 소개 의미 보조 상태 'failed:TypeError' — 모델 호출 전에 멈춘다\n",
+  "work_status_violations": [
+    "q101: 소개 의미 보조 상태 'failed:TypeError'"
+  ],
+  "server_state_after_matches_baseline": true,
+  "traceback_tail_redacted": "개인 홈 경로를 ~로 바꿈(커밋 전 검사)"
+}

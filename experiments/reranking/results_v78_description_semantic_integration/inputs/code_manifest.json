@@ -1,0 +1,17 @@
+{
+ "base_commit": "3660083038f666aa2b69892e76db7d07ca6d8024",
+ "src_py_tree_sha16": "b4131c16124861eb",
+ "src_py_files": 163,
+ "changed_blobs": {
+  "src/backend/api/dependencies.py": "326c83e0d4cbd02fc6eefe9971b2e78be14ac748",
+  "src/backend/main.py": "e2a6b308e507fdc027d36324d310b86008480b26",
+  "src/retrieval/evaluate_search_accuracy.py": "7b03b9749fc62ddf42ebfd83915b4c87ee630c12",
+  "src/retrieval/explain.py": "470dcf220e13309a73fff2223a81f309c35dcb2a",
+  "src/retrieval/search_router.py": "ac7b20417375b9aba3c901f26a27409cfccdb4ff",
+  "src/retrieval/search_service.py": "663511e3b7f03db9766a9f7d19bfcd8b05a6dd2d",
+  "src/retrieval/user_explanation.py": "b3cd31f1d64de0ee4b31395628d1d37afeb8f339"
+ },
+ "added_blobs": {
+  "src/retrieval/description_semantic_aux.py": "d463b0399a11dc775bc4c89c04b62e6a46731291"
+ }
+}

@@ -1,0 +1,1572 @@
+diff --git a/.env.example b/.env.example
+index a750ebf..8181089 100644
+--- a/.env.example
++++ b/.env.example
+@@ -137,6 +137,13 @@ ATTR_FILTER_K=30
+ ATTR_FILTER_USE_GENRE=1
+ ATTR_FILTER_GENRE_POLICY=always
+ 
++# 앨범 소개 의미 보조 후보(실험 스위치, 기본 꺼짐 — experiments/reranking/results_v78_description_semantic_integration/RUN_INFO.md).
++# 멜론 앨범 소개 원문 청크를 KoE5 질의 벡터로 찾아 소개 묶음당 대표곡 하나(최대 10곡)를 RRF 가중 0.5로 더한다.
++#   DESCRIPTION_SEMANTIC_AUX_WEIGHT  0(기본 = 경로 없음·산출물 안 읽음) 또는 0.5. 그 밖의 값·산출물 없음·지문 불일치는 기동 오류
++#   DESCRIPTION_SEMANTIC_AUX_PATH    런타임 산출물 폴더(기본 artifacts/description_semantic/desc_semantic_v1_runtime —
++#                                    `python -m src.retrieval.description_semantic_aux build`)
++DESCRIPTION_SEMANTIC_AUX_WEIGHT=0
++
+ # 5. MongoDB — 가사 정확 일치 검색에 사용
+ #    없으면 그 경로만 비고 나머지 검색은 그대로 동작한다
+ MONGO_URI="mongodb://localhost:27017"
+diff --git a/src/backend/api/dependencies.py b/src/backend/api/dependencies.py
+index de24fa3..326c83e 100644
+--- a/src/backend/api/dependencies.py
++++ b/src/backend/api/dependencies.py
+@@ -345,6 +345,19 @@ def load_work_name_runtime() -> Optional[Any]:
+     return load_runtime_from_env()
+ 
+ 
++@singleton
++def load_description_semantic_runtime() -> Optional[Any]:
++    """`DESCRIPTION_SEMANTIC_AUX_WEIGHT`가 0.5일 때만 앨범 소개 의미 보조 묶음을 만든다(v78 실험). 꺼져 있으면 None
++    (산출물도 읽지 않는다).
++
++    작품명 해석과 같이 서버 기동(`main.lifespan`)에서 미리 부른다 — 켰는데 산출물이 없거나 sha·규칙 판·모델이 다르거나
++    가중 값이 틀리면 서버가 뜨지 않는다. 벡터 클라이언트를 쥐지 않는다.
++    """
++    from src.retrieval.description_semantic_aux import load_runtime_from_env
++
++    return load_runtime_from_env()
++
++
+ @singleton
+ def get_search_router() -> SearchRouter:
+     context_settings = load_context_settings()
+@@ -366,4 +379,6 @@ def get_search_router() -> SearchRouter:
+         feedback_retriever=get_feedback_retriever(),
+         # 간접 지칭 작품명 해석(실험, 기본 꺼짐). 켜면 저장소·해석기를 여기서 불러오고, 못 하면 기동 오류다.
+         work_name_runtime=load_work_name_runtime(),
++        # 앨범 소개 의미 보조(v78 실험, 기본 꺼짐). 켜면 산출물을 여기서 불러오고, 못 하면 기동 오류다.
++        description_semantic_runtime=load_description_semantic_runtime(),
+     )
+diff --git a/src/backend/main.py b/src/backend/main.py
+index 89bbb80..e2a6b30 100644
+--- a/src/backend/main.py
++++ b/src/backend/main.py
+@@ -11,6 +11,7 @@ from src.backend.api.dependencies import (
+     close_lyrics_exact_search_service,
+     close_vector_client,
+     get_vector_client,
++    load_description_semantic_runtime,
+     load_work_name_runtime,
+     lyrics_cache_status,
+     reranker_backend,
+@@ -101,6 +102,9 @@ async def lifespan(app: FastAPI):
+         # 설정값 오류는 다시 시도해도 낫지 않으므로 기동 실패다(꺼져 있으면 아무것도 읽지 않는다). 기동마다 환경을 다시 읽는다.
+         load_work_name_runtime.cache_clear()  # type: ignore[attr-defined]
+         load_work_name_runtime()
++        # 앨범 소개 의미 보조(v78 실험, 기본 꺼짐) — 같은 이유로 기동에서 산출물을 불러온다(꺼져 있으면 읽지 않는다).
++        load_description_semantic_runtime.cache_clear()  # type: ignore[attr-defined]
++        load_description_semantic_runtime()
+     except Exception:
+         await asyncio.to_thread(close_vector_client)
+         raise
+diff --git a/src/retrieval/evaluate_search_accuracy.py b/src/retrieval/evaluate_search_accuracy.py
+index a4b320c..7b03b97 100644
+--- a/src/retrieval/evaluate_search_accuracy.py
++++ b/src/retrieval/evaluate_search_accuracy.py
+@@ -550,6 +550,24 @@ def _work_name_switches() -> dict:
+     return out
+ 
+ 
++def _description_semantic_switches() -> dict:
++    from src.retrieval import description_semantic_aux as dsa
++
++    weight = dsa.aux_weight_from_env()
++    if weight <= 0:
++        return {"enabled": False}
++    out: dict = {"enabled": True, "schema_version": dsa.SCHEMA_VERSION, "rule_version": dsa.RULE_VERSION,
++                 "weight": weight, "groups_k": dsa.GROUPS_K, "model": dsa.MODEL_NAME,
++                 "model_revision": dsa.MODEL_REVISION, "runtime_dir": dsa.runtime_dir_from_env().name}
++    mpath = dsa.runtime_dir_from_env() / dsa.MANIFEST_FILE
++    if mpath.is_file():
++        manifest = json.loads(mpath.read_text(encoding="utf-8"))
++        out["structure_sha256_16"] = str(manifest.get("structure_sha256", ""))[:16]
++        out["member_dense_sha256_16"] = str(manifest.get("member_dense_sha256", ""))[:16]
++        out["vectors_sha256_16"] = str((manifest.get("index") or {}).get("vectors_sha256", ""))[:16]
++    return out
++
++
+ def _ranking_switches(config: Any) -> dict:
+     """순위를 바꾸는 스위치의 **실제 적용값**. 환경 변수 문자열이 아니라 search_router가 읽는 함수를 부른다.
+ 
+@@ -566,6 +584,8 @@ def _ranking_switches(config: Any) -> dict:
+         "audio_fusion_scale": _search_router._audio_fusion_scale(),
+         # 간접 지칭 작품명 해석(v70 실험, 기본 꺼짐). 켠 실행은 판정·검증·프롬프트 버전과 저장소 지문·해석기 종류를 남긴다
+         "work_name_resolution": _work_name_switches(),
++        # 앨범 소개 의미 보조(v78 실험, 기본 꺼짐). 켠 실행은 규칙 판·상수·모델·산출물 지문을 남긴다
++        "description_semantic_aux": _description_semantic_switches(),
+         # 속성 조건 보조 후보(experiments/reranking/results_v51_attr_filter — 실험 스위치, 기본 가중 0 = 경로 없음 = v50 B 조건)
+         "attr_filter_weight": _search_router._attr_filter_weight(),
+         "attr_filter_k": _search_router._attr_filter_k(),
+@@ -792,6 +812,9 @@ def build_explain_payload(
+     if record.work_resolution is not None:
+         # 작품명 해석을 켠 실행에만 있다(v70 실험) — 꺼진 실행의 기록 모양은 그대로다
+         row["work_resolution"] = dict(record.work_resolution)
++    if record.description_semantic is not None:
++        # 앨범 소개 의미 보조를 켠 실행에만 있다(v78 실험) — 꺼진 실행의 기록 모양은 그대로다
++        row["description_semantic"] = dict(record.description_semantic)
+     return row
+ 
+ 
+diff --git a/src/retrieval/explain.py b/src/retrieval/explain.py
+index 78db44d..470dcf2 100644
+--- a/src/retrieval/explain.py
++++ b/src/retrieval/explain.py
+@@ -56,6 +56,9 @@ PATH_LABELS: Dict[str, str] = {
+     # 간접 지칭 작품명 해석(실험 스위치 WORK_NAME_RESOLUTION_ENABLED)이 추정한 작품명으로 찾은 보조 후보. **추정이다** —
+     # 사용자가 그 작품을 말했다는 뜻도, 곡이 그 작품에 쓰였다는 확인도 아니다. 작품명은 요청 기록에만 남는다.
+     "work_name_aux": "작품명 추정 보조",
++    # 앨범 소개 원문 문장을 의미로 찾은 보조 후보(실험 스위치 DESCRIPTION_SEMANTIC_AUX_WEIGHT, v78). 앨범 단위 소개라
++    # 그 곡 자체에 대한 문장이라는 보장은 없다.
++    "description_semantic_aux": "앨범 소개 의미 보조",
+ }
+ 
+ FEEDBACK_PATH = "feedback_case"
+@@ -516,6 +519,9 @@ class SearchExplain:
+     # 간접 지칭 작품명 해석의 요청 기록(`work_name_resolution.WorkResolution.as_dict`). 주입하지 않은 라우터에서는 None —
+     # 기존 기록 모양을 바꾸지 않는다. 추정 작품명은 내부 기록이며 사용자 문장에 쓰지 않는다.
+     work_resolution: Optional[Dict[str, Any]] = None
++    # 앨범 소개 의미 보조의 요청 기록(`description_semantic_aux.DescriptionSemanticRecord.as_dict`, v78). 주입하지 않은
++    # 라우터에서는 None — 기존 기록 모양을 바꾸지 않는다.
++    description_semantic: Optional[Dict[str, Any]] = None
+ 
+     @property
+     def rerank_runs_applied(self) -> int:
+@@ -636,6 +642,10 @@ class ExplainRecorder:
+         """작품명 해석 기록. 라우터는 해석기가 주입됐을 때만 부른다(판정 미통과도 남긴다)."""
+         self.record.work_resolution = dict(record)
+ 
++    def set_description_semantic(self, record: Dict[str, Any]) -> None:
++        """앨범 소개 의미 보조 기록. 라우터는 런타임이 주입됐을 때만 부른다(정책상 생략·보조 곡 0도 남긴다)."""
++        self.record.description_semantic = dict(record)
++
+     def note_rerank_run(
+         self,
+         status: str,
+@@ -851,6 +861,9 @@ class _NullRecorder(ExplainRecorder):
+     def set_work_resolution(self, record) -> None:
+         return
+ 
++    def set_description_semantic(self, record) -> None:
++        return
++
+     def set_attr_filter_genre(self, decision) -> None:
+         return
+ 
+diff --git a/src/retrieval/search_router.py b/src/retrieval/search_router.py
+index 9168581..ac7b204 100644
+--- a/src/retrieval/search_router.py
++++ b/src/retrieval/search_router.py
+@@ -20,6 +20,8 @@ from dataclasses import asdict, dataclass
+ from functools import partial
+ from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+ 
++import numpy as np
++
+ from src.backend.schemas.query import ContextClue, QueryAnalysis
+ from src.backend.schemas.search import ClarifyAnswer, MatchingTrack
+ from src.embedding.models.audio_clap import CLAPAudioEmbedder
+@@ -81,6 +83,22 @@ from src.retrieval.clarify import (
+     canonical_artist_types as _canonical_artist_types,
+ )
+ from src.retrieval.search_service import SearchService
++from src.retrieval.description_semantic_aux import (
++    MODEL_NAME as DESCRIPTION_SEMANTIC_MODEL_NAME,
++    QUERY_PREFIX as DESCRIPTION_SEMANTIC_QUERY_PREFIX,
++    REASON_ABLATION as DESCRIPTION_SEMANTIC_REASON_ABLATION,
++    REASON_EXACT_LYRIC as DESCRIPTION_SEMANTIC_REASON_EXACT_LYRIC,
++    REASON_NO_QUERY_TEXT as DESCRIPTION_SEMANTIC_REASON_NO_QUERY_TEXT,
++    STATUS_APPLIED as DESCRIPTION_SEMANTIC_STATUS_APPLIED,
++    STATUS_FAILED_PREFIX as DESCRIPTION_SEMANTIC_STATUS_FAILED_PREFIX,
++    STATUS_NO_BASE_CANDIDATES as DESCRIPTION_SEMANTIC_STATUS_NO_BASE_CANDIDATES,
++    STATUS_NOT_TRIGGERED_PREFIX as DESCRIPTION_SEMANTIC_STATUS_NOT_TRIGGERED_PREFIX,
++    VECTOR_OWN as DESCRIPTION_SEMANTIC_VECTOR_OWN,
++    VECTOR_OWN_AFTER_FAILURE as DESCRIPTION_SEMANTIC_VECTOR_OWN_AFTER_FAILURE,
++    VECTOR_SHARED as DESCRIPTION_SEMANTIC_VECTOR_SHARED,
++    DescriptionSemanticRecord,
++    DescriptionSemanticRuntime,
++)
+ from src.retrieval.work_name_resolution import (
+     STATUS_APPLIED as WORK_STATUS_APPLIED,
+     STATUS_FAILED_PREFIX as WORK_STATUS_FAILED_PREFIX,
+@@ -610,6 +628,24 @@ def _phonetic_lyric_terms(analysis: QueryAnalysis) -> List[str]:
+     return _dedupe_terms(values)
+ 
+ 
++def _text_dense_query(analysis: QueryAnalysis) -> str:
++    """텍스트 경로의 dense(KoE5) 입력 문장. 가사 의미·들리는 가사 표기가 있으면 search_text 뒤에 덧붙인다."""
++    exact_lyric_terms = _exact_lyric_terms(analysis)
++    phonetic_lyric_terms = _phonetic_lyric_terms(analysis)
++    dense_query = analysis.search_text
++    if analysis.lyric_semantic_query and not exact_lyric_terms:
++        dense_query = (
++            f"{analysis.search_text}\n"
++            f"가사 의미: {analysis.lyric_semantic_query}"
++        )
++    if phonetic_lyric_terms and not exact_lyric_terms:
++        dense_query = (
++            f"{dense_query}\n"
++            f"들리는 가사의 가능한 표기: {' / '.join(phonetic_lyric_terms)}"
++        )
++    return dense_query
++
++
+ def exact_lyric_constraint_score(
+     analysis: QueryAnalysis,
+     track: MatchingTrack,
+@@ -758,6 +794,40 @@ def _reject_and_trim(
+ # 작품명 해석 마감 = 해석기 시간 제한 + 이 여유(로컬 보조 조회). 넘으면 결과를 쓰지 않는다.
+ _WORK_LOOKUP_MARGIN_SECONDS = 2.0
+ WORK_NAME_AUX_PATH = "work_name_aux"
++DESCRIPTION_SEMANTIC_AUX_PATH = "description_semantic_aux"
++
++
++class _QueryVectorSink:
++    """한 요청 안에서 본 텍스트 경로의 질의 벡터를 소개 의미 보조로 넘기는 칸(v78 실험). 요청마다 새로 만든다.
++
++    본 경로(검색 풀 스레드)가 임베딩 직후 (dense 입력 문장, 벡터)로 부른다. 문장이 `expected`와 글자까지 같을 때만 받는다 —
++    가사 의미·음차 표기가 덧붙은 문장은 다른 입력이라 쓰지 않는다. 전역 상태가 없어 다른 요청의 벡터가 섞이지 않는다.
++    """
++
++    def __init__(self, loop: asyncio.AbstractEventLoop, expected: str) -> None:
++        self._loop = loop
++        self.expected = expected
++        self.future: "asyncio.Future" = loop.create_future()
++
++    def __call__(self, text: str, vector: Any) -> None:
++        if text != self.expected:
++            return
++        copied = np.array(vector, dtype=np.float32, copy=True)
++        self._loop.call_soon_threadsafe(self._set, copied)
++
++    def _set(self, vector: Any) -> None:
++        if not self.future.done():
++            self.future.set_result(vector)
++
++
++@dataclass
++class _DescriptionSemanticJob:
++    """한 요청의 소개 의미 보조. 정책상 생략이면 `task`가 None이고 `record`에 사유가 있다."""
++
++    runtime: DescriptionSemanticRuntime
++    record: Optional[DescriptionSemanticRecord]
++    sink: Optional[_QueryVectorSink] = None
++    task: Optional["asyncio.Task"] = None
+ 
+ 
+ @dataclass
+@@ -1401,6 +1471,8 @@ class SearchRouter:
+     # 간접 지칭 작품명 해석(실험, 기본 꺼짐). 주입하지 않으면 판정도 하지 않는다 — 기존 경로·기록이 그대로다.
+     _work_names: Optional[WorkNameRuntime] = None
+     _work_pool: Optional[ThreadPoolExecutor] = None
++    # 앨범 소개 의미 보조(v78 실험, 기본 꺼짐). 주입하지 않으면 경로도 기록도 없다 — 기존 경로·기록이 그대로다.
++    _description_semantic: Optional[DescriptionSemanticRuntime] = None
+ 
+     def __init__(
+         self,
+@@ -1419,7 +1491,13 @@ class SearchRouter:
+         default_candidate_k: int = 30,
+         feedback_retriever: Optional[Any] = None,
+         work_name_runtime: Optional[WorkNameRuntime] = None,
++        description_semantic_runtime: Optional[DescriptionSemanticRuntime] = None,
+     ):
++        if description_semantic_runtime is not None:
++            # 색인 청크는 KoE5로 임베딩했다 — 질의도 같은 모델이어야 한다(다르면 기동 오류)
++            model_name = getattr(getattr(search_service, "text_embedder", None), "model_name", None)
++            if model_name != DESCRIPTION_SEMANTIC_MODEL_NAME:
++                raise ValueError(f"소개 의미 보조는 텍스트 임베더 {DESCRIPTION_SEMANTIC_MODEL_NAME}가 필요하다: {model_name!r}")
+         if not math.isfinite(context_weight) or context_weight < 0:
+             raise ValueError("context_weight must be finite and nonnegative")
+         if context_fact_k < 1 or context_sparse_k < 1:
+@@ -1465,6 +1543,8 @@ class SearchRouter:
+             if work_name_runtime is not None
+             else None
+         )
++        # 앨범 소개 의미 보조는 메모리 조회 + (필요하면) 질의 임베딩 1회 + 메타데이터 조회 1회라 기존 검색 풀에서 돈다.
++        self._description_semantic = description_semantic_runtime
+ 
+     def shutdown(self, wait: bool = True) -> None:
+         """FastAPI lifespan 종료 시 스레드풀을 정리한다.
+@@ -1670,13 +1750,25 @@ class SearchRouter:
+                 and _audio_fusion_scale() > 0
+             )
+ 
++        # 앨범 소개 의미 보조(v78 실험) — 판정은 규칙이라 여기서 한다. 본 텍스트 경로의 dense 입력이 search_text와 같으면
++        # 그 경로가 만든 질의 벡터를 이 요청 안에서만 넘겨받는다. 주입하지 않았으면 None — 기존 경로·기록 그대로.
++        description_job = self._prepare_description_semantic_job(
++            loop, analysis, ablation=force_weights is not None or disable_boost,
++        )
++        text_search_fn = (
++            partial(self._search_text, dense_vector_sink=description_job.sink)
++            if description_job is not None and description_job.sink is not None
++            else self._search_text
++        )
+         text_fut = loop.run_in_executor(
+             self._pool,
+             timer.job(
+-                "path.text", self._search_text, analysis,
++                "path.text", text_search_fn, analysis,
+                 max(text_pool_k, fusion_k),
+             ),
+         )
++        if description_job is not None:
++            self._start_description_semantic_job(loop, description_job, analysis, text_fut, timer)
+         image_fut = (
+             loop.run_in_executor(
+                 self._pool,
+@@ -2376,6 +2468,13 @@ class SearchRouter:
+                 reverse=True,
+             )
+ 
++        # 앨범 소개 의미 보조(v78 실험) — 명시 단서 보조 다음 · 작품명 보조 앞(v76과 같은 자리)에서 RRF 기여만 더한다.
++        # 정책상 생략·보조 곡 0·실패면 fused는 손대지 않은 그대로다. 아래 보정·거절 제외·절단·가사 보호·리랭킹은 기존과 같다.
++        if description_job is not None:
++            fused = await self._apply_description_semantic(
++                description_job, analysis, fused, meta_cache, excluded, candidates, disable_boost, recorder,
++            )
++
+         # 작품명 보조 후보 — 다른 보조 경로와 같은 자리에서 RRF 기여만 더한다(분석·기존 경로는 그대로). 판정 미통과·보류·
+         # 실패·시간 초과면 fused는 손대지 않은 그대로다. 아래 보정·거절 제외·절단·가사 보호·리랭킹은 기존과 같다.
+         if work_job is not None:
+@@ -2751,6 +2850,160 @@ class SearchRouter:
+         recorder.set_rank_after([t.id for t in final])
+         return final
+ 
++    def _prepare_description_semantic_job(
++        self,
++        loop: asyncio.AbstractEventLoop,
++        analysis: QueryAnalysis,
++        *,
++        ablation: bool,
++    ) -> Optional[_DescriptionSemanticJob]:
++        """판정(규칙)과 질의 벡터 재사용 여부. 주입되지 않았으면 None.
++
++        정책상 생략: 가중치 고정 ablation·보정 끔(다른 보조 경로와 같은 조건) · 정확 가사 구절이 있는 질의(텍스트 경로가 가사
++        전용 질의로 바뀌는 질의 — 가사 보호 계약을 건드리지 않는다) · 빈 search_text.
++        """
++        runtime = self._description_semantic
++        if runtime is None:
++            return None
++        reason = ""
++        if ablation:
++            reason = DESCRIPTION_SEMANTIC_REASON_ABLATION
++        elif _exact_lyric_terms(analysis):
++            reason = DESCRIPTION_SEMANTIC_REASON_EXACT_LYRIC
++        elif not str(analysis.search_text or "").strip():
++            reason = DESCRIPTION_SEMANTIC_REASON_NO_QUERY_TEXT
++        if reason:
++            record = DescriptionSemanticRecord(
++                status=DESCRIPTION_SEMANTIC_STATUS_NOT_TRIGGERED_PREFIX + reason, versions=runtime.versions(),
++            )
++            return _DescriptionSemanticJob(runtime, record)
++        # 본 텍스트 경로의 dense 입력이 search_text와 글자까지 같을 때만 그 벡터를 넘겨받는다(같은 임베더·같은 접두·정규화)
++        sink = (
++            _QueryVectorSink(loop, analysis.search_text)
++            if _text_dense_query(analysis) == analysis.search_text
++            else None
++        )
++        return _DescriptionSemanticJob(runtime, None, sink)
++
++    def _start_description_semantic_job(
++        self,
++        loop: asyncio.AbstractEventLoop,
++        job: _DescriptionSemanticJob,
++        analysis: QueryAnalysis,
++        text_fut: "asyncio.Future",
++        timer: Any,
++    ) -> None:
++        if job.record is not None:
++            return
++        job.task = asyncio.ensure_future(self._run_description_semantic(loop, job, analysis, text_fut, timer))
++        # 결과를 기다리지 않고 끝나는 길(다른 단계 예외)에서 예외가 "가져가지 않음"으로 남지 않게.
++        job.task.add_done_callback(lambda done: done.cancelled() or done.exception())
++
++    async def _run_description_semantic(
++        self,
++        loop: asyncio.AbstractEventLoop,
++        job: _DescriptionSemanticJob,
++        analysis: QueryAnalysis,
++        text_fut: "asyncio.Future",
++        timer: Any,
++    ) -> Tuple[DescriptionSemanticRecord, List[MatchingTrack]]:
++        """질의 벡터를 정하고(넘겨받기 또는 직접 임베딩) 메모리 검색·메타데이터 조회를 검색 풀에서 돌린다.
++
++        넘겨받기를 기다리는 동안 풀 스레드를 쥐지 않는다(이벤트 루프에서 기다린다). 본 경로가 벡터를 넘기지 못하고 끝나면
++        직접 임베딩한다.
++        """
++        vector: Any = None
++        source = DESCRIPTION_SEMANTIC_VECTOR_OWN
++        wait_ms: Optional[float] = None
++        if job.sink is not None:
++            started = time.perf_counter()
++            await asyncio.wait({job.sink.future, text_fut}, return_when=asyncio.FIRST_COMPLETED)
++            if not job.sink.future.done():
++                await asyncio.sleep(0)  # 본 경로가 끝나기 직전에 넘긴 벡터가 아직 루프에 올라오지 않았을 수 있다
++            if job.sink.future.done():
++                vector = job.sink.future.result()
++                source = DESCRIPTION_SEMANTIC_VECTOR_SHARED
++            else:
++                source = DESCRIPTION_SEMANTIC_VECTOR_OWN_AFTER_FAILURE
++            wait_ms = round((time.perf_counter() - started) * 1000, 3)
++        embedder = self._text_svc.text_embedder
++
++        def embed(text: str) -> Any:
++            # 본 텍스트 경로(SearchService.search_text)와 같은 호출 — 같은 임베더·접두·정규화
++            return embedder.embed_passages(
++                [DESCRIPTION_SEMANTIC_QUERY_PREFIX + text], add_e5_prefix=False, normalize=True,
++            )[0]
++
++        record, tracks = await loop.run_in_executor(
++            self._pool,
++            timer.job(
++                "path.description_semantic", job.runtime.run, analysis, vector, source, embed,
++                self._text_svc.fetch_tracks_by_ids,
++            ),
++        )
++        record.wait_ms = wait_ms
++        return record, tracks
++
++    async def _apply_description_semantic(
++        self,
++        job: _DescriptionSemanticJob,
++        analysis: QueryAnalysis,
++        fused: List[Tuple[str, float]],
++        meta_cache: Dict[str, MatchingTrack],
++        excluded: Optional[Set[str]],
++        candidates: int,
++        disable_boost: bool,
++        recorder: ExplainRecorder,
++    ) -> List[Tuple[str, float]]:
++        """보조 목록을 융합 목록에 더한다. 들어온/밀려난 곡은 같은 보정·거절 제외·절단을 보조 없이 한 결과와 비교한다.
++
++        경로 예외는 실패 상태와 경로 실패 기록으로 남기고 융합 목록은 그대로 돌려준다(정상 0건과 구분된다).
++        """
++        record = job.record
++        aux_tracks: List[MatchingTrack] = []
++        if job.task is not None:
++            try:
++                record, aux_tracks = await job.task
++            except Exception as exc:  # noqa: BLE001 - 보조 경로 실패는 검색을 막지 않는다
++                logger.warning("[SearchRouter] 앨범 소개 의미 보조 실패: %s", type(exc).__name__)
++                record = DescriptionSemanticRecord(
++                    status=DESCRIPTION_SEMANTIC_STATUS_FAILED_PREFIX + type(exc).__name__,
++                    versions=job.runtime.versions(),
++                )
++                recorder.note_path_failed(DESCRIPTION_SEMANTIC_AUX_PATH, type(exc).__name__)
++                aux_tracks = []
++        assert record is not None
++        if record.status == DESCRIPTION_SEMANTIC_STATUS_APPLIED and fused:
++            weight = job.runtime.weight
++            baseline = _reject_and_trim(
++                self._apply_explicit_boosts(analysis, fused, meta_cache, disable_boost=disable_boost),
++                excluded, candidates,
++            )
++            for track in aux_tracks:
++                current = meta_cache.get(track.id)
++                if current is None or current.title == "Unknown":
++                    meta_cache[track.id] = track
++            fused_scores = dict(fused)
++            for rank, track in enumerate(aux_tracks, start=1):
++                _fuse_add(
++                    fused_scores, track.id, weight / (_RRF_K + rank),
++                    recorder, DESCRIPTION_SEMANTIC_AUX_PATH, rank, f"가중치 {weight:.2f}",
++                )
++            fused = sorted(fused_scores.items(), key=lambda item: item[1], reverse=True)
++            with_aux = _reject_and_trim(
++                self._apply_explicit_boosts(analysis, fused, meta_cache, disable_boost=disable_boost),
++                excluded, candidates,
++            )
++            base_ids = [song_id for song_id, _ in baseline]
++            new_ids = [song_id for song_id, _ in with_aux]
++            base_set, new_set = set(base_ids), set(new_ids)
++            record.entered_ids = [song_id for song_id in new_ids if song_id not in base_set]
++            record.displaced_ids = [song_id for song_id in base_ids if song_id not in new_set]
++        elif record.status == DESCRIPTION_SEMANTIC_STATUS_APPLIED:
++            record.status = DESCRIPTION_SEMANTIC_STATUS_NO_BASE_CANDIDATES
++        recorder.set_description_semantic(record.as_dict())
++        return fused
++
+     def _start_work_name_job(
+         self,
+         loop: asyncio.AbstractEventLoop,
+@@ -3327,11 +3580,12 @@ class SearchRouter:
+         analysis: QueryAnalysis,
+         top_k: int,
+         metadata_filter: Optional[Dict[str, Any]] = None,
++        dense_vector_sink: Optional[Any] = None,
+     ) -> List[MatchingTrack]:
+         """KoE5(dense) + BM25(sparse) 하이브리드 검색.
+ 
+         metadata_filter를 주면 같은 질의를 그 payload 조건 안에서만 검색한다(속성 조건 보조 후보 경로).
+-        기본 텍스트 경로는 필터 없이 그대로다.
++        기본 텍스트 경로는 필터 없이 그대로다. dense_vector_sink는 본 경로에만 준다(v78 소개 의미 보조의 질의 벡터 재사용).
+         """
+         # dense/sparse 비중은 modality가 아닌 전용 text_alpha 사용
+         alpha = analysis.text_alpha
+@@ -3368,17 +3622,7 @@ class SearchRouter:
+         # 메타데이터 표기 형태 모두 결합 — 인덱스 토큰과 매칭 가능성 ↑
+         sparse_terms.extend(a for a in analysis.artist_name_alt if a)
+         sparse_query = " ".join(sparse_terms) if sparse_terms else None
+-        dense_query = analysis.search_text
+-        if analysis.lyric_semantic_query and not exact_lyric_terms:
+-            dense_query = (
+-                f"{analysis.search_text}\n"
+-                f"가사 의미: {analysis.lyric_semantic_query}"
+-            )
+-        if phonetic_lyric_terms and not exact_lyric_terms:
+-            dense_query = (
+-                f"{dense_query}\n"
+-                f"들리는 가사의 가능한 표기: {' / '.join(phonetic_lyric_terms)}"
+-            )
++        dense_query = _text_dense_query(analysis)
+ 
+         logger.debug(
+             "[SearchRouter/text] query='%s' alpha=%.2f sparse='%s' top_k=%d",
+@@ -3390,6 +3634,7 @@ class SearchRouter:
+             alpha=alpha,
+             sparse_query=sparse_query,
+             **({"metadata_filter": metadata_filter} if metadata_filter else {}),
++            **({"dense_vector_sink": dense_vector_sink} if dense_vector_sink is not None else {}),
+         )
+ 
+     def _search_balanced_semantic(
+diff --git a/src/retrieval/search_service.py b/src/retrieval/search_service.py
+index 1635ea9..663511e 100644
+--- a/src/retrieval/search_service.py
++++ b/src/retrieval/search_service.py
+@@ -1,7 +1,7 @@
+ from __future__ import annotations
+ 
+ import logging
+-from typing import Any, Dict, List, Mapping, Optional, Sequence
++from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence
+ 
+ from src.retrieval import timing
+ from src.backend.schemas.search import MatchingTrack
+@@ -127,6 +127,7 @@ class SearchService:
+         alpha: float = 0.5,
+         sparse_query: Optional[str] = None,
+         metadata_filter: Optional[Dict[str, Any]] = None,
++        dense_vector_sink: Optional[Callable[[str, Any], None]] = None,
+     ) -> List[MatchingTrack]:
+         """
+         Dense + Sparse Hybrid Search.
+@@ -134,6 +135,8 @@ class SearchService:
+         - query: dense(KoE5) 의미 검색용 자연어 텍스트
+         - sparse_query: sparse(BM25) 키워드 매칭용 텍스트 (없으면 query 재사용)
+         - alpha: dense 비중 (1.0=dense 전용, 0.0=sparse 전용)
++        - dense_vector_sink: 주면 임베딩 직후 (dense 입력 문장, 정규화 벡터)를 넘긴다 — 같은 요청의 다른 경로가 같은
++          문장을 다시 임베딩하지 않게(v78 소개 의미 보조 실험). 주지 않으면 기존과 같다.
+         """
+         # 1. Dense Embedding — E5 계열은 query에 "query: " prefix 사용
+         #
+@@ -144,6 +147,8 @@ class SearchService:
+                 [f"query: {query}"], add_e5_prefix=False, normalize=True
+             )
+             dense_vec = dense_vecs[0].tolist()
++        if dense_vector_sink is not None:
++            dense_vector_sink(query, dense_vecs[0])
+ 
+         # 2. Sparse Embedding — BM25 미학습 시 dense 전용으로 폴백
+         sparse_vec = None
+diff --git a/src/retrieval/user_explanation.py b/src/retrieval/user_explanation.py
+index f78bf05..b3cd31f 100644
+--- a/src/retrieval/user_explanation.py
++++ b/src/retrieval/user_explanation.py
+@@ -160,6 +160,7 @@ _PATH_SEARCH_NAMES: Dict[str, str] = {
+     "feedback_case": "이전 사용자 제보",
+     # 작품명은 말하지 않는다 — 추정한 이름을 사실처럼 보이게 하지 않는다
+     "work_name_aux": "작품명 추정 보조 검색",
++    "description_semantic_aux": "앨범 소개 의미 보조 검색",
+ }
+ 
+ # 사실 일치 규칙 — "직접 확인한 것은 아니다"를 붙이지 않는다(제목·가수·형태는 등록 정보와 맞춘 것이다).
+diff --git a/src/retrieval/description_semantic_aux.py b/src/retrieval/description_semantic_aux.py
+new file mode 100644
+index 0000000..d463b03
+--- /dev/null
++++ b/src/retrieval/description_semantic_aux.py
+@@ -0,0 +1,443 @@
++"""앨범 소개 원문을 **문장 의미**로 찾는 보조 후보 경로(v78 실험, 기본 꺼짐).
++
++v77(`experiments/reranking/results_v77_description_semantic_recall/`)의 실험 전용 검색기 규칙 `desc_semantic_v1`을 그대로
++옮겼다. 텍스트 색인에는 멜론 앨범 소개 원문(`metadata.album_description`)이 아니라 요약만 들어가므로, 질의가 곡의 맥락을
++다른 낱말로 말하면 기존 경로가 닿지 못한다. 이 모듈은 소개 원문을 400자 이하 청크로 나눠 KoE5로 미리 임베딩한 색인(v77
++산출물)을 메모리에 올리고, 질의 `"query: " + search_text` 벡터와 비교해 소개 묶음(같은 소개 = 같은 묶음) 위 10개를 고른다.
++
++- 묶음 점수 = 청크 점수의 최댓값. 근거 청크 = 최댓값 청크 중 번호가 작은 것. (점수 내림, 묶음 id 오름) 순.
++- 묶음마다 대표곡 하나(정답 미사용): ① 근거 청크에 제목이 나오는 곡이 하나면 그 곡 ② 여럿이면 그중, 없으면 묶음 전체에서
++  기존 텍스트 dense 벡터와 질의 벡터의 내적이 가장 큰 곡(동점은 song_id 숫자가 작은 곡).
++- 런타임 산출물은 v77 색인에서 만든다(`build`). 청크 원문은 싣지 않고, 제목 일치는 빌드 때 계산해 둔다.
++- 산출물·v77 색인 sha와 규칙 판을 manifest에 남기고, 불러올 때 다르면 거부한다(기능을 켤 수 없다).
++
++    venv/bin/python -m src.retrieval.description_semantic_aux build \
++        --index-dir artifacts/description_semantic/desc_semantic_v1 --songs data/all_songs.jsonl \
++        --text-dense-dir artifacts/embeddings/text_dense/nlpai-lab__KoE5 \
++        --out artifacts/description_semantic/desc_semantic_v1_runtime
++"""
++
++from __future__ import annotations
++
++import argparse
++import gzip
++import hashlib
++import json
++import math
++import os
++import re
++import sys
++import time
++import unicodedata
++from dataclasses import asdict, dataclass, field
++from datetime import datetime, timezone
++from pathlib import Path
++from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple
++
++import numpy as np
++
++SCHEMA_VERSION = "description_semantic_runtime_v1"
++RULE_VERSION = "desc_semantic_v1"
++
++# 아래 값은 v77에서 고정했고 v78 RUN_INFO §1에 다시 적었다. 실행 결과를 보고 바꾸지 않는다.
++GROUPS_K = 10                # 보조 목록에 싣는 소개 묶음 수(작품명 보조 목록 상한과 같은 값)
++WEIGHT_WHEN_ON = 0.5         # 켤 때의 RRF 가중 — 기본은 꺼짐(0). 이 값만 허용한다
++MIN_TITLE_CHARS = 2          # 정규화한 제목이 이보다 짧으면 제목 일치로 치지 않는다
++MODEL_NAME = "nlpai-lab/KoE5"
++MODEL_REVISION = "237b580aea358e3042fcf5baf78124c33c3afd16"
++QUERY_PREFIX = "query: "
++DIM = 1024
++
++STATUS_APPLIED = "applied"
++STATUS_NO_AUX_SONGS = "no_aux_songs"
++STATUS_NO_BASE_CANDIDATES = "no_base_candidates"
++STATUS_NOT_TRIGGERED_PREFIX = "not_triggered:"
++STATUS_FAILED_PREFIX = "failed:"
++REASON_EXACT_LYRIC = "exact_lyric"
++REASON_ABLATION = "ablation"
++REASON_NO_QUERY_TEXT = "no_query_text"
++
++VECTOR_SHARED = "shared_text_path"
++VECTOR_OWN = "own_embed"
++VECTOR_OWN_AFTER_FAILURE = "own_after_text_path_failure"
++
++DEFAULT_RUNTIME_DIR = "artifacts/description_semantic/desc_semantic_v1_runtime"
++STRUCTURE_FILE = "structure.json.gz"
++MEMBER_DENSE_FILE = "member_dense.npy"
++MANIFEST_FILE = "manifest.json"
++
++_PAREN = re.compile(r"[\(\[\{（【][^\)\]\}）】]*[\)\]\}）】]")
++
++
++def _sha256_file(path: Path) -> str:
++    h = hashlib.sha256()
++    with open(path, "rb") as f:
++        for block in iter(lambda: f.read(1 << 20), b""):
++            h.update(block)
++    return h.hexdigest()
++
++
++def normalize_title_key(text: str) -> str:
++    """제목 일치용 정규화(v77 그대로): NFKC · 괄호 부분 제거 · 소문자 · 글자/숫자만."""
++    text = unicodedata.normalize("NFKC", text or "")
++    text = _PAREN.sub(" ", text).lower()
++    return "".join(ch for ch in text if ch.isalnum())
++
++
++def normalize_chunk_key(text: str) -> str:
++    text = unicodedata.normalize("NFKC", text or "").lower()
++    return "".join(ch for ch in text if ch.isalnum())
++
++
++def song_sort_key(song_id: str) -> Tuple[int, str]:
++    return (int(song_id), song_id) if song_id.isdigit() else (1 << 62, song_id)
++
++
++class DescriptionSemanticStoreError(RuntimeError):
++    """산출물이 없거나 manifest·규칙 판·지문과 맞지 않는다 — 기능을 켤 수 없다."""
++
++
++class QueryVectorError(RuntimeError):
++    """질의 벡터의 차원이 다르거나 유한하지 않다(경로 실패로 기록한다)."""
++
++
++# ---------------------------------------------------------------------- 빌드(운영 자료는 읽기만)
++
++def _read_jsonl_gz(path: Path) -> List[dict]:
++    with gzip.open(path, "rt", encoding="utf-8") as fh:
++        return [json.loads(line) for line in fh if line.strip()]
++
++
++def build_runtime(index_dir: Path, songs_path: Path, text_dense_dir: Path) -> Tuple[dict, np.ndarray, dict]:
++    """v77 색인 + 코퍼스 제목 + 기존 텍스트 dense 벡터 → (구조, 곡 dense 행렬, manifest 초안)."""
++    index_dir, songs_path, text_dense_dir = Path(index_dir), Path(songs_path), Path(text_dense_dir)
++    index_manifest_path = index_dir / "manifest.json"
++    index_manifest = json.loads(index_manifest_path.read_text(encoding="utf-8"))
++    if index_manifest.get("rule_version") != RULE_VERSION:
++        raise DescriptionSemanticStoreError("v77 색인의 규칙 판이 다르다")
++    fps = index_manifest.get("fingerprints") or {}
++    for key, name in (("vectors_sha256", "vectors.npy"), ("chunks_file_sha256", "chunks.jsonl.gz"),
++                      ("groups_file_sha256", "groups.jsonl.gz")):
++        if fps.get(key) != _sha256_file(index_dir / name):
++            raise DescriptionSemanticStoreError(f"v77 색인 {name} sha가 manifest와 다르다")
++    corpus_sha = _sha256_file(songs_path)
++    if (index_manifest.get("inputs") or {}).get("corpus_sha256") != corpus_sha:
++        raise DescriptionSemanticStoreError("코퍼스 sha가 v77 색인을 만든 코퍼스와 다르다")
++    model = index_manifest.get("model") or {}
++    if model.get("name") != MODEL_NAME or model.get("revision") != MODEL_REVISION or int(model.get("dim", 0)) != DIM:
++        raise DescriptionSemanticStoreError("v77 색인의 모델·차원이 다르다")
++
++    groups = _read_jsonl_gz(index_dir / "groups.jsonl.gz")
++    group_ids = [str(g["group"]) for g in groups]
++    if group_ids != sorted(group_ids) or len(set(group_ids)) != len(group_ids):
++        raise DescriptionSemanticStoreError("v77 묶음 목록이 묶음 id 순이 아니거나 중복이 있다")
++    group_index = {gid: i for i, gid in enumerate(group_ids)}
++    group_songs = [[str(s) for s in g["songs"]] for g in groups]
++    member_ids = sorted({s for songs in group_songs for s in songs}, key=song_sort_key)
++
++    titles: Dict[str, str] = {}
++    with songs_path.open(encoding="utf-8") as fh:
++        for line in fh:
++            if not line.strip():
++                continue
++            rec = json.loads(line)
++            titles[str(rec["song_id"])] = str((rec.get("metadata") or {}).get("title") or "")
++    missing_titles = [s for s in member_ids if s not in titles]
++    if missing_titles:
++        raise DescriptionSemanticStoreError(f"코퍼스에 없는 묶음 곡: {missing_titles[:3]}")
++    title_key = {s: normalize_title_key(titles[s]) for s in member_ids}
++
++    rows: List[list] = []
++    last = (-1, -1)
++    for row in _read_jsonl_gz(index_dir / "chunks.jsonl.gz"):
++        gi = group_index[str(row["group"])]
++        ci = int(row["chunk"])
++        if (gi, ci) <= last:
++            raise DescriptionSemanticStoreError("v77 청크 행이 (묶음, 청크 번호) 순이 아니다")
++        last = (gi, ci)
++        key = normalize_chunk_key(str(row["text"]))
++        titled = [s for s in group_songs[gi] if len(title_key[s]) >= MIN_TITLE_CHARS and title_key[s] in key]
++        rows.append([gi, ci, int(row["u"]), titled])
++
++    dense_ids: List[str] = []
++    dense_rows: List[np.ndarray] = []
++    dense_missing: List[str] = []
++    for sid in member_ids:
++        path = text_dense_dir / f"{sid}.npy"
++        if path.is_file():
++            dense_ids.append(sid)
++            dense_rows.append(np.load(path).astype(np.float32).reshape(-1))
++        else:
++            dense_missing.append(sid)
++    dense = np.stack(dense_rows).astype(np.float32) if dense_rows else np.zeros((0, DIM), dtype=np.float32)
++    if dense.shape[1] != DIM:
++        raise DescriptionSemanticStoreError("기존 텍스트 dense 벡터 차원이 다르다")
++
++    structure = {"schema_version": SCHEMA_VERSION, "rule_version": RULE_VERSION, "groups": group_ids,
++                 "group_songs": group_songs, "rows": rows, "dense_ids": dense_ids}
++    manifest = {
++        "schema_version": SCHEMA_VERSION, "rule_version": RULE_VERSION,
++        "generated_at": datetime.now(timezone.utc).isoformat(),
++        "model": {"name": MODEL_NAME, "revision": MODEL_REVISION, "dim": DIM, "query_prefix": QUERY_PREFIX,
++                  "normalize": True},
++        "index": {"dir_name": index_dir.name, "manifest_sha256": _sha256_file(index_manifest_path),
++                  "vectors_relpath": f"../{index_dir.name}/vectors.npy", "vectors_sha256": fps["vectors_sha256"],
++                  "chunks_file_sha256": fps["chunks_file_sha256"], "groups_file_sha256": fps["groups_file_sha256"]},
++        "sources": {"songs_jsonl": {"path_name": songs_path.name, "sha256": corpus_sha},
++                    "text_dense": {"dir_name": text_dense_dir.name, "loaded": len(dense_ids),
++                                   "missing": dense_missing}},
++        "counts": {"groups": len(group_ids), "chunk_rows": len(rows), "member_songs": len(member_ids),
++                   "rows_with_title": sum(1 for r in rows if r[3]),
++                   "rows_with_multiple_titles": sum(1 for r in rows if len(r[3]) > 1)},
++        "constants": {"groups_k": GROUPS_K, "min_title_chars": MIN_TITLE_CHARS, "weight_when_on": WEIGHT_WHEN_ON},
++    }
++    return structure, dense, manifest
++
++
++def write_runtime(structure: dict, dense: np.ndarray, manifest: dict, out_dir: Path) -> dict:
++    out_dir = Path(out_dir)
++    out_dir.mkdir(parents=True, exist_ok=False)
++    payload = json.dumps(structure, ensure_ascii=False, sort_keys=True).encode("utf-8")
++    (out_dir / STRUCTURE_FILE).write_bytes(gzip.compress(payload, mtime=0))  # 같은 자료면 같은 바이트
++    np.save(out_dir / MEMBER_DENSE_FILE, dense)
++    manifest = dict(manifest, structure_sha256=_sha256_file(out_dir / STRUCTURE_FILE),
++                    member_dense_sha256=_sha256_file(out_dir / MEMBER_DENSE_FILE))
++    (out_dir / MANIFEST_FILE).write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
++    return manifest
++
++
++# ---------------------------------------------------------------------- 저장소(메모리 조회만 — 색인·DB 호출 없음)
++
++@dataclass
++class GroupHit:
++    group: str
++    score: float
++    chunk: int
++    representative: str = ""                # 없으면 빈 문자열(목록에서 빠진다)
++    rule: str = "none"                      # title_unique · title_tie_dense · dense · none
++
++
++class DescriptionSemanticStore:
++    def __init__(self, structure: Mapping[str, Any], vectors: np.ndarray, member_dense: np.ndarray,
++                 manifest: Optional[dict] = None) -> None:
++        if structure.get("schema_version") != SCHEMA_VERSION or structure.get("rule_version") != RULE_VERSION:
++            raise DescriptionSemanticStoreError("소개 의미 산출물의 규칙 판이 코드와 다르다")
++        vectors = np.asarray(vectors, dtype=np.float32)
++        member_dense = np.asarray(member_dense, dtype=np.float32)
++        if vectors.ndim != 2 or vectors.shape[1] != DIM or member_dense.ndim != 2 or member_dense.shape[1] != DIM:
++            raise DescriptionSemanticStoreError("소개 의미 산출물의 벡터 차원이 다르다")
++        self.groups: List[str] = [str(g) for g in structure["groups"]]
++        self.group_songs: List[List[str]] = [[str(s) for s in songs] for songs in structure["group_songs"]]
++        rows = structure["rows"]
++        if len(self.group_songs) != len(self.groups) or not rows:
++            raise DescriptionSemanticStoreError("소개 의미 산출물 형식이 잘못됐다")
++        row_group = np.asarray([int(r[0]) for r in rows], dtype=np.int64)
++        self.row_chunk = [int(r[1]) for r in rows]
++        self.row_u = np.asarray([int(r[2]) for r in rows], dtype=np.int64)
++        self.row_titled: List[List[str]] = [[str(s) for s in r[3]] for r in rows]
++        # 청크 행은 (묶음 번호, 청크 번호) 순이고 모든 묶음이 한 행 이상 있어야 한다 — reduceat 경계가 묶음 경계다
++        if (np.any(np.diff(row_group) < 0) or int(row_group[0]) != 0
++                or len(np.unique(row_group)) != len(self.groups) or int(row_group[-1]) != len(self.groups) - 1):
++            raise DescriptionSemanticStoreError("소개 의미 산출물의 청크 행 순서가 다르다")
++        if int(self.row_u.max()) >= vectors.shape[0] or int(self.row_u.min()) < 0:
++            raise DescriptionSemanticStoreError("청크 행이 색인 벡터 범위 밖을 가리킨다")
++        self.group_starts = np.flatnonzero(np.r_[True, np.diff(row_group) != 0]).astype(np.int64)
++        self.group_ends = np.r_[self.group_starts[1:], len(rows)].astype(np.int64)
++        self.group_order_key = np.arange(len(self.groups), dtype=np.int64)  # 묶음 id 오름 = 번호 오름
++        if self.groups != sorted(self.groups):
++            raise DescriptionSemanticStoreError("소개 의미 산출물의 묶음이 id 순이 아니다")
++        dense_ids = [str(s) for s in structure["dense_ids"]]
++        if len(dense_ids) != member_dense.shape[0]:
++            raise DescriptionSemanticStoreError("곡 dense 행 수가 목록과 다르다")
++        self.dense_row = {sid: i for i, sid in enumerate(dense_ids)}
++        self.vectors = vectors
++        self.member_dense = member_dense
++        self.manifest = dict(manifest or {})
++
++    @classmethod
++    def load(cls, runtime_dir: Path) -> "DescriptionSemanticStore":
++        runtime_dir = Path(runtime_dir)
++        mpath = runtime_dir / MANIFEST_FILE
++        if not mpath.is_file():
++            raise DescriptionSemanticStoreError(f"소개 의미 산출물이 없다: {runtime_dir.name}")
++        manifest = json.loads(mpath.read_text(encoding="utf-8"))
++        if manifest.get("schema_version") != SCHEMA_VERSION or manifest.get("rule_version") != RULE_VERSION:
++            raise DescriptionSemanticStoreError("소개 의미 산출물의 규칙 판이 코드와 다르다")
++        model = manifest.get("model") or {}
++        if model.get("name") != MODEL_NAME or model.get("revision") != MODEL_REVISION or int(model.get("dim", 0)) != DIM:
++            raise DescriptionSemanticStoreError("소개 의미 산출물의 모델이 코드와 다르다")
++        index = manifest.get("index") or {}
++        vectors_path = (runtime_dir / str(index.get("vectors_relpath", ""))).resolve()
++        checks = ((runtime_dir / STRUCTURE_FILE, manifest.get("structure_sha256")),
++                  (runtime_dir / MEMBER_DENSE_FILE, manifest.get("member_dense_sha256")),
++                  (vectors_path, index.get("vectors_sha256")))
++        for path, expected in checks:
++            if not path.is_file():
++                raise DescriptionSemanticStoreError(f"소개 의미 산출물 파일이 없다: {path.name}")
++            if not expected or _sha256_file(path) != expected:
++                raise DescriptionSemanticStoreError(f"소개 의미 산출물 sha가 manifest와 다르다: {path.name}")
++        structure = json.loads(gzip.decompress((runtime_dir / STRUCTURE_FILE).read_bytes()))
++        return cls(structure, np.load(vectors_path), np.load(runtime_dir / MEMBER_DENSE_FILE), manifest)
++
++    def fingerprint(self) -> Dict[str, str]:
++        index = self.manifest.get("index") or {}
++        return {"schema_version": SCHEMA_VERSION, "rule_version": RULE_VERSION,
++                "structure_sha256_16": str(self.manifest.get("structure_sha256", ""))[:16],
++                "member_dense_sha256_16": str(self.manifest.get("member_dense_sha256", ""))[:16],
++                "vectors_sha256_16": str(index.get("vectors_sha256", ""))[:16],
++                "groups": str(len(self.groups)), "chunk_rows": str(len(self.row_chunk))}
++
++    def search(self, query_vector: Any, k: int = GROUPS_K) -> List[GroupHit]:
++        """위 k묶음과 대표곡. 결정적(동점: 묶음 id 오름 · 청크 번호 오름 · song_id 숫자 오름)."""
++        q = np.asarray(query_vector, dtype=np.float32).reshape(-1)
++        if q.shape[0] != DIM or not bool(np.all(np.isfinite(q))):
++            raise QueryVectorError(f"질의 벡터 차원 {q.shape[0]} 또는 유한하지 않은 값")
++        row_scores = (self.vectors @ q)[self.row_u]
++        group_max = np.maximum.reduceat(row_scores, self.group_starts)
++        order = np.lexsort((self.group_order_key, -group_max))[:k]
++        hits: List[GroupHit] = []
++        for gi in order.tolist():
++            start, end = int(self.group_starts[gi]), int(self.group_ends[gi])
++            row = start + int(np.argmax(row_scores[start:end]))  # 같은 최댓값이면 앞 행 = 번호가 작은 청크
++            hit = GroupHit(self.groups[gi], float(group_max[gi]), self.row_chunk[row])
++            hit.representative, hit.rule = self._representative(gi, row, q)
++            hits.append(hit)
++        return hits
++
++    def _representative(self, gi: int, row: int, q: np.ndarray) -> Tuple[str, str]:
++        songs = self.group_songs[gi]
++        titled = self.row_titled[row]
++        if len(titled) == 1:
++            return titled[0], "title_unique"
++        present = [s for s in songs if s in self.dense_row]
++        scores = self.member_dense[[self.dense_row[s] for s in present]] @ q if present else np.zeros(0, np.float32)
++        dense_score = {s: float(v) for s, v in zip(present, scores)}
++        pool = [s for s in (titled or songs) if s in dense_score]
++        if not pool:
++            return "", "none"
++        pool.sort(key=lambda s: (-dense_score[s], song_sort_key(s)))
++        return pool[0], ("title_tie_dense" if titled else "dense")
++
++
++# ---------------------------------------------------------------------- 요청 단위 실행
++
++@dataclass
++class DescriptionSemanticRecord:
++    status: str
++    vector_source: str = ""
++    groups: List[Dict[str, Any]] = field(default_factory=list)
++    aux_ids: List[str] = field(default_factory=list)
++    missing_ids: List[str] = field(default_factory=list)   # 대표곡인데 텍스트 색인 메타데이터가 없어 뺀 곡
++    entered_ids: List[str] = field(default_factory=list)
++    displaced_ids: List[str] = field(default_factory=list)
++    wait_ms: Optional[float] = None
++    embed_ms: Optional[float] = None
++    search_ms: Optional[float] = None
++    fetch_ms: Optional[float] = None
++    versions: Dict[str, str] = field(default_factory=dict)
++
++    def as_dict(self) -> Dict[str, Any]:
++        return asdict(self)
++
++
++EmbedFn = Callable[[str], Any]
++FetchFn = Callable[[List[str]], Mapping[str, Any]]
++
++
++def query_text(analysis: Any) -> str:
++    return str(getattr(analysis, "search_text", "") or "")
++
++
++class DescriptionSemanticRuntime:
++    """산출물 + 가중. 라우터가 주입받아 질의마다 `run`을 부른다."""
++
++    def __init__(self, store: DescriptionSemanticStore, weight: float = WEIGHT_WHEN_ON) -> None:
++        if weight != WEIGHT_WHEN_ON:
++            raise ValueError(f"소개 의미 보조 가중은 {WEIGHT_WHEN_ON}만 허용한다")
++        self.store = store
++        self.weight = float(weight)
++
++    def versions(self) -> Dict[str, str]:
++        return {**self.store.fingerprint(), "weight": f"{self.weight:g}", "groups_k": str(GROUPS_K),
++                "model": MODEL_NAME, "model_revision": MODEL_REVISION[:12]}
++
++    def run(self, analysis: Any, vector: Optional[Any], vector_source: str, embed_fn: EmbedFn,
++            fetch_fn: FetchFn) -> Tuple[DescriptionSemanticRecord, List[Any]]:
++        """(기록, 보조 곡 MatchingTrack 순위 목록). 벡터가 없으면 `embed_fn`으로 직접 만든다.
++
++        예외는 **삼키지 않는다** — 라우터가 경로 실패로 기록하고 융합 목록을 그대로 둔다.
++        """
++        record = DescriptionSemanticRecord(status=STATUS_NO_AUX_SONGS, vector_source=vector_source,
++                                           versions=self.versions())
++        if vector is None:
++            started = time.perf_counter()
++            vector = embed_fn(query_text(analysis))
++            record.embed_ms = round((time.perf_counter() - started) * 1000, 3)
++        started = time.perf_counter()
++        hits = self.store.search(vector)
++        record.search_ms = round((time.perf_counter() - started) * 1000, 3)
++        ordered: List[str] = []
++        for hit in hits:
++            record.groups.append({"group": hit.group, "score": round(hit.score, 6), "chunk": hit.chunk,
++                                  "representative": hit.representative, "rule": hit.rule})
++            if hit.representative and hit.representative not in ordered:
++                ordered.append(hit.representative)
++        if not ordered:
++            return record, []
++        started = time.perf_counter()
++        tracks = fetch_fn(list(ordered))
++        record.fetch_ms = round((time.perf_counter() - started) * 1000, 3)
++        out = [tracks[song_id] for song_id in ordered if song_id in tracks]
++        record.missing_ids = [song_id for song_id in ordered if song_id not in tracks]
++        record.aux_ids = [str(t.id) for t in out]
++        record.status = STATUS_APPLIED if out else STATUS_NO_AUX_SONGS
++        return record, out
++
++
++def aux_weight_from_env() -> float:
++    """`DESCRIPTION_SEMANTIC_AUX_WEIGHT`. 비었거나 `0`이면 꺼짐(0.0). 켤 때는 0.5만 허용한다 — 그 밖은 설정 오류."""
++    raw = os.getenv("DESCRIPTION_SEMANTIC_AUX_WEIGHT", "").strip()
++    if raw in {"", "0"}:
++        return 0.0
++    try:
++        value = float(raw)
++    except ValueError as exc:
++        raise ValueError("DESCRIPTION_SEMANTIC_AUX_WEIGHT는 0(꺼짐) 또는 0.5여야 한다") from exc
++    if not math.isfinite(value) or value != WEIGHT_WHEN_ON:
++        raise ValueError("DESCRIPTION_SEMANTIC_AUX_WEIGHT는 0(꺼짐) 또는 0.5여야 한다")
++    return value
++
++
++def runtime_dir_from_env() -> Path:
++    return Path(os.getenv("DESCRIPTION_SEMANTIC_AUX_PATH", DEFAULT_RUNTIME_DIR))
++
++
++def load_runtime_from_env() -> Optional[DescriptionSemanticRuntime]:
++    """서비스·평가 공용. 꺼져 있으면 None(산출물을 읽지 않는다). 켜져 있으면 반드시 불러온다 — 못 하면 기동 오류."""
++    weight = aux_weight_from_env()
++    if weight <= 0:
++        return None
++    return DescriptionSemanticRuntime(DescriptionSemanticStore.load(runtime_dir_from_env()), weight)
++
++
++def main(argv: Optional[Sequence[str]] = None) -> int:
++    ap = argparse.ArgumentParser(description=(__doc__ or "").split("\n")[0])
++    sub = ap.add_subparsers(dest="cmd", required=True)
++    build = sub.add_parser("build", help="v77 색인에서 런타임 산출물을 만든다(운영 자료는 읽기만)")
++    build.add_argument("--index-dir", type=Path, required=True)
++    build.add_argument("--songs", type=Path, required=True)
++    build.add_argument("--text-dense-dir", type=Path, required=True)
++    build.add_argument("--out", type=Path, required=True)
++    args = ap.parse_args(argv)
++    if args.out.exists():
++        print(f"이미 있다 — 덮어쓰지 않는다: {args.out}", file=sys.stderr)
++        return 2
++    structure, dense, manifest = build_runtime(args.index_dir, args.songs, args.text_dense_dir)
++    manifest = write_runtime(structure, dense, manifest, args.out)
++    print(json.dumps({k: manifest[k] for k in ("counts", "structure_sha256", "member_dense_sha256")},
++                     ensure_ascii=False))
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/tests/test_description_semantic_aux.py b/tests/test_description_semantic_aux.py
+new file mode 100644
+index 0000000..82f1e5a
+--- /dev/null
++++ b/tests/test_description_semantic_aux.py
+@@ -0,0 +1,525 @@
++"""앨범 소개 의미 보조(v78, 기본 꺼짐) — 저장소 규칙·빌드·라우터 연결·질의 벡터 재사용·기동 검사. 모델·DB·네트워크 없음.
++
++**합성 자료로 배선과 계약을 확인한다.** 검색 품질의 증거가 아니다. 벡터·곡·제목은 모두 시험용으로 지어낸 것이다.
++"""
++from __future__ import annotations
++
++import asyncio
++import gzip
++import hashlib
++import json
++from pathlib import Path
++
++import numpy as np
++import pytest
++
++from src.retrieval import description_semantic_aux as dsa
++from src.retrieval import search_router as sr
++from src.retrieval.explain import PATH_LABELS, ExplainRecorder
++from src.retrieval.user_explanation import _PATH_SEARCH_NAMES
++from tests.test_search_explain import _analysis, _router, _run, _track
++
++D = dsa.DIM
++
++
++def _e(*pairs) -> np.ndarray:
++    """(차원, 값) 쌍으로 만든 정규화 벡터."""
++    v = np.zeros(D, dtype=np.float32)
++    for i, x in pairs:
++        v[i] = x
++    return (v / np.linalg.norm(v)).astype(np.float32)
++
++
++# ---------------------------------------------------------------------------
++# 합성 저장소: g1(t21·202, 청크 2개) · g2(203) · g3(204) · g4(205)
++# ---------------------------------------------------------------------------
++
++GROUPS = ["g1", "g2", "g3", "g4"]
++GROUP_SONGS = [["202", "t21"], ["203"], ["204"], ["205"]]
++
++
++def _structure(rows=None, group_songs=None, groups=None, dense_ids=None) -> dict:
++    return {"schema_version": dsa.SCHEMA_VERSION, "rule_version": dsa.RULE_VERSION,
++            "groups": groups or GROUPS, "group_songs": group_songs or GROUP_SONGS,
++            # (묶음 번호, 청크 번호, 벡터 행, 제목이 나오는 곡)
++            "rows": rows or [[0, 0, 0, []], [0, 1, 1, ["t21"]], [1, 0, 2, ["203"]], [2, 0, 3, []], [3, 0, 4, []]],
++            "dense_ids": dense_ids or ["202", "203", "204", "205", "t21"]}
++
++
++def _vectors() -> np.ndarray:
++    return np.stack([_e((0, 1)), _e((1, 1)), _e((2, 1)), _e((3, 1)), _e((4, 1))])
++
++
++def _member_dense() -> np.ndarray:
++    return np.stack([_e((10, 1)), _e((11, 1)), _e((12, 1)), _e((13, 1)), _e((14, 1))])
++
++
++def _store(**kw) -> dsa.DescriptionSemanticStore:
++    return dsa.DescriptionSemanticStore(_structure(**kw), _vectors(), _member_dense())
++
++
++QUERY = "경연에서 우승한 사람 노래"
++QUERY_VEC = _e((0, 0.2), (1, 0.9), (2, 0.5), (3, 0.3), (4, 0.1))   # g1(청크 1) > g2 > g3 > g4
++
++
++class _Embedder:
++    """KoE5 대역. 입력 문장 → 정해 둔 벡터(없으면 다른 축의 벡터). 호출을 남긴다."""
++
++    model_name = dsa.MODEL_NAME
++
++    def __init__(self, table=None):
++        self.table = dict(table or {})
++        self.calls: list = []
++
++    def embed_passages(self, passages, *, add_e5_prefix=True, normalize=True, batch_size=64, show_progress_bar=False):
++        self.calls.append(list(passages))
++        return np.stack([self.table.get(p, _e((500, 1))) for p in passages])
++
++
++class _TextService:
++    """본 텍스트 경로 대역 — 실제 서비스처럼 `"query: " + dense 문장`을 임베딩하고 sink에 넘긴 뒤 정해 둔 목록을 돌려준다."""
++
++    def __init__(self, hits, catalogue, embedder, *, fetch_raises=None, text_raises=None):
++        self._hits = hits
++        self._catalogue = catalogue
++        self.text_embedder = embedder
++        self._fetch_raises = fetch_raises
++        self._text_raises = text_raises
++        self.calls: list = []
++        self.fetches: list = []
++
++    def search_text(self, query, top_k=10, alpha=0.5, sparse_query=None, metadata_filter=None, dense_vector_sink=None):
++        self.calls.append({"query": query, "top_k": top_k, "sink": dense_vector_sink is not None})
++        if self._text_raises:
++            raise self._text_raises
++        vec = self.text_embedder.embed_passages([f"query: {query}"], add_e5_prefix=False, normalize=True)[0]
++        if dense_vector_sink is not None:
++            dense_vector_sink(query, vec)
++        return [t.model_copy() for t in self._hits[:top_k]]
++
++    def fetch_tracks_by_ids(self, song_ids):
++        self.fetches.append(list(song_ids))
++        if self._fetch_raises:
++            raise self._fetch_raises
++        return {sid: self._catalogue[sid].model_copy() for sid in song_ids if sid in self._catalogue}
++
++    def track_from_match(self, match):
++        return _track(str(match.get("id")))
++
++
++def _runtime(**kw) -> dsa.DescriptionSemanticRuntime:
++    return dsa.DescriptionSemanticRuntime(_store(**kw), dsa.WEIGHT_WHEN_ON)
++
++
++def _setup(runtime=None, *, n_text=40, lyrics_hits=None, table=None, catalogue=None, **svc_kw):
++    text_hits = [_track(f"t{i}", title=f"텍스트{i}") for i in range(1, n_text + 1)]
++    if catalogue is None:
++        catalogue = {sid: _track(sid, title=f"소개곡{sid}") for sid in ("202", "203", "204", "205")}
++        catalogue["t21"] = text_hits[20] if n_text >= 21 else _track("t21")
++    embedder = _Embedder(table if table is not None else {f"query: {QUERY}": QUERY_VEC})
++    service = _TextService(text_hits, catalogue, embedder, **svc_kw)
++    router = _router(text_hits, lyrics_hits=lyrics_hits)
++    router._text_svc = service
++    router._description_semantic = runtime
++    return router, service
++
++
++def _search(runtime=None, analysis=None, **kw):
++    setup_kw = {k: kw.pop(k) for k in ("n_text", "lyrics_hits", "table", "catalogue", "fetch_raises", "text_raises")
++                if k in kw}
++    router, service = _setup(runtime, **setup_kw)
++    rec = ExplainRecorder("q")
++    analysis = analysis or _analysis(original_query=QUERY, intent_type="mixed", korean_tags=["경연", "우승"])
++    before = analysis.model_dump()
++    kw.setdefault("candidate_k", 30)
++    results = _run(router, analysis, top_k=kw.pop("top_k", 30), use_rerank=False, recorder=rec, **kw)
++    assert analysis.model_dump() == before, "분석 객체를 바꾸면 안 된다"
++    return [t.id for t in results], service, rec.record
++
++
++# ---------------------------------------------------------------------------
++# 저장소 규칙
++# ---------------------------------------------------------------------------
++
++def test_group_score_is_the_best_chunk_and_representative_follows_title_then_dense() -> None:
++    hits = _store().search(QUERY_VEC)
++    assert [(h.group, h.chunk) for h in hits] == [("g1", 1), ("g2", 0), ("g3", 0), ("g4", 0)]
++    assert [(h.representative, h.rule) for h in hits] == [("t21", "title_unique"), ("203", "title_unique"),
++                                                          ("204", "dense"), ("205", "dense")]
++    assert hits[0].score == pytest.approx(float(QUERY_VEC[1]), abs=1e-6)
++
++
++def test_ties_break_by_group_id_then_chunk_number_then_song_id() -> None:
++    # 두 청크가 같은 벡터 → 같은 점수. 묶음 안에서는 번호가 작은 청크, 묶음 사이에서는 id가 작은 묶음
++    rows = [[0, 0, 0, []], [0, 1, 0, []], [1, 0, 0, []], [2, 0, 3, []], [3, 0, 4, []]]
++    hits = _store(rows=rows).search(_e((0, 1)))
++    assert [(h.group, h.chunk) for h in hits][:2] == [("g1", 0), ("g2", 0)]
++    # g1 대표: 제목 일치 없음 → dense 동점(같은 벡터) → song_id 숫자가 작은 곡(숫자 id가 문자 id보다 앞)
++    store = dsa.DescriptionSemanticStore(_structure(rows=rows), _vectors(),
++                                         np.stack([_e((10, 1))] * 5))
++    assert store.search(_e((0, 1), (10, 1)))[0].representative == "202"
++
++
++def test_several_titles_in_the_chunk_fall_back_to_dense_among_them() -> None:
++    rows = [[0, 0, 0, ["202", "t21"]], [0, 1, 1, []], [1, 0, 2, []], [2, 0, 3, []], [3, 0, 4, []]]
++    hit = _store(rows=rows).search(_e((0, 1), (14, 0.5)))[0]   # t21의 dense 행(14)과 더 가깝다
++    assert (hit.representative, hit.rule) == ("t21", "title_tie_dense")
++
++
++def test_group_without_dense_vectors_has_no_representative() -> None:
++    store = dsa.DescriptionSemanticStore(_structure(dense_ids=["202", "203", "204", "t21"]), _vectors(),
++                                         _member_dense()[:4])
++    hits = store.search(QUERY_VEC)
++    assert (hits[3].group, hits[3].representative, hits[3].rule) == ("g4", "", "none")
++
++
++def test_query_vector_with_wrong_shape_or_nan_is_an_error() -> None:
++    with pytest.raises(dsa.QueryVectorError):
++        _store().search(np.ones(8, dtype=np.float32))
++    bad = QUERY_VEC.copy()
++    bad[0] = np.nan
++    with pytest.raises(dsa.QueryVectorError):
++        _store().search(bad)
++
++
++def test_store_rejects_bad_structure() -> None:
++    with pytest.raises(dsa.DescriptionSemanticStoreError):
++        dsa.DescriptionSemanticStore({**_structure(), "rule_version": "other"}, _vectors(), _member_dense())
++    with pytest.raises(dsa.DescriptionSemanticStoreError):  # 청크 행이 묶음 순이 아니다
++        _store(rows=[[1, 0, 2, []], [0, 0, 0, []], [2, 0, 3, []], [3, 0, 4, []]])
++    with pytest.raises(dsa.DescriptionSemanticStoreError):  # 벡터 범위 밖
++        _store(rows=[[0, 0, 9, []], [1, 0, 2, []], [2, 0, 3, []], [3, 0, 4, []]])
++    with pytest.raises(dsa.DescriptionSemanticStoreError):  # 차원
++        dsa.DescriptionSemanticStore(_structure(), np.ones((5, 8), np.float32), _member_dense())
++
++
++# ---------------------------------------------------------------------------
++# 빌드 · 적재(지문)
++# ---------------------------------------------------------------------------
++
++def _sha(path: Path) -> str:
++    return hashlib.sha256(path.read_bytes()).hexdigest()
++
++
++def _write_jsonl_gz(path: Path, rows) -> None:
++    with path.open("wb") as raw, gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as gz:
++        for row in rows:
++            gz.write((json.dumps(row, ensure_ascii=False) + "\n").encode("utf-8"))
++
++
++def _v77_like(tmp_path: Path):
++    """v77 색인 모양의 합성 폴더 · 코퍼스 · 기존 dense 폴더."""
++    index = tmp_path / "desc_semantic_v1"
++    index.mkdir()
++    np.save(index / "vectors.npy", _vectors())
++    _write_jsonl_gz(index / "groups.jsonl.gz", [{"group": g, "songs": s} for g, s in zip(GROUPS, GROUP_SONGS)])
++    texts = ["앨범 이야기", "타이틀 T-21 (Remix)", "가상곡203 수록", "소개", "소개 둘"]
++    keys = [(0, 0), (0, 1), (1, 0), (2, 0), (3, 0)]
++    _write_jsonl_gz(index / "chunks.jsonl.gz", [{"group": GROUPS[g], "chunk": c, "u": u, "text": t}
++                                                for u, ((g, c), t) in enumerate(zip(keys, texts))])
++    songs = tmp_path / "songs.jsonl"
++    titles = {"202": "다른곡", "t21": "T-21", "203": "가상곡203", "204": "가", "205": "없는제목"}
++    songs.write_text("".join(json.dumps({"song_id": s, "metadata": {"title": t}}, ensure_ascii=False) + "\n"
++                             for s, t in titles.items()), encoding="utf-8")
++    manifest = {"rule_version": dsa.RULE_VERSION,
++                "model": {"name": dsa.MODEL_NAME, "revision": dsa.MODEL_REVISION, "dim": D},
++                "inputs": {"corpus_sha256": _sha(songs)},
++                "fingerprints": {"vectors_sha256": _sha(index / "vectors.npy"),
++                                 "chunks_file_sha256": _sha(index / "chunks.jsonl.gz"),
++                                 "groups_file_sha256": _sha(index / "groups.jsonl.gz")}}
++    (index / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
++    dense = tmp_path / "dense"
++    dense.mkdir()
++    for i, sid in enumerate(["202", "203", "204", "205", "t21"]):
++        np.save(dense / f"{sid}.npy", _member_dense()[i])
++    return index, songs, dense
++
++
++def test_build_computes_title_matches_and_loads_with_fingerprints(tmp_path: Path) -> None:
++    index, songs, dense = _v77_like(tmp_path)
++    out = tmp_path / "runtime"
++    assert dsa.main(["build", "--index-dir", str(index), "--songs", str(songs), "--text-dense-dir", str(dense),
++                     "--out", str(out)]) == 0
++    structure = json.loads(gzip.decompress((out / dsa.STRUCTURE_FILE).read_bytes()))
++    # 제목 일치: "T-21"(괄호 제거·기호 제거 → t21)는 청크 1에, "가상곡203"은 청크 2에. 한 글자 제목 "가"는 세지 않는다
++    assert [r[3] for r in structure["rows"]] == [[], ["t21"], ["203"], [], []]
++    store = dsa.DescriptionSemanticStore.load(out)
++    assert [(h.representative, h.rule) for h in store.search(QUERY_VEC)] == \
++        [(h.representative, h.rule) for h in _store().search(QUERY_VEC)]
++    # 같은 자료면 같은 바이트 · 덮어쓰지 않는다
++    again = tmp_path / "runtime2"
++    dsa.main(["build", "--index-dir", str(index), "--songs", str(songs), "--text-dense-dir", str(dense), "--out", str(again)])
++    assert _sha(again / dsa.STRUCTURE_FILE) == _sha(out / dsa.STRUCTURE_FILE)
++    assert dsa.main(["build", "--index-dir", str(index), "--songs", str(songs), "--text-dense-dir", str(dense),
++                     "--out", str(out)]) == 2
++
++
++def test_load_rejects_changed_files_and_versions(tmp_path: Path) -> None:
++    index, songs, dense = _v77_like(tmp_path)
++    out = tmp_path / "runtime"
++    dsa.main(["build", "--index-dir", str(index), "--songs", str(songs), "--text-dense-dir", str(dense), "--out", str(out)])
++    np.save(index / "vectors.npy", _vectors() * 0.5)            # 색인 벡터가 바뀌었다
++    with pytest.raises(dsa.DescriptionSemanticStoreError, match="vectors.npy"):
++        dsa.DescriptionSemanticStore.load(out)
++    with pytest.raises(dsa.DescriptionSemanticStoreError):
++        dsa.DescriptionSemanticStore.load(tmp_path / "missing")
++    manifest = json.loads((out / dsa.MANIFEST_FILE).read_text(encoding="utf-8"))
++    (out / dsa.MANIFEST_FILE).write_text(json.dumps({**manifest, "rule_version": "x"}), encoding="utf-8")
++    with pytest.raises(dsa.DescriptionSemanticStoreError, match="규칙 판"):
++        dsa.DescriptionSemanticStore.load(out)
++
++
++def test_build_rejects_a_different_corpus_or_index(tmp_path: Path) -> None:
++    index, songs, dense = _v77_like(tmp_path)
++    songs.write_text(songs.read_text(encoding="utf-8") + "\n", encoding="utf-8")
++    with pytest.raises(dsa.DescriptionSemanticStoreError, match="코퍼스"):
++        dsa.build_runtime(index, songs, dense)
++    other = tmp_path / "b"
++    other.mkdir()
++    index2, songs2, dense2 = _v77_like(other)
++    _write_jsonl_gz(index2 / "groups.jsonl.gz", [{"group": "g9", "songs": ["1"]}])
++    with pytest.raises(dsa.DescriptionSemanticStoreError, match="groups"):
++        dsa.build_runtime(index2, songs2, dense2)
++
++
++@pytest.mark.parametrize("raw", ["0.25", "1", "abc", "nan", "inf", "-0.5"])
++def test_weight_env_is_strict(monkeypatch, raw) -> None:
++    monkeypatch.setenv("DESCRIPTION_SEMANTIC_AUX_WEIGHT", raw)
++    with pytest.raises(ValueError):
++        dsa.aux_weight_from_env()
++
++
++def test_runtime_loading_is_off_by_default_and_strict_when_on(monkeypatch, tmp_path: Path) -> None:
++    monkeypatch.delenv("DESCRIPTION_SEMANTIC_AUX_WEIGHT", raising=False)
++    monkeypatch.setenv("DESCRIPTION_SEMANTIC_AUX_PATH", str(tmp_path / "missing"))
++    assert dsa.load_runtime_from_env() is None                      # 꺼짐: 산출물을 읽지 않는다
++    monkeypatch.setenv("DESCRIPTION_SEMANTIC_AUX_WEIGHT", "0")
++    assert dsa.load_runtime_from_env() is None
++    monkeypatch.setenv("DESCRIPTION_SEMANTIC_AUX_WEIGHT", "0.5")
++    with pytest.raises(dsa.DescriptionSemanticStoreError):
++        dsa.load_runtime_from_env()
++    with pytest.raises(ValueError):
++        dsa.DescriptionSemanticRuntime(_store(), 1.0)
++
++
++def test_router_requires_the_koe5_text_embedder() -> None:
++    from tests.test_search_explain import _FakeClient, _FakeEmbedder
++
++    class _Other(_TextService):
++        pass
++
++    service = _Other([], {}, _Embedder())
++    service.text_embedder.model_name = "other/model"
++    with pytest.raises(ValueError, match="KoE5"):
++        sr.SearchRouter(search_service=service, image_embedder=_FakeEmbedder(), audio_embedder=_FakeEmbedder(),
++                        vector_client=_FakeClient(), description_semantic_runtime=_runtime(), max_workers=1)
++    service.text_embedder.model_name = dsa.MODEL_NAME
++    router = sr.SearchRouter(search_service=service, image_embedder=_FakeEmbedder(), audio_embedder=_FakeEmbedder(),
++                             vector_client=_FakeClient(), description_semantic_runtime=_runtime(), max_workers=1)
++    router.shutdown()
++
++
++# ---------------------------------------------------------------------------
++# 라우터 연결 — 꺼짐·정책상 생략·0건·실패는 기존과 같다
++# ---------------------------------------------------------------------------
++
++def test_off_router_has_no_record_no_sink_and_no_extra_calls() -> None:
++    ids, service, record = _search(None)
++    assert record.description_semantic is None
++    assert service.fetches == [] and not any(c["sink"] for c in service.calls)
++    assert not any(p.path == "description_semantic_aux" for s in record.songs.values() for p in s.paths)
++
++
++@pytest.mark.parametrize("case", ["exact_lyric", "ablation", "no_query_text", "empty", "fetch_error", "bad_vector"])
++def test_non_applied_outcomes_keep_existing_results(case) -> None:
++    analysis = None
++    kw: dict = {}
++    if case == "exact_lyric":
++        analysis = _analysis(original_query=QUERY, intent_type="mixed", lyric_clues=[{"kind": "verbatim", "text": "한 소절"}])
++    elif case == "ablation":
++        kw["disable_boost"] = True
++    elif case == "no_query_text":
++        analysis = _analysis(original_query="")
++    elif case == "empty":
++        kw["catalogue"] = {}                     # 대표곡이 텍스트 색인에 없다 — 정상 0건
++    elif case == "fetch_error":
++        kw["fetch_raises"] = ConnectionError("down")
++    elif case == "bad_vector":
++        kw["table"] = {f"query: {QUERY}": np.ones(8, dtype=np.float32)}
++    off_ids, off_service, _ = _search(None, analysis, **{k: v for k, v in kw.items()
++                                                         if k not in ("fetch_raises", "table", "catalogue")})
++    ids, service, record = _search(_runtime(), analysis, **kw)
++    assert ids == off_ids
++    assert [c["query"] for c in service.calls] == [c["query"] for c in off_service.calls]
++    rec = record.description_semantic
++    assert rec["aux_ids"] == [] and rec["entered_ids"] == [] and rec["displaced_ids"] == []
++    expected = {"exact_lyric": "not_triggered:exact_lyric", "ablation": "not_triggered:ablation",
++                "no_query_text": "not_triggered:no_query_text", "empty": "no_aux_songs",
++                "fetch_error": "failed:ConnectionError", "bad_vector": "failed:QueryVectorError"}[case]
++    assert rec["status"] == expected
++    # 경로 오류만 경로 실패로 남는다 — 정상 0건·정책상 생략과 구분된다
++    assert ("description_semantic_aux" in record.failed_paths) == case.endswith(("_error", "_vector"))
++    if case in ("exact_lyric", "ablation", "no_query_text"):
++        assert service.fetches == [] and not any(c["sink"] for c in service.calls)
++    if case == "empty":
++        assert rec["missing_ids"] == ["t21", "203", "204", "205"]
++
++
++# ---------------------------------------------------------------------------
++# 라우터 연결 — 적용
++# ---------------------------------------------------------------------------
++
++def test_applied_adds_bonus_keeps_the_candidate_count_and_records_entered_and_displaced() -> None:
++    off_ids, _, _ = _search(None, candidate_k=20, top_k=20, path_k=40)
++    ids, service, record = _search(_runtime(), candidate_k=20, top_k=20, path_k=40)
++    rec = record.description_semantic
++    assert rec["status"] == "applied" and rec["aux_ids"] == ["t21", "203", "204", "205"]
++    assert [g["group"] for g in rec["groups"]] == GROUPS and rec["groups"][0]["chunk"] == 1
++    assert service.fetches == [["t21", "203", "204", "205"]]       # 메타데이터 조회 1회
++    # 후보 20: 텍스트 21위 t21(1/81)은 0.5/61을 더해 20위(1/80)를 넘고, 새 곡(0.5/62 이하)은 못 넘는다
++    assert rec["entered_ids"] == ["t21"] and rec["displaced_ids"] == ["t20"]
++    assert len(ids) == 20 and "t21" in ids and "t20" not in ids and set(ids) - {"t21"} <= set(off_ids)
++    paths = [p for p in record.songs["t21"].paths if p.path == "description_semantic_aux"]
++    assert paths and paths[0].delta == pytest.approx(0.5 / (sr._RRF_K + 1))
++
++
++def test_new_songs_enter_when_the_base_list_is_short() -> None:
++    ids, _, record = _search(_runtime(), n_text=20)
++    rec = record.description_semantic
++    assert set(rec["entered_ids"]) == {"t21", "203", "204", "205"} and rec["displaced_ids"] == []
++    assert len(ids) == len(set(ids)) == 24
++
++
++def test_rejected_songs_stay_excluded() -> None:
++    ids, _, record = _search(_runtime(), exclude_ids=["t21"], candidate_k=20, top_k=20, path_k=40)
++    assert "t21" not in ids and record.description_semantic["entered_ids"] == []
++
++
++def test_exact_lyric_protection_is_untouched() -> None:
++    protected = _track("p", title="보호곡", lyric_match_type="exact", lyric_match_score=0.95)
++    analysis = _analysis(original_query=QUERY, intent_type="mixed", lyric_clues=[{"kind": "verbatim", "text": "한 소절"}])
++    off_ids, _, _ = _search(None, analysis, lyrics_hits=[protected])
++    ids, _, record = _search(_runtime(), analysis, lyrics_hits=[protected])
++    assert off_ids[0] == "p" and ids == off_ids
++    assert record.description_semantic["status"] == "not_triggered:exact_lyric"
++
++
++def test_repeat_runs_are_identical() -> None:
++    first = _search(_runtime())
++    second = _search(_runtime())
++    timing = ("wait_ms", "embed_ms", "search_ms", "fetch_ms")
++    assert first[0] == second[0]
++    assert {k: v for k, v in first[2].description_semantic.items() if k not in timing} == \
++        {k: v for k, v in second[2].description_semantic.items() if k not in timing}
++
++
++# ---------------------------------------------------------------------------
++# 질의 벡터 재사용
++# ---------------------------------------------------------------------------
++
++def _query_embeds(service) -> list:
++    return [p for call in service.text_embedder.calls for p in call]
++
++
++def test_vector_is_shared_when_the_text_path_embeds_the_same_sentence() -> None:
++    _, off_service, _ = _search(None)
++    _, service, record = _search(_runtime())
++    assert record.description_semantic["vector_source"] == "shared_text_path"
++    assert record.description_semantic["embed_ms"] is None
++    assert _query_embeds(service) == _query_embeds(off_service)   # 임베딩 호출이 늘지 않는다
++    assert [c["sink"] for c in service.calls] == [True]           # 본 경로에만 칸을 준다
++
++
++def test_vector_is_embedded_once_more_when_the_dense_sentence_differs() -> None:
++    analysis = _analysis(original_query=QUERY, intent_type="mixed", lyric_semantic_query="이별 뒤의 그리움")
++    _, off_service, _ = _search(None, analysis)
++    _, service, record = _search(_runtime(), analysis)
++    rec = record.description_semantic
++    assert rec["vector_source"] == "own_embed" and rec["embed_ms"] is not None and rec["status"] == "applied"
++    extra = list(_query_embeds(service))
++    for p in _query_embeds(off_service):
++        extra.remove(p)
++    assert extra == [f"query: {QUERY}"]                            # search_text 그대로 한 번 더
++    assert not any(c["sink"] for c in service.calls)
++    assert rec["aux_ids"] == ["t21", "203", "204", "205"]          # 같은 search_text 벡터 → 같은 결과
++
++
++def test_vector_is_embedded_by_the_aux_path_when_the_text_path_fails_first() -> None:
++    ids, service, record = _search(_runtime(), text_raises=RuntimeError("text down"))
++    rec = record.description_semantic
++    assert rec["vector_source"] == "own_after_text_path_failure" and rec["status"] == "no_base_candidates"
++    assert _query_embeds(service) == [f"query: {QUERY}"]
++
++
++def test_concurrent_requests_do_not_share_vectors() -> None:
++    other = "다른 질의"
++    table = {f"query: {QUERY}": QUERY_VEC, f"query: {other}": _e((4, 1))}   # 다른 질의 → g4가 1위
++    router, _service = _setup(_runtime(), table=table)
++    recs = [ExplainRecorder("a"), ExplainRecorder("b")]
++    analyses = [_analysis(original_query=QUERY, intent_type="mixed"), _analysis(original_query=other, intent_type="mixed")]
++
++    async def both():
++        return await asyncio.gather(*(router.search(a, top_k=30, use_rerank=False, candidate_k=30, recorder=r)
++                                      for a, r in zip(analyses, recs)))
++
++    try:
++        asyncio.run(both())
++    finally:
++        router.shutdown()
++    assert [g["group"] for g in recs[0].record.description_semantic["groups"]][0] == "g1"
++    assert [g["group"] for g in recs[1].record.description_semantic["groups"]][0] == "g4"
++    assert all(r.record.description_semantic["vector_source"] == "shared_text_path" for r in recs)
++
++
++# ---------------------------------------------------------------------------
++# 기동 검사 · 이름표
++# ---------------------------------------------------------------------------
++
++@pytest.fixture
++def offline_app(monkeypatch):
++    from src.backend.api import dependencies
++    from tests.test_v60_context_startup_check import _offline_app
++
++    backend_main = _offline_app(monkeypatch)
++    monkeypatch.setenv("CONTEXT_WEIGHT", "0")
++    monkeypatch.delenv("WORK_NAME_RESOLUTION_ENABLED", raising=False)
++    dependencies.close_vector_client()
++    yield backend_main, dependencies
++    dependencies.close_vector_client()
++    dependencies.load_description_semantic_runtime.cache_clear()
++
++
++def test_startup_fails_when_enabled_but_unusable(offline_app, monkeypatch, tmp_path) -> None:
++    from fastapi.testclient import TestClient
++
++    backend_main, dependencies = offline_app
++    monkeypatch.setenv("DESCRIPTION_SEMANTIC_AUX_WEIGHT", "0.5")
++    monkeypatch.setenv("DESCRIPTION_SEMANTIC_AUX_PATH", str(tmp_path / "missing"))
++    with pytest.raises(dsa.DescriptionSemanticStoreError):
++        with TestClient(backend_main.app):
++            pytest.fail("켰는데 산출물을 쓸 수 없으면 서버가 떠서는 안 된다")
++    assert dependencies.get_vector_client.peek() is None
++
++
++def test_startup_loads_the_runtime_when_enabled_and_nothing_when_off(offline_app, monkeypatch, tmp_path) -> None:
++    from fastapi.testclient import TestClient
++
++    backend_main, dependencies = offline_app
++    index, songs, dense = _v77_like(tmp_path)
++    out = tmp_path / "runtime"
++    dsa.main(["build", "--index-dir", str(index), "--songs", str(songs), "--text-dense-dir", str(dense), "--out", str(out)])
++    monkeypatch.setenv("DESCRIPTION_SEMANTIC_AUX_PATH", str(out))
++    monkeypatch.delenv("DESCRIPTION_SEMANTIC_AUX_WEIGHT", raising=False)
++    with TestClient(backend_main.app) as client:
++        assert client.get("/health").json()["status"] == "ok"
++        assert dependencies.load_description_semantic_runtime.peek() is None
++    monkeypatch.setenv("DESCRIPTION_SEMANTIC_AUX_WEIGHT", "0.5")
++    with TestClient(backend_main.app):
++        runtime = dependencies.load_description_semantic_runtime.peek()
++        assert isinstance(runtime, dsa.DescriptionSemanticRuntime) and runtime.weight == 0.5
++        assert dependencies.load_description_semantic_runtime() is runtime
++
++
++def test_labels_name_the_source_without_claiming_a_fact() -> None:
++    assert PATH_LABELS["description_semantic_aux"] == "앨범 소개 의미 보조"
++    assert _PATH_SEARCH_NAMES["description_semantic_aux"] == "앨범 소개 의미 보조 검색"
