@@ -34,7 +34,7 @@
 | P2 | `src/frontend/static/map_data.json`이 있다 | 파일 존재·수정 시각 | **Git 제외 파일**이다. 새 워크트리에는 없다. 없으면 지도가 그려지지 않고 모의 서버 검색은 500이 난다(v57·v59·v63·v70 기록) |
 | P3 | 데이터·색인 판을 기록한다 | BM25 지문: `shasum -a 256 artifacts/bm25_params.json`의 앞 12자(5,143곡 색인은 `bf606b19ab02`) · Qdrant 연결 방식(`QDRANT_PATH` 로컬 파일 / `QDRANT_URL` 서버) | 로컬 파일과 서버 Qdrant는 같은 색인이어도 후보가 달랐던 기록이 있다(v64 §7-①, v65에서 동점 정렬 수정 뒤 174/176) |
 | P4 | 기능 스위치 값을 기록한다(아래 표) | `.env`와 실행 환경변수에서 **키와 값만** | 시연 구성이 포스터 수치의 구성과 다를 수 있다(§1-1) |
-| P5 | 다른 프로세스를 확인한다 | `ps aux | grep -E "uvicorn|src.crawler|qdrant_load"` | 로컬 Qdrant 폴더는 한 프로세스만 연다. 크롤러가 돌고 있으면 같은 IP에서 별도 요청을 만들지 않는다 |
+| P5 | 다른 프로세스를 확인한다 | `ps aux \| grep -E "uvicorn\|src.crawler\|qdrant_load"` | 로컬 Qdrant 폴더는 한 프로세스만 연다. 크롤러가 돌고 있으면 같은 IP에서 별도 요청을 만들지 않는다 |
 | P6 | ADC가 크레딧이 연결된 프로젝트를 가리킨다(`[Vertex]` 점검만) | 기동 로그의 `[Gemini] Vertex AI 확인: location=… models=…` 한 줄 | 설정 오류면 서버가 뜨지 않는다. 연결 문제면 경고만 남기고 뜬다(`main.lifespan`) |
 | P7 | 브라우저 상태를 비운다 | 콘솔에서 `clearBirthYear()` · `clearHeard()`, 또는 새 프로필 | 출생 연도가 저장돼 있으면 출생 연도 질문이 **다시 나오지 않는다**(`vf.birthYear`). 들은 곡 표시(`vf.heard`), 레일 접힘(`vf.railClosed`)도 남는다 |
 | P8 | 발표 화면 해상도와 브라우저 창 크기를 정한다 | 실제 발표 장비 또는 같은 해상도 | 화면 배치가 1400px·900px·700px에서 바뀐다(§3-F1) |
