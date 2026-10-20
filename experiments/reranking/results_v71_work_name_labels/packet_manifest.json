@@ -1,0 +1,35 @@
+{
+ "prepared_at": "2026-10-18 17:34 KST",
+ "seed": 20261018,
+ "n_items": 22,
+ "source_sha256": "c5fa61622f32946497423b3ce5db158f0138355672058f4480e4ade92f8d5510",
+ "item_map_sha256": "065986f07e688e4a0de4d2fb109ccb61db9e93e2a50c2fb2604d8507c4434d3d",
+ "blank_sheet_sha256": {
+  "labeler": "7e8fe5a23fdf5f5eda2d059451c1b2f7730745f19cbf5c7fe91e1b74b52942dc",
+  "checker": "7e8fe5a23fdf5f5eda2d059451c1b2f7730745f19cbf5c7fe91e1b74b52942dc"
+ },
+ "guide_sha256": "069d91e140b04a0b285d33357d59eb1d457452946ab8160aba1febf3d6e856a7",
+ "sheet_columns": [
+  "item_no",
+  "query",
+  "judgment_status",
+  "intended_work",
+  "possible_works",
+  "work_type",
+  "work_identifier",
+  "query_phrase",
+  "external_check",
+  "sources",
+  "memory_mismatch",
+  "confidence",
+  "open_questions",
+  "labeler_id",
+  "labeled_at",
+  "saw_model_output_before",
+  "saw_answer_song_before",
+  "saw_experiment_results_before",
+  "saw_v67_work_list_before",
+  "notes"
+ ],
+ "model_output_in_this_folder": false
+}
