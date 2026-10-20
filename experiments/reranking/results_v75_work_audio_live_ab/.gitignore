@@ -1,0 +1,20 @@
+# v75 — 로컬 재현 자료(커밋 제외). 보고서·도구·실행 조건·경량 요약·질의별 표만 커밋한다(v73 .gitignore 사본).
+# 해석 캐시 사본(모델 원출력)·질의별 원기록(후보·점수·그룹·프롬프트 sha·응답 sha·Qdrant 조회)·평가기 설명·상세 기록
+resolution_cache/
+**/v75_queries.jsonl
+**/v75_qdrant_calls.jsonl
+**/search_eval_*_explain.jsonl
+**/search_eval_*_detail.csv
+**/search_eval_*_lyric_boosts.csv
+**/search_eval_*_checkpoint*.json
+# 실행 로그·진행 기록·예산 장부 원본
+logs/
+budget/
+__pycache__/
+# 커밋할 경량 결과(저장소 .gitignore의 csv 제외를 이 폴더 깊이에서 되돌린다)
+!**/search_eval_*_summary.csv
+!**/search_eval_*_top10.csv
+!analysis/*.csv
+# 오프라인(가짜 리랭커) 실행의 평가기 요약·top-10은 가짜 순서 기준이라 품질이 아니다 — 추적하지 않는다
+offline/**/search_eval_*_summary.csv
+offline/**/search_eval_*_top10.csv

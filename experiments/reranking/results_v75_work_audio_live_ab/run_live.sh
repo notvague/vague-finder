@@ -1,0 +1,72 @@
+#!/bin/zsh
+# v75 실제 Vertex 리랭킹 dev 176 전체 A/B 묶음 — 작품명 해석 ON(v71 반복 1 캐시) 고정, 소리 경로 ON(A) / 생략(B).
+# 순서 A1(on) → B1(skip) → B2(skip) → A2(on), 순차(동시 실행 없음). 네 실행이 장부 하나·한도 하나·마감 하나를 공유한다.
+# v73 run_live.sh · run_live_attempt3.sh(PR #88 병합) 사본. 바꾼 것:
+#   - 구성 = 소리 스위치(V75_AUDIO=on|skip), 작품명 ON 고정 · 기준 지문 offline/full/work_<소리>_full_warm
+#   - 평가 전용 제한(호출 60초 · 질의 120초)은 v75_eval_runtime이 고정한다(판 t60 하나뿐)
+#   - 소규모 확인 단계 없음(사용자 지시 2026-10-20: 별도 20분 유료 스모크를 반복하지 않는다)
+#   - 한도(사용자 승인 2026-10-20, 작업 전체 누적): 비용 $8 · SDK HTTP 시도 1,000회 · 첫 유료 시도부터 240분(14,400초)
+#     장부를 새로 만들어도 작업 전체 한도는 초기화되지 않는다 — 이 파일은 장부가 이미 있으면 시작하지 않는다(재개·새 장부 자동 생성 없음)
+# 실행마다: (1) 직전 오프라인 지문(가짜 응답, $0) → 기준(offline/full/work_<소리>_full_warm)과 입력 동일 확인
+#           (2) 실제 실행 (3) 직후 오프라인 지문 → 직전 지문과 동일 확인 (4) 실제 실행이 보낸 입력 = 직전 지문 확인
+# 어느 단계든 실패·입력 차이·서버 상태 변화·해석 상태 차이가 있으면 그 코드로 즉시 멈춘다(다음 모델 호출 없음). 이미 쓴 결과·장부는 보존한다.
+# 정지 규칙은 v75_budget(= v69~v73 규칙 그대로)에 고정: 연속 504 3회 · 10분 안 504 5회 · 인증·권한·결제 첫 오류 · 연속 실패 5회 ·
+#   누적 실패 20회 · 시도 상한 · 비용 상한 · 첫 시도 기준 마감.
+# 한도는 이 파일에 고정한다. 환경변수로 늘릴 수 없다.
+# 운영 .env에서 GCP_PROJECT_ID·GOOGLE_APPLICATION_CREDENTIALS 두 키만 with_env.py로 넘긴다(값 출력·복사 없음).
+#   필수: V75_LIVE_APPROVED=1
+#   자체 검사(selftest_runner.sh)만: PY · LOG_DIR · OUT_LIVE · OUT_OFF · CHECK_DIR · LEDGER · RUNS 를 바꾼다
+set -u
+cd "$(git rev-parse --show-toplevel)"
+R=experiments/reranking/results_v75_work_audio_live_ab
+PY=${PY:-venv/bin/python}
+LOGS=${LOG_DIR:-$R/logs}
+OUT_LIVE=${OUT_LIVE:-$R/live}
+OUT_OFF=${OUT_OFF:-$R/offline/live_fingerprints}
+CHECKS=${CHECK_DIR:-$R/live_checks}
+LEDGER=${LEDGER:-$R/budget/ledger.jsonl}
+STATE=$R/server_state_baseline.json
+REF=$R/offline/full
+WORK_STATUS=$R/inputs/expected_work_status.json
+WORK_STATUS_SHA16=1fb2f754366de693
+RUNS=${RUNS:-"on:1 skip:1 skip:2 on:2"}
+COST_CAP=8
+ATTEMPT_CAP=1000
+WINDOW=14400
+: ${V75_LIVE_APPROVED:?사용자 승인 표시 V75_LIVE_APPROVED=1이 없다}
+[[ "$V75_LIVE_APPROVED" == "1" ]] || { echo "V75_LIVE_APPROVED는 정확히 1이어야 한다" >&2; exit 2; }
+[[ -e $LEDGER ]] && { echo "장부가 이미 있다($LEDGER) — 재개·새 장부 생성 없이 멈춘다" >&2; exit 2; }
+mkdir -p $LOGS $CHECKS ${LEDGER:h}
+P=$LOGS/progress_live.txt
+step() { echo "$1 $(date +%T)" >> $P; }
+stop() { echo "STOP $1 exit=$2 $(date +%T)" >> $P; echo "STOP $1 (exit $2) — 다음 모델 호출 중단" >&2; exit $2; }
+WS=(--expect-work-status $WORK_STATUS --expect-work-status-sha16 $WORK_STATUS_SHA16)
+CLEAN=(env -u CLAUDE_EFFORT -u QDRANT_HYBRID_SCAN_LIMIT -u V75_FAULT_PLAN -u V75_FAIL_INJECT -u V75_PATH_FAIL_INJECT -u V75_WORK_MISS_INJECT -u V75_CONFIG)
+offline() {  # offline <audio> <rep> <name>
+  "${CLEAN[@]}" V75_AUDIO=$1 V75_MODEL=fake \
+    $PY $R/run_eval.py --rep $2 --run-name $3 --out-root $OUT_OFF --expect-server-state $STATE "${WS[@]}" > $LOGS/$3.log 2>&1
+}
+for spec in ${=RUNS}; do
+  cfg=${spec%%:*}; rep=${spec##*:}
+  live=live_work_${cfg}_server_rep${rep}; pre=pre_work_${cfg}_rep${rep}; post=post_work_${cfg}_rep${rep}
+  step "start $pre"
+  offline $cfg $rep $pre; rc=$?; (( rc == 0 )) || stop $pre $rc
+  $PY $R/compare_inputs.py --a $REF/work_${cfg}_full_warm --b $OUT_OFF/$pre --require-identical \
+    --out $CHECKS/${pre}__vs_reference.json >> $LOGS/checks.log 2>&1; rc=$?; (( rc == 0 )) || stop "${pre}_vs_reference" $rc
+  step "start $live"
+  "${CLEAN[@]}" V75_AUDIO=$cfg V75_MODEL=live V75_LIVE_APPROVED=1 \
+    $PY $R/with_env.py GCP_PROJECT_ID,GOOGLE_APPLICATION_CREDENTIALS -- \
+    $PY $R/run_eval.py --rep $rep --out-root $OUT_LIVE --expect-server-state $STATE --ledger $LEDGER "${WS[@]}" \
+      --deadline-window-seconds $WINDOW --cost-cap $COST_CAP --attempt-cap $ATTEMPT_CAP > $LOGS/$live.log 2>&1
+  rc=$?; step "done $live exit=$rc"
+  (( rc == 0 )) || stop $live $rc
+  step "start $post"
+  offline $cfg $rep $post; rc=$?; (( rc == 0 )) || stop $post $rc
+  $PY $R/compare_inputs.py --a $OUT_OFF/$pre --b $OUT_OFF/$post --require-identical \
+    --out $CHECKS/${post}__vs_pre.json >> $LOGS/checks.log 2>&1; rc=$?; (( rc == 0 )) || stop "${post}_vs_pre" $rc
+  $PY $R/compare_inputs.py --a $OUT_OFF/$pre --b $OUT_LIVE/$live --require-identical \
+    --out $CHECKS/${live}__vs_pre.json >> $LOGS/checks.log 2>&1; rc=$?; (( rc == 0 )) || stop "${live}_vs_pre" $rc
+  step "verified $live"
+done
+step "LIVE DONE"
+echo "LIVE DONE"
