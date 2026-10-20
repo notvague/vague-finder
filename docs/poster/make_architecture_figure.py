@@ -51,7 +51,8 @@ t(16, 26, "Vague-Finder 검색 구조 — 2026-10-20 main 기준 (서비스 기�
 box(16, 60, 150, 92, "① 입력", ["자연어 기억 질의", "+ 재질문 답(성별·장르)", "+ 거절한 곡 · 출생 연도"])
 
 # 열 2: 분석
-box(196, 60, 200, 150, "② 질의 분석", ["Gemini 3.1 flash-lite (Vertex AI)",
+box(196, 60, 200, 150, "② 질의 분석", ["Gemini 3.1 flash-lite",
+                                    "Google Cloud(Vertex AI)",
                                     "→ 단서 구조(JSON 스키마)",
                                     "가사 구절/음차 · 한국어 태그 ·",
                                     "표지 영어 질의 · 소리 영어 질의 ·",
@@ -135,7 +136,7 @@ box(16, dy, 1208, 118, "자료층 — 5,143곡(2026-10-11 확장 뒤), 저장소
     ["곡 레코드 data/all_songs.jsonl: 멜론 메타(제목·가수·앨범·발매일·장르·보컬 성별·앨범 소개·플레이리스트 태그) · 가사 원문 · LLM 태그(분위기·장소·색·소리·심상) · 댓글 요약·인기도 · 나무위키 사실",
      "임베딩 artifacts/embeddings: 텍스트 KoE5 dense + BM25 sparse(5,143) · 표지 SigLIP2(5,143) · 음원 CLAP 평균(5,143, 센터링) · Context KoE5 dense(사실 5,054) + BM25 sparse(639곡)",
      "저장소: Qdrant 컬렉션 5개(text 1024 Dot · image 768 Cos · audio 512 Cos · context dense/sparse, 별칭 세대 f6424b94) · MongoDB(가사 원문) · 평가 질의 CSV(v06·v09·v10)",
-     "분석·리랭킹: Vertex AI Gemini(리랭킹은 후보 묶음별, 정책 생략 시 호출 없음). 수집 정제·댓글 선별·Context 추출은 gemini-3.5-flash-lite(오프라인)"],
+     "분석·리랭킹: Google Cloud(Vertex AI) Gemini(리랭킹은 후보 묶음별, 정책 생략 시 호출 없음). 수집 정제·댓글 선별·Context 추출은 gemini-3.5-flash-lite(오프라인)"],
     bg="#fafaf8", bd=GRAY_BD)
 
 # 범례

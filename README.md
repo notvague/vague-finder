@@ -66,9 +66,9 @@ flowchart LR
 
 ## 성능
 
-### 최신 측정 — 5,143곡 · dev 176 · Vertex AI (2026-10-18 ~ 10-20)
+### 최신 측정 — 5,143곡 · dev 176 · Google Cloud(Vertex AI) (2026-10-18 ~ 10-20)
 
-평가 질의는 dev 176건(v06 57 + v09 59 + v10 60)이고, 원래 타깃만 정답으로 세는 엄격 지표다. 리랭커는 Vertex AI의
+평가 질의는 dev 176건(v06 57 + v09 59 + v10 60)이고, 원래 타깃만 정답으로 세는 엄격 지표다. 리랭커는 Google Cloud(Vertex AI)의
 `gemini-3.1-flash-lite` listwise다. 두 실험(v73 · v75)은 각각 구성 둘을 A1 → B1 → B2 → A2 순서로 두 번씩 쟀고,
 여덟 실행 모두 리랭킹 실패 0이다.
 
@@ -96,8 +96,8 @@ flowchart LR
 - dev 176은 설계·진단에 반복해서 쓴 세트다. 개발 비교 기준(작품명 해석 ON)을 독립 test로 잰 수치는 없다.
   기존 test(v06 25 · v09 38 · v10 42)는 모두 이미 열었다. 새 독립 평가 자료(v11)는 수집 준비만 됐고 수집은 0건이다
 - 위 수치는 평가기의 리랭킹 포함 품질이다. 실제 HTTP 요청 전체 경로, 실시간 질의 분석·작품명 해석, 서비스 기본 시간 제한(20초 / 30초),
-  기동 직후 첫 요청, 요청 전체 응답 시간은 이 구성으로 재지 않았다. 평가기의 리랭킹 호출 지연(v73 실행별 중앙값 4.48~4.92초, v75 4.69~4.91초)은 HTTP 전체 응답 시간이 아니다
-- 재질문(2턴)은 Vertex AI 전환 뒤 전체 재측정이 없다
+  기동 직후 첫 요청, 요청 전체 응답 시간은 이 구성으로 재지 않았다. 평가기의 리랭킹 호출 지연(중앙값 4.52초, 작품명 ON · 소리 ON 구성 v73 B1 실행)은 HTTP 전체 응답 시간이 아니다
+- 재질문(2턴)은 Google Cloud(Vertex AI) 전환 뒤 전체 재측정이 없다
 
 ### 기능 적용 상태
 
@@ -136,7 +136,7 @@ Gemini listwise는 두 줄이다. 전환 근거가 된 측정(v32~v34)은 드라
 - 교차검증을 끈 당시 기본은 dev 116건에서 Hit@10 84 → 84(v06 +1, v09 −1)로 같았다. 봉인 test는 한 번만 열기로 해 그 설정으로 다시 재지 않았다.
   검증은 구조 규칙(`gemini_rare_fact_rescue`)으로만 순서에 반영되는데 v34에서 발동 0회라, 끈 설정이어도 같은 결과가 나왔을 측정이다
 - 요청 전체 처리 시간(dev 57건, 예열 뒤, 당시 코퍼스·호출 경로): Cross-Encoder 중앙값 **4.2초** · p95 5.3초, Gemini listwise 중앙값 **7.0초** · p95 8.6초.
-  질의당 Gemini 호출은 2회(질의 분석 1 · 리랭킹 1)다. 교차검증을 켜면 외부 맥락 질의만 리랭킹이 약 11초 늘어 p95가 18.8초였다. 5,143곡 · Vertex AI에서 같은 방식으로 다시 잰 기록은 없다(`experiments/latency/`)
+  질의당 Gemini 호출은 2회(질의 분석 1 · 리랭킹 1)다. 교차검증을 켜면 외부 맥락 질의만 리랭킹이 약 11초 늘어 p95가 18.8초였다. 5,143곡 · Google Cloud(Vertex AI)에서 같은 방식으로 다시 잰 기록은 없다(`experiments/latency/`)
 - 허용 정답(팀이 검토해 더한 유사 정답)까지 세는 확장 지표는 v06에만 있다: Cross-Encoder 기준 dev Hit@10 0.789 · test 0.680
 - 측정 방법·코드 판·실행 조건과 근거(각 `RUN_INFO.md`): [`results_v35_rare_verify_off`](experiments/reranking/results_v35_rare_verify_off/RUN_INFO.md)(당시 기본) · [`results_v32_gemini_listwise`](experiments/reranking/results_v32_gemini_listwise/RUN_INFO.md) ·
   [`results_v33_v09_dev`](experiments/reranking/results_v33_v09_dev/RUN_INFO.md) · [`results_v34_v09_test`](experiments/reranking/results_v34_v09_test/RUN_INFO.md) ·
@@ -173,7 +173,7 @@ Gemini listwise는 두 줄이다. 전환 근거가 된 측정(v32~v34)은 드라
 
 ## 시작하기
 
-**필요한 것**: Python 3.11 이상, ffmpeg (오디오 디코딩), Vertex AI를 쓸 수 있는 GCP 프로젝트와 인증(서비스 계정 키 파일 또는 ADC 로그인, Gemini), 위의 데이터.
+**필요한 것**: Python 3.11 이상, ffmpeg (오디오 디코딩), Google Cloud(Vertex AI) 프로젝트와 인증(서비스 계정 키 파일 또는 ADC 로그인, Gemini), 위의 데이터.
 Node.js는 수집 파이프라인(yt-dlp)을 돌릴 때만 필요하다.
 
 ```bash
@@ -181,7 +181,7 @@ Node.js는 수집 파이프라인(yt-dlp)을 돌릴 때만 필요하다.
 python3 -m venv venv
 venv/bin/pip install -r requirements.txt
 
-# 2. 환경 변수 — Gemini는 Vertex AI 전용: GCP_PROJECT_ID(크레딧이 연결된 프로젝트) + 인증
+# 2. 환경 변수 — Gemini는 Google Cloud(Vertex AI) 전용: GCP_PROJECT_ID(크레딧이 연결된 프로젝트) + 인증
 #    AI Studio 키(GEMINI_API_KEY)는 쓰지 않는다. 서버는 기동에서 설정·인증·모델을 확인한다 (.env.example 3)
 cp .env.example .env
 #    인증 ① 팀 공용 서비스 계정 키: 팀 드라이브의 vertex-sa.json을 secrets/ 에 두면 끝 (.env 기본값이 가리킨다. Docker도 같다)
