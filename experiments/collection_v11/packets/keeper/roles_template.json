@@ -1,0 +1,14 @@
+{
+ "_comment": "보관자 폴더의 roles.json으로 복사해 채운다. 이름은 쓰지 않는다(코드만). 이름↔코드 대응은 별도 파일(roster_private.csv)에만. summary만 상태 문서에 실린다.",
+ "people": {
+  "P01": {"roles": ["writer"], "relation": "team|acquaintance|other", "involved_in_search_dev": false}
+ },
+ "summary": {
+  "writers_assigned": 0,
+  "checkers_assigned": 0,
+  "keeper_assigned": false,
+  "keeper_involved_in_search_dev": null,
+  "people_with_multiple_roles": 0,
+  "multi_role_note": "예: 확인자 1명이 작성자도 맡음 — 그 사람 질의는 다른 확인자가 확인"
+ }
+}

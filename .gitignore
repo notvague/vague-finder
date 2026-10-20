@@ -274,3 +274,6 @@ experiments/reranking/results_v67_candidate_recall_diagnosis/logs/
 !experiments/reranking/results_v67_candidate_recall_diagnosis/analysis/*.csv
 !experiments/reranking/results_v67_candidate_recall_diagnosis/trace/*.csv
 # runs/의 평가기 summary·top10은 가짜 리랭커 순서로 계산된 값이라 품질 지표가 아니다 — 추적하지 않는다(*.csv 기본 제외 그대로)
+
+# v11 독립 평가 자료 수집(experiments/collection_v11) — 빈 양식(열 머리만)만 추적한다. 받은 자료는 저장소 밖 보관자 폴더에만
+!experiments/collection_v11/packets/*/*_blank.csv
