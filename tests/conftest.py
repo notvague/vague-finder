@@ -12,7 +12,7 @@ Qdrant 저장 폴더까지 연다. 개발 서버가 떠 있는 채로 테스트�
 리랭커가 실제 Vertex를 부르거나, ADC가 없는 PC에서 앱 기동 테스트가 떨어지지 않게. 바꿔 끼운 자격 증명은 토큰 요청에서
 예외를 내므로 어떤 경로로든 실제 요청이 나가려 하면 네트워크 전에 멈추고, 호출부의 폴백(규칙 분석 · 검색 순서 + failed)으로
 끝난다. 실제 구현을 시험하려면 private 이름(`_load_default_credentials` · `_verify_vertex_setup`)을 직접 부른다
-(tests/test_gemini_client.py).
+(tests/query/test_gemini_client.py).
 """
 
 import os

@@ -1,6 +1,6 @@
 """v61 — 합성 자료 재현(메모리 Qdrant · 3차원 · 7곡 · 상한 3). 모델·DB·네트워크 없음.
 
-`tests/test_v61_hybrid_scan_audit.py`와 같은 자료를 써서, 상한이 자료 수보다 작을 때 구현 결과와 직접 내적 합산이 어떻게
+`tests/vector_db/test_v61_hybrid_scan_audit.py`와 같은 자료를 써서, 상한이 자료 수보다 작을 때 구현 결과와 직접 내적 합산이 어떻게
 어긋나는지 표로 찍는다. 실행: venv/bin/python experiments/reranking/results_v61_hybrid_scan_audit/repro_synthetic.py
 """
 from __future__ import annotations
@@ -18,7 +18,7 @@ os.chdir(ROOT)
 from src.vector_db import qdrant_backend as qb  # noqa: E402
 from src.vector_db.qdrant_backend import QdrantVectorClient  # noqa: E402
 from src.vector_db.settings import TEXT_HYBRID_INDEX_NAME  # noqa: E402
-from tests.test_v61_hybrid_scan_audit import _corpus, _exact, _fill  # noqa: E402
+from tests.vector_db.test_v61_hybrid_scan_audit import _corpus, _exact, _fill  # noqa: E402
 
 
 def main() -> int:

@@ -4,7 +4,7 @@
 `$or/$and`, `$set/$push($each·$slice)`, 정렬·건너뛰기·개수 제한, 색인 정보. 실제 Mongo와 갈릴 수 있는
 자리(없는 필드와 null의 비교, `$nin`·`$ne`가 없는 필드를 맞추는 것)는 Mongo 규칙대로 구현했고,
 같은 계약 시험을 `FEEDBACK_TEST_MONGO_URI`가 있으면 **실제 Mongo로도** 돌린다(`store_backend` 픽스처).
-대역 통과만으로 TTL 삭제가 검증된 것은 아니다 — 그것은 `tests/test_feedback_mongo_integration.py`가 본다.
+대역 통과만으로 TTL 삭제가 검증된 것은 아니다 — 그것은 `tests/feedback/test_feedback_mongo_integration.py`가 본다.
 """
 from __future__ import annotations
 

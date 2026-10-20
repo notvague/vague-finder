@@ -16,7 +16,7 @@ from src.retrieval import search_router as sr
 from src.retrieval.explain import ExplainRecorder
 from src.retrieval.gemini_listwise_reranker import GeminiListwiseReranker, GeminiListwiseRerankerConfig
 from tests.fake_gemini_client import FakeGeminiClient
-from tests.test_search_explain import _analysis, _router, _track
+from tests.search.test_search_explain import _analysis, _router, _track
 
 BUDGET, REQ_TIMEOUT, RETRIES = 1.0, 0.6, 3
 
