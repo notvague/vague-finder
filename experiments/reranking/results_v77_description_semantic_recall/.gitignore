@@ -1,0 +1,8 @@
+# 질의별 원기록(근거 청크 원문 · 질의별 순위) · 로그는 커밋하지 않는다
+runs/*/rankings.jsonl.gz
+runs/*/evidence_text.jsonl.gz
+logs/
+__pycache__/
+superseded_run0/
+# 커밋할 경량 결과(질의 id 단위 · 원문 없음) — 저장소 .gitignore의 csv 제외를 이 폴더 깊이에서 되돌린다
+!analysis/*.csv

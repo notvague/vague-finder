@@ -1,0 +1,84 @@
+{
+  "rule_version": "desc_semantic_v1",
+  "created_at": "2026-10-20T13:10:42+0900",
+  "inputs": {
+    "corpus": "<main checkout>/data/all_songs.jsonl",
+    "corpus_sha256": "63891fd3fa6155f73e2f7496ec5fdff414937c67ea2373c5e0ff18470568d9de",
+    "code_sha256": {
+      "desc_semantic.py": "48a4efba6d91e78d80f952019d9a16cfa06d1ef89a7e2c8faa9eeed1b8f22737",
+      "build_index.py": "84b0fc32b1806d20f0c0a23d8117de1f6ef9391a7ae0725dfcb6547b721f8702"
+    },
+    "bm25_tokenizer_sha256": "af0c6afc4224907aaf7ac8a59be26083c6bffa99c6908733db0e50b31efbfcd3"
+  },
+  "model": {
+    "name": "nlpai-lab/KoE5",
+    "revision": "237b580aea358e3042fcf5baf78124c33c3afd16",
+    "safetensors_blob": "97693a2aeaeae9ecaac5fc68c5d27007dd1604d667ccbc61a32a52a9035cca67",
+    "device": "mps:0",
+    "max_seq_length": 512,
+    "prefix": "passage: ",
+    "normalize": true,
+    "batch_size": 32,
+    "dim": 1024
+  },
+  "rules": {
+    "max_chunk_chars": 400,
+    "sentence_split": "(?<=[.!?。])\\s+",
+    "dedup_within_group": true,
+    "identity_prefix": null
+  },
+  "counts": {
+    "songs": 5143,
+    "songs_without_description": 270,
+    "groups": 3904,
+    "groups_shared": 514,
+    "songs_in_shared_groups": 1483,
+    "group_size_max": 11,
+    "chunk_rows": 13372,
+    "unique_chunks": 13344,
+    "unique_chunks_in_multiple_groups": 24,
+    "chunks_per_group_median": 3,
+    "forced_split_sentences": 607,
+    "tokens_median": 170,
+    "tokens_p90": 228,
+    "tokens_p99": 251,
+    "tokens_max": 295,
+    "truncated_over_max_seq": 0
+  },
+  "fingerprints": {
+    "chunk_list_sha256": "6d68a05277bb6a0af606e66349d279acddeaebbf2a3e34fa1d02b8bf4a11437f",
+    "vectors_sha256": "50fb9fd3964d7fb06ef03fd4e5fee29d9ae3b3db2fbe256528745f6ef0b113e5",
+    "chunks_file_sha256": "a61a34a25552553729e2c8ddfc7ca5601e7ad86c316dffaf1528ede1d36311dc",
+    "groups_file_sha256": "2fc1ae9394f2bb67301531827180d96364b27526bf750c0381cd41599d8b3f2b",
+    "bm25_tokens_file_sha256": "5660385fbc1ed42084aa7b8e8c38a52fb48f68a10d2e007fbe18bad78e8db75e"
+  },
+  "reproducibility_sample": {
+    "seed": 77,
+    "n": 200,
+    "max_abs_diff": 8.21426510810852e-07,
+    "median_abs_diff": 0.0,
+    "min_cosine": 0.9999998807907104
+  },
+  "timing_seconds": {
+    "corpus_and_chunking": 0.358,
+    "bm25_tokenize": 17.961,
+    "model_load": 0.966,
+    "embed": 444.908,
+    "total": 476.365
+  },
+  "resources": {
+    "max_rss_mb": 1488.5,
+    "vectors_mb": 54.66,
+    "chunks_gz_mb": 3.25
+  },
+  "runtime": {
+    "python": "3.14.7",
+    "torch": "2.10.0",
+    "sentence_transformers": "3.3.1",
+    "transformers": "4.50.3",
+    "numpy": "2.5.3",
+    "kiwipiepy": "0.23.2",
+    "machine": "arm64"
+  },
+  "external_calls": 0
+}
