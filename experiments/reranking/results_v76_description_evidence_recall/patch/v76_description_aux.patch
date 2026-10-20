@@ -1,0 +1,1265 @@
+diff --git a/.env.example b/.env.example
+index a750ebf..ce64b1d 100644
+--- a/.env.example
++++ b/.env.example
+@@ -137,6 +137,12 @@ ATTR_FILTER_K=30
+ ATTR_FILTER_USE_GENRE=1
+ ATTR_FILTER_GENRE_POLICY=always
+ 
++# 앨범 소개 원문 잔여 보조 후보(실험 스위치, 기본 꺼짐 — experiments/reranking/results_v76_description_evidence_recall/RUN_INFO.md).
++# 멜론 앨범 소개 원문 중 색인 문서에 없는 낱말을 질의 태그로 찾아 낮은 RRF 가중으로 더한다(소개 묶음당 한 곡, 최대 10곡).
++#   DESCRIPTION_AUX_WEIGHT  RRF 가중(기본 0 = 경로 없음·산출물 안 읽음). 켤 때의 값 0.5. 0보다 크면 산출물이 없을 때 기동 오류
++#   DESCRIPTION_AUX_PATH    산출물(기본 artifacts/description_aux/description_residual_v1.json.gz — `python -m src.retrieval.description_aux build`)
++DESCRIPTION_AUX_WEIGHT=0
++
+ # 5. MongoDB — 가사 정확 일치 검색에 사용
+ #    없으면 그 경로만 비고 나머지 검색은 그대로 동작한다
+ MONGO_URI="mongodb://localhost:27017"
+diff --git a/src/backend/api/dependencies.py b/src/backend/api/dependencies.py
+index de24fa3..6af6725 100644
+--- a/src/backend/api/dependencies.py
++++ b/src/backend/api/dependencies.py
+@@ -345,6 +345,18 @@ def load_work_name_runtime() -> Optional[Any]:
+     return load_runtime_from_env()
+ 
+ 
++@singleton
++def load_description_aux_runtime() -> Optional[Any]:
++    """`DESCRIPTION_AUX_WEIGHT`가 0보다 클 때만 앨범 소개 잔여 보조 묶음을 만든다(v76 실험). 꺼져 있으면 None(산출물도 읽지 않는다).
++
++    작품명 해석과 같이 서버 기동(`main.lifespan`)에서 미리 부른다 — 켰는데 산출물이 없거나 sha·규칙 버전이 다르거나 가중 값이
++    틀리면 서버가 뜨지 않는다. 벡터 클라이언트를 쥐지 않는다.
++    """
++    from src.retrieval.description_aux import load_runtime_from_env
++
++    return load_runtime_from_env()
++
++
+ @singleton
+ def get_search_router() -> SearchRouter:
+     context_settings = load_context_settings()
+@@ -366,4 +378,6 @@ def get_search_router() -> SearchRouter:
+         feedback_retriever=get_feedback_retriever(),
+         # 간접 지칭 작품명 해석(실험, 기본 꺼짐). 켜면 저장소·해석기를 여기서 불러오고, 못 하면 기동 오류다.
+         work_name_runtime=load_work_name_runtime(),
++        # 앨범 소개 원문 잔여 보조(v76 실험, 기본 꺼짐). 켜면 산출물을 여기서 불러오고, 못 하면 기동 오류다.
++        description_aux_runtime=load_description_aux_runtime(),
+     )
+diff --git a/src/backend/main.py b/src/backend/main.py
+index 89bbb80..8ef7d33 100644
+--- a/src/backend/main.py
++++ b/src/backend/main.py
+@@ -11,6 +11,7 @@ from src.backend.api.dependencies import (
+     close_lyrics_exact_search_service,
+     close_vector_client,
+     get_vector_client,
++    load_description_aux_runtime,
+     load_work_name_runtime,
+     lyrics_cache_status,
+     reranker_backend,
+@@ -101,6 +102,9 @@ async def lifespan(app: FastAPI):
+         # 설정값 오류는 다시 시도해도 낫지 않으므로 기동 실패다(꺼져 있으면 아무것도 읽지 않는다). 기동마다 환경을 다시 읽는다.
+         load_work_name_runtime.cache_clear()  # type: ignore[attr-defined]
+         load_work_name_runtime()
++        # 앨범 소개 원문 잔여 보조(v76 실험, 기본 꺼짐) — 같은 이유로 기동에서 산출물을 불러온다(꺼져 있으면 읽지 않는다).
++        load_description_aux_runtime.cache_clear()  # type: ignore[attr-defined]
++        load_description_aux_runtime()
+     except Exception:
+         await asyncio.to_thread(close_vector_client)
+         raise
+diff --git a/src/retrieval/evaluate_search_accuracy.py b/src/retrieval/evaluate_search_accuracy.py
+index a4b320c..607a54c 100644
+--- a/src/retrieval/evaluate_search_accuracy.py
++++ b/src/retrieval/evaluate_search_accuracy.py
+@@ -550,6 +550,21 @@ def _work_name_switches() -> dict:
+     return out
+ 
+ 
++def _description_aux_switches() -> dict:
++    from src.retrieval import description_aux as da
++
++    weight = da.aux_weight_from_env()
++    if weight <= 0:
++        return {"enabled": False}
++    out: dict = {"enabled": True, "schema_version": da.SCHEMA_VERSION, "rule_version": da.RULE_VERSION,
++                 "weight": weight, "groups_k": da.GROUPS_K, "min_matched_terms": da.MIN_MATCHED_TERMS,
++                 "bm25_k1": da.BM25_K1, "bm25_b": da.BM25_B, "store_file": da.store_path_from_env().name}
++    mpath = da.manifest_path(da.store_path_from_env())
++    if mpath.is_file():
++        out["store_sha256_16"] = str(json.loads(mpath.read_text(encoding="utf-8")).get("store_sha256", ""))[:16]
++    return out
++
++
+ def _ranking_switches(config: Any) -> dict:
+     """순위를 바꾸는 스위치의 **실제 적용값**. 환경 변수 문자열이 아니라 search_router가 읽는 함수를 부른다.
+ 
+@@ -566,6 +581,8 @@ def _ranking_switches(config: Any) -> dict:
+         "audio_fusion_scale": _search_router._audio_fusion_scale(),
+         # 간접 지칭 작품명 해석(v70 실험, 기본 꺼짐). 켠 실행은 판정·검증·프롬프트 버전과 저장소 지문·해석기 종류를 남긴다
+         "work_name_resolution": _work_name_switches(),
++        # 앨범 소개 원문 잔여 보조(v76 실험, 기본 꺼짐). 켠 실행은 규칙 판·상수·산출물 지문을 남긴다
++        "description_aux": _description_aux_switches(),
+         # 속성 조건 보조 후보(experiments/reranking/results_v51_attr_filter — 실험 스위치, 기본 가중 0 = 경로 없음 = v50 B 조건)
+         "attr_filter_weight": _search_router._attr_filter_weight(),
+         "attr_filter_k": _search_router._attr_filter_k(),
+@@ -792,6 +809,9 @@ def build_explain_payload(
+     if record.work_resolution is not None:
+         # 작품명 해석을 켠 실행에만 있다(v70 실험) — 꺼진 실행의 기록 모양은 그대로다
+         row["work_resolution"] = dict(record.work_resolution)
++    if record.description_aux is not None:
++        # 앨범 소개 잔여 보조를 켠 실행에만 있다(v76 실험) — 꺼진 실행의 기록 모양은 그대로다
++        row["description_aux"] = dict(record.description_aux)
+     return row
+ 
+ 
+diff --git a/src/retrieval/explain.py b/src/retrieval/explain.py
+index 78db44d..8fc4464 100644
+--- a/src/retrieval/explain.py
++++ b/src/retrieval/explain.py
+@@ -56,6 +56,9 @@ PATH_LABELS: Dict[str, str] = {
+     # 간접 지칭 작품명 해석(실험 스위치 WORK_NAME_RESOLUTION_ENABLED)이 추정한 작품명으로 찾은 보조 후보. **추정이다** —
+     # 사용자가 그 작품을 말했다는 뜻도, 곡이 그 작품에 쓰였다는 확인도 아니다. 작품명은 요청 기록에만 남는다.
+     "work_name_aux": "작품명 추정 보조",
++    # 앨범 소개 원문 중 색인 문서에 없는 낱말로 찾은 보조 후보(실험 스위치 DESCRIPTION_AUX_WEIGHT, v76). 앨범 단위 소개라
++    # 그 곡 자체에 대한 문장이라는 보장은 없다.
++    "description_aux": "앨범 소개 원문 보조",
+ }
+ 
+ FEEDBACK_PATH = "feedback_case"
+@@ -516,6 +519,9 @@ class SearchExplain:
+     # 간접 지칭 작품명 해석의 요청 기록(`work_name_resolution.WorkResolution.as_dict`). 주입하지 않은 라우터에서는 None —
+     # 기존 기록 모양을 바꾸지 않는다. 추정 작품명은 내부 기록이며 사용자 문장에 쓰지 않는다.
+     work_resolution: Optional[Dict[str, Any]] = None
++    # 앨범 소개 잔여 보조의 요청 기록(`description_aux.DescriptionAuxRecord.as_dict`, v76). 주입하지 않은 라우터에서는 None —
++    # 기존 기록 모양을 바꾸지 않는다.
++    description_aux: Optional[Dict[str, Any]] = None
+ 
+     @property
+     def rerank_runs_applied(self) -> int:
+@@ -636,6 +642,10 @@ class ExplainRecorder:
+         """작품명 해석 기록. 라우터는 해석기가 주입됐을 때만 부른다(판정 미통과도 남긴다)."""
+         self.record.work_resolution = dict(record)
+ 
++    def set_description_aux(self, record: Dict[str, Any]) -> None:
++        """앨범 소개 잔여 보조 기록. 라우터는 런타임이 주입됐을 때만 부른다(판정 밖·근거 없음도 남긴다)."""
++        self.record.description_aux = dict(record)
++
+     def note_rerank_run(
+         self,
+         status: str,
+@@ -851,6 +861,9 @@ class _NullRecorder(ExplainRecorder):
+     def set_work_resolution(self, record) -> None:
+         return
+ 
++    def set_description_aux(self, record) -> None:
++        return
++
+     def set_attr_filter_genre(self, decision) -> None:
+         return
+ 
+diff --git a/src/retrieval/search_router.py b/src/retrieval/search_router.py
+index 9168581..373a45b 100644
+--- a/src/retrieval/search_router.py
++++ b/src/retrieval/search_router.py
+@@ -81,6 +81,15 @@ from src.retrieval.clarify import (
+     canonical_artist_types as _canonical_artist_types,
+ )
+ from src.retrieval.search_service import SearchService
++from src.retrieval.description_aux import (
++    REASON_ABLATION as DESCRIPTION_REASON_ABLATION,
++    REASON_EXACT_LYRIC as DESCRIPTION_REASON_EXACT_LYRIC,
++    STATUS_APPLIED as DESCRIPTION_STATUS_APPLIED,
++    STATUS_FAILED_PREFIX as DESCRIPTION_STATUS_FAILED_PREFIX,
++    STATUS_NOT_TRIGGERED_PREFIX as DESCRIPTION_STATUS_NOT_TRIGGERED_PREFIX,
++    DescriptionAuxRecord,
++    DescriptionAuxRuntime,
++)
+ from src.retrieval.work_name_resolution import (
+     STATUS_APPLIED as WORK_STATUS_APPLIED,
+     STATUS_FAILED_PREFIX as WORK_STATUS_FAILED_PREFIX,
+@@ -88,6 +97,7 @@ from src.retrieval.work_name_resolution import (
+     WorkNameRuntime,
+     WorkResolution,
+     gate_indirect_work_reference,
++    song_id_filter,
+ )
+ from src.common.title_features import (
+     build_title_meaning_metadata_filter,
+@@ -758,6 +768,16 @@ def _reject_and_trim(
+ # 작품명 해석 마감 = 해석기 시간 제한 + 이 여유(로컬 보조 조회). 넘으면 결과를 쓰지 않는다.
+ _WORK_LOOKUP_MARGIN_SECONDS = 2.0
+ WORK_NAME_AUX_PATH = "work_name_aux"
++DESCRIPTION_AUX_PATH = "description_aux"
++
++
++@dataclass
++class _DescriptionAuxJob:
++    """한 요청의 앨범 소개 잔여 보조. 판정 밖이면 `future`가 None이고 `record`에 사유가 있다."""
++
++    runtime: DescriptionAuxRuntime
++    record: Optional[DescriptionAuxRecord]
++    future: Optional["asyncio.Future"]
+ 
+ 
+ @dataclass
+@@ -1401,6 +1421,8 @@ class SearchRouter:
+     # 간접 지칭 작품명 해석(실험, 기본 꺼짐). 주입하지 않으면 판정도 하지 않는다 — 기존 경로·기록이 그대로다.
+     _work_names: Optional[WorkNameRuntime] = None
+     _work_pool: Optional[ThreadPoolExecutor] = None
++    # 앨범 소개 잔여 보조(v76 실험, 기본 꺼짐). 주입하지 않으면 경로도 기록도 없다 — 기존 경로·기록이 그대로다.
++    _description_aux: Optional[DescriptionAuxRuntime] = None
+ 
+     def __init__(
+         self,
+@@ -1419,6 +1441,7 @@ class SearchRouter:
+         default_candidate_k: int = 30,
+         feedback_retriever: Optional[Any] = None,
+         work_name_runtime: Optional[WorkNameRuntime] = None,
++        description_aux_runtime: Optional[DescriptionAuxRuntime] = None,
+     ):
+         if not math.isfinite(context_weight) or context_weight < 0:
+             raise ValueError("context_weight must be finite and nonnegative")
+@@ -1465,6 +1488,8 @@ class SearchRouter:
+             if work_name_runtime is not None
+             else None
+         )
++        # 앨범 소개 잔여 보조는 메모리 조회 + 텍스트 색인 1회라 기존 검색 풀에서 다른 경로와 나란히 돈다.
++        self._description_aux = description_aux_runtime
+ 
+     def shutdown(self, wait: bool = True) -> None:
+         """FastAPI lifespan 종료 시 스레드풀을 정리한다.
+@@ -1850,6 +1875,10 @@ class SearchRouter:
+             if force_weights is None and not disable_boost
+             else None
+         )
++        # 앨범 소개 잔여 보조(v76 실험)도 기존 경로와 나란히 시작한다. 주입하지 않았으면 None — 기존 경로·기록 그대로.
++        description_job = self._start_description_aux_job(
++            loop, analysis, timer, ablation=force_weights is not None or disable_boost,
++        )
+ 
+         if not use_image:
+             logger.debug(
+@@ -2376,6 +2405,13 @@ class SearchRouter:
+                 reverse=True,
+             )
+ 
++        # 앨범 소개 잔여 보조 — 다른 보조 경로와 같은 자리에서 RRF 기여만 더한다. 판정 밖·근거 없음·실패면 fused는
++        # 손대지 않은 그대로다. 아래 작품명 보조·보정·거절 제외·절단(후보 수 그대로)·가사 보호·리랭킹은 기존과 같다.
++        if description_job is not None:
++            fused = await self._apply_description_aux(
++                description_job, analysis, fused, meta_cache, excluded, candidates, disable_boost, recorder,
++            )
++
+         # 작품명 보조 후보 — 다른 보조 경로와 같은 자리에서 RRF 기여만 더한다(분석·기존 경로는 그대로). 판정 미통과·보류·
+         # 실패·시간 초과면 fused는 손대지 않은 그대로다. 아래 보정·거절 제외·절단·가사 보호·리랭킹은 기존과 같다.
+         if work_job is not None:
+@@ -2751,6 +2787,103 @@ class SearchRouter:
+         recorder.set_rank_after([t.id for t in final])
+         return final
+ 
++    def _start_description_aux_job(
++        self,
++        loop: asyncio.AbstractEventLoop,
++        analysis: QueryAnalysis,
++        timer: Any,
++        *,
++        ablation: bool,
++    ) -> Optional["_DescriptionAuxJob"]:
++        """판정(규칙)을 하고, 통과하면 1단계(메모리)·2단계(텍스트 색인 1회)를 검색 풀에 건다. 주입되지 않았으면 None.
++
++        판정 밖: 가중치 고정 ablation·보정 끔(다른 보조 경로와 같은 조건) · 정확 가사 구절이 있는 질의(텍스트 경로가 가사
++        전용 질의로 바뀌는 질의 — 가사 보호 계약을 건드리지 않는다).
++        """
++        runtime = self._description_aux
++        if runtime is None:
++            return None
++        reason = ""
++        if ablation:
++            reason = DESCRIPTION_REASON_ABLATION
++        elif _exact_lyric_terms(analysis):
++            reason = DESCRIPTION_REASON_EXACT_LYRIC
++        if reason:
++            record = DescriptionAuxRecord(
++                status=DESCRIPTION_STATUS_NOT_TRIGGERED_PREFIX + reason, versions=runtime.versions(),
++            )
++            return _DescriptionAuxJob(runtime, record, None)
++
++        def search_text_fn(song_ids: List[str], k: int) -> List[MatchingTrack]:
++            # 근거 곡 안에서만 — 기존 텍스트 경로와 같은 dense 문장·sparse 질의·alpha
++            return self._search_text(analysis, k, metadata_filter=song_id_filter(song_ids))
++
++        future = loop.run_in_executor(
++            self._pool,
++            timer.job("path.description_aux", runtime.run, analysis, search_text_fn),
++        )
++        future.add_done_callback(lambda done: done.cancelled() or done.exception())
++        return _DescriptionAuxJob(runtime, None, future)
++
++    async def _apply_description_aux(
++        self,
++        job: "_DescriptionAuxJob",
++        analysis: QueryAnalysis,
++        fused: List[Tuple[str, float]],
++        meta_cache: Dict[str, MatchingTrack],
++        excluded: Optional[Set[str]],
++        candidates: int,
++        disable_boost: bool,
++        recorder: ExplainRecorder,
++    ) -> List[Tuple[str, float]]:
++        """보조 목록을 융합 목록에 더한다. 들어온/밀려난 곡은 같은 보정·거절 제외·절단을 보조 없이 한 결과와 비교한다.
++
++        경로 예외는 실패 상태와 경로 실패 기록으로 남기고 융합 목록은 그대로 돌려준다(근거 없음·빈 결과와 구분된다).
++        """
++        record = job.record
++        aux_tracks: List[MatchingTrack] = []
++        if job.future is not None:
++            try:
++                record, aux_tracks = await job.future
++            except Exception as exc:  # noqa: BLE001 - 보조 경로 실패는 검색을 막지 않는다
++                logger.warning("[SearchRouter] 앨범 소개 보조 실패: %s", type(exc).__name__)
++                record = DescriptionAuxRecord(
++                    status=DESCRIPTION_STATUS_FAILED_PREFIX + type(exc).__name__, versions=job.runtime.versions(),
++                )
++                recorder.note_path_failed(DESCRIPTION_AUX_PATH, type(exc).__name__)
++                aux_tracks = []
++        assert record is not None
++        if record.status == DESCRIPTION_STATUS_APPLIED and fused:
++            weight = job.runtime.weight
++            baseline = _reject_and_trim(
++                self._apply_explicit_boosts(analysis, fused, meta_cache, disable_boost=disable_boost),
++                excluded, candidates,
++            )
++            for track in aux_tracks:
++                current = meta_cache.get(track.id)
++                if current is None or current.title == "Unknown":
++                    meta_cache[track.id] = track
++            fused_scores = dict(fused)
++            for rank, track in enumerate(aux_tracks, start=1):
++                _fuse_add(
++                    fused_scores, track.id, weight / (_RRF_K + rank),
++                    recorder, DESCRIPTION_AUX_PATH, rank, f"가중치 {weight:.2f}",
++                )
++            fused = sorted(fused_scores.items(), key=lambda item: item[1], reverse=True)
++            with_aux = _reject_and_trim(
++                self._apply_explicit_boosts(analysis, fused, meta_cache, disable_boost=disable_boost),
++                excluded, candidates,
++            )
++            base_ids = [song_id for song_id, _ in baseline]
++            new_ids = [song_id for song_id, _ in with_aux]
++            base_set, new_set = set(base_ids), set(new_ids)
++            record.entered_ids = [song_id for song_id in new_ids if song_id not in base_set]
++            record.displaced_ids = [song_id for song_id in base_ids if song_id not in new_set]
++        elif record.status == DESCRIPTION_STATUS_APPLIED:
++            record.status = "no_base_candidates"
++        recorder.set_description_aux(record.as_dict())
++        return fused
++
+     def _start_work_name_job(
+         self,
+         loop: asyncio.AbstractEventLoop,
+diff --git a/src/retrieval/user_explanation.py b/src/retrieval/user_explanation.py
+index f78bf05..8905f42 100644
+--- a/src/retrieval/user_explanation.py
++++ b/src/retrieval/user_explanation.py
+@@ -160,6 +160,7 @@ _PATH_SEARCH_NAMES: Dict[str, str] = {
+     "feedback_case": "이전 사용자 제보",
+     # 작품명은 말하지 않는다 — 추정한 이름을 사실처럼 보이게 하지 않는다
+     "work_name_aux": "작품명 추정 보조 검색",
++    "description_aux": "앨범 소개 원문 보조 검색",
+ }
+ 
+ # 사실 일치 규칙 — "직접 확인한 것은 아니다"를 붙이지 않는다(제목·가수·형태는 등록 정보와 맞춘 것이다).
+diff --git a/src/retrieval/description_aux.py b/src/retrieval/description_aux.py
+new file mode 100644
+index 0000000..124e28b
+--- /dev/null
++++ b/src/retrieval/description_aux.py
+@@ -0,0 +1,431 @@
++"""앨범 소개 원문 중 **색인 문서에 없는 낱말**로 찾는 보조 후보 경로(v76, 기본 꺼짐).
++
++텍스트 색인(BM25 sparse 문서)에는 멜론 앨범 소개 원문(`metadata.album_description`)이 아니라 그 요약(`album_summary`)만
++들어간다. 요약은 고유명("…3 Part.4")을 남기고 일반어("경연곡"·"우승"·"오디션 프로그램"·"원곡자")를 버릴 수 있어, 질의가
++곡의 맥락을 일반어로만 말하면 BM25 일치가 0이 된다. 이 모듈은 곡마다 "소개 원문 토큰 − 그 곡의 색인 문서 토큰"(중복 횟수
++유지)을 미리 계산한 **별도 산출물**을 만들고, 검색 때 질의 분석의 `korean_tags`로 그 문서들만 BM25 점수를 매긴다.
++
++- 낱말 사전·질의 id·정답을 쓰지 않는다. 전체 코퍼스에 같은 규칙 하나(`desc_residual_v1`).
++- 토큰화는 색인과 같은 `normalize_for_bm25`, 색인 문서는 같은 `build_sparse_passage`.
++- 소개는 앨범 단위다(같은 앨범 곡들이 같은 소개를 공유). 같은 소개 = 같은 묶음이며, 보조 목록에는 묶음마다 한 곡만
++  싣는다 — 대표 곡은 묶음 안 근거 곡만으로 제한한 기존 텍스트 검색의 첫 곡이다(라우터가 넘기는 `search_text_fn`).
++- 근거 = 질의 토큰과 서로 다른 토큰 `MIN_MATCHED_TERMS`개 이상 겹치는 곡. 낱말 하나 일치는 근거로 치지 않는다.
++- 산출물 sha256·규칙 버전을 manifest에 남기고, 불러올 때 다르면 거부한다(기능을 켤 수 없다).
++
++    venv/bin/python -m src.retrieval.description_aux build --songs data/all_songs.jsonl \
++        --out artifacts/description_aux/description_residual_v1.json.gz
++"""
++
++from __future__ import annotations
++
++import argparse
++from array import array
++import gzip
++import hashlib
++import json
++import math
++import os
++import sys
++import time
++from dataclasses import asdict, dataclass, field
++from datetime import datetime, timezone
++from pathlib import Path
++from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
++
++SCHEMA_VERSION = "description_residual_v1"
++RULE_VERSION = "desc_residual_v1"
++
++# 아래 값은 구현 전에 고정했다(v76 RUN_INFO §3). 실행 결과를 보고 바꾸지 않는다.
++MIN_MATCHED_TERMS = 2        # 근거 = 서로 다른 질의 토큰 2개 이상 일치
++GROUPS_K = 10                # 보조 목록에 싣는 소개 묶음 수 = 작품명 보조 목록 상한(AUX_MAX_SONGS)과 같은 값
++WEIGHT_WHEN_ON = 0.5         # 켤 때의 RRF 가중(작품명 보조 기본 가중과 같은 값) — 기본은 꺼짐(0)
++BM25_K1 = 1.2                # 텍스트 색인 bm25_params.json과 같은 값
++BM25_B = 0.75
++
++STATUS_APPLIED = "applied"
++STATUS_NO_EVIDENCE = "no_evidence"
++STATUS_NO_AUX_SONGS = "no_aux_songs"
++STATUS_NOT_TRIGGERED_PREFIX = "not_triggered:"
++STATUS_FAILED_PREFIX = "failed:"
++REASON_EXACT_LYRIC = "exact_lyric"
++REASON_NO_QUERY_TERMS = "no_query_terms"
++REASON_ABLATION = "ablation"
++
++DEFAULT_STORE_PATH = "artifacts/description_aux/description_residual_v1.json.gz"
++
++
++def _sha256_file(path: Path) -> str:
++    h = hashlib.sha256()
++    with open(path, "rb") as f:
++        for chunk in iter(lambda: f.read(1 << 20), b""):
++            h.update(chunk)
++    return h.hexdigest()
++
++
++def description_text(song: Mapping[str, Any]) -> str:
++    metadata = song.get("metadata") or {}
++    return str(metadata.get("album_description") or "").strip()
++
++
++def description_group_id(description: str) -> str:
++    """같은 소개 원문(앞뒤 공백 제거) = 같은 묶음."""
++    return hashlib.sha256(description.encode("utf-8")).hexdigest()[:16]
++
++
++def residual_terms(song: Mapping[str, Any]) -> Dict[str, int]:
++    """소개 원문 토큰 중 그 곡의 색인 문서(`build_sparse_passage`)에 없는 토큰과 횟수. 소개가 없으면 빈 dict."""
++    from src.embedding.text.korean_bm25_tokenizer import normalize_for_bm25
++    from src.embedding.text.passage_builder import build_sparse_passage
++
++    description = description_text(song)
++    if not description:
++        return {}
++    indexed = set(normalize_for_bm25(build_sparse_passage(dict(song))).split())
++    counts: Dict[str, int] = {}
++    for token in normalize_for_bm25(description).split():
++        if token and token not in indexed:
++            counts[token] = counts.get(token, 0) + 1
++    return counts
++
++
++def _module_sha256(module_name: str) -> str:
++    module = sys.modules.get(module_name)
++    path = Path(getattr(module, "__file__", "") or "")
++    return _sha256_file(path) if path.is_file() else ""
++
++
++def build_store(songs_path: Path) -> Tuple[dict, dict]:
++    """코퍼스 전체에 같은 규칙. (저장소, manifest). 저장소는 같은 자료면 같은 바이트가 된다."""
++    import src.embedding.text.korean_bm25_tokenizer  # noqa: F401 - 지문 기록용
++    import src.embedding.text.passage_builder  # noqa: F401
++
++    songs: Dict[str, Dict[str, Any]] = {}
++    seen: set = set()
++    total = with_description = 0
++    with open(songs_path, encoding="utf-8") as f:
++        for line in f:
++            if not line.strip():
++                continue
++            song = json.loads(line)
++            song_id = str(song.get("song_id") or "").strip()
++            if not song_id:
++                raise ValueError("song_id 없는 곡이 있다")
++            if song_id in seen:
++                raise ValueError(f"song_id 중복: {song_id}")
++            seen.add(song_id)
++            total += 1
++            description = description_text(song)
++            if not description:
++                continue
++            with_description += 1
++            terms = residual_terms(song)
++            if terms:
++                songs[song_id] = {"group": description_group_id(description), "terms": terms}
++    df: Dict[str, int] = {}
++    total_tokens = 0
++    for doc in songs.values():
++        total_tokens += sum(doc["terms"].values())
++        for token in doc["terms"]:
++            df[token] = df.get(token, 0) + 1
++    n_docs = len(songs)
++    store = {
++        "schema_version": SCHEMA_VERSION, "rule_version": RULE_VERSION, "songs": songs,
++        "bm25": {"k1": BM25_K1, "b": BM25_B, "n_docs": n_docs,
++                 "avgdl": (total_tokens / n_docs) if n_docs else 0.0, "df": df},
++    }
++    try:
++        from importlib.metadata import version as _version
++
++        kiwi_version = _version("kiwipiepy")
++    except Exception:  # noqa: BLE001 - 기록용
++        kiwi_version = ""
++    groups = {doc["group"] for doc in songs.values()}
++    manifest = {
++        "schema_version": SCHEMA_VERSION,
++        "rule_version": RULE_VERSION,
++        "generated_at": datetime.now(timezone.utc).isoformat(),
++        "song_count": total,
++        "songs_with_description": with_description,
++        "docs": n_docs,
++        "description_groups": len(groups),
++        "residual_tokens": total_tokens,
++        "vocabulary": len(df),
++        "sources": {"songs_jsonl": {"path_name": songs_path.name, "sha256": _sha256_file(songs_path)}},
++        "code": {
++            "korean_bm25_tokenizer_sha256": _module_sha256("src.embedding.text.korean_bm25_tokenizer"),
++            "passage_builder_sha256": _module_sha256("src.embedding.text.passage_builder"),
++            "kiwipiepy": kiwi_version,
++        },
++    }
++    return store, manifest
++
++
++def manifest_path(store_path: Path) -> Path:
++    name = store_path.name
++    for suffix in (".json.gz", ".gz", ".json"):
++        if name.endswith(suffix):
++            name = name[: -len(suffix)]
++            break
++    return store_path.with_name(name + ".manifest.json")
++
++
++def write_store(store: dict, manifest: dict, out: Path) -> dict:
++    out.parent.mkdir(parents=True, exist_ok=True)
++    payload = json.dumps(store, ensure_ascii=False, sort_keys=True).encode("utf-8")
++    out.write_bytes(gzip.compress(payload, mtime=0))  # 시각을 넣지 않는다 — 같은 자료면 같은 바이트
++    manifest = dict(manifest, store_file=out.name, store_sha256=_sha256_file(out))
++    manifest_path(out).write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
++    return manifest
++
++
++class DescriptionStoreError(RuntimeError):
++    """산출물이 없거나 manifest·규칙 버전과 맞지 않는다 — 기능을 켤 수 없다."""
++
++
++@dataclass(frozen=True)
++class EvidenceHit:
++    song_id: str
++    group: str
++    score: float
++    matched: Tuple[str, ...]
++
++
++class DescriptionResidualStore:
++    """색인 밖 소개 토큰의 메모리 역색인. 조회는 메모리 안에서만 한다(색인·DB 호출 없음)."""
++
++    def __init__(self, songs: Mapping[str, Mapping[str, Any]], bm25: Mapping[str, Any],
++                 manifest: Optional[dict] = None) -> None:
++        self._ids: List[str] = sorted((str(s) for s in songs), key=lambda s: (len(s), s))
++        index = {song_id: i for i, song_id in enumerate(self._ids)}
++        self._group: List[str] = [str(songs[s]["group"]) for s in self._ids]
++        self._length: List[int] = [int(sum(int(c) for c in songs[s]["terms"].values())) for s in self._ids]
++        # 토큰 → (문서 번호 배열, 횟수 배열). 튜플 목록보다 메모리가 작다(약 64만 항목).
++        postings: Dict[str, Tuple[array, array]] = {}
++        for song_id in self._ids:
++            doc = index[song_id]
++            for token, count in songs[song_id]["terms"].items():
++                if int(count) > 0:
++                    docs, tfs = postings.setdefault(sys.intern(str(token)), (array("I"), array("I")))
++                    docs.append(doc)
++                    tfs.append(int(count))
++        self._postings = postings
++        self.k1 = float(bm25.get("k1", BM25_K1))
++        self.b = float(bm25.get("b", BM25_B))
++        self.n_docs = len(self._ids)
++        self.avgdl = (sum(self._length) / self.n_docs) if self.n_docs else 0.0
++        self.manifest = dict(manifest or {})
++
++    @classmethod
++    def from_store(cls, store: Mapping[str, Any], manifest: Optional[dict] = None) -> "DescriptionResidualStore":
++        if store.get("schema_version") != SCHEMA_VERSION or store.get("rule_version") != RULE_VERSION:
++            raise DescriptionStoreError("소개 잔여 산출물의 규칙 버전이 코드와 다르다")
++        songs, bm25 = store.get("songs"), store.get("bm25")
++        if not isinstance(songs, dict) or not isinstance(bm25, dict):
++            raise DescriptionStoreError("소개 잔여 산출물 형식이 잘못됐다")
++        built = cls(songs, bm25, manifest)
++        if int(bm25.get("n_docs", -1)) != built.n_docs:
++            raise DescriptionStoreError("소개 잔여 산출물의 문서 수가 통계와 다르다")
++        return built
++
++    @classmethod
++    def load(cls, path: Path) -> "DescriptionResidualStore":
++        path = Path(path)
++        mpath = manifest_path(path)
++        if not path.is_file() or not mpath.is_file():
++            raise DescriptionStoreError(f"소개 잔여 산출물이 없다: {path.name}")
++        manifest = json.loads(mpath.read_text(encoding="utf-8"))
++        if manifest.get("schema_version") != SCHEMA_VERSION or manifest.get("rule_version") != RULE_VERSION:
++            raise DescriptionStoreError("소개 잔여 산출물의 규칙 버전이 코드와 다르다")
++        if manifest.get("store_sha256") != _sha256_file(path):
++            raise DescriptionStoreError("소개 잔여 산출물 sha가 manifest와 다르다")
++        return cls.from_store(json.loads(gzip.decompress(path.read_bytes())), manifest)
++
++    def fingerprint(self) -> Dict[str, str]:
++        return {"schema_version": SCHEMA_VERSION, "rule_version": RULE_VERSION,
++                "store_sha256_16": str(self.manifest.get("store_sha256", ""))[:16],
++                "docs": str(self.n_docs)}
++
++    def _idf(self, df: int) -> float:
++        return math.log(1.0 + (self.n_docs - df + 0.5) / (df + 0.5))
++
++    def evidence(self, query_terms: Iterable[str], min_matched: int = MIN_MATCHED_TERMS) -> List[EvidenceHit]:
++        """근거 곡(서로 다른 질의 토큰 `min_matched`개 이상 일치). (점수 내림, 곡 id) 순 — 결정적."""
++        terms = sorted({str(t) for t in query_terms if str(t)})
++        scores: Dict[int, float] = {}
++        matched: Dict[int, List[str]] = {}
++        for token in terms:  # 정렬된 순서로 더한다 — 부동소수 합이 실행마다 같다
++            posting = self._postings.get(token)
++            if not posting:
++                continue
++            docs, tfs = posting
++            idf = self._idf(len(docs))
++            for doc, tf in zip(docs, tfs):
++                norm = self.k1 * (1.0 - self.b + self.b * self._length[doc] / self.avgdl)
++                scores[doc] = scores.get(doc, 0.0) + idf * tf * (self.k1 + 1.0) / (tf + norm)
++                matched.setdefault(doc, []).append(token)
++        hits = [EvidenceHit(self._ids[doc], self._group[doc], scores[doc], tuple(matched[doc]))
++                for doc in scores if len(matched[doc]) >= min_matched]
++        hits.sort(key=lambda h: (-h.score, len(h.song_id), h.song_id))
++        return hits
++
++
++@dataclass
++class DescriptionGroup:
++    group: str
++    score: float
++    members: List[str]                      # 그 묶음의 근거 곡(곡 id 순)
++    matched: List[str]                      # 근거 곡들의 일치 토큰 합집합(정렬)
++    representative: str = ""                # 2단계가 고른 곡. 없으면 빈 문자열(목록에서 빠진다)
++
++
++def top_groups(hits: Sequence[EvidenceHit], k: int = GROUPS_K) -> List[DescriptionGroup]:
++    """묶음 점수 = 근거 곡 점수의 최댓값. (점수 내림, 묶음 id) 순 위 k묶음."""
++    by_group: Dict[str, DescriptionGroup] = {}
++    for hit in hits:
++        group = by_group.get(hit.group)
++        if group is None:
++            by_group[hit.group] = DescriptionGroup(hit.group, hit.score, [hit.song_id], sorted(hit.matched))
++            continue
++        group.score = max(group.score, hit.score)
++        group.members.append(hit.song_id)
++        group.matched = sorted(set(group.matched) | set(hit.matched))
++    groups = sorted(by_group.values(), key=lambda g: (-g.score, g.group))[:k]
++    for group in groups:
++        group.members.sort(key=lambda s: (len(s), s))
++    return groups
++
++
++def query_terms(analysis: Any) -> List[str]:
++    """질의 분석의 `korean_tags`만(색인과 같은 정규화). 제목·가수·가사·원문·영문 질의는 쓰지 않는다. 처음 나온 순서."""
++    from src.embedding.text.korean_bm25_tokenizer import normalize_for_bm25
++
++    tags = [str(t) for t in (getattr(analysis, "korean_tags", None) or []) if str(t).strip()]
++    if not tags:
++        return []
++    return list(dict.fromkeys(t for t in normalize_for_bm25(" ".join(tags)).split() if t))
++
++
++@dataclass
++class DescriptionAuxRecord:
++    status: str
++    query_terms: List[str] = field(default_factory=list)
++    evidence_songs: int = 0
++    groups: List[Dict[str, Any]] = field(default_factory=list)
++    aux_ids: List[str] = field(default_factory=list)
++    entered_ids: List[str] = field(default_factory=list)
++    displaced_ids: List[str] = field(default_factory=list)
++    stage1_ms: Optional[float] = None
++    stage2_ms: Optional[float] = None
++    versions: Dict[str, str] = field(default_factory=dict)
++
++    def as_dict(self) -> Dict[str, Any]:
++        return asdict(self)
++
++
++SearchTextFn = Callable[[List[str], int], List[Any]]
++
++
++class DescriptionAuxRuntime:
++    """산출물 + 가중. 라우터가 주입받아 질의마다 `run`을 부른다."""
++
++    def __init__(self, store: DescriptionResidualStore, weight: float = WEIGHT_WHEN_ON) -> None:
++        if not math.isfinite(weight) or not 0 < weight <= 1:
++            raise ValueError("소개 보조 가중은 0보다 크고 1 이하여야 한다")
++        self.store = store
++        self.weight = float(weight)
++
++    def versions(self) -> Dict[str, str]:
++        return {**self.store.fingerprint(), "weight": f"{self.weight:g}", "groups_k": str(GROUPS_K),
++                "min_matched_terms": str(MIN_MATCHED_TERMS)}
++
++    def run(self, analysis: Any, search_text_fn: SearchTextFn) -> Tuple[DescriptionAuxRecord, List[Any]]:
++        """(기록, 보조 곡 MatchingTrack 순위 목록). 근거 없음·빈 결과는 정상 상태로 남긴다.
++
++        1·2단계 예외는 **삼키지 않는다** — 라우터가 경로 실패로 기록하고 융합 목록을 그대로 둔다.
++        """
++        record = DescriptionAuxRecord(status=STATUS_NO_EVIDENCE, versions=self.versions())
++        record.query_terms = query_terms(analysis)
++        if not record.query_terms:
++            record.status = STATUS_NOT_TRIGGERED_PREFIX + REASON_NO_QUERY_TERMS
++            return record, []
++        started = time.perf_counter()
++        hits = self.store.evidence(record.query_terms)
++        groups = top_groups(hits)
++        record.stage1_ms = round((time.perf_counter() - started) * 1000, 2)
++        record.evidence_songs = len(hits)
++        if not groups:
++            record.status = STATUS_NO_EVIDENCE
++            return record, []
++        allowed = [song_id for group in groups for song_id in group.members]
++        started = time.perf_counter()
++        tracks = list(search_text_fn(allowed, len(allowed)))
++        record.stage2_ms = round((time.perf_counter() - started) * 1000, 2)
++        first_rank: Dict[str, int] = {}
++        by_id: Dict[str, Any] = {}
++        allowed_set = set(allowed)
++        for rank, track in enumerate(tracks):
++            song_id = str(getattr(track, "id", ""))
++            if song_id in allowed_set and song_id not in first_rank:
++                first_rank[song_id] = rank
++                by_id[song_id] = track
++        out: List[Any] = []
++        for group in groups:
++            returned = [s for s in group.members if s in first_rank]
++            if returned:
++                group.representative = min(returned, key=lambda s: first_rank[s])
++                out.append(by_id[group.representative])
++            record.groups.append({"group": group.group, "score": round(group.score, 4),
++                                  "members": list(group.members), "matched": list(group.matched),
++                                  "representative": group.representative})
++        record.aux_ids = [str(t.id) for t in out]
++        record.status = STATUS_APPLIED if out else STATUS_NO_AUX_SONGS
++        return record, out
++
++
++def aux_weight_from_env() -> float:
++    """`DESCRIPTION_AUX_WEIGHT`. 비었거나 `0`이면 꺼짐(0.0). 그 밖에는 0 < 값 ≤ 1인 수여야 한다 — 아니면 설정 오류."""
++    raw = os.getenv("DESCRIPTION_AUX_WEIGHT", "").strip()
++    if raw in {"", "0"}:
++        return 0.0
++    try:
++        value = float(raw)
++    except ValueError as exc:
++        raise ValueError("DESCRIPTION_AUX_WEIGHT는 0(꺼짐) 또는 0보다 크고 1 이하인 수여야 한다") from exc
++    if not math.isfinite(value) or not 0 < value <= 1:
++        raise ValueError("DESCRIPTION_AUX_WEIGHT는 0(꺼짐) 또는 0보다 크고 1 이하인 수여야 한다")
++    return value
++
++
++def store_path_from_env() -> Path:
++    return Path(os.getenv("DESCRIPTION_AUX_PATH", DEFAULT_STORE_PATH))
++
++
++def load_runtime_from_env() -> Optional[DescriptionAuxRuntime]:
++    """서비스·평가 공용. 꺼져 있으면 None(산출물을 읽지 않는다). 켜져 있으면 산출물을 반드시 불러온다 — 못 하면 기동 오류."""
++    weight = aux_weight_from_env()
++    if weight <= 0:
++        return None
++    return DescriptionAuxRuntime(DescriptionResidualStore.load(store_path_from_env()), weight)
++
++
++def main(argv: Optional[Sequence[str]] = None) -> int:
++    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
++    sub = ap.add_subparsers(dest="cmd", required=True)
++    build = sub.add_parser("build", help="코퍼스에서 산출물을 만든다(운영 자료는 읽기만)")
++    build.add_argument("--songs", type=Path, required=True)
++    build.add_argument("--out", type=Path, required=True)
++    args = ap.parse_args(argv)
++    if args.cmd == "build":
++        if args.out.exists() or manifest_path(args.out).exists():
++            print(f"이미 있다 — 덮어쓰지 않는다: {args.out}", file=sys.stderr)
++            return 2
++        store, manifest = build_store(args.songs)
++        manifest = write_store(store, manifest, args.out)
++        print(json.dumps({k: manifest[k] for k in ("song_count", "songs_with_description", "docs",
++                                                   "description_groups", "residual_tokens", "vocabulary",
++                                                   "store_sha256")}, ensure_ascii=False))
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/tests/test_description_aux.py b/tests/test_description_aux.py
+new file mode 100644
+index 0000000..abd9981
+--- /dev/null
++++ b/tests/test_description_aux.py
+@@ -0,0 +1,451 @@
++"""앨범 소개 원문 잔여 보조(v76, 기본 꺼짐) — 산출물 규칙·근거 판정·라우터 연결·기동 검사. 모델·DB·네트워크 없음.
++
++**합성 자료로 배선과 계약을 확인한다.** 검색 품질의 증거가 아니다. 곡 소개·태그는 모두 시험용으로 지어낸 것이다.
++"""
++from __future__ import annotations
++
++import gzip
++import json
++from pathlib import Path
++
++import pytest
++
++from src.retrieval import description_aux as da
++from src.retrieval import search_router as sr
++from src.retrieval.explain import PATH_LABELS, ExplainRecorder
++from src.retrieval.user_explanation import _PATH_SEARCH_NAMES
++from tests.test_search_explain import _analysis, _router, _run, _track
++
++TAGS = ["경연프로그램", "우승곡"]  # Kiwi 정규화 → 경연 · 프로그램 · 우승 · 곡
++
++
++# ---------------------------------------------------------------------------
++# 도우미
++# ---------------------------------------------------------------------------
++
++def _songs() -> dict:
++    """g1 = 같은 앨범 두 곡(201·202), g2 = 203, g3 = 낱말 하나만 맞는 204, g4 = 질의와 무관한 205."""
++    return {
++        "201": {"group": "g1", "terms": {"경연": 2, "우승": 1, "무대": 4}},
++        "202": {"group": "g1", "terms": {"경연": 1, "프로그램": 1}},
++        "203": {"group": "g2", "terms": {"우승": 1, "프로그램": 2}},
++        "204": {"group": "g3", "terms": {"경연": 1, "사랑": 2}},
++        "205": {"group": "g4", "terms": {"사랑": 3}},
++    }
++
++
++def _store(songs: dict | None = None) -> da.DescriptionResidualStore:
++    return da.DescriptionResidualStore(songs or _songs(), {"k1": da.BM25_K1, "b": da.BM25_B})
++
++
++class _TextService:
++    """필터 없는 호출은 기본 목록, `song_id $in` 필터 호출은 카탈로그 순서 그대로 그 곡만 돌려준다. 호출 인자를 남긴다."""
++
++    def __init__(self, hits, catalogue, *, raises=None):
++        self._hits = hits
++        self._catalogue = catalogue
++        self._raises = raises
++        self.calls: list = []
++
++    def search_text(self, query, top_k=10, alpha=0.5, sparse_query=None, metadata_filter=None):
++        self.calls.append({"query": query, "top_k": top_k, "alpha": alpha, "sparse_query": sparse_query,
++                           "metadata_filter": metadata_filter})
++        if not metadata_filter:
++            return [t.model_copy() for t in self._hits[:top_k]]
++        if self._raises:
++            raise self._raises
++        allowed = {str(v) for branch in metadata_filter["$or"] for v in branch["song_id"]["$in"]}
++        return [t.model_copy() for sid, t in self._catalogue.items() if sid in allowed][:top_k]
++
++    def track_from_match(self, match):
++        return _track(str(match.get("id")))
++
++
++def _setup(runtime=None, *, n_text=40, lyrics_hits=None, raises=None, catalogue_order=("202", "201", "203", "204")):
++    text_hits = [_track(f"t{i}", title=f"텍스트{i}") for i in range(1, n_text + 1)]
++    catalogue = {sid: _track(sid, title=f"소개곡{sid}") for sid in catalogue_order}
++    service = _TextService(text_hits, catalogue, raises=raises)
++    router = _router(text_hits, lyrics_hits=lyrics_hits)
++    router._text_svc = service
++    router._description_aux = runtime
++    return router, service
++
++
++def _search(runtime=None, analysis=None, **kw):
++    setup_kw = {k: kw.pop(k) for k in ("catalogue_order",) if k in kw}
++    router, service = _setup(runtime, lyrics_hits=kw.pop("lyrics_hits", None), raises=kw.pop("raises", None),
++                             **setup_kw)
++    rec = ExplainRecorder("q")
++    analysis = analysis or _analysis(original_query="경연에서 우승한 사람 노래", intent_type="mixed", korean_tags=TAGS)
++    before = analysis.model_dump()
++    kw.setdefault("candidate_k", 30)
++    results = _run(router, analysis, top_k=kw.pop("top_k", 30), use_rerank=False, recorder=rec, **kw)
++    assert analysis.model_dump() == before, "분석 객체를 바꾸면 안 된다"
++    return [t.id for t in results], service.calls, rec.record
++
++
++def _main_calls(calls):
++    return [c for c in calls if not c["metadata_filter"]]
++
++
++def _aux_calls(calls):
++    return [c for c in calls if c["metadata_filter"]]
++
++
++# ---------------------------------------------------------------------------
++# 산출물 규칙
++# ---------------------------------------------------------------------------
++
++def _song(song_id, description, **meta):
++    return {"song_id": song_id, "metadata": {"title": meta.pop("title", "가상곡"), "artist": ["가상가수"],
++                                              "album": meta.pop("album", "가상앨범"),
++                                              "album_summary": meta.pop("summary", ""),
++                                              "album_description": description, **meta},
++            "semantic_analysis": {}, "community_feedback": {}, "lyrics_data": {}}
++
++
++def test_residual_keeps_only_description_tokens_missing_from_the_indexed_passage() -> None:
++    song = _song("1", "경연 프로그램에서 우승한 곡이다. 원곡자의 코치를 받았다.", summary="경연에서 부른 곡")
++    residual = da.residual_terms(song)
++    from src.embedding.text.korean_bm25_tokenizer import normalize_for_bm25
++    from src.embedding.text.passage_builder import build_sparse_passage
++
++    indexed = set(normalize_for_bm25(build_sparse_passage(song)).split())
++    assert residual and not set(residual) & indexed
++    assert "경연" not in residual  # 요약(색인 문서)에 이미 있다
++    assert {"프로그램", "우승"} <= set(residual)
++    assert da.residual_terms(_song("2", "   ")) == {}
++
++
++def test_store_build_is_deterministic_groups_by_description_and_load_checks_sha(tmp_path: Path) -> None:
++    songs = tmp_path / "songs.jsonl"
++    rows = [_song("1", "오디션 프로그램 결승 무대에서 부른 곡", title="가"),
++            _song("2", "오디션 프로그램 결승 무대에서 부른 곡", title="나"),   # 같은 앨범 소개
++            _song("3", "", title="다")]                                       # 소개 없음
++    songs.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n", encoding="utf-8")
++    store_a, manifest = da.build_store(songs)
++    store_b, _ = da.build_store(songs)
++    assert store_a == store_b
++    assert set(store_a["songs"]) == {"1", "2"} and manifest["songs_with_description"] == 2
++    assert store_a["songs"]["1"]["group"] == store_a["songs"]["2"]["group"] and manifest["description_groups"] == 1
++    assert manifest["sources"]["songs_jsonl"]["sha256"] and manifest["code"]["passage_builder_sha256"]
++    path = tmp_path / "residual.json.gz"
++    da.write_store(store_a, manifest, path)
++    first = path.read_bytes()
++    loaded = da.DescriptionResidualStore.load(path)
++    assert loaded.n_docs == 2 and loaded.fingerprint()["store_sha256_16"]
++    # 같은 자료면 같은 바이트
++    path.unlink()
++    da.manifest_path(path).unlink()
++    da.write_store(store_b, manifest, path)
++    assert path.read_bytes() == first
++    # 바이트가 바뀌면 거부
++    path.write_bytes(gzip.compress(json.dumps({**store_a, "songs": {}}).encode(), mtime=0))
++    with pytest.raises(da.DescriptionStoreError, match="sha"):
++        da.DescriptionResidualStore.load(path)
++
++
++def test_store_rejects_missing_files_and_other_rule_versions(tmp_path: Path) -> None:
++    with pytest.raises(da.DescriptionStoreError, match="없다"):
++        da.DescriptionResidualStore.load(tmp_path / "none.json.gz")
++    with pytest.raises(da.DescriptionStoreError, match="규칙 버전"):
++        da.DescriptionResidualStore.from_store({"schema_version": da.SCHEMA_VERSION, "rule_version": "other",
++                                                "songs": {}, "bm25": {}})
++    with pytest.raises(da.DescriptionStoreError, match="문서 수"):
++        da.DescriptionResidualStore.from_store({"schema_version": da.SCHEMA_VERSION, "rule_version": da.RULE_VERSION,
++                                                "songs": _songs(), "bm25": {"n_docs": 1}})
++
++
++def test_builder_refuses_to_overwrite(tmp_path: Path) -> None:
++    out = tmp_path / "r.json.gz"
++    out.write_bytes(b"x")
++    assert da.main(["build", "--songs", str(tmp_path / "s.jsonl"), "--out", str(out)]) == 2
++    assert out.read_bytes() == b"x"
++
++
++# ---------------------------------------------------------------------------
++# 근거 판정 · 묶음
++# ---------------------------------------------------------------------------
++
++def test_one_matching_word_is_not_evidence_and_repeats_count_once() -> None:
++    store = _store()
++    assert [h.song_id for h in store.evidence(["경연", "경연", "경연"])] == []      # 같은 낱말 반복은 하나
++    assert {h.song_id for h in store.evidence(["경연", "사랑"])} == {"204"}        # 서로 다른 둘
++    hits = store.evidence(["경연", "프로그램", "우승", "곡"])
++    assert {h.song_id for h in hits} == {"201", "202", "203"}                     # 204(경연 하나)는 빠진다
++    assert all(len(h.matched) >= da.MIN_MATCHED_TERMS for h in hits)
++    assert store.evidence(["없는말", "다른말"]) == []
++
++
++def test_evidence_order_is_deterministic_on_ties() -> None:
++    songs = {"9": {"group": "a", "terms": {"x": 1, "y": 1}}, "10": {"group": "b", "terms": {"x": 1, "y": 1}},
++             "2": {"group": "c", "terms": {"x": 1, "y": 1}}}
++    store = _store(songs)
++    first = store.evidence(["y", "x"])
++    assert [h.song_id for h in first] == ["2", "9", "10"]  # 같은 점수 → 곡 id(길이, 값) 순
++    assert [h.song_id for h in store.evidence(["x", "y"])] == [h.song_id for h in first]
++    groups = da.top_groups(first)
++    assert [g.group for g in groups] == ["a", "b", "c"]  # 같은 점수 → 묶음 id 순
++
++
++def test_groups_keep_evidence_members_only_and_are_capped() -> None:
++    store = _store()
++    groups = da.top_groups(store.evidence(["경연", "프로그램", "우승", "곡"]))
++    by_id = {g.group: g for g in groups}
++    assert set(by_id) == {"g1", "g2"} and by_id["g1"].members == ["201", "202"]
++    hits = store.evidence(["경연", "프로그램", "우승", "곡"])
++    assert by_id["g1"].score == max(h.score for h in hits if h.group == "g1")
++    many = {str(i): {"group": f"g{i:02d}", "terms": {"x": 1, "y": i}} for i in range(1, 25)}
++    assert len(da.top_groups(_store(many).evidence(["x", "y"]))) == da.GROUPS_K
++
++
++def test_query_terms_use_only_korean_tags() -> None:
++    analysis = _analysis(original_query="오디션 우승 노래", korean_tags=TAGS, song_title="가상제목", artist_name="가상가수")
++    terms = da.query_terms(analysis)
++    assert terms == ["경연", "프로그램", "우승", "곡"]
++    assert da.query_terms(_analysis(original_query="오디션 우승 노래")) == []
++
++
++# ---------------------------------------------------------------------------
++# 런타임 단계
++# ---------------------------------------------------------------------------
++
++def test_runtime_states_without_evidence_do_not_search() -> None:
++    runtime = da.DescriptionAuxRuntime(_store())
++    calls: list = []
++
++    def fn(ids, k):
++        calls.append(ids)
++        return []
++
++    record, out = runtime.run(_analysis(), fn)
++    assert record.status == "not_triggered:no_query_terms" and out == [] and calls == []
++    record, out = runtime.run(_analysis(korean_tags=["사랑"]), fn)
++    assert record.status == "no_evidence" and record.evidence_songs == 0 and calls == []
++    record, out = runtime.run(_analysis(korean_tags=TAGS), fn)
++    assert record.status == "no_aux_songs" and out == [] and len(calls) == 1  # 근거는 있었지만 색인에서 0건
++
++
++def test_runtime_picks_one_song_per_description_group() -> None:
++    runtime = da.DescriptionAuxRuntime(_store())
++    seen: list = []
++
++    def fn(ids, k):
++        seen.append((list(ids), k))
++        # 묶음 밖 곡·중복은 무시돼야 한다
++        return [_track("999"), _track("202"), _track("202"), _track("203"), _track("201")]
++
++    record, out = runtime.run(_analysis(korean_tags=TAGS), fn)
++    assert record.status == "applied"
++    assert sorted(seen[0][0]) == ["201", "202", "203"] and seen[0][1] == 3
++    # 같은 앨범(g1)에서 한 곡 — 2단계에서 먼저 나온 202
++    assert sorted(record.aux_ids) == ["202", "203"] and len(out) == 2
++    order = [g["group"] for g in record.groups]
++    assert record.aux_ids == [{"g1": "202", "g2": "203"}[g] for g in order]
++    assert {g["group"]: g["representative"] for g in record.groups} == {"g1": "202", "g2": "203"}
++
++
++def test_runtime_lets_search_errors_reach_the_router() -> None:
++    runtime = da.DescriptionAuxRuntime(_store())
++
++    def fn(ids, k):
++        raise ConnectionError("down")
++
++    with pytest.raises(ConnectionError):
++        runtime.run(_analysis(korean_tags=TAGS), fn)
++
++
++@pytest.mark.parametrize("raw", ["abc", "2", "-0.5", "nan", "inf"])
++def test_weight_env_is_strict(monkeypatch, raw) -> None:
++    monkeypatch.setenv("DESCRIPTION_AUX_WEIGHT", raw)
++    with pytest.raises(ValueError):
++        da.aux_weight_from_env()
++
++
++def test_runtime_loading_is_off_by_default_and_strict_when_on(monkeypatch, tmp_path: Path) -> None:
++    monkeypatch.setenv("DESCRIPTION_AUX_PATH", str(tmp_path / "missing.json.gz"))
++    for raw in (None, "", "0"):
++        if raw is None:
++            monkeypatch.delenv("DESCRIPTION_AUX_WEIGHT", raising=False)
++        else:
++            monkeypatch.setenv("DESCRIPTION_AUX_WEIGHT", raw)
++        assert da.load_runtime_from_env() is None  # 꺼짐 — 산출물을 읽지 않는다(없어도 오류 아님)
++    monkeypatch.setenv("DESCRIPTION_AUX_WEIGHT", "0.5")
++    with pytest.raises(da.DescriptionStoreError):
++        da.load_runtime_from_env()
++    with pytest.raises(ValueError):
++        da.DescriptionAuxRuntime(_store(), 0.0)
++
++
++# ---------------------------------------------------------------------------
++# 라우터 연결 — 꺼짐·판정 밖·근거 없음·실패는 기존과 같다
++# ---------------------------------------------------------------------------
++
++def test_off_router_has_no_record_and_no_extra_calls() -> None:
++    ids, calls, record = _search(None)
++    assert record.description_aux is None
++    assert _aux_calls(calls) == []
++    assert not any(p.path == "description_aux" for s in record.songs.values() for p in s.paths)
++
++
++@pytest.mark.parametrize("case", ["no_evidence", "no_terms", "exact_lyric", "ablation", "error", "empty"])
++def test_non_applied_outcomes_keep_existing_results(case) -> None:
++    analysis = None
++    kw: dict = {}
++    if case == "no_evidence":
++        analysis = _analysis(original_query="사랑 노래", korean_tags=["사랑"])
++    elif case == "no_terms":
++        analysis = _analysis(original_query="노래")
++    elif case == "exact_lyric":
++        analysis = _analysis(original_query="한 소절", intent_type="mixed", korean_tags=TAGS,
++                             lyric_clues=[{"kind": "verbatim", "text": "한 소절"}])
++    elif case == "ablation":
++        kw["disable_boost"] = True
++    elif case == "error":
++        kw["raises"] = ConnectionError("down")
++    elif case == "empty":
++        kw["catalogue_order"] = ()  # 근거 곡이 색인에 없다 — 2단계가 0건
++    off_ids, off_calls, _ = _search(None, analysis, **{k: v for k, v in kw.items() if k != "raises"})
++    ids, calls, record = _search(da.DescriptionAuxRuntime(_store(), 1.0), analysis, **kw)
++    assert ids == off_ids
++    assert _main_calls(calls) == _main_calls(off_calls)
++    rec = record.description_aux
++    assert rec["aux_ids"] == [] and rec["entered_ids"] == [] and rec["displaced_ids"] == []
++    expected = {"no_evidence": "no_evidence", "no_terms": "not_triggered:no_query_terms",
++                "exact_lyric": "not_triggered:exact_lyric", "ablation": "not_triggered:ablation",
++                "error": "failed:ConnectionError", "empty": "no_aux_songs"}[case]
++    assert rec["status"] == expected
++    # 경로 오류만 경로 실패로 남는다 — 정상 0건(근거 없음·빈 결과)과 구분된다
++    assert ("description_aux" in record.failed_paths) == (case == "error")
++    if case in ("no_evidence", "no_terms", "exact_lyric", "ablation"):
++        assert _aux_calls(calls) == []
++
++
++# ---------------------------------------------------------------------------
++# 라우터 연결 — 적용
++# ---------------------------------------------------------------------------
++
++def test_applied_adds_an_auxiliary_list_without_touching_the_main_path() -> None:
++    off_ids, off_calls, _ = _search(None)
++    # 가짜 텍스트 경로만 있는 판에서 30위 점수는 1/90이다 — 가중 1.0이면 보조 1위(1/61)가 들어온다(배선 시험)
++    ids, calls, record = _search(da.DescriptionAuxRuntime(_store(), 1.0))
++    rec = record.description_aux
++    assert rec["status"] == "applied" and rec["query_terms"] == ["경연", "프로그램", "우승", "곡"]
++    assert _main_calls(calls) == _main_calls(off_calls)
++    [aux] = _aux_calls(calls)
++    main = _main_calls(calls)[0]
++    # 2단계 = 기존 텍스트 경로와 같은 dense 문장·sparse 질의·alpha, 근거 곡으로만 제한
++    assert (aux["query"], aux["sparse_query"], aux["alpha"]) == (main["query"], main["sparse_query"], main["alpha"])
++    assert sorted(v for b in aux["metadata_filter"]["$or"] for v in b["song_id"]["$in"] if isinstance(v, str)) == \
++        ["201", "202", "203"]
++    assert set(rec["aux_ids"]) == {"202", "203"}
++    assert rec["entered_ids"] and set(rec["entered_ids"]) <= set(rec["aux_ids"]) <= set(ids) | set(rec["aux_ids"])
++    assert len(ids) == 30 and len(rec["displaced_ids"]) == len(rec["entered_ids"])  # 최종 후보 30 유지
++    assert set(rec["displaced_ids"]) <= set(off_ids) and not set(rec["displaced_ids"]) & set(ids)
++    first = rec["aux_ids"][0]
++    paths = [p for p in record.songs[first].paths if p.path == "description_aux"]
++    assert paths and paths[0].delta == pytest.approx(1.0 / (sr._RRF_K + 1))
++
++
++def test_default_weight_entrant_must_beat_the_cut() -> None:
++    """켤 때의 가중 0.5: 보조 1위(0.5/61)는 이 판의 30위(1/90)보다 작아 들어오지 못한다 — 1위 보장이 없다."""
++    off_ids, _, _ = _search(None)
++    ids, _, record = _search(da.DescriptionAuxRuntime(_store(), da.WEIGHT_WHEN_ON))
++    rec = record.description_aux
++    assert rec["status"] == "applied" and rec["aux_ids"]
++    assert ids == off_ids and rec["entered_ids"] == [] and rec["displaced_ids"] == []
++
++
++def test_existing_candidate_gets_the_bonus_but_is_not_duplicated() -> None:
++    text_hits = [_track(f"t{i}") for i in range(1, 41)]
++    runtime = da.DescriptionAuxRuntime(_store({"t35": {"group": "g", "terms": {"경연": 1, "우승": 1}},
++                                               "t2": {"group": "h", "terms": {"프로그램": 1, "우승": 1}}}), 1.0)
++    router, service = _setup(runtime)
++    router._text_svc = _TextService(text_hits, {"t2": text_hits[1], "t35": text_hits[34]})
++    rec = ExplainRecorder("q")
++    ids = [t.id for t in _run(router, _analysis(original_query="q", korean_tags=TAGS), top_k=30, candidate_k=30,
++                              use_rerank=False, recorder=rec)]
++    assert len(ids) == len(set(ids)) == 30
++    assert "t2" in ids and "t35" in ids and rec.record.description_aux["entered_ids"] == ["t35"]
++
++
++def test_rejected_songs_stay_excluded() -> None:
++    ids, _, record = _search(da.DescriptionAuxRuntime(_store(), 1.0), exclude_ids=["202", "203"])
++    rec = record.description_aux
++    assert "202" not in ids and "203" not in ids
++    assert set(rec["aux_ids"]) == {"202", "203"} and rec["entered_ids"] == []
++
++
++def test_exact_lyric_protection_is_untouched() -> None:
++    protected = _track("p", title="보호곡", lyric_match_type="exact", lyric_match_score=0.95)
++    analysis = _analysis(original_query="한 소절", intent_type="mixed", korean_tags=TAGS,
++                         lyric_clues=[{"kind": "verbatim", "text": "한 소절"}])
++    off_ids, _, _ = _search(None, analysis, lyrics_hits=[protected])
++    ids, calls, record = _search(da.DescriptionAuxRuntime(_store(), 1.0), analysis, lyrics_hits=[protected])
++    assert off_ids[0] == "p" and ids == off_ids
++    assert record.description_aux["status"] == "not_triggered:exact_lyric" and _aux_calls(calls) == []
++
++
++def test_repeat_runs_are_identical() -> None:
++    runtime = da.DescriptionAuxRuntime(_store(), 1.0)
++    first = _search(runtime)
++    second = _search(runtime)
++    assert first[0] == second[0]
++    assert first[2].description_aux == {**second[2].description_aux,
++                                        "stage1_ms": first[2].description_aux["stage1_ms"],
++                                        "stage2_ms": first[2].description_aux["stage2_ms"]}
++
++
++# ---------------------------------------------------------------------------
++# 기동 검사 · 이름표
++# ---------------------------------------------------------------------------
++
++@pytest.fixture
++def offline_app(monkeypatch):
++    from src.backend.api import dependencies
++    from tests.test_v60_context_startup_check import _offline_app
++
++    backend_main = _offline_app(monkeypatch)
++    monkeypatch.setenv("CONTEXT_WEIGHT", "0")
++    monkeypatch.delenv("WORK_NAME_RESOLUTION_ENABLED", raising=False)
++    dependencies.close_vector_client()
++    yield backend_main, dependencies
++    dependencies.close_vector_client()
++    dependencies.load_description_aux_runtime.cache_clear()
++
++
++def test_startup_fails_when_enabled_but_unusable(offline_app, monkeypatch, tmp_path) -> None:
++    from fastapi.testclient import TestClient
++
++    backend_main, dependencies = offline_app
++    monkeypatch.setenv("DESCRIPTION_AUX_WEIGHT", "0.5")
++    monkeypatch.setenv("DESCRIPTION_AUX_PATH", str(tmp_path / "missing.json.gz"))
++    with pytest.raises(da.DescriptionStoreError):
++        with TestClient(backend_main.app):
++            pytest.fail("켰는데 산출물을 쓸 수 없으면 서버가 떠서는 안 된다")
++    assert dependencies.get_vector_client.peek() is None
++
++
++def test_startup_loads_the_runtime_when_enabled_and_nothing_when_off(offline_app, monkeypatch, tmp_path) -> None:
++    from fastapi.testclient import TestClient
++
++    backend_main, dependencies = offline_app
++    path = tmp_path / "residual.json.gz"
++    da.write_store({"schema_version": da.SCHEMA_VERSION, "rule_version": da.RULE_VERSION, "songs": _songs(),
++                    "bm25": {"k1": 1.2, "b": 0.75, "n_docs": 5}}, {"schema_version": da.SCHEMA_VERSION,
++                                                                   "rule_version": da.RULE_VERSION}, path)
++    monkeypatch.setenv("DESCRIPTION_AUX_PATH", str(path))
++    monkeypatch.delenv("DESCRIPTION_AUX_WEIGHT", raising=False)
++    with TestClient(backend_main.app) as client:
++        assert client.get("/health").json()["status"] == "ok"
++        assert dependencies.load_description_aux_runtime.peek() is None
++    monkeypatch.setenv("DESCRIPTION_AUX_WEIGHT", "0.5")
++    with TestClient(backend_main.app):
++        runtime = dependencies.load_description_aux_runtime.peek()
++        assert isinstance(runtime, da.DescriptionAuxRuntime) and runtime.weight == 0.5
++        assert dependencies.load_description_aux_runtime() is runtime
++
++
++def test_labels_name_the_source_without_claiming_a_fact() -> None:
++    assert PATH_LABELS["description_aux"] == "앨범 소개 원문 보조"
++    assert _PATH_SEARCH_NAMES["description_aux"] == "앨범 소개 원문 보조 검색"

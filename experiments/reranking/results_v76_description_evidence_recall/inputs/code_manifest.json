@@ -1,0 +1,17 @@
+{
+ "base_commit": "3d9676ad79ef7031b65cc7c907ad0cdfee07ec5d",
+ "src_py_files": 163,
+ "src_py_tree_sha16": "f3c2e1b737479bdc",
+ "changed_blobs": {
+  "src/backend/api/dependencies.py": "6af6725d49de493932d2ea6df84ea3fae27dac47",
+  "src/backend/main.py": "8ef7d332b3fe0b3187b64481ae8852e56f5bc854",
+  "src/retrieval/evaluate_search_accuracy.py": "607a54cc443e4033dcb63f43c85ae343271a53c2",
+  "src/retrieval/explain.py": "8fc4464096ef4aaf33a6c903f61aa24fedad86f0",
+  "src/retrieval/search_router.py": "373a45bdeca299204fe47d991fbfc7acc2f8265b",
+  "src/retrieval/user_explanation.py": "8905f42d222b0163e2a88a66afda0a90439b6b3d"
+ },
+ "added_blobs": {
+  "src/retrieval/description_aux.py": "124e28b23f2fbb867de33aac1f59e78d72853930"
+ },
+ "removed": []
+}

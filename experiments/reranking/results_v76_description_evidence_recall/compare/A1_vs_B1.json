@@ -1,0 +1,2640 @@
+{
+ "pair": "desc_off_server_rep1 vs desc_on_server_rep1",
+ "a": "experiments/reranking/results_v76_description_evidence_recall/runs/desc_off_server_rep1",
+ "b": "experiments/reranking/results_v76_description_evidence_recall/runs/desc_on_server_rep1",
+ "a_done": true,
+ "b_done": true,
+ "queries": 176,
+ "missing_either": [],
+ "fields_compared": [
+  "cand_ids",
+  "cand_scores",
+  "lyrics",
+  "protection",
+  "rerank_input",
+  "prompts",
+  "final"
+ ],
+ "input_identical": 53,
+ "input_diff_queries": [
+  "c601",
+  "c602",
+  "c603",
+  "c607",
+  "c701",
+  "c705",
+  "c706",
+  "c707",
+  "m102",
+  "m104",
+  "m201",
+  "m202",
+  "m203",
+  "m303",
+  "m402",
+  "m403",
+  "n002",
+  "n006",
+  "n010",
+  "n011",
+  "n014",
+  "n016",
+  "n020",
+  "n021",
+  "n025",
+  "n029",
+  "n030",
+  "n031",
+  "n034",
+  "n035",
+  "n038",
+  "n043",
+  "n044",
+  "n046",
+  "n051",
+  "n054",
+  "n055",
+  "n058",
+  "n061",
+  "n062",
+  "n065",
+  "n068",
+  "n072",
+  "n073",
+  "n075",
+  "n076",
+  "n077",
+  "n081",
+  "n082",
+  "n086",
+  "n088",
+  "n089",
+  "n090",
+  "n091",
+  "n093",
+  "n095",
+  "n096",
+  "n097",
+  "q103",
+  "q104",
+  "q105",
+  "q106",
+  "q107",
+  "q108",
+  "q110",
+  "q112",
+  "q117",
+  "q202",
+  "q203",
+  "q204",
+  "q205",
+  "q207",
+  "q208",
+  "q210",
+  "q215",
+  "q218",
+  "q219",
+  "q307",
+  "q308",
+  "q310",
+  "q311",
+  "q312",
+  "q313",
+  "q314",
+  "q315",
+  "q316",
+  "t004",
+  "t007",
+  "t008",
+  "t009",
+  "t010",
+  "t011",
+  "t026",
+  "t029",
+  "t031",
+  "t033",
+  "t036",
+  "t037",
+  "t040",
+  "t041",
+  "t043",
+  "t044",
+  "t046",
+  "t058",
+  "t062",
+  "t068",
+  "t073",
+  "t075",
+  "t077",
+  "t080",
+  "t082",
+  "t083",
+  "t084",
+  "t085",
+  "t086",
+  "t092",
+  "t098",
+  "t100",
+  "t101",
+  "t103",
+  "t104",
+  "t107",
+  "t108"
+ ],
+ "diff_counts": {
+  "cand_ids": 123,
+  "cand_scores": 123,
+  "lyrics": 0,
+  "protection": 0,
+  "rerank_input": 109,
+  "prompts": 109,
+  "final": 123
+ },
+ "diff_queries": {
+  "cand_ids": [
+   "c601",
+   "c602",
+   "c603",
+   "c607",
+   "c701",
+   "c705",
+   "c706",
+   "c707",
+   "m102",
+   "m104",
+   "m201",
+   "m202",
+   "m203",
+   "m303",
+   "m402",
+   "m403",
+   "n002",
+   "n006",
+   "n010",
+   "n011",
+   "n014",
+   "n016",
+   "n020",
+   "n021",
+   "n025",
+   "n029",
+   "n030",
+   "n031",
+   "n034",
+   "n035",
+   "n038",
+   "n043",
+   "n044",
+   "n046",
+   "n051",
+   "n054",
+   "n055",
+   "n058",
+   "n061",
+   "n062",
+   "n065",
+   "n068",
+   "n072",
+   "n073",
+   "n075",
+   "n076",
+   "n077",
+   "n081",
+   "n082",
+   "n086",
+   "n088",
+   "n089",
+   "n090",
+   "n091",
+   "n093",
+   "n095",
+   "n096",
+   "n097",
+   "q103",
+   "q104",
+   "q105",
+   "q106",
+   "q107",
+   "q108",
+   "q110",
+   "q112",
+   "q117",
+   "q202",
+   "q203",
+   "q204",
+   "q205",
+   "q207",
+   "q208",
+   "q210",
+   "q215",
+   "q218",
+   "q219",
+   "q307",
+   "q308",
+   "q310",
+   "q311",
+   "q312",
+   "q313",
+   "q314",
+   "q315",
+   "q316",
+   "t004",
+   "t007",
+   "t008",
+   "t009",
+   "t010",
+   "t011",
+   "t026",
+   "t029",
+   "t031",
+   "t033",
+   "t036",
+   "t037",
+   "t040",
+   "t041",
+   "t043",
+   "t044",
+   "t046",
+   "t058",
+   "t062",
+   "t068",
+   "t073",
+   "t075",
+   "t077",
+   "t080",
+   "t082",
+   "t083",
+   "t084",
+   "t085",
+   "t086",
+   "t092",
+   "t098",
+   "t100",
+   "t101",
+   "t103",
+   "t104",
+   "t107",
+   "t108"
+  ],
+  "cand_scores": [
+   "c601",
+   "c602",
+   "c603",
+   "c607",
+   "c701",
+   "c705",
+   "c706",
+   "c707",
+   "m102",
+   "m104",
+   "m201",
+   "m202",
+   "m203",
+   "m303",
+   "m402",
+   "m403",
+   "n002",
+   "n006",
+   "n010",
+   "n011",
+   "n014",
+   "n016",
+   "n020",
+   "n021",
+   "n025",
+   "n029",
+   "n030",
+   "n031",
+   "n034",
+   "n035",
+   "n038",
+   "n043",
+   "n044",
+   "n046",
+   "n051",
+   "n054",
+   "n055",
+   "n058",
+   "n061",
+   "n062",
+   "n065",
+   "n068",
+   "n072",
+   "n073",
+   "n075",
+   "n076",
+   "n077",
+   "n081",
+   "n082",
+   "n086",
+   "n088",
+   "n089",
+   "n090",
+   "n091",
+   "n093",
+   "n095",
+   "n096",
+   "n097",
+   "q103",
+   "q104",
+   "q105",
+   "q106",
+   "q107",
+   "q108",
+   "q110",
+   "q112",
+   "q117",
+   "q202",
+   "q203",
+   "q204",
+   "q205",
+   "q207",
+   "q208",
+   "q210",
+   "q215",
+   "q218",
+   "q219",
+   "q307",
+   "q308",
+   "q310",
+   "q311",
+   "q312",
+   "q313",
+   "q314",
+   "q315",
+   "q316",
+   "t004",
+   "t007",
+   "t008",
+   "t009",
+   "t010",
+   "t011",
+   "t026",
+   "t029",
+   "t031",
+   "t033",
+   "t036",
+   "t037",
+   "t040",
+   "t041",
+   "t043",
+   "t044",
+   "t046",
+   "t058",
+   "t062",
+   "t068",
+   "t073",
+   "t075",
+   "t077",
+   "t080",
+   "t082",
+   "t083",
+   "t084",
+   "t085",
+   "t086",
+   "t092",
+   "t098",
+   "t100",
+   "t101",
+   "t103",
+   "t104",
+   "t107",
+   "t108"
+  ],
+  "rerank_input": [
+   "c601",
+   "c602",
+   "c603",
+   "c607",
+   "c701",
+   "c705",
+   "c706",
+   "c707",
+   "m102",
+   "m104",
+   "m201",
+   "m202",
+   "m203",
+   "m303",
+   "m402",
+   "m403",
+   "n002",
+   "n006",
+   "n010",
+   "n011",
+   "n014",
+   "n016",
+   "n020",
+   "n021",
+   "n025",
+   "n029",
+   "n030",
+   "n031",
+   "n034",
+   "n035",
+   "n038",
+   "n043",
+   "n044",
+   "n046",
+   "n051",
+   "n054",
+   "n055",
+   "n058",
+   "n061",
+   "n062",
+   "n065",
+   "n072",
+   "n081",
+   "n082",
+   "n086",
+   "n088",
+   "n089",
+   "n090",
+   "n093",
+   "n095",
+   "n096",
+   "n097",
+   "q103",
+   "q104",
+   "q105",
+   "q106",
+   "q107",
+   "q108",
+   "q110",
+   "q112",
+   "q202",
+   "q203",
+   "q205",
+   "q207",
+   "q208",
+   "q210",
+   "q215",
+   "q218",
+   "q219",
+   "q308",
+   "q310",
+   "q311",
+   "q312",
+   "q313",
+   "q314",
+   "q316",
+   "t004",
+   "t007",
+   "t008",
+   "t009",
+   "t010",
+   "t011",
+   "t026",
+   "t029",
+   "t031",
+   "t033",
+   "t036",
+   "t037",
+   "t040",
+   "t041",
+   "t043",
+   "t044",
+   "t046",
+   "t058",
+   "t062",
+   "t068",
+   "t073",
+   "t075",
+   "t077",
+   "t080",
+   "t083",
+   "t084",
+   "t085",
+   "t100",
+   "t101",
+   "t103",
+   "t104",
+   "t107",
+   "t108"
+  ],
+  "prompts": [
+   "c601",
+   "c602",
+   "c603",
+   "c607",
+   "c701",
+   "c705",
+   "c706",
+   "c707",
+   "m102",
+   "m104",
+   "m201",
+   "m202",
+   "m203",
+   "m303",
+   "m402",
+   "m403",
+   "n002",
+   "n006",
+   "n010",
+   "n011",
+   "n014",
+   "n016",
+   "n020",
+   "n021",
+   "n025",
+   "n029",
+   "n030",
+   "n031",
+   "n034",
+   "n035",
+   "n038",
+   "n043",
+   "n044",
+   "n046",
+   "n051",
+   "n054",
+   "n055",
+   "n058",
+   "n061",
+   "n062",
+   "n065",
+   "n072",
+   "n081",
+   "n082",
+   "n086",
+   "n088",
+   "n089",
+   "n090",
+   "n093",
+   "n095",
+   "n096",
+   "n097",
+   "q103",
+   "q104",
+   "q105",
+   "q106",
+   "q107",
+   "q108",
+   "q110",
+   "q112",
+   "q202",
+   "q203",
+   "q205",
+   "q207",
+   "q208",
+   "q210",
+   "q215",
+   "q218",
+   "q219",
+   "q308",
+   "q310",
+   "q311",
+   "q312",
+   "q313",
+   "q314",
+   "q316",
+   "t004",
+   "t007",
+   "t008",
+   "t009",
+   "t010",
+   "t011",
+   "t026",
+   "t029",
+   "t031",
+   "t033",
+   "t036",
+   "t037",
+   "t040",
+   "t041",
+   "t043",
+   "t044",
+   "t046",
+   "t058",
+   "t062",
+   "t068",
+   "t073",
+   "t075",
+   "t077",
+   "t080",
+   "t083",
+   "t084",
+   "t085",
+   "t100",
+   "t101",
+   "t103",
+   "t104",
+   "t107",
+   "t108"
+  ],
+  "final": [
+   "c601",
+   "c602",
+   "c603",
+   "c607",
+   "c701",
+   "c705",
+   "c706",
+   "c707",
+   "m102",
+   "m104",
+   "m201",
+   "m202",
+   "m203",
+   "m303",
+   "m402",
+   "m403",
+   "n002",
+   "n006",
+   "n010",
+   "n011",
+   "n014",
+   "n016",
+   "n020",
+   "n021",
+   "n025",
+   "n029",
+   "n030",
+   "n031",
+   "n034",
+   "n035",
+   "n038",
+   "n043",
+   "n044",
+   "n046",
+   "n051",
+   "n054",
+   "n055",
+   "n058",
+   "n061",
+   "n062",
+   "n065",
+   "n068",
+   "n072",
+   "n073",
+   "n075",
+   "n076",
+   "n077",
+   "n081",
+   "n082",
+   "n086",
+   "n088",
+   "n089",
+   "n090",
+   "n091",
+   "n093",
+   "n095",
+   "n096",
+   "n097",
+   "q103",
+   "q104",
+   "q105",
+   "q106",
+   "q107",
+   "q108",
+   "q110",
+   "q112",
+   "q117",
+   "q202",
+   "q203",
+   "q204",
+   "q205",
+   "q207",
+   "q208",
+   "q210",
+   "q215",
+   "q218",
+   "q219",
+   "q307",
+   "q308",
+   "q310",
+   "q311",
+   "q312",
+   "q313",
+   "q314",
+   "q315",
+   "q316",
+   "t004",
+   "t007",
+   "t008",
+   "t009",
+   "t010",
+   "t011",
+   "t026",
+   "t029",
+   "t031",
+   "t033",
+   "t036",
+   "t037",
+   "t040",
+   "t041",
+   "t043",
+   "t044",
+   "t046",
+   "t058",
+   "t062",
+   "t068",
+   "t073",
+   "t075",
+   "t077",
+   "t080",
+   "t082",
+   "t083",
+   "t084",
+   "t085",
+   "t086",
+   "t092",
+   "t098",
+   "t100",
+   "t101",
+   "t103",
+   "t104",
+   "t107",
+   "t108"
+  ]
+ },
+ "cand_set_diff_queries": [
+  "c601",
+  "c602",
+  "c603",
+  "c607",
+  "c701",
+  "c705",
+  "c706",
+  "c707",
+  "m102",
+  "m104",
+  "m201",
+  "m202",
+  "m203",
+  "m303",
+  "m402",
+  "m403",
+  "n002",
+  "n006",
+  "n011",
+  "n014",
+  "n016",
+  "n020",
+  "n021",
+  "n025",
+  "n029",
+  "n030",
+  "n034",
+  "n035",
+  "n038",
+  "n043",
+  "n044",
+  "n046",
+  "n051",
+  "n054",
+  "n055",
+  "n058",
+  "n061",
+  "n062",
+  "n065",
+  "n068",
+  "n072",
+  "n073",
+  "n075",
+  "n076",
+  "n077",
+  "n081",
+  "n082",
+  "n086",
+  "n088",
+  "n089",
+  "n090",
+  "n091",
+  "n093",
+  "n095",
+  "n096",
+  "n097",
+  "q103",
+  "q104",
+  "q105",
+  "q106",
+  "q107",
+  "q108",
+  "q110",
+  "q112",
+  "q117",
+  "q202",
+  "q203",
+  "q204",
+  "q205",
+  "q207",
+  "q208",
+  "q210",
+  "q215",
+  "q218",
+  "q307",
+  "q308",
+  "q310",
+  "q311",
+  "q312",
+  "q313",
+  "q314",
+  "q315",
+  "q316",
+  "t004",
+  "t007",
+  "t008",
+  "t009",
+  "t010",
+  "t011",
+  "t026",
+  "t029",
+  "t031",
+  "t033",
+  "t036",
+  "t037",
+  "t040",
+  "t041",
+  "t043",
+  "t044",
+  "t046",
+  "t058",
+  "t062",
+  "t068",
+  "t073",
+  "t077",
+  "t080",
+  "t082",
+  "t083",
+  "t085",
+  "t086",
+  "t092",
+  "t098",
+  "t100",
+  "t101",
+  "t103",
+  "t104",
+  "t107",
+  "t108"
+ ],
+ "path_diff_query_ids": {
+  "index:text-1024-koe5": [
+   "c601",
+   "c602",
+   "c603",
+   "c605",
+   "c607",
+   "c701",
+   "c705",
+   "c706",
+   "c707",
+   "m102",
+   "m103",
+   "m104",
+   "m201",
+   "m202",
+   "m203",
+   "m303",
+   "m402",
+   "m403",
+   "n002",
+   "n006",
+   "n010",
+   "n011",
+   "n014",
+   "n016",
+   "n019",
+   "n020",
+   "n021",
+   "n025",
+   "n029",
+   "n030",
+   "n031",
+   "n033",
+   "n034",
+   "n035",
+   "n038",
+   "n040",
+   "n042",
+   "n043",
+   "n044",
+   "n045",
+   "n046",
+   "n048",
+   "n051",
+   "n054",
+   "n055",
+   "n057",
+   "n058",
+   "n061",
+   "n062",
+   "n065",
+   "n068",
+   "n072",
+   "n073",
+   "n075",
+   "n076",
+   "n077",
+   "n081",
+   "n082",
+   "n086",
+   "n088",
+   "n089",
+   "n090",
+   "n091",
+   "n093",
+   "n095",
+   "n096",
+   "n097",
+   "q101",
+   "q103",
+   "q104",
+   "q105",
+   "q106",
+   "q107",
+   "q108",
+   "q110",
+   "q112",
+   "q113",
+   "q114",
+   "q115",
+   "q117",
+   "q202",
+   "q203",
+   "q204",
+   "q205",
+   "q206",
+   "q207",
+   "q208",
+   "q210",
+   "q215",
+   "q218",
+   "q219",
+   "q304",
+   "q307",
+   "q308",
+   "q310",
+   "q311",
+   "q312",
+   "q313",
+   "q314",
+   "q315",
+   "q316",
+   "q318",
+   "t001",
+   "t004",
+   "t007",
+   "t008",
+   "t009",
+   "t010",
+   "t011",
+   "t024",
+   "t026",
+   "t029",
+   "t031",
+   "t033",
+   "t036",
+   "t037",
+   "t038",
+   "t039",
+   "t040",
+   "t041",
+   "t042",
+   "t043",
+   "t044",
+   "t046",
+   "t053",
+   "t058",
+   "t062",
+   "t068",
+   "t070",
+   "t071",
+   "t073",
+   "t075",
+   "t077",
+   "t078",
+   "t079",
+   "t080",
+   "t082",
+   "t083",
+   "t084",
+   "t085",
+   "t086",
+   "t092",
+   "t098",
+   "t100",
+   "t101",
+   "t103",
+   "t104",
+   "t107",
+   "t108",
+   "t110"
+  ]
+ },
+ "groups_not_sent": {},
+ "retry_prompt_changed_queries": [],
+ "per_query": {
+  "c601": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "c602": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "c603": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "c605": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "c607": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "c701": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "c705": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "c706": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "c707": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "m102": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "m103": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "m104": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "m201": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "m202": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "m203": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "m303": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "m402": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "m403": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n002": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n006": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n010": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n011": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n014": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n016": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n019": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n020": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n021": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n025": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n029": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n030": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n031": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n033": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n034": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n035": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n038": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n040": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n042": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n043": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n044": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n045": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n046": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n048": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n051": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n054": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n055": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n057": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n058": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n061": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n062": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n065": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n068": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n072": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n073": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n075": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n076": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n077": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n081": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n082": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n086": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n088": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n089": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n090": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n091": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n093": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n095": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n096": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "n097": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q101": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q103": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q104": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q105": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q106": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q107": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q108": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q110": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q112": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q113": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q114": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q115": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q117": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q202": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q203": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q204": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q205": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q206": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q207": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q208": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q210": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q215": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q218": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q219": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q304": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q307": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q308": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q310": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q311": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q312": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q313": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q314": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q315": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q316": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "q318": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t001": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t004": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t007": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t008": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t009": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t010": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t011": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t024": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t026": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t029": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t031": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t033": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t036": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t037": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t038": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t039": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t040": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t041": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t042": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t043": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t044": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t046": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t053": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t058": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t062": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t068": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t070": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t071": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t073": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t075": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t077": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t078": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t079": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t080": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t082": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t083": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t084": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t085": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t086": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t092": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t098": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t100": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t101": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t103": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t104": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t107": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t108": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  },
+  "t110": {
+   "fields": [],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  }
+ }
+}
