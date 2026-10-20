@@ -4,7 +4,7 @@
 Qdrant에 같은 벡터를 넣고 부른다. v62부터 두 조회의 limit은 요청마다 `count(exact)`로 센 대상 수이므로, 옛 상수
 `HYBRID_SCAN_LIMIT`을 자료 수보다 작게 둬도(여기서는 monkeypatch로 3·2) 결과가 기준과 같아야 한다.
 
-**옛 결함의 재현은 v61 기준 커밋에 보존돼 있다** — `git show fc20e86:tests/vector_db/test_v61_hybrid_scan_audit.py`(PR #76, 2026-10-16).
+**옛 결함의 재현은 v61 기준 커밋에 보존돼 있다** — `git show fc20e86:tests/test_v61_hybrid_scan_audit.py`(PR #76, 2026-10-16).
 그 판에서는 같은 자료·같은 `_exact` 기준으로 상한 3일 때 4번 곡의 dense 몫(0.15)이 빠져 1.15 → 1.00이 되고, 7번 곡이 결과에서
 사라지며, 음수 dense 곡의 합산이 2.0 → 3.0으로 부풀었다. 여기서는 그 세 사례가 **기준과 같아졌는지**를 같은 숫자로 단언한다.
 
