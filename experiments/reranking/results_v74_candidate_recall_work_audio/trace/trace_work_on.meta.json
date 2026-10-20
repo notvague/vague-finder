@@ -1,0 +1,20 @@
+{
+ "config": {
+  "code": "work_on",
+  "AUDIO_FUSION_SCALE": "1",
+  "WORK_NAME_RESOLUTION_ENABLED": "1",
+  "WORK_NAME_RESOLVER": "cache:/private/tmp/vague-finder-v74-candidate-recall/experiments/reranking/results_v74_candidate_recall_work_audio/resolution_cache/v71_rep1.json"
+ },
+ "rows": 190,
+ "queries": 176,
+ "deep_k": 5143,
+ "network_attempts": [],
+ "path_failures": [],
+ "work_status_problems": [],
+ "work_resolver_calls": [],
+ "pool_check_vs_eval_run": {
+  "run": "experiments/reranking/results_v74_candidate_recall_work_audio/runs/work_on_server_rep1",
+  "queries": 176,
+  "different": []
+ }
+}

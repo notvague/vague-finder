@@ -1,0 +1,30 @@
+{
+ "query_ids_by_set": {
+  "v06": [
+   "c602",
+   "c607",
+   "c701",
+   "c705",
+   "c707",
+   "m103"
+  ],
+  "v09": [
+   "n031",
+   "n033",
+   "n038",
+   "n043",
+   "n096"
+  ],
+  "v10": [
+   "t037",
+   "t046"
+  ]
+ },
+ "count": 13,
+ "rule": "A(off)↔B(work, v71 rep1 캐시) 가짜 리랭커 dev 176 실행에서 후보·가사·보호·그룹 입력·전송 프롬프트 중 하나라도 다른 질의",
+ "source_runs": {
+  "A": "offline/full/off_full_fake",
+  "B": "offline/full/work_full_fake"
+ },
+ "precheck_sha16": "2d7bbe7084a223ca"
+}

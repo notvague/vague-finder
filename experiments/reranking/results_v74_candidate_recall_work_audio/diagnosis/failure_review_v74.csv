@@ -1,0 +1,56 @@
+set,query_id,kind,relevant_count,rep_song,stage_v74,pool_rank_v74,auto_v74,auto_v67,stage_changed_vs_v67,primary,primary_source,secondary,confidence,tags,paths_now,paths_deep,best_main_rank_deep,fused_rank_now,boosted_rank_now,fused_rank_deep,boosted_rank_deep,work_status,work_skip_stage,work_skip_pool_rank,v67_primary
+v06,q106,out_of_pool,1,2906349,경로 밖,,P,P,0,P,auto,A,확인,depth_attr|title_rule|audio_path_ran,,audio:362|text_hybrid:32,32,,,71,25,not_triggered,경로 밖,,P
+v06,q110,out_of_pool,1,4503810,경로 밖,,P,P,0,P,auto,A,확인,depth_attr|title_rule|audio_path_ran,,audio:832|text_hybrid:44,44,,,103,17,not_triggered,경로 밖,,P
+v06,q112,out_of_pool,1,1556547,경로 밖,,P,P,0,P,auto,,확인,depth_attr|audio_path_ran,,audio:1387|text_hybrid:304,304,,,466,4,not_triggered,경로 밖,,P
+v06,q115,out_of_pool,1,31829536,경로 밖,,human,human,0,R,inherited_v67,,확인,sound_generic|audio_path_ran,,audio:295|text_hybrid:386,295,,,358,90,not_triggered,경로 밖,,R
+v06,q117,out_of_pool,5,1204915,경로 밖,,human,human,0,R,inherited_v67,L,확인,cover_generic,,image:296|text_hybrid:526,296,,,326,326,not_triggered,경로 밖,,R
+v06,q203,in_pool_fail,1,837567,후보 안,25,K,K,0,K,auto,,확인,indirect_reference|pool_in_work_skip|audio_path_ran,context:2,audio:1214|context:2|text_hybrid:772,772,18,25,17,235,not_triggered,후보 안,22,K
+v06,q205,in_pool_fail,1,30486509,후보 안,9,K,K,0,K,auto,,확인,pool_in_work_skip|audio_path_ran,image:2,audio:87|image:2|text_hybrid:95,2,14,9,14,12,not_triggered,후보 안,9,K
+v06,m302,out_of_pool,5,4527879,경로 밖,,human,human,0,R,inherited_v67,,확인,cover_generic,,image:145|text_hybrid:658,145,,,202,202,not_triggered,경로 밖,,R
+v06,m303,out_of_pool,3,30755375,경로 밖,,human,human,0,R,inherited_v67,,확인,cover_generic,,image:32|text_hybrid:2527,32,,,42,42,not_triggered,경로 밖,,R
+v06,m402,out_of_pool,4,67169,융합 절단,,F,F,0,F,auto,R,확인,audio_crowding|image_crowding|audio_path_ran,audio:29*,audio:29|image:660|text_hybrid:184,29,,,53,20,not_triggered,경로 밖,,F
+v06,m403,out_of_pool,2,30849733,경로 밖,,human,human,0,R,inherited_v67,L,추정,cover_generic|audio_path_ran,,audio:489|image:3711|text_hybrid:514,489,,,905,546,not_triggered,경로 밖,,R
+v06,c601,out_of_pool,1,3853978,경로 밖,,P,P,0,P,auto,B,확인,depth_attr,,text_hybrid:35,35,,,39,24,not_triggered,경로 밖,,P
+v06,c602,out_of_pool,1,4854588,경로 밖,,human,human,0,R,reviewed_v74,,확인,indirect_reference|work_input_changed|work_mention_digit_boundary|work_status=applied,,text_hybrid:64,64,,,70,67,applied,경로 밖,,R
+v06,c603,out_of_pool,1,2967751,경로 밖,,human,human,0,R,inherited_v67,A,확인,indirect_reference|work_status=abstained,,text_hybrid:57,57,,,57,55,abstained,경로 밖,,R
+v06,c607,out_of_pool,1,7921208,보정 뒤 절단,,F,human,1,F,reviewed_v74,,확인,indirect_reference|work_input_changed|work_aux_cut|work_status=applied,work_name_aux:1,text_hybrid:32|work_name_aux:1,32,31,41,3,29,applied,보정 뒤 절단,,B
+v06,c701,out_of_pool,1,4412196,보정 뒤 절단,,F,human,1,F,reviewed_v74,L,확인,indirect_reference|work_input_changed|work_aux_cut|work_status=applied|audio_path_ran,work_name_aux:4,audio:1172|text_hybrid:33|work_name_aux:4,33,30,34,12,1172,applied,보정 뒤 절단,,L
+v06,c705,in_pool_fail,1,1928055,후보 안,22,K,K,0,K,auto,L,확인,indirect_reference|work_input_changed|work_status=applied|pool_in_work_skip|audio_path_ran,text_hybrid:14|work_name_aux:2,audio:793|text_hybrid:14|work_name_aux:2,14,3,22,4,1161,applied,후보 안,22,K
+v09,n002,out_of_pool,1,55991,경로 밖,,P,P,0,P,auto,A,확인,depth_attr|indirect_reference|audio_path_ran,,audio:608|text_hybrid:727,608,,,728,1,not_triggered,경로 밖,,P
+v09,n011,out_of_pool,1,1921365,경로 밖,,human,human,0,B,inherited_v67,,확인,,,text_hybrid:877,877,,,877,45,not_triggered,경로 밖,,B
+v09,n016,out_of_pool,1,3051244,경로 밖,,human,human,0,A,inherited_v67,L,확인,indirect_reference|audio_path_ran,,audio:4506|text_hybrid:862,862,,,1282,475,not_triggered,경로 밖,,A
+v09,n030,out_of_pool,1,31532656,경로 밖,,P,P,0,P,auto,A,확인,depth_attr|audio_path_ran,,audio:2215|text_hybrid:2453,2215,,,2959,29,not_triggered,경로 밖,,P
+v09,n040,out_of_pool,1,30729198,경로 밖,,P,P,0,P,auto,A,확인,depth_attr|indirect_reference|audio_path_ran,,audio:95|text_hybrid:95,95,,,93,8,not_triggered,경로 밖,,P
+v09,n046,out_of_pool,1,88794,경로 밖,,human,human,0,R,inherited_v67,,확인,sound_generic|audio_path_ran,,audio:1383|text_hybrid:153,153,,,513,262,not_triggered,경로 밖,,R
+v09,n048,out_of_pool,1,432309,경로 밖,,human,human,0,B,inherited_v67,R,확인,sound_generic|audio_path_ran,,audio:2751|text_hybrid:2022,2022,,,2718,845,not_triggered,경로 밖,,B
+v09,n055,out_of_pool,1,612040,융합 절단,,F,F,0,F,auto,P,확인,audio_crowding|audio_path_ran,text_hybrid:39*,audio:835|text_hybrid:39,39,,,129,123,not_triggered,보정 뒤 절단,,F
+v09,n058,out_of_pool,1,35665282,경로 밖,,human,human,0,A,inherited_v67,,확인,era_simile_rule|audio_path_ran,,audio:2449|text_hybrid:2438,2438,,,2921,508,not_triggered,경로 밖,,A
+v09,n064,out_of_pool,1,34754292,경로 밖,,human,human,0,R,inherited_v67,U,추정,sound_generic|lyric_surface,,text_hybrid:321,321,,,363,236,not_triggered,경로 밖,,R
+v09,n065,out_of_pool,1,36001290,경로 밖,,human,human,0,L,inherited_v67,R,확인,audio_path_ran,,audio:1749|text_hybrid:2419,1749,,,2444,289,not_triggered,경로 밖,,L
+v09,n072,out_of_pool,1,9620469,융합 절단,,F,F,0,F,auto,,확인,image_crowding,text_hybrid:7*,image:73|text_hybrid:7,7,,,8,8,not_triggered,융합 절단,,F
+v09,n088,out_of_pool,1,1928044,경로 밖,,human,human,0,B,inherited_v67,R,확인,cover_generic|audio_path_ran,,audio:1408|image:42|text_hybrid:86,42,,,54,148,not_triggered,경로 밖,,B
+v09,n093,out_of_pool,1,36206259,경로 밖,,human,human,0,L,inherited_v67,,확인,,,text_hybrid:399,399,,,399,367,not_triggered,경로 밖,,L
+v09,n095,out_of_pool,1,30514366,경로 밖,,human,human,0,L,inherited_v67,,확인,audio_path_ran,,audio:525|text_hybrid:1278,525,,,942,527,not_triggered,경로 밖,,L
+v10,t001,out_of_pool,1,77363,경로 밖,,P,P,0,P,auto,B,확인,depth_attr|audio_path_ran,,audio:136|text_hybrid:570,136,,,240,6,not_triggered,경로 밖,,P
+v10,t009,out_of_pool,1,1771020,경로 밖,,human,human,0,R,inherited_v67,A,확인,indirect_reference|audio_path_ran,,audio:1781|text_hybrid:1127,1127,,,1648,147,not_triggered,경로 밖,,R
+v10,t011,out_of_pool,1,1645856,경로 밖,,P,P,0,P,auto,A,확인,depth_attr|title_rule|audio_path_ran,,audio:2016|text_hybrid:309,309,,,631,2,not_triggered,경로 밖,,P
+v10,t016,out_of_pool,1,1325050,경로 밖,,human,human,0,B,inherited_v67,L,확인,lyric_surface,,text_hybrid:616,616,,,620,54,not_triggered,경로 밖,,B
+v10,t029,out_of_pool,1,34055256,경로 밖,,human,human,0,L,inherited_v67,A,확인,audio_path_ran,,audio:1741|text_hybrid:45,45,,,51,3092,not_triggered,경로 밖,,L
+v10,t031,out_of_pool,1,34101563,경로 밖,,P,P,0,P,auto,U,확인,depth_attr|audio_path_ran,,audio:1070|text_hybrid:557,557,,,732,28,not_triggered,경로 밖,,P
+v10,t038,out_of_pool,1,5402092,경로 밖,,human,human,0,R,inherited_v67,A,확인,indirect_reference|context_target_rule|audio_path_ran,,audio:1568|text_hybrid:490,490,,,612,846,not_triggered,경로 밖,,R
+v10,t040,out_of_pool,1,1046278,경로 밖,,human,human,0,A,inherited_v67,B,확인,indirect_reference|context_target_rule|audio_path_ran,,audio:1645|text_hybrid:928,928,,,1146,1102,not_triggered,경로 밖,,A
+v10,t043,out_of_pool,1,39166708,경로 밖,,human,human,0,A,inherited_v67,B,확인,indirect_reference|work_status=no_usable_work|audio_path_ran,,audio:677|text_hybrid:131,131,,,144,144,no_usable_work,경로 밖,,A
+v10,t044,in_pool_fail,1,5826465,후보 안,29,K,K,0,K,auto,,확인,indirect_reference|pool_in_work_skip|audio_path_ran,text_hybrid:29,audio:1492|text_hybrid:29,29,29,29,30,30,not_triggered,후보 안,29,K
+v10,t058,out_of_pool,1,56870,보정 뒤 절단,,F,F,0,F,auto,,확인,audio_crowding|pool_in_work_skip|audio_path_ran,text_hybrid:2,audio:1050|text_hybrid:2,2,42,36,50,46,not_triggered,후보 안,16,F
+v10,t060,out_of_pool,1,7956303,경로 밖,,human,human,0,R,inherited_v67,,확인,lyric_surface,,text_hybrid:244,244,,,244,188,not_triggered,경로 밖,,R
+v10,t068,out_of_pool,1,30049271,경로 밖,,human,human,0,B,inherited_v67,R,추정,audio_path_ran,,audio:518|text_hybrid:96,96,,,104,534,not_triggered,경로 밖,,B
+v10,t073,out_of_pool,1,5389475,경로 밖,,human,human,0,R,inherited_v67,,확인,sound_generic|audio_path_ran,,audio:156|text_hybrid:858,156,,,243,715,not_triggered,경로 밖,,R
+v10,t075,out_of_pool,1,5465066,경로 밖,,human,human,0,R,inherited_v67,L,확인,sound_generic|audio_path_ran,,audio:233|text_hybrid:651,233,,,391,1144,not_triggered,경로 밖,,R
+v10,t077,out_of_pool,1,39156202,융합 절단,,F,F,0,F,auto,,확인,audio_crowding|pool_in_work_skip|audio_path_ran,text_hybrid:82*,audio:622|text_hybrid:82,82,,,136,22,not_triggered,후보 안,21,F
+v10,t078,out_of_pool,1,454476,보정 뒤 절단,,F,F,0,F,auto,,확인,audio_crowding|pool_in_work_skip|audio_path_ran,text_hybrid:17,audio:621|text_hybrid:17,17,83,42,79,55,not_triggered,후보 안,11,F
+v10,t079,out_of_pool,1,14221,경로 밖,,human,human,0,R,inherited_v67,,확인,sound_generic|audio_path_ran,,audio:387|text_hybrid:632,387,,,538,470,not_triggered,경로 밖,,R
+v10,t080,out_of_pool,1,4681146,경로 밖,,human,human,0,R,inherited_v67,,확인,sound_generic|audio_path_ran,,audio:2494|text_hybrid:1489,1489,,,2507,58,not_triggered,경로 밖,,R
+v10,t092,out_of_pool,1,4454340,경로 밖,,human,human,0,R,inherited_v67,,확인,cover_generic,,image:122|text_hybrid:1265,122,,,154,134,not_triggered,경로 밖,,R
+v10,t100,out_of_pool,1,3348065,융합 절단,,F,F,0,F,auto,,확인,audio_crowding|pool_in_work_skip|audio_path_ran,image:16*,audio:501|image:16|text_hybrid:47,16,,,18,14,not_triggered,후보 안,7,F
+v10,t103,out_of_pool,1,534252,경로 밖,,human,human,0,R,inherited_v67,A,확인,cover_generic,,image:45|text_hybrid:617,45,,,111,111,not_triggered,경로 밖,,R
+v10,t111,out_of_pool,1,5661710,보정 뒤 절단,,F,F,0,F,auto,,확인,audio_crowding|pool_in_work_skip|audio_path_ran,text_hybrid:25,audio:344|text_hybrid:25,25,51,51,41,41,not_triggered,후보 안,25,F

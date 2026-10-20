@@ -1,0 +1,72 @@
+{
+ "pair": "work_on_server_rep1 vs diag_mention_digit_work_on_rep1",
+ "a": "experiments/reranking/results_v74_candidate_recall_work_audio/runs/work_on_server_rep1",
+ "b": "experiments/reranking/results_v74_candidate_recall_work_audio/runs_diag/diag_mention_digit_work_on_rep1",
+ "a_done": true,
+ "b_done": true,
+ "queries": 176,
+ "missing_either": [],
+ "fields_compared": [
+  "cand_ids",
+  "cand_scores",
+  "lyrics",
+  "protection",
+  "rerank_input",
+  "prompts",
+  "final"
+ ],
+ "input_identical": 175,
+ "input_diff_queries": [
+  "c602"
+ ],
+ "diff_counts": {
+  "cand_ids": 1,
+  "cand_scores": 1,
+  "lyrics": 0,
+  "protection": 0,
+  "rerank_input": 1,
+  "prompts": 1,
+  "final": 1
+ },
+ "diff_queries": {
+  "cand_ids": [
+   "c602"
+  ],
+  "cand_scores": [
+   "c602"
+  ],
+  "rerank_input": [
+   "c602"
+  ],
+  "prompts": [
+   "c602"
+  ],
+  "final": [
+   "c602"
+  ]
+ },
+ "cand_set_diff_queries": [
+  "c602"
+ ],
+ "path_diff_query_ids": {
+  "index:text-1024-koe5": [
+   "c602"
+  ]
+ },
+ "groups_not_sent": {},
+ "retry_prompt_changed_queries": [],
+ "per_query": {
+  "c602": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": [
+    "index:text-1024-koe5"
+   ]
+  }
+ }
+}
