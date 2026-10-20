@@ -1,0 +1,5 @@
+# v50(2026-10-15) 진단표 — 곡 ID·순위·질의 ID만(제목·가사 없음). 질의 원문은 이미 커밋된 eval_queries_*.csv의 것이다
+!/failure_diagnosis.csv
+!/failure_review.csv
+!/context_lookup.csv
+!/context_lookup_raw.csv

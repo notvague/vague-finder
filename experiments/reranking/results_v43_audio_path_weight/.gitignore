@@ -1,0 +1,5 @@
+# 소리 경로 융합 가중 실험(results_v43) — 후보 추적표. 대조용 캐시는 make_weight_variants.py로 다시 만든다
+!/*.csv
+/analysis_cache_*.json
+!/*/*/search_eval_*_summary.csv
+!/*/*/search_eval_*_top10.csv

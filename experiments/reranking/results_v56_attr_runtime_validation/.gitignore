@@ -1,0 +1,18 @@
+# v56 재집계 입력·질의별 결과
+!/fallback_results_subset_run2.csv
+!/latency_joined.csv
+!/latency_per_query.csv
+!/latency_requests.csv
+!/latency_summary.csv
+!/query_categories.csv
+!/run1_noalias/fallback_results.csv
+!/run1_noalias/latency_joined.csv
+!/run1_noalias/latency_per_query.csv
+!/run1_noalias/latency_requests.csv
+!/run1_noalias/latency_summary.csv
+
+# 실행 중 제어 파일·서버 로그는 공유하지 않는다
+/logs/
+/ctl/
+/run1_noalias/logs_run1/
+/progress.txt

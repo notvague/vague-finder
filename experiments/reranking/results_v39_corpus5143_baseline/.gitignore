@@ -1,0 +1,5 @@
+# 5,143곡 기준선(results_v39) — 질의별 대조표·3,010곡 후보 순위 참조·두 단계 아래 요약
+!/*.csv
+!/*/*/search_eval_*_summary.csv
+!/*/*/search_eval_*_top10.csv
+!/*/*/search_eval_*_ranks.csv

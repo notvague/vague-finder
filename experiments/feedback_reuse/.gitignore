@@ -1,0 +1,8 @@
+# 피드백 후보 보충 측정(docs/feedback.md §8). 합성 평가 자료(실제 곡·피드백과 무관)와 집계만 커밋한다.
+# 질의별 변화(changes)는 **합성 자료로 잰 것만** 커밋한다 — 운영 사례로 잰 것에는 사례가 가리킨 곡이
+# 질의별로 들어 있고, 그것은 원래 만료 뒤에 남기지 않는다. detail·유사도 쌍은 어느 쪽이든 커밋하지 않는다.
+# 집계(summary)는 건수·비율뿐이다.
+!/synthetic/*.csv
+!/results_*/feedback_reuse_summary.csv
+!/results_*/feedback_reuse_similarity_summary.csv
+!/results_synthetic_*/feedback_reuse_changes.csv

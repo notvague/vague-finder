@@ -1,0 +1,9 @@
+# v58 가사 캐시 갱신 HTTP 검증 결과(요청별 표)는 공유하고 실행 제어·원시 로그는 로컬에 보존한다
+!/http_check_new.csv
+!/http_check_old.csv
+/logs/
+/ctl/
+/progress.txt
+/timing_*.jsonl
+/fake_calls_*.jsonl
+/source_calls_*.jsonl

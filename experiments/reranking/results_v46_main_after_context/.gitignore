@@ -1,0 +1,4 @@
+# #12 병합 뒤 기준선(results_v46) — 분석 전후표 · 두 단계 아래 요약과 top-10
+!/*.csv
+!/*/*/search_eval_*_summary.csv
+!/*/*/search_eval_*_top10.csv

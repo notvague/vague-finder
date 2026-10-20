@@ -1,0 +1,7 @@
+# v57 HTTP 재현 결과는 공유하고 실행 중 상태·원시 로그는 로컬에 보존한다
+!/fallback_results_A_v57.csv
+/logs/
+/ctl/
+/progress.txt
+/timing_A.jsonl
+/fake_calls_A.jsonl

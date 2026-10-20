@@ -1,0 +1,36 @@
+# 검색 측정 결과 공통 규칙. 결과 폴더별 예외는 그 폴더의 .gitignore에 둔다.
+# 저장소 루트의 *.csv 제외를 여기서 필요한 표만 되살린다.
+
+# eval 질의 CSV는 *.csv 규칙에서 예외 (팀 공유 자산)
+!/*.csv
+
+# 측정 요약 결과는 기준선 추적용으로 커밋 (detail은 용량 커서 제외)
+# 실행 이름/세트 폴더 두 단계 아래(results_*/<실행>/<세트>_dev/)에 세트별로 돌린 실행(v46·v49)의 요약도 커밋한다
+!/results_*/search_eval_*_summary.csv
+!/results_*/*/search_eval_*_summary.csv
+!/results_*/*/*/search_eval_*_summary.csv
+# 질의별 순위·지표 경량본도 커밋 — detail 없이도 split 재집계가 재현된다
+!/results_*/search_eval_*_ranks.csv
+# 질의별 top-10 곡 ID 경량본 — detail 없이 relaxed_metrics(확장 지표·범주형 집계)를 다시 돌린다 (곡 ID만)
+!/results_*/search_eval_*_top10.csv
+!/results_*/*/search_eval_*_top10.csv
+!/results_*/*/*/search_eval_*_top10.csv
+# CE 묶음 요약 · 조건별 폴더 아래 지연 요약
+!/results_*/ce_batch_*_summary.csv
+!/results_*/*/latency_summary.csv
+# 후보 밖 정답의 단계별 위치·경로 깊이별 후보 포함 기록 (곡 ID와 순위만)
+!/results_*/candidate_drop_*.csv
+!/results_*/candidate_depth_sweep_*.csv
+# v50 Context 비중별 추적 폴더(trace_ctx*) 아래의 같은 기록
+!/results_*/trace_ctx*/candidate_drop_*.csv
+# 표지 질의 진단 — 곡 ID·순위·점수와 질의에서 나온 문장만 (표지 이미지·주소는 남기지 않는다, 주소는 해시로만)
+!/results_*/image_diag_*.csv
+# 재질문 정책 비교 산출물 — detail도 100KB 수준(analysis_json 없음)이고
+# 정책 간 우열의 1차 증거라 함께 커밋한다
+!/results_clarify_*/clarify_*.csv
+
+# 질의별 전체 실행 기록. 조건당 ~600KB, 전체 22MB다.
+# analysis_cache_*.json과 같은 저장소에 있으면 결정적으로 재생성되므로 추적하지 않는다.
+/results_*/*_explain.jsonl
+/results_*/*/*_explain.jsonl
+/results_*/*/*/*_explain.jsonl

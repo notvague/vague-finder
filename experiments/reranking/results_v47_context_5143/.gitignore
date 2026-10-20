@@ -1,0 +1,4 @@
+# 5,143곡 Context 색인 후보 단계 측정(results_v47) — 질의별 후보 순위표 · 두 단계 아래 요약과 top-10
+!/*.csv
+!/*/*/search_eval_*_summary.csv
+!/*/*/search_eval_*_top10.csv

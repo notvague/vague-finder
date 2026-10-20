@@ -1,0 +1,6 @@
+# 모달리티 규칙 토큰 경계 수정(results_v40) — 규칙 판정 전후표·가정 실험 입력·두 단계 아래 요약
+!/*.csv
+!/*/search_eval_*_summary.csv
+!/*/search_eval_*_top10.csv
+!/*/*/search_eval_*_summary.csv
+!/*/*/search_eval_*_top10.csv

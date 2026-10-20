@@ -1,0 +1,4 @@
+# v52 후속 검토: 재질문 OFF/ON 실행이 <실행>/<세트>_dev/ 두 단계 아래에 있다. 같은 산출물(곡 ID·순위만)과
+# 질의별 손실 추적표(loss_analysis.csv — 질의 ID·정답 곡 ID·순위·플래그만)를 커밋한다. detail CSV는 clarify 관례대로 포함(analysis_json 없음)
+!/*/*/clarify_*.csv
+!/loss_analysis.csv
