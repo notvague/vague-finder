@@ -1,0 +1,32 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='760' height='330' viewBox='0 0 760 330'>
+<rect width='760' height='330' fill='#ffffff'/>
+<text x='16.0' y='26.0' font-size='15' fill='#0b0b0b' text-anchor='start' font-weight='bold' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>구성별 정답 건수 — dev 176 · 실제 Vertex 리랭킹 · 평가기 60/120초</text>
+<line x1='70' y1='80.6' x2='740' y2='80.6' stroke='#52514e' stroke-dasharray='4 4' stroke-width='1'/>
+<text x='738.0' y='76.6' font-size='11' fill='#52514e' text-anchor='end' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>70% = 124</text>
+<line x1='70' y1='58.7' x2='740' y2='58.7' stroke='#52514e' stroke-dasharray='4 4' stroke-width='1'/>
+<text x='738.0' y='54.7' font-size='11' fill='#52514e' text-anchor='end' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>80% = 141</text>
+<line x1='70' y1='240' x2='740' y2='240' stroke='#52514e' stroke-width='1'/>
+<rect x='100' y='89.6' width='56' height='150.4' rx='4' fill='#2a78d6'/>
+<text x='128.0' y='107.6' font-size='13' fill='#ffffff' text-anchor='middle' font-weight='bold' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>117</text>
+<rect x='162' y='135.9' width='56' height='104.1' rx='4' fill='#eb6834'/>
+<text x='190.0' y='153.9' font-size='13' fill='#ffffff' text-anchor='middle' font-weight='bold' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>81</text>
+<text x='159.0' y='258.0' font-size='11' fill='#52514e' text-anchor='middle' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>작품명 OFF · 소리 ON</text>
+<text x='159.0' y='273.0' font-size='11' fill='#52514e' text-anchor='middle' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>(v73 A)</text>
+<rect x='300' y='84.4' width='56' height='155.6' rx='4' fill='#2a78d6'/>
+<text x='328.0' y='102.4' font-size='13' fill='#ffffff' text-anchor='middle' font-weight='bold' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>121</text>
+<rect x='362' y='133.3' width='56' height='106.7' rx='4' fill='#eb6834'/>
+<text x='390.0' y='151.3' font-size='13' fill='#ffffff' text-anchor='middle' font-weight='bold' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>83</text>
+<text x='359.0' y='258.0' font-size='11' fill='#52514e' text-anchor='middle' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>작품명 ON · 소리 ON</text>
+<text x='359.0' y='273.0' font-size='11' fill='#52514e' text-anchor='middle' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>(개발 비교 기준, v73 B = v75 A)</text>
+<rect x='500' y='81.9' width='56' height='158.1' rx='4' fill='#2a78d6'/>
+<text x='528.0' y='99.9' font-size='13' fill='#ffffff' text-anchor='middle' font-weight='bold' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>123</text>
+<rect x='562' y='139.7' width='56' height='100.3' rx='4' fill='#eb6834'/>
+<text x='590.0' y='157.7' font-size='13' fill='#ffffff' text-anchor='middle' font-weight='bold' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>78</text>
+<text x='559.0' y='258.0' font-size='11' fill='#52514e' text-anchor='middle' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>작품명 ON · 소리 생략</text>
+<text x='559.0' y='273.0' font-size='11' fill='#52514e' text-anchor='middle' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>(보류 구성, v75 B)</text>
+<rect x='70' y='308' width='12' height='12' rx='2' fill='#2a78d6'/>
+<text x='88.0' y='318.0' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>Hit@10 (10위 안 정답)</text>
+<rect x='240' y='308' width='12' height='12' rx='2' fill='#eb6834'/>
+<text x='258.0' y='318.0' font-size='11' fill='#52514e' text-anchor='start' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>Hit@1 (1위 정답)</text>
+<text x='740.0' y='318.0' font-size='11' fill='#52514e' text-anchor='end' font-weight='normal' font-family='Pretendard, Apple SD Gothic Neo, Noto Sans KR, sans-serif'>작품명 ON·소리 생략은 Hit@10 +2이지만 Hit@1 −5 → 채택 보류</text>
+</svg>
