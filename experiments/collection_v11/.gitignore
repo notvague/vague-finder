@@ -1,0 +1,4 @@
+# 혹시 생길 로컬 사본(보관자 폴더는 저장소 밖에 둔다) · 개발 세션 NEXT_WORK 반영 초안
+private/
+NEXT_WORK_UPDATE.md
+__pycache__/
