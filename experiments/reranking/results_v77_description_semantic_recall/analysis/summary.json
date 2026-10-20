@@ -1,0 +1,993 @@
+{
+ "run": "R1",
+ "counts": {
+  "all": 176,
+  "out_fail": 51,
+  "success": 121,
+  "in_fail": 4,
+  "exact_lyric": 17
+ },
+ "by_split": {
+  "all": {
+   "searchable": 160,
+   "gold_without_description_all": 16,
+   "S_group_at": {
+    "1": 8,
+    "3": 12,
+    "5": 19,
+    "10": 30,
+    "20": 34,
+    "50": 47,
+    "100": 60
+   },
+   "L_group_at": {
+    "1": 4,
+    "3": 11,
+    "5": 15,
+    "10": 23,
+    "20": 31,
+    "50": 43,
+    "100": 55
+   },
+   "V_group_at": {
+    "1": 1,
+    "3": 3,
+    "5": 3,
+    "10": 3,
+    "20": 8,
+    "50": 10,
+    "100": 14
+   },
+   "S_rep10": 25,
+   "S_expand10": 30,
+   "S_new10_total": 1610,
+   "S_new10_gold": 7,
+   "S_new10_distinct_songs": 793,
+   "S_expand10_songs_median": 12.0,
+   "S_expand10_songs_max": 25,
+   "L_rep10": 17,
+   "L_expand10": 23,
+   "L_new10_total": 1569,
+   "L_new10_gold": 2,
+   "L_new10_distinct_songs": 940,
+   "L_expand10_songs_median": 12.0,
+   "L_expand10_songs_max": 21,
+   "S_evidence_kind_at10": {
+    "unique_description": 21,
+    "title_in_chunk": 5,
+    "album_common": 4
+   },
+   "S_gold_group_rep_rule_at10": {
+    "title_unique": 20,
+    "dense": 6,
+    "title_tie_dense": 4
+   }
+  },
+  "out_fail": {
+   "searchable": 47,
+   "gold_without_description_all": 4,
+   "S_group_at": {
+    "1": 1,
+    "3": 3,
+    "5": 5,
+    "10": 7,
+    "20": 8,
+    "50": 12,
+    "100": 15
+   },
+   "L_group_at": {
+    "1": 1,
+    "3": 1,
+    "5": 1,
+    "10": 2,
+    "20": 6,
+    "50": 10,
+    "100": 13
+   },
+   "V_group_at": {
+    "1": 0,
+    "3": 0,
+    "5": 0,
+    "10": 0,
+    "20": 2,
+    "50": 2,
+    "100": 3
+   },
+   "S_rep10": 7,
+   "S_expand10": 7,
+   "S_new10_total": 480,
+   "S_new10_gold": 7,
+   "S_new10_distinct_songs": 338,
+   "S_expand10_songs_median": 12,
+   "S_expand10_songs_max": 23,
+   "L_rep10": 2,
+   "L_expand10": 2,
+   "L_new10_total": 463,
+   "L_new10_gold": 2,
+   "L_new10_distinct_songs": 367,
+   "L_expand10_songs_median": 13,
+   "L_expand10_songs_max": 20,
+   "S_evidence_kind_at10": {
+    "unique_description": 6,
+    "title_in_chunk": 1
+   },
+   "S_gold_group_rep_rule_at10": {
+    "title_unique": 5,
+    "dense": 2
+   }
+  },
+  "success": {
+   "searchable": 109,
+   "gold_without_description_all": 12,
+   "S_group_at": {
+    "1": 7,
+    "3": 9,
+    "5": 14,
+    "10": 23,
+    "20": 26,
+    "50": 34,
+    "100": 44
+   },
+   "L_group_at": {
+    "1": 3,
+    "3": 10,
+    "5": 14,
+    "10": 21,
+    "20": 25,
+    "50": 33,
+    "100": 42
+   },
+   "V_group_at": {
+    "1": 1,
+    "3": 3,
+    "5": 3,
+    "10": 3,
+    "20": 6,
+    "50": 8,
+    "100": 11
+   },
+   "S_rep10": 18,
+   "S_expand10": 23,
+   "S_new10_total": 1091,
+   "S_new10_gold": 0,
+   "S_new10_distinct_songs": 621,
+   "S_expand10_songs_median": 12,
+   "S_expand10_songs_max": 25,
+   "L_rep10": 15,
+   "L_expand10": 21,
+   "L_new10_total": 1074,
+   "L_new10_gold": 0,
+   "L_new10_distinct_songs": 717,
+   "L_expand10_songs_median": 12,
+   "L_expand10_songs_max": 21,
+   "S_evidence_kind_at10": {
+    "unique_description": 15,
+    "title_in_chunk": 4,
+    "album_common": 4
+   },
+   "S_gold_group_rep_rule_at10": {
+    "title_unique": 15,
+    "title_tie_dense": 4,
+    "dense": 4
+   }
+  },
+  "in_fail": {
+   "searchable": 4,
+   "gold_without_description_all": 0,
+   "S_group_at": {
+    "1": 0,
+    "3": 0,
+    "5": 0,
+    "10": 0,
+    "20": 0,
+    "50": 1,
+    "100": 1
+   },
+   "L_group_at": {
+    "1": 0,
+    "3": 0,
+    "5": 0,
+    "10": 0,
+    "20": 0,
+    "50": 0,
+    "100": 0
+   },
+   "V_group_at": {
+    "1": 0,
+    "3": 0,
+    "5": 0,
+    "10": 0,
+    "20": 0,
+    "50": 0,
+    "100": 0
+   },
+   "S_rep10": 0,
+   "S_expand10": 0,
+   "S_new10_total": 39,
+   "S_new10_gold": 0,
+   "S_new10_distinct_songs": 37,
+   "S_expand10_songs_median": 12.0,
+   "S_expand10_songs_max": 14,
+   "L_rep10": 0,
+   "L_expand10": 0,
+   "L_new10_total": 32,
+   "L_new10_gold": 0,
+   "L_new10_distinct_songs": 32,
+   "L_expand10_songs_median": 12.0,
+   "L_expand10_songs_max": 19,
+   "S_evidence_kind_at10": {},
+   "S_gold_group_rep_rule_at10": {}
+  },
+  "exact_lyric": {
+   "searchable": 14,
+   "gold_without_description_all": 3,
+   "S_group_at": {
+    "1": 0,
+    "3": 0,
+    "5": 0,
+    "10": 2,
+    "20": 3,
+    "50": 4,
+    "100": 5
+   },
+   "L_group_at": {
+    "1": 0,
+    "3": 0,
+    "5": 1,
+    "10": 1,
+    "20": 1,
+    "50": 3,
+    "100": 5
+   },
+   "V_group_at": {
+    "1": 0,
+    "3": 0,
+    "5": 0,
+    "10": 0,
+    "20": 1,
+    "50": 1,
+    "100": 2
+   },
+   "S_rep10": 1,
+   "S_expand10": 2,
+   "S_new10_total": 160,
+   "S_new10_gold": 0,
+   "S_new10_distinct_songs": 137,
+   "S_expand10_songs_median": 11,
+   "S_expand10_songs_max": 21,
+   "L_rep10": 0,
+   "L_expand10": 1,
+   "L_new10_total": 154,
+   "L_new10_gold": 0,
+   "L_new10_distinct_songs": 133,
+   "L_expand10_songs_median": 11,
+   "L_expand10_songs_max": 17,
+   "S_evidence_kind_at10": {
+    "unique_description": 1,
+    "album_common": 1
+   },
+   "S_gold_group_rep_rule_at10": {
+    "dense": 1,
+    "title_tie_dense": 1
+   }
+  }
+ },
+ "out_fail_detail": [
+  {
+   "qid": "n040",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": 1,
+   "L_group_rank": 1,
+   "V_group_rank": "",
+   "S_rep10_rank": 1,
+   "S_in_expand10": 1,
+   "S_evidence_kind": "unique_description",
+   "S_gold_group_size": 1
+  },
+  {
+   "qid": "c607",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": 2,
+   "L_group_rank": 83,
+   "V_group_rank": "",
+   "S_rep10_rank": 2,
+   "S_in_expand10": 1,
+   "S_evidence_kind": "unique_description",
+   "S_gold_group_size": 1
+  },
+  {
+   "qid": "n011",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": 2,
+   "L_group_rank": 6,
+   "V_group_rank": 63,
+   "S_rep10_rank": 2,
+   "S_in_expand10": 1,
+   "S_evidence_kind": "unique_description",
+   "S_gold_group_size": 1
+  },
+  {
+   "qid": "t031",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": 4,
+   "L_group_rank": 33,
+   "V_group_rank": "",
+   "S_rep10_rank": 4,
+   "S_in_expand10": 1,
+   "S_evidence_kind": "unique_description",
+   "S_gold_group_size": 1
+  },
+  {
+   "qid": "c602",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": 5,
+   "L_group_rank": 20,
+   "V_group_rank": 14,
+   "S_rep10_rank": 5,
+   "S_in_expand10": 1,
+   "S_evidence_kind": "unique_description",
+   "S_gold_group_size": 1
+  },
+  {
+   "qid": "n072",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": 8,
+   "L_group_rank": 28,
+   "V_group_rank": "",
+   "S_rep10_rank": 8,
+   "S_in_expand10": 1,
+   "S_evidence_kind": "title_in_chunk",
+   "S_gold_group_size": 3
+  },
+  {
+   "qid": "m402",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": 10,
+   "L_group_rank": 56,
+   "V_group_rank": "",
+   "S_rep10_rank": 10,
+   "S_in_expand10": 1,
+   "S_evidence_kind": "unique_description",
+   "S_gold_group_size": 1
+  },
+  {
+   "qid": "t016",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": 11,
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "unique_description",
+   "S_gold_group_size": 1
+  },
+  {
+   "qid": "c603",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": 26,
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "unique_description",
+   "S_gold_group_size": 1
+  },
+  {
+   "qid": "t073",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": 32,
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "unique_description",
+   "S_gold_group_size": 1
+  },
+  {
+   "qid": "t001",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": 35,
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "album_common",
+   "S_gold_group_size": 3
+  },
+  {
+   "qid": "n002",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": 44,
+   "L_group_rank": 21,
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "unique_description",
+   "S_gold_group_size": 1
+  },
+  {
+   "qid": "t038",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": 55,
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "unique_description",
+   "S_gold_group_size": 1
+  },
+  {
+   "qid": "q110",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": 56,
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "unique_description",
+   "S_gold_group_size": 1
+  },
+  {
+   "qid": "t068",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": 86,
+   "L_group_rank": 17,
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "unique_description",
+   "S_gold_group_size": 1
+  },
+  {
+   "qid": "c601",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "c701",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": 20,
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "m302",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "m303",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "m403",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "n016",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "n030",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "n046",
+   "design_seen": 1,
+   "searchable": 0,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "n048",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "n055",
+   "design_seen": 0,
+   "searchable": 0,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "n058",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "n064",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "n065",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "n088",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "n093",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "n095",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "q106",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "q112",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "q115",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "q117",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t009",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t011",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t029",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t040",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": 27,
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t043",
+   "design_seen": 0,
+   "searchable": 0,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t058",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t060",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": 79,
+   "V_group_rank": 18,
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t075",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t077",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t078",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t079",
+   "design_seen": 1,
+   "searchable": 0,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t080",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": 20,
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t092",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t100",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t103",
+   "design_seen": 1,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  },
+  {
+   "qid": "t111",
+   "design_seen": 0,
+   "searchable": 1,
+   "S_group_rank": "",
+   "L_group_rank": "",
+   "V_group_rank": "",
+   "S_rep10_rank": "",
+   "S_in_expand10": 0,
+   "S_evidence_kind": "",
+   "S_gold_group_size": ""
+  }
+ ],
+ "concentration_S_top10": {
+  "distinct_groups": 836,
+  "slots": 1760,
+  "max_group_frequency": 19,
+  "top5_group_frequencies": [
+   19,
+   17,
+   17,
+   16,
+   15
+  ],
+  "queries_with_any_top5_group": 68,
+  "top5_group_sizes": [
+   1,
+   1,
+   1,
+   1,
+   3
+  ],
+  "distinct_rep_songs": 869,
+  "max_rep_song_frequency": 19,
+  "groups_appearing_in_ge_10pct_queries": 1
+ },
+ "cost": {
+  "encode_ms_median": 25.424,
+  "S_search_ms_median": 2.572,
+  "S_search_ms_p90": 2.64,
+  "index_matrix_mb": 54.66,
+  "rss_index_increase_mb": 69.6,
+  "model_device": "mps:0"
+ },
+ "gates": {
+  "E1": {
+   "S_group_at10_out_fail": [
+    "c602",
+    "c607",
+    "m402",
+    "n011",
+    "n040",
+    "n072",
+    "t031"
+   ],
+   "L_group_at10_out_fail": [
+    "n011",
+    "n040"
+   ],
+   "pass": true
+  },
+  "E2": {
+   "S_rep10_out_fail": [
+    "c602",
+    "c607",
+    "m402",
+    "n011",
+    "n040",
+    "n072",
+    "t031"
+   ],
+   "pass": true
+  },
+  "E3": {
+   "E1_not_design_seen": [
+    "c607",
+    "m402",
+    "n040",
+    "n072",
+    "t031"
+   ],
+   "E2_not_design_seen": [
+    "c607",
+    "m402",
+    "n040",
+    "n072",
+    "t031"
+   ],
+   "pass": true
+  },
+  "E4": {
+   "S_search_ms_median": 2.572,
+   "index_matrix_mb": 54.66,
+   "pass": true
+  },
+  "E0": {
+   "status_counts": {
+    "ok": 176
+   },
+   "external_calls": 0,
+   "repeat_identical": true,
+   "pass": true
+  }
+ },
+ "repeat": {
+  "a": "R1",
+  "b": "R2",
+  "differs": {
+   "S": [],
+   "S_reps": [],
+   "L": [],
+   "L_reps": [],
+   "V": []
+  },
+  "identical_all": true,
+  "max_abs_score_diff": 0.0
+ }
+}

@@ -1,0 +1,46 @@
+{
+ "out_fail": 51,
+ "type_counts": {
+  "reached_song": 7,
+  "near": 8,
+  "not_reached": 32,
+  "no_data": 4
+ },
+ "type_counts_design_seen": {
+  "reached_song": 2,
+  "near": 4,
+  "not_reached": 13,
+  "no_data": 2
+ },
+ "mechanism_note": "작성자(모델) 판단 · 사람 검증 전",
+ "mechanism": {
+  "c602": {
+   "label": "context_paraphrase",
+   "note": "경연·우승 맥락을 다른 표현(결승·공연 1위)으로 맞춤"
+  },
+  "c607": {
+   "label": "context_paraphrase",
+   "note": "옛 동네·추억 드라마 맥락을 다른 표현(80년대·88년 드라마 속 청춘)으로 맞춤. 다시 부름은 근거 청크에 없음"
+  },
+  "n011": {
+   "label": "context_paraphrase_plus_year",
+   "note": "데뷔·퍼포먼스를 다른 표현(첫 싱글·과감한 춤)으로, 연도는 글자로 맞춤. L도 6위"
+  },
+  "n040": {
+   "label": "same_words",
+   "note": "답가·여자 버전이 글자로 같음. L도 1위 — 의미 검색 고유 이득이 아니라 소개 원문 표현의 이득"
+  },
+  "t031": {
+   "label": "artist_name_plus_association",
+   "note": "가수 이름 글자 일치 + 분홍↔딸기 색 연상"
+  },
+  "n072": {
+   "label": "album_concept_for_cover",
+   "note": "표지 묘사(우주·행성)를 앨범 콘셉트 소개로 맞춤 — 표지 자체 근거 아님"
+  },
+  "m402": {
+   "label": "generic_sound",
+   "note": "현악기·남자·발라드의 일반 소리 묘사 — 같은 표현의 곡이 많아 경계(10위)"
+  }
+ }
+}

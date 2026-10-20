@@ -1,0 +1,58 @@
+{
+  "run": "R1",
+  "started_at": "2026-10-20T13:10:43+0900",
+  "finished_at": "2026-10-20T13:10:56+0900",
+  "worktree_head": "3d9676ad79ef7031b65cc7c907ad0cdfee07ec5d",
+  "index_manifest_sha256": "1e49ccec2f20a8c7872d0131594588dbf72bef8d43e375d2b08a8538c1e33cd5",
+  "index_vectors_sha256": "50fb9fd3964d7fb06ef03fd4e5fee29d9ae3b3db2fbe256528745f6ef0b113e5",
+  "code_sha256": {
+    "desc_semantic.py": "48a4efba6d91e78d80f952019d9a16cfa06d1ef89a7e2c8faa9eeed1b8f22737",
+    "retrieve.py": "6ec973ec1534abd9715bebf1f210f0c9debf496f0e7055358c41062ea840a315"
+  },
+  "analysis_caches_sha256": {
+    "v06": "36eab91ca92a233bdfba5e3448b7bd561a963fc80b974e094f83fb7a5109eff1",
+    "v09": "e1048ecff964004e982c07828a9fa448da37c3061df00f0bbed51c5d73e7261c",
+    "v10": "c6c2d9d8449570117a99746e29305478c1628684382e8b8418e3ff02ac276188"
+  },
+  "v76": {
+    "module_sha256": "f05d45563fa35ab13d580f443e9f55e6236115df98178af1902be1afea02d1cd",
+    "store_sha256": "11d72680dfe8285c6d8c2559cb3389d1c7014bef78a24ea766656591826eb0ad"
+  },
+  "model": {
+    "name": "nlpai-lab/KoE5",
+    "revision": "237b580aea358e3042fcf5baf78124c33c3afd16",
+    "device": "mps:0"
+  },
+  "queries": 176,
+  "status_counts": {
+    "ok": 176
+  },
+  "text_dense": {
+    "loaded": 5143,
+    "missing": []
+  },
+  "timing": {
+    "index_load_s": 0.077,
+    "bm25_build_s": 0.251,
+    "text_dense_load_s": 1.018,
+    "v76_load_s": 0.283,
+    "model_load_s": 1.603,
+    "encode_ms_median": 25.424,
+    "encode_ms_p90": 43.878,
+    "encode_ms_max": 58.091,
+    "S_search_ms_median": 2.572,
+    "S_search_ms_p90": 2.64,
+    "S_search_ms_max": 5.602
+  },
+  "rss_mb": {
+    "start": 35.5,
+    "before_index": 61.6,
+    "after_index": 131.3,
+    "after_all_indexes": 386.9,
+    "after_model": 1147.7,
+    "index_increase": 69.6,
+    "max": 2105.9
+  },
+  "index_matrix_mb": 54.66,
+  "external_calls": 0
+}

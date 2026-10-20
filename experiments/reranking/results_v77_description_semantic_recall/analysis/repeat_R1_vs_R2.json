@@ -1,0 +1,13 @@
+{
+ "a": "R1",
+ "b": "R2",
+ "differs": {
+  "S": [],
+  "S_reps": [],
+  "L": [],
+  "L_reps": [],
+  "V": []
+ },
+ "identical_all": true,
+ "max_abs_score_diff": 0.0
+}
