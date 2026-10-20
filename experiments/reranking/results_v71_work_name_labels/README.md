@@ -136,7 +136,7 @@ v72 `review_after_labels.csv`의 `model_works_match_label`은 위 분류에 이�
 
 | 경로 | 내용 | Git |
 |---|---|---|
-| `README.md` · `LABELER_GUIDE.md` · `HANDOFF.md` · `PR_DRAFT.md` | 문서. 라벨러 안내는 질의 id·모델 출력·사례 표시가 없다 | 추적 |
+| `README.md` · `LABELER_GUIDE.md` · `HANDOFF.md` | 문서. 라벨러 안내는 질의 id·모델 출력·사례 표시가 없다 | 추적 |
 | `work_label_tool.py` · `selftest_work_label_tool.py` | 도구·자체 검사 | 추적 |
 | `packet_manifest.json` | 가린 표·대응표·원문 대기표·안내문의 sha256, 시드 | 추적 |
 | `freeze_log.jsonl` · `agreement_summary.json` · `label_summary.json` | 고정 기록·집계(질의 원문·작품명 없음) — 라벨이 온 뒤 생김 | 추적 |

@@ -196,7 +196,7 @@ R1~R5는 네 실행이 모두 완료돼야 계산한다(`analyze_v73.py`는 미�
 
 | 경로 | 내용 | Git |
 |---|---|---|
-| `RUN_INFO.md` · `PR_DRAFT.md` | 문서 | 추적 |
+| `RUN_INFO.md` | 문서 | 추적 |
 | `run_eval.py` · `v73_eval_runtime.py` · `v73_budget.py` · `run_live.sh` · `compare_inputs.py` · `qdrant_reference.py` · `server_state.py` · `with_env.py` · `precheck_v73.py` · `analyze_v73.py` · `budget_summary.py` · `selftest_budget.py` · `selftest_runner.sh` · `.gitignore` | 실행기·검사·집계 | 추적 |
 | `inputs/v72_rerank_input_changed.json` · `inputs/expected_work_status.json` | v72 부분집합(질의 id 13) · 질의별 기준 해석 상태(질의 id → 상태) | 추적 |
 | `analysis/precheck_v73.json` · `analysis/live_summary.json` · `analysis/per_query.csv` · `budget_summary.json` | 사전 검증·결과 요약·질의별 표(A1 값만, 질의 원문·작품명·모델 원출력 없음)·장부 요약 | 추적 |

@@ -342,7 +342,7 @@ A = 작품명 해석 ON + 소리 경로 ON(`work_on`), B = 작품명 해석 ON +
 
 | 경로 | 내용 | Git |
 |---|---|---|
-| `RUN_INFO.md` · `PR_DRAFT.md` · `NEXT_WORK_UPDATE.md` | 문서 | 추적(`NEXT_WORK_UPDATE.md`는 사용자 판단 — 로컬 `NEXT_WORK.md` 통합용) |
+| `RUN_INFO.md` | 문서 | 추적 |
 | `v75_eval_runtime.py` · `run_eval.py` · `v75_budget.py` · `run_live.sh` · `compare_inputs.py` · `qdrant_reference.py` · `server_state.py` · `with_env.py` · `precheck_v75.py` · `analyze_v75.py` · `budget_summary.py` · `selftest_budget.py` · `selftest_runner.sh` · `.gitignore` | 실행기·검사·집계 | 추적 |
 | `inputs/*.json` | 기준 해석 상태(질의 id → 상태) · 예열 규칙 파일 | 추적 |
 | `analysis/precheck_v75.json` · `analysis/live_summary.json` · `analysis/per_query.csv` · `budget_summary.json` · `precheck/*.json` · `live_checks/*.json` | 사전 검증·결과 요약·질의별 표(질의 원문·곡 제목·모델 원출력 없음)·장부 요약·입력 대조 | 추적 |

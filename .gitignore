@@ -62,6 +62,10 @@ src/frontend/static/map_data.json
 # 질의 작성 양식은 예시 2행뿐이라 곡 목록 노출이 없다
 docs/plans
 docs/reviews
+# 로컬 NEXT_WORK.md 반영 초안과 PR 본문 초안은 커밋하지 않는다(PR 본문은 GitHub에 남는다)
+NEXT_WORK_UPDATE.md
+PR_DRAFT.md
+PR_FOLLOWUP.md
 !docs/eval/query_writing_template.csv
 cookies.txt
 logs/
