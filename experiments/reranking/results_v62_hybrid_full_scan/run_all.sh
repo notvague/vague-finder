@@ -29,8 +29,8 @@ run() {  # run <이름> <명령...> — 실패하면 종료 코드를 그대로 
   if [ $rc -ne 0 ]; then step "FAILED at '$name' (exit=$rc) — 중단"; exit $rc; fi
 }
 
-run "1 회귀 테스트" zsh -c "$PY -m pytest tests/test_v62_hybrid_full_scan.py tests/test_v61_hybrid_scan_audit.py tests/test_qdrant_backend.py -q -p no:cacheprovider > $OUT/logs/pytest.log 2>&1"
-run "1b 회귀 테스트(QDRANT_HYBRID_SCAN_LIMIT=6000)" zsh -c "QDRANT_HYBRID_SCAN_LIMIT=6000 $PY -m pytest tests/test_v62_hybrid_full_scan.py tests/test_v61_hybrid_scan_audit.py -q -p no:cacheprovider > $OUT/logs/pytest_env6000.log 2>&1"
+run "1 회귀 테스트" zsh -c "$PY -m pytest tests/vector_db/test_v62_hybrid_full_scan.py tests/vector_db/test_v61_hybrid_scan_audit.py tests/vector_db/test_qdrant_backend.py -q -p no:cacheprovider > $OUT/logs/pytest.log 2>&1"
+run "1b 회귀 테스트(QDRANT_HYBRID_SCAN_LIMIT=6000)" zsh -c "QDRANT_HYBRID_SCAN_LIMIT=6000 $PY -m pytest tests/vector_db/test_v62_hybrid_full_scan.py tests/vector_db/test_v61_hybrid_scan_audit.py -q -p no:cacheprovider > $OUT/logs/pytest_env6000.log 2>&1"
 run "2 저장 호출 311건 재생(수정 구현 ↔ 독립 기준, 불일치·건수 부족·limit 검증 실패면 비정상 종료)" zsh -c "$PY $OUT/replay_fixed.py --label fixed --expected-calls 311 > $OUT/logs/replay_fixed.log 2>&1"
 run "3 수정 구현으로 후보 30개 재생성(dev 176) → $CAND_ROOT" zsh $OUT/run_candidates_fixed.sh
 run "4 후보 비교(v61 A·B ↔ 수정 구현)" zsh -c "$PY $OUT/compare_fixed.py --fixed-root $CAND_ROOT > $OUT/logs/compare_fixed.log 2>&1"

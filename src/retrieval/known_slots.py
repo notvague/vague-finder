@@ -37,7 +37,7 @@ from src.backend.schemas.search import KNOWN_SLOT_ORDER
 from src.retrieval.query_analyzer import _quoted_ranges
 
 # 재질문이 "이미 말했다"로 뺄 수 있는 슬롯 — 요청·응답 스키마와 같은 한 곳의 값. clarify.ALLOWED_SLOTS와 같아야 한다
-# (tests/test_known_slots.py가 고정한다).
+# (tests/query/test_known_slots.py가 고정한다).
 KNOWN_SLOT_NAMES: Sequence[str] = KNOWN_SLOT_ORDER
 
 # 절 경계 — 문장 부호, 접속어, 연결 어미. 불확실·부정 표현은 같은 절 안에서만 그 단서에 붙는다.

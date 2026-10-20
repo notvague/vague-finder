@@ -1,4 +1,4 @@
-// node --test tests/frontend/explain_panel.test.cjs   (pytest도 tests/test_frontend_node.py로 함께 돌린다)
+// node --test tests/frontend/explain_panel.test.cjs   (pytest도 tests/frontend/test_frontend_node.py로 함께 돌린다)
 //
 // 근거 패널(map.js explainPanel)과 실행 기록 줄(renderRunNote)을 **실제 함수로** 그린다. DOM만 대체한다.
 //

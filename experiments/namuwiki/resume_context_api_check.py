@@ -154,8 +154,8 @@ def run(project: Path, root: Path) -> int:
         step("stop_backend", base + ["stop", "backend"])
         step("build", evaluation + ["build", "backend"])
         prefix = evaluation + ["run", "--rm", "--no-deps", "-T", "backend", "python", "-u", "-m"]
-        step("tests", prefix + ["pytest", "-q", "tests/context", "tests/test_qdrant_backend.py",
-                                "tests/test_clarify_state.py", "tests/test_search_explain.py", "tests/test_lyric_evidence.py"])
+        step("tests", prefix + ["pytest", "-q", "tests/context", "tests/vector_db/test_qdrant_backend.py",
+                                "tests/clarify/test_clarify_state.py", "tests/search/test_search_explain.py", "tests/search/test_lyric_evidence.py"])
         passed_binding(project, root)
         step("runtime_identity", prefix + ["experiments.namuwiki.resume_context_api_check", "--runtime-only", "--output-dir", relative])
         step("effective_settings", prefix + ["experiments.namuwiki.check_context_review_runtime", "--output-dir", relative + "/api_resume"])

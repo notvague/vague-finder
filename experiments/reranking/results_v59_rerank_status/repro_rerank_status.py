@@ -32,9 +32,9 @@ from src.retrieval import explain as ex  # noqa: E402
 from src.retrieval.evaluate_search_accuracy import rerank_outcome  # noqa: E402
 from src.retrieval.gemini_listwise_reranker import GeminiListwiseReranker, GeminiListwiseRerankerConfig  # noqa: E402
 from tests.fake_gemini_client import FOREIGN_ID_PREFIX, FakeGeminiClient, _Response, normal_ranking  # noqa: E402
-from tests.test_rerank_shared_budget import ScriptedClient, _lyric_analysis, _others, _protected  # noqa: E402
-from tests.test_search_explain import _StubReranker, _analysis, _router  # noqa: E402
-from tests.test_user_explanation_route import _CountingAnalyzer  # noqa: E402
+from tests.rerank.test_rerank_shared_budget import ScriptedClient, _lyric_analysis, _others, _protected  # noqa: E402
+from tests.search.test_search_explain import _StubReranker, _analysis, _router  # noqa: E402
+from tests.api.test_user_explanation_route import _CountingAnalyzer  # noqa: E402
 
 BUDGET = 1.0
 REQ_TIMEOUT = 0.6
@@ -140,7 +140,7 @@ def run_cases():
                       modality_weights=ModalityWeights(text=0.1, image=0.9, audio=0.0))
     put("policy_skip_image_dominant", c, reranker(c), cover, [], _others(n=4))
     c = Client(["normal"]); put("rerank_disabled", c, reranker(c), _analysis(), [], _others(n=4), use_rerank=False)
-    from tests.test_search_explain import _LegacyReranker
+    from tests.search.test_search_explain import _LegacyReranker
     put("unknown_status_backend", None, _LegacyReranker(), _analysis(), [], _others(n=4))
     return cases
 

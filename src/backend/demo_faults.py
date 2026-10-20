@@ -11,7 +11,7 @@
 
 모델을 올리지 않으므로 기동이 즉시 끝나고 로컬 Qdrant 폴더도 열지 않는다 —
 개발 서버가 떠 있는 채로 함께 돌려도 된다. 라우트가 벡터 DB에 기대는 의존성을 새로
-쓰면 여기서도 대체해야 한다(`tests/test_demo_faults.py`가 실물이 열리지 않는지 본다).
+쓰면 여기서도 대체해야 한다(`tests/api/test_demo_faults.py`가 실물이 열리지 않는지 본다).
 
     venv/bin/python -m src.backend.demo_faults        # 8010 포트
     curl -X POST localhost:8010/__fault -d '{"mode":"rerank_fail"}'

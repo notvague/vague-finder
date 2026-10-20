@@ -1,4 +1,4 @@
-// node --test tests/frontend/clarify_flow.test.cjs   (pytest도 tests/test_frontend_node.py로 함께 돌린다)
+// node --test tests/frontend/clarify_flow.test.cjs   (pytest도 tests/frontend/test_frontend_node.py로 함께 돌린다)
 //
 // 화면(map.js)의 재질문 상태 전이를 **실제 함수로** 실행한다. DOM과 서버 호출만 대체하고 모델·DB는 쓰지 않는다.
 //

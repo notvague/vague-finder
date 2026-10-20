@@ -304,7 +304,7 @@ def _after_span(after: str) -> str:
 def is_specific_mv_scene_query(query: str) -> bool:
     """사용자가 **뮤직비디오 속 구체적인 장면**을 단서로 말했는가. 원문만 본다.
 
-    지원 범위(`tests/test_rerank_policy.py`로 고정 — 예문 목록과 성질 시험):
+    지원 범위(`tests/rerank/test_rerank_policy.py`로 고정 — 예문 목록과 성질 시험):
       대상   — "뮤비에 의자가 하늘에 떠있는 장면이 있어", "뮤비를 봤는데 의자가 하늘에 떠 있었어",
                "뮤비에서 교복 입고 춤추는 노래", "뮤비 배경이 사막이야", "뮤비가 흑백이고 비가 계속 내려",
                "제목은 기억 안 나는데 뮤비에서 의자가 하늘에 떠 있었어"(다른 대상의 부정은 무시),
