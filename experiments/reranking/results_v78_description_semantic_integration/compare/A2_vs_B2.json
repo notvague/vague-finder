@@ -1,0 +1,2545 @@
+{
+ "pair": "sem_off_server_rep2 vs sem_on_server_rep2",
+ "a": "experiments/reranking/results_v78_description_semantic_integration/runs/sem_off_server_rep2",
+ "b": "experiments/reranking/results_v78_description_semantic_integration/runs/sem_on_server_rep2",
+ "a_done": true,
+ "b_done": true,
+ "queries": 176,
+ "missing_either": [],
+ "fields_compared": [
+  "cand_ids",
+  "cand_scores",
+  "lyrics",
+  "protection",
+  "rerank_input",
+  "prompts",
+  "final"
+ ],
+ "input_identical": 24,
+ "input_diff_queries": [
+  "c601",
+  "c602",
+  "c603",
+  "c605",
+  "c607",
+  "c701",
+  "c705",
+  "c706",
+  "c707",
+  "m102",
+  "m103",
+  "m104",
+  "m201",
+  "m202",
+  "m203",
+  "m302",
+  "m303",
+  "m402",
+  "m403",
+  "n002",
+  "n006",
+  "n010",
+  "n011",
+  "n014",
+  "n016",
+  "n018",
+  "n019",
+  "n020",
+  "n021",
+  "n025",
+  "n029",
+  "n030",
+  "n031",
+  "n033",
+  "n034",
+  "n035",
+  "n038",
+  "n040",
+  "n042",
+  "n043",
+  "n044",
+  "n045",
+  "n046",
+  "n048",
+  "n051",
+  "n054",
+  "n055",
+  "n057",
+  "n058",
+  "n061",
+  "n062",
+  "n065",
+  "n066",
+  "n068",
+  "n071",
+  "n072",
+  "n073",
+  "n074",
+  "n075",
+  "n076",
+  "n077",
+  "n081",
+  "n082",
+  "n086",
+  "n088",
+  "n089",
+  "n090",
+  "n091",
+  "n093",
+  "n095",
+  "n096",
+  "n097",
+  "q101",
+  "q103",
+  "q104",
+  "q105",
+  "q106",
+  "q107",
+  "q108",
+  "q110",
+  "q112",
+  "q113",
+  "q114",
+  "q115",
+  "q117",
+  "q202",
+  "q204",
+  "q205",
+  "q206",
+  "q207",
+  "q208",
+  "q210",
+  "q215",
+  "q218",
+  "q307",
+  "q308",
+  "q310",
+  "q311",
+  "q312",
+  "q313",
+  "q314",
+  "q315",
+  "q316",
+  "q318",
+  "t001",
+  "t004",
+  "t007",
+  "t009",
+  "t010",
+  "t011",
+  "t024",
+  "t026",
+  "t029",
+  "t031",
+  "t033",
+  "t036",
+  "t037",
+  "t039",
+  "t040",
+  "t041",
+  "t042",
+  "t043",
+  "t044",
+  "t046",
+  "t053",
+  "t058",
+  "t062",
+  "t068",
+  "t070",
+  "t071",
+  "t073",
+  "t075",
+  "t077",
+  "t078",
+  "t080",
+  "t082",
+  "t083",
+  "t084",
+  "t085",
+  "t086",
+  "t092",
+  "t096",
+  "t097",
+  "t098",
+  "t099",
+  "t100",
+  "t101",
+  "t103",
+  "t104",
+  "t107",
+  "t108",
+  "t111"
+ ],
+ "diff_counts": {
+  "cand_ids": 152,
+  "cand_scores": 152,
+  "lyrics": 0,
+  "protection": 0,
+  "rerank_input": 132,
+  "prompts": 132,
+  "final": 152
+ },
+ "diff_queries": {
+  "cand_ids": [
+   "c601",
+   "c602",
+   "c603",
+   "c605",
+   "c607",
+   "c701",
+   "c705",
+   "c706",
+   "c707",
+   "m102",
+   "m103",
+   "m104",
+   "m201",
+   "m202",
+   "m203",
+   "m302",
+   "m303",
+   "m402",
+   "m403",
+   "n002",
+   "n006",
+   "n010",
+   "n011",
+   "n014",
+   "n016",
+   "n018",
+   "n019",
+   "n020",
+   "n021",
+   "n025",
+   "n029",
+   "n030",
+   "n031",
+   "n033",
+   "n034",
+   "n035",
+   "n038",
+   "n040",
+   "n042",
+   "n043",
+   "n044",
+   "n045",
+   "n046",
+   "n048",
+   "n051",
+   "n054",
+   "n055",
+   "n057",
+   "n058",
+   "n061",
+   "n062",
+   "n065",
+   "n066",
+   "n068",
+   "n071",
+   "n072",
+   "n073",
+   "n074",
+   "n075",
+   "n076",
+   "n077",
+   "n081",
+   "n082",
+   "n086",
+   "n088",
+   "n089",
+   "n090",
+   "n091",
+   "n093",
+   "n095",
+   "n096",
+   "n097",
+   "q101",
+   "q103",
+   "q104",
+   "q105",
+   "q106",
+   "q107",
+   "q108",
+   "q110",
+   "q112",
+   "q113",
+   "q114",
+   "q115",
+   "q117",
+   "q202",
+   "q204",
+   "q205",
+   "q206",
+   "q207",
+   "q208",
+   "q210",
+   "q215",
+   "q218",
+   "q307",
+   "q308",
+   "q310",
+   "q311",
+   "q312",
+   "q313",
+   "q314",
+   "q315",
+   "q316",
+   "q318",
+   "t001",
+   "t004",
+   "t007",
+   "t009",
+   "t010",
+   "t011",
+   "t024",
+   "t026",
+   "t029",
+   "t031",
+   "t033",
+   "t036",
+   "t037",
+   "t039",
+   "t040",
+   "t041",
+   "t042",
+   "t043",
+   "t044",
+   "t046",
+   "t053",
+   "t058",
+   "t062",
+   "t068",
+   "t070",
+   "t071",
+   "t073",
+   "t075",
+   "t077",
+   "t078",
+   "t080",
+   "t082",
+   "t083",
+   "t084",
+   "t085",
+   "t086",
+   "t092",
+   "t096",
+   "t097",
+   "t098",
+   "t099",
+   "t100",
+   "t101",
+   "t103",
+   "t104",
+   "t107",
+   "t108",
+   "t111"
+  ],
+  "cand_scores": [
+   "c601",
+   "c602",
+   "c603",
+   "c605",
+   "c607",
+   "c701",
+   "c705",
+   "c706",
+   "c707",
+   "m102",
+   "m103",
+   "m104",
+   "m201",
+   "m202",
+   "m203",
+   "m302",
+   "m303",
+   "m402",
+   "m403",
+   "n002",
+   "n006",
+   "n010",
+   "n011",
+   "n014",
+   "n016",
+   "n018",
+   "n019",
+   "n020",
+   "n021",
+   "n025",
+   "n029",
+   "n030",
+   "n031",
+   "n033",
+   "n034",
+   "n035",
+   "n038",
+   "n040",
+   "n042",
+   "n043",
+   "n044",
+   "n045",
+   "n046",
+   "n048",
+   "n051",
+   "n054",
+   "n055",
+   "n057",
+   "n058",
+   "n061",
+   "n062",
+   "n065",
+   "n066",
+   "n068",
+   "n071",
+   "n072",
+   "n073",
+   "n074",
+   "n075",
+   "n076",
+   "n077",
+   "n081",
+   "n082",
+   "n086",
+   "n088",
+   "n089",
+   "n090",
+   "n091",
+   "n093",
+   "n095",
+   "n096",
+   "n097",
+   "q101",
+   "q103",
+   "q104",
+   "q105",
+   "q106",
+   "q107",
+   "q108",
+   "q110",
+   "q112",
+   "q113",
+   "q114",
+   "q115",
+   "q117",
+   "q202",
+   "q204",
+   "q205",
+   "q206",
+   "q207",
+   "q208",
+   "q210",
+   "q215",
+   "q218",
+   "q307",
+   "q308",
+   "q310",
+   "q311",
+   "q312",
+   "q313",
+   "q314",
+   "q315",
+   "q316",
+   "q318",
+   "t001",
+   "t004",
+   "t007",
+   "t009",
+   "t010",
+   "t011",
+   "t024",
+   "t026",
+   "t029",
+   "t031",
+   "t033",
+   "t036",
+   "t037",
+   "t039",
+   "t040",
+   "t041",
+   "t042",
+   "t043",
+   "t044",
+   "t046",
+   "t053",
+   "t058",
+   "t062",
+   "t068",
+   "t070",
+   "t071",
+   "t073",
+   "t075",
+   "t077",
+   "t078",
+   "t080",
+   "t082",
+   "t083",
+   "t084",
+   "t085",
+   "t086",
+   "t092",
+   "t096",
+   "t097",
+   "t098",
+   "t099",
+   "t100",
+   "t101",
+   "t103",
+   "t104",
+   "t107",
+   "t108",
+   "t111"
+  ],
+  "rerank_input": [
+   "c601",
+   "c602",
+   "c603",
+   "c605",
+   "c607",
+   "c701",
+   "c705",
+   "c706",
+   "c707",
+   "m102",
+   "m103",
+   "m104",
+   "m201",
+   "m202",
+   "m203",
+   "m302",
+   "m303",
+   "m402",
+   "m403",
+   "n002",
+   "n006",
+   "n010",
+   "n011",
+   "n014",
+   "n016",
+   "n018",
+   "n019",
+   "n020",
+   "n021",
+   "n025",
+   "n029",
+   "n030",
+   "n031",
+   "n033",
+   "n034",
+   "n035",
+   "n038",
+   "n040",
+   "n042",
+   "n043",
+   "n044",
+   "n045",
+   "n046",
+   "n048",
+   "n051",
+   "n054",
+   "n055",
+   "n057",
+   "n058",
+   "n061",
+   "n062",
+   "n065",
+   "n072",
+   "n081",
+   "n082",
+   "n086",
+   "n088",
+   "n089",
+   "n090",
+   "n093",
+   "n095",
+   "n096",
+   "n097",
+   "q101",
+   "q103",
+   "q104",
+   "q105",
+   "q106",
+   "q107",
+   "q108",
+   "q110",
+   "q112",
+   "q113",
+   "q114",
+   "q115",
+   "q202",
+   "q205",
+   "q206",
+   "q207",
+   "q208",
+   "q210",
+   "q215",
+   "q218",
+   "q308",
+   "q310",
+   "q311",
+   "q312",
+   "q313",
+   "q314",
+   "q316",
+   "q318",
+   "t001",
+   "t004",
+   "t007",
+   "t009",
+   "t010",
+   "t011",
+   "t024",
+   "t026",
+   "t029",
+   "t031",
+   "t033",
+   "t036",
+   "t037",
+   "t039",
+   "t040",
+   "t041",
+   "t042",
+   "t043",
+   "t044",
+   "t046",
+   "t053",
+   "t058",
+   "t062",
+   "t068",
+   "t070",
+   "t071",
+   "t073",
+   "t075",
+   "t077",
+   "t078",
+   "t080",
+   "t083",
+   "t084",
+   "t085",
+   "t100",
+   "t101",
+   "t103",
+   "t104",
+   "t107",
+   "t108",
+   "t111"
+  ],
+  "prompts": [
+   "c601",
+   "c602",
+   "c603",
+   "c605",
+   "c607",
+   "c701",
+   "c705",
+   "c706",
+   "c707",
+   "m102",
+   "m103",
+   "m104",
+   "m201",
+   "m202",
+   "m203",
+   "m302",
+   "m303",
+   "m402",
+   "m403",
+   "n002",
+   "n006",
+   "n010",
+   "n011",
+   "n014",
+   "n016",
+   "n018",
+   "n019",
+   "n020",
+   "n021",
+   "n025",
+   "n029",
+   "n030",
+   "n031",
+   "n033",
+   "n034",
+   "n035",
+   "n038",
+   "n040",
+   "n042",
+   "n043",
+   "n044",
+   "n045",
+   "n046",
+   "n048",
+   "n051",
+   "n054",
+   "n055",
+   "n057",
+   "n058",
+   "n061",
+   "n062",
+   "n065",
+   "n072",
+   "n081",
+   "n082",
+   "n086",
+   "n088",
+   "n089",
+   "n090",
+   "n093",
+   "n095",
+   "n096",
+   "n097",
+   "q101",
+   "q103",
+   "q104",
+   "q105",
+   "q106",
+   "q107",
+   "q108",
+   "q110",
+   "q112",
+   "q113",
+   "q114",
+   "q115",
+   "q202",
+   "q205",
+   "q206",
+   "q207",
+   "q208",
+   "q210",
+   "q215",
+   "q218",
+   "q308",
+   "q310",
+   "q311",
+   "q312",
+   "q313",
+   "q314",
+   "q316",
+   "q318",
+   "t001",
+   "t004",
+   "t007",
+   "t009",
+   "t010",
+   "t011",
+   "t024",
+   "t026",
+   "t029",
+   "t031",
+   "t033",
+   "t036",
+   "t037",
+   "t039",
+   "t040",
+   "t041",
+   "t042",
+   "t043",
+   "t044",
+   "t046",
+   "t053",
+   "t058",
+   "t062",
+   "t068",
+   "t070",
+   "t071",
+   "t073",
+   "t075",
+   "t077",
+   "t078",
+   "t080",
+   "t083",
+   "t084",
+   "t085",
+   "t100",
+   "t101",
+   "t103",
+   "t104",
+   "t107",
+   "t108",
+   "t111"
+  ],
+  "final": [
+   "c601",
+   "c602",
+   "c603",
+   "c605",
+   "c607",
+   "c701",
+   "c705",
+   "c706",
+   "c707",
+   "m102",
+   "m103",
+   "m104",
+   "m201",
+   "m202",
+   "m203",
+   "m302",
+   "m303",
+   "m402",
+   "m403",
+   "n002",
+   "n006",
+   "n010",
+   "n011",
+   "n014",
+   "n016",
+   "n018",
+   "n019",
+   "n020",
+   "n021",
+   "n025",
+   "n029",
+   "n030",
+   "n031",
+   "n033",
+   "n034",
+   "n035",
+   "n038",
+   "n040",
+   "n042",
+   "n043",
+   "n044",
+   "n045",
+   "n046",
+   "n048",
+   "n051",
+   "n054",
+   "n055",
+   "n057",
+   "n058",
+   "n061",
+   "n062",
+   "n065",
+   "n066",
+   "n068",
+   "n071",
+   "n072",
+   "n073",
+   "n074",
+   "n075",
+   "n076",
+   "n077",
+   "n081",
+   "n082",
+   "n086",
+   "n088",
+   "n089",
+   "n090",
+   "n091",
+   "n093",
+   "n095",
+   "n096",
+   "n097",
+   "q101",
+   "q103",
+   "q104",
+   "q105",
+   "q106",
+   "q107",
+   "q108",
+   "q110",
+   "q112",
+   "q113",
+   "q114",
+   "q115",
+   "q117",
+   "q202",
+   "q204",
+   "q205",
+   "q206",
+   "q207",
+   "q208",
+   "q210",
+   "q215",
+   "q218",
+   "q307",
+   "q308",
+   "q310",
+   "q311",
+   "q312",
+   "q313",
+   "q314",
+   "q315",
+   "q316",
+   "q318",
+   "t001",
+   "t004",
+   "t007",
+   "t009",
+   "t010",
+   "t011",
+   "t024",
+   "t026",
+   "t029",
+   "t031",
+   "t033",
+   "t036",
+   "t037",
+   "t039",
+   "t040",
+   "t041",
+   "t042",
+   "t043",
+   "t044",
+   "t046",
+   "t053",
+   "t058",
+   "t062",
+   "t068",
+   "t070",
+   "t071",
+   "t073",
+   "t075",
+   "t077",
+   "t078",
+   "t080",
+   "t082",
+   "t083",
+   "t084",
+   "t085",
+   "t086",
+   "t092",
+   "t096",
+   "t097",
+   "t098",
+   "t099",
+   "t100",
+   "t101",
+   "t103",
+   "t104",
+   "t107",
+   "t108",
+   "t111"
+  ]
+ },
+ "cand_set_diff_queries": [
+  "c601",
+  "c602",
+  "c603",
+  "c607",
+  "c701",
+  "c705",
+  "c706",
+  "c707",
+  "m102",
+  "m103",
+  "m104",
+  "m201",
+  "m202",
+  "m203",
+  "m302",
+  "m303",
+  "m402",
+  "m403",
+  "n002",
+  "n010",
+  "n011",
+  "n014",
+  "n016",
+  "n018",
+  "n019",
+  "n020",
+  "n021",
+  "n025",
+  "n029",
+  "n030",
+  "n031",
+  "n033",
+  "n034",
+  "n035",
+  "n038",
+  "n040",
+  "n043",
+  "n044",
+  "n045",
+  "n046",
+  "n048",
+  "n051",
+  "n054",
+  "n057",
+  "n058",
+  "n061",
+  "n062",
+  "n065",
+  "n066",
+  "n068",
+  "n071",
+  "n072",
+  "n073",
+  "n074",
+  "n075",
+  "n076",
+  "n077",
+  "n081",
+  "n082",
+  "n086",
+  "n088",
+  "n089",
+  "n090",
+  "n091",
+  "n093",
+  "n095",
+  "n096",
+  "n097",
+  "q101",
+  "q103",
+  "q104",
+  "q105",
+  "q106",
+  "q107",
+  "q108",
+  "q110",
+  "q112",
+  "q113",
+  "q114",
+  "q115",
+  "q117",
+  "q202",
+  "q204",
+  "q205",
+  "q206",
+  "q207",
+  "q210",
+  "q215",
+  "q218",
+  "q307",
+  "q308",
+  "q310",
+  "q311",
+  "q312",
+  "q313",
+  "q314",
+  "q315",
+  "q316",
+  "t001",
+  "t004",
+  "t007",
+  "t009",
+  "t010",
+  "t011",
+  "t024",
+  "t026",
+  "t029",
+  "t031",
+  "t033",
+  "t036",
+  "t037",
+  "t039",
+  "t040",
+  "t041",
+  "t042",
+  "t043",
+  "t044",
+  "t046",
+  "t053",
+  "t058",
+  "t062",
+  "t068",
+  "t070",
+  "t073",
+  "t075",
+  "t077",
+  "t078",
+  "t080",
+  "t082",
+  "t083",
+  "t085",
+  "t086",
+  "t092",
+  "t096",
+  "t097",
+  "t098",
+  "t099",
+  "t100",
+  "t101",
+  "t103",
+  "t104",
+  "t107",
+  "t108",
+  "t111"
+ ],
+ "path_diff_query_ids": {},
+ "groups_not_sent": {},
+ "retry_prompt_changed_queries": [],
+ "per_query": {
+  "c601": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "c602": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "c603": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "c605": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "c607": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "c701": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "c705": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "c706": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "c707": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "m102": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "m103": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "m104": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "m201": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "m202": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "m203": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "m302": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "m303": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "m402": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "m403": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n002": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n006": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n010": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n011": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n014": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n016": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n018": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n019": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n020": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n021": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n025": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n029": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n030": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n031": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n033": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n034": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n035": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n038": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n040": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n042": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n043": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n044": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n045": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n046": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n048": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n051": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n054": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n055": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n057": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n058": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n061": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n062": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n065": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n066": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "n068": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "n071": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "n072": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n073": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "n074": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "n075": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "n076": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "n077": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "n081": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n082": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n086": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n088": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n089": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n090": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n091": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "n093": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n095": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n096": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "n097": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q101": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q103": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q104": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q105": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q106": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q107": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q108": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q110": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q112": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q113": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q114": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q115": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q117": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "q202": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q204": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "q205": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q206": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q207": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q208": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q210": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q215": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q218": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q307": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "q308": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q310": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q311": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q312": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q313": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q314": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q315": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "q316": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "q318": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t001": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t004": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t007": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t009": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t010": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t011": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t024": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t026": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t029": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t031": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t033": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t036": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t037": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t039": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t040": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t041": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t042": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t043": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t044": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t046": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t053": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t058": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t062": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t068": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t070": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t071": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t073": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t075": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t077": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t078": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t080": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t082": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "t083": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t084": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t085": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t086": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "t092": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "t096": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "t097": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "t098": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "t099": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "final"
+   ],
+   "paths": []
+  },
+  "t100": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t101": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t103": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t104": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t107": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t108": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  },
+  "t111": {
+   "fields": [
+    "cand_ids",
+    "cand_scores",
+    "rerank_input",
+    "prompts",
+    "final"
+   ],
+   "paths": []
+  }
+ }
+}

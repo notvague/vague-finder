@@ -1,0 +1,37 @@
+{
+ "v77_rankings_sha256_16": "5c6f729be780ce87",
+ "runtime_fingerprint": {
+  "schema_version": "description_semantic_runtime_v1",
+  "rule_version": "desc_semantic_v1",
+  "structure_sha256_16": "466bf366afafc862",
+  "member_dense_sha256_16": "01a1ef1970e69b38",
+  "vectors_sha256_16": "50fb9fd3964d7fb0",
+  "groups": "3904",
+  "chunk_rows": "13372"
+ },
+ "store_load_seconds": 0.042,
+ "queries": 176,
+ "applicable": 159,
+ "all": {
+  "input_sha16_matches_v77": 176,
+  "groups_same": 176,
+  "chunks_same": 176,
+  "scores_same_6dp": 176,
+  "reps_same": 176
+ },
+ "applicable_counts": {
+  "input_sha16_matches_v77": 159,
+  "groups_same": 159,
+  "chunks_same": 159,
+  "scores_same_6dp": 159,
+  "reps_same": 159
+ },
+ "max_score_abs_diff": 0.0,
+ "max_vector_abs_diff_product_vs_pinned": 0.0,
+ "rule_counts_top10": {
+  "dense": 1007,
+  "title_unique": 704,
+  "title_tie_dense": 49
+ },
+ "mismatches": []
+}
