@@ -182,13 +182,15 @@ class ContextArtifactV6Tests(unittest.TestCase):
             self.assertIn(expected, terms)
 
     def test_default_artifact_path_follows_custom_raw_sandbox(self):
+        # default_artifact_dir resolves symlinks (macOS: /tmp -> /private/tmp)
+        # so run_backfill can compare it with the resolved raw/cache dirs.
         self.assertEqual(
             default_artifact_dir(Path("/tmp/context-test/raw")),
-            Path("/tmp/context-test/artifacts/context"),
+            Path("/tmp/context-test/artifacts/context").resolve(),
         )
         self.assertEqual(
             default_artifact_dir(Path("/app/data/raw")),
-            Path("/app/artifacts/context"),
+            Path("/app/artifacts/context").resolve(),
         )
 
 
