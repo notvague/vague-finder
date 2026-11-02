@@ -1,0 +1,26 @@
+{
+ "H1": true,
+ "H2": true,
+ "H3": true,
+ "H4": true,
+ "H5": true,
+ "max_seconds": 10.24,
+ "median_delta_vs_off": {
+  "triggered": 1.16,
+  "not_triggered": 0.21
+ },
+ "median_delta_vs_on": {
+  "triggered": 0.66,
+  "not_triggered": 0.39
+ },
+ "names_checked": 16,
+ "leak": [],
+ "resolver_status": {
+  "c602": "candidates",
+  "c607": "candidates",
+  "c707": "candidates",
+  "n043": "candidates",
+  "n010": "abstain",
+  "t043": "candidates"
+ }
+}
