@@ -7,6 +7,10 @@ Qdrant 저장 폴더까지 연다. 개발 서버가 떠 있는 채로 테스트�
 
 `setdefault`이므로 일부러 켜서 돌리는 것은 그대로 된다.
 
+**테스트는 서비스 구성 스위치를 .env에서 물려받지 않는다.** 시험은 코드 기본 구성(작품명 해석 꺼짐 · 소리 경로 켬)을 기준으로 쓰였다.
+`.env`에 서비스 구성(`AUDIO_FUSION_SCALE=0` 등)을 넣은 PC에서 소리 경로를 전제한 시험이 떨어지지 않게 기본값을 먼저 둔다
+(`load_dotenv`는 이미 있는 환경변수를 덮지 않는다). 값을 시험하는 테스트는 직접 setenv한다.
+
 **테스트는 Vertex AI도 ADC도 건드리지 않는다.** `src.common.gemini_client`의 ADC 읽기(`_load_default_credentials`)와
 기동·측정 시작 검사(`verify_vertex_setup`)를 모든 테스트에서 바꿔 끼운다 — .env에 프로젝트가 있는 PC에서 `QueryAnalyzer()`·
 리랭커가 실제 Vertex를 부르거나, ADC가 없는 PC에서 앱 기동 테스트가 떨어지지 않게. 바꿔 끼운 자격 증명은 토큰 요청에서
@@ -22,6 +26,8 @@ import pytest
 
 os.environ.setdefault("SEARCH_WARMUP", "0")
 os.environ.setdefault("FEEDBACK_COLLECTION_ENABLED", "0")
+os.environ.setdefault("AUDIO_FUSION_SCALE", "1.0")
+os.environ.setdefault("WORK_NAME_RESOLUTION_ENABLED", "0")
 
 
 class OfflineCredentials(google.auth.credentials.Credentials):
