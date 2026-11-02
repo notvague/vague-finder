@@ -60,7 +60,7 @@ from src.retrieval.lyrics_exact_search import (
 from src.retrieval.query_analyzer import QueryAnalyzer, rule_fallback
 from src.retrieval.search_router import SearchRouter
 from src.retrieval.search_service import SearchService
-from src.retrieval.user_explanation import build_user_explanation
+from src.retrieval.user_explanation import UserExplanation, build_user_explanation, distinguish_summaries
 from src.feedback.capture import capture_search
 from src.vector_db.settings import TEXT_HYBRID_INDEX_NAME
 
@@ -213,28 +213,52 @@ def _user_explanation(
     explain: SongExplain,
     evidence: list,
     rerank_skip_reason: str,
-) -> Optional[UserExplanationOut]:
+) -> Optional[UserExplanation]:
     """사용자용 설명. **같은 실행의 것만 쓴다** — 원문·검색에 쓴 분석·답변·결과 곡·기록·가사 인용.
 
-    모델·DB를 부르지 않고 입력을 바꾸지 않는다(`build_user_explanation`). 설명을 못 만들어도,
-    만든 설명이 응답 스키마와 어긋나도 검색 응답은 실패하지 않는다 — 그 곡은 기존 기록만 보인다.
-    그래서 응답 모델 검증까지 여기서 끝내고 검증된 모델을 넘긴다.
+    모델·DB를 부르지 않고 입력을 바꾸지 않는다(`build_user_explanation`). 설명을 못 만들어도 검색 응답은
+    실패하지 않는다 — 그 곡은 기존 기록만 보인다.
     """
     try:
-        return to_user_explanation_out(
-            build_user_explanation(
-                query=query,
-                analysis=analysis,
-                search_analysis=search_analysis,
-                answers=answers,
-                track=track,
-                explain=explain,
-                evidence=evidence,
-                rerank_skip_reason=rerank_skip_reason,
-            )
+        return build_user_explanation(
+            query=query,
+            analysis=analysis,
+            search_analysis=search_analysis,
+            answers=answers,
+            track=track,
+            explain=explain,
+            evidence=evidence,
+            rerank_skip_reason=rerank_skip_reason,
         )
     except Exception:  # 설명은 부가 정보다 — 결과를 막지 않는다
         logger.exception("[explain] %s 사용자용 설명 생성 실패", explain.song_id)
+        return None
+
+
+def _distinguished_explanations(
+    built: Sequence[Optional[Any]], song_explains: Sequence[SongExplain],
+) -> list:
+    """결과 곡을 함께 보고 요약을 다시 쓴다(곡마다 다른 단서 우선). 실패하면 곡별 요약을 그대로 쓴다."""
+    usable = [i for i, ux in enumerate(built) if isinstance(ux, UserExplanation)]
+    out = list(built)
+    try:
+        rewritten = distinguish_summaries([(built[i], song_explains[i]) for i in usable])
+    except Exception:  # 요약 순서 때문에 설명 전체를 잃지 않는다
+        logger.exception("[explain] 요약 비교 실패 — 곡별 요약을 그대로 쓴다")
+        return out
+    for i, ux in zip(usable, rewritten):
+        out[i] = ux
+    return out
+
+
+def _validated_explanation(built: Optional[Any], song_id: str) -> Optional[UserExplanationOut]:
+    """응답 스키마 검증. 어긋난 설명은 그 곡에서만 빠지고 검색 응답은 실패하지 않는다."""
+    if built is None:
+        return None
+    try:
+        return to_user_explanation_out(built)
+    except Exception:
+        logger.exception("[explain] %s 사용자용 설명 생성 실패", song_id)
         return None
 
 
@@ -450,31 +474,42 @@ async def search(
                     else (rerank_skips[0] if rerank_skips else "")
                 )
                 snapshot = lyrics_snapshot[0] if lyrics_snapshot else None
-                explained = []
-                for track in results:
-                    song_explain = recorder.record.get(track.id)
-                    evidence = _lyric_evidence(lyrics_service, song_explain, snapshot)
-                    explained.append(
-                        track.model_copy(
-                            update={
-                                "explain": to_track_explain(
-                                    song_explain,
-                                    reorder_stage=stage,
-                                    evidence=evidence,
-                                    user_explanation=_user_explanation(
-                                        query=analysis.original_query or request.query,
-                                        analysis=analysis,
-                                        search_analysis=explain_analysis,
-                                        answers=request.answers,
-                                        track=track,
-                                        explain=song_explain,
-                                        evidence=evidence,
-                                        rerank_skip_reason=skip_reason,
-                                    ),
-                                )
-                            }
+                song_explains = [recorder.record.get(track.id) for track in results]
+                evidences = [
+                    _lyric_evidence(lyrics_service, song_explain, snapshot) for song_explain in song_explains
+                ]
+                # 어느 단서가 곡을 가르는지는 결과 곡을 함께 봐야 안다 — 곡별로 만든 뒤 요약만 다시 쓴다
+                user_explanations = _distinguished_explanations(
+                    [
+                        _user_explanation(
+                            query=analysis.original_query or request.query,
+                            analysis=analysis,
+                            search_analysis=explain_analysis,
+                            answers=request.answers,
+                            track=track,
+                            explain=song_explain,
+                            evidence=evidence,
+                            rerank_skip_reason=skip_reason,
                         )
+                        for track, song_explain, evidence in zip(results, song_explains, evidences)
+                    ],
+                    song_explains,
+                )
+                explained = [
+                    track.model_copy(
+                        update={
+                            "explain": to_track_explain(
+                                song_explain,
+                                reorder_stage=stage,
+                                evidence=evidence,
+                                user_explanation=_validated_explanation(built, song_explain.song_id),
+                            )
+                        }
                     )
+                    for track, song_explain, evidence, built in zip(
+                        results, song_explains, evidences, user_explanations,
+                    )
+                ]
                 results = explained
                 explain_summary = SearchExplainOut.of(recorder.record)
 

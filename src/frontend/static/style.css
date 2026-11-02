@@ -1022,6 +1022,38 @@ body.listmode .sitefooter { min-width: 0; }
 .exstatus-mismatch { color: #a3301c; background: #fbe4df; }
 .exstatus-unverified { color: #555; background: #ececec; }
 
+/* 모든 곡에서 같은 줄 — 곡별 표에서는 뒤로 밀리고 옅게 보인다(목록 위에 한 번 모아 보인다) */
+.exclue-common td { color: #8a8a8a; }
+.exclue-common .excluetext { color: #777; font-weight: 500; }
+.excommon {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 5px;
+  border: 1px solid #e2e2e2;
+  border-radius: 8px;
+  color: #999;
+  font-size: 9.5px;
+  font-weight: 400;
+}
+
+/* 결과 곡 전체 공통 단서 — 목록 위에 한 번 */
+.commonclues {
+  margin: 0 0 6px;
+  padding: 6px 8px;
+  border: 1px solid #ececec;
+  border-radius: 6px;
+  background: #fafafa;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.commonhead { color: #555; font-weight: 700; cursor: pointer; }
+.commonunverified { color: #777; font-weight: 400; }
+.commonnote { margin: 3px 0; color: #999; font-size: 10px; font-weight: 400; }
+.commonlist { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.commonitem { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; overflow-wrap: anywhere; }
+.commonclue { color: #333; }
+.commonbasis { color: #939ba6; font-size: 10px; }
+
 /* 점수 상세 — 기본은 접힘. 네이티브 <details>라 Enter·Space로 펼친다 */
 .exdetails { margin-top: 6px; }
 .exdetailsum {

@@ -334,3 +334,67 @@ def test_a_validated_explanation_passes_through_and_a_misshapen_one_is_rejected(
     assert to_user_explanation_out({"summary": "요약"}) == out
     with pytest.raises(ValidationError):
         to_user_explanation_out({"summary": "요약", "clue_checks": [{"slot": "vocal_gender"}]})
+
+
+DRINK_QUERY = "술 한잔 마실 때 생각나는 노래야. 이별한 전 인연을 그리워하는 가사가 있었고 남자 가수에 엄청 고음이 많은 발라드?"
+
+
+def _drink_hits():
+    """세 곡 모두 남성 발라드. 곡 자료(태그·요약)만 다르다 — 예전에는 세 요약이 똑같았다."""
+    return [
+        _track("d1", title="곡1", vocal_gender="남성", genre="발라드", sound_tags=["폭발적인 고음"]),
+        _track("d2", title="곡2", vocal_gender="남성", genre="발라드", place_activity_tags=["술"]),
+        _track("d3", title="곡3", vocal_gender="남성", genre="발라드",
+               lyrics_summary="떠난 인연을 그리워하는 이야기"),
+    ]
+
+
+def test_route_material_rows_make_per_song_summaries_without_changing_results():
+    fields = dict(vocal_gender="남성", genre="발라드", korean_tags=["술", "고음"],
+                  lyric_semantic_query="이별한 전 인연을 그리워하는 내용")
+    on, a_on, r_on = _post({"query": DRINK_QUERY, "top_k": 3, "explain": True},
+                           analyzer=_CountingAnalyzer(**fields), hits=_drink_hits())
+    off, a_off, r_off = _post({"query": DRINK_QUERY, "top_k": 3},
+                              analyzer=_CountingAnalyzer(**fields), hits=_drink_hits())
+    assert [t["id"] for t in on["results"]] == [t["id"] for t in off["results"]]
+    assert [t["score"] for t in on["results"]] == [t["score"] for t in off["results"]]
+    assert a_on.calls == a_off.calls == 1 and r_on.calls == r_off.calls
+
+    by_id = {t["id"]: t["explain"]["user_explanation"] for t in on["results"]}
+    assert len({ux["summary"] for ux in by_id.values()}) == 3, [ux["summary"] for ux in by_id.values()]
+    rows = {sid: {(c["slot"], c["clue"]): c for c in ux["clue_checks"]} for sid, ux in by_id.items()}
+    assert rows["d1"][("tag", "고음")]["status"] == "match"
+    assert "사운드 태그 ‘폭발적인 고음’" in rows["d1"][("tag", "고음")]["observed"]
+    assert rows["d2"][("material_not_found", "고음")]["status_label"] == "미확인"
+    assert rows["d2"][("tag", "술")]["status"] == "match"
+    # 원문은 "…그리워하는 가사"라 분석이 다듬은 문장이다 — 해석으로 표시한다
+    meaning = rows["d3"][("lyric_meaning", "이별한 전 인연을 그리워하는 내용(검색이 해석한 내용)")]
+    assert meaning["status"] == "partial" and "가사 요약 ‘떠난 인연을 그리워하는 이야기’" in meaning["observed"]
+    for sid in by_id:
+        for (slot, _), check in rows[sid].items():
+            if slot in {"tag", "lyric_meaning", "sound"}:
+                assert "가사에서 확인" not in check["observed"]
+                assert check["basis_label"] == "순위 반영 기록 없음" and check["ranking_basis"] == []
+
+
+def test_route_names_the_clue_that_separates_songs_first_in_the_summary():
+    fields = dict(vocal_gender="남성", genre="발라드", korean_tags=["이별", "그리움", "고음"])
+    def song(song_id, **kw):
+        return _track(song_id, title=song_id, vocal_gender="남성", genre="발라드",
+                      relation_context_tags=["이별"], emotion_tags=["그리움"], **kw)
+    body, _, _ = _post({"query": DRINK_QUERY, "top_k": 3, "explain": True}, analyzer=_CountingAnalyzer(**fields),
+                       hits=[song("d1", sound_tags=["고음"]), song("d2"), song("d3")])
+    summary = {t["id"]: t["explain"]["user_explanation"]["summary"] for t in body["results"]}
+    assert summary["d1"].startswith("고음·이별·그리움 단서는"), summary["d1"]
+    assert summary["d2"].startswith("이별·그리움 단서는"), summary["d2"]
+
+
+def test_route_keeps_per_song_summaries_when_comparing_them_fails(monkeypatch):
+    def boom(_items):
+        raise RuntimeError("요약 비교 실패")
+    monkeypatch.setattr(route_module, "distinguish_summaries", boom)
+    fields = dict(vocal_gender="남성", genre="발라드", korean_tags=["고음"])
+    body, _, _ = _post({"query": DRINK_QUERY, "top_k": 3, "explain": True},
+                       analyzer=_CountingAnalyzer(**fields), hits=_drink_hits())
+    assert {t["id"] for t in body["results"]} == {"d1", "d2", "d3"}
+    assert all(t["explain"]["user_explanation"]["summary"] for t in body["results"])

@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400..700&family=Jost:wght@300..900&display=swap">
-<link rel="stylesheet" href="/static/style.css?v=answer-1">
+<link rel="stylesheet" href="/static/style.css?v=common-clues-1">
 <link rel="stylesheet" href="/static/intro.css?v=2">
 <!-- JS가 꺼진 환경에서는 인트로가 화면을 가리지 않게 한다 -->
 <noscript><style>#vagueIntro{display:none}html.vi-lock,html.vi-lock body{overflow:auto}</style></noscript>
@@ -85,6 +85,8 @@
       곡을 펼쳐야 보이는 자리에 두지 않는다.
     -->
     <p id="runNote" class="runnote" hidden></p>
+    <!-- 결과 곡 전체에서 상태가 같은 근거 단서. 곡별 근거는 곡마다 다른 점을 먼저 보인다 -->
+    <div id="commonClues" class="commonclues" hidden></div>
     <ol id="resultList" class="resultlist"></ol>
     <section id="feedbackBox" class="feedbackbox" aria-label="찾던 곡 알려주기" hidden></section>
   </div>
@@ -167,6 +169,6 @@
 
 <script src="/static/intro.js?v=2"></script>
 <script src="/static/feedback.js?v=4"></script>
-<script src="/static/map.js?v=rerank-status-1"></script>
+<script src="/static/map.js?v=common-clues-1"></script>
 </body>
 </html>

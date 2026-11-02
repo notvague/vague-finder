@@ -26,10 +26,11 @@ function functionSource(name) {
   return source.slice(found.index, end + 2);
 }
 
-const DECLARATIONS = ['convo', 'runNote', 'panelMode'];
+const DECLARATIONS = ['convo', 'runNote', 'panelMode', 'commonClueKeys', 'commonCluesOpen'];
 const FUNCTIONS = [
   'makeEl', 'exDelta', 'exGroup', 'exItem', 'exFact', 'exSum', 'exPathDetail',
   'explainMix', 'explainLyric', 'explainEvidence', 'explainPanel', 'explainClues', 'explainRecord',
+  'clueKey', 'commonClues', 'renderCommonClues',
   'toggleExplain', 'renderRunNote', 'applyResponse', 'isBirthYearQuestion',
   'explainToggle', 'resultActions',
 ];
@@ -47,6 +48,7 @@ function node(tag) {
       contains(c) { return classes.has(c) || self.className.split(/\s+/).includes(c); },
     },
     append(...items) { this.children.push(...items); },
+    replaceChildren(...items) { this.children = [...items]; },
     setAttribute(k, v) { this.attrs[k] = v; },
     addEventListener(type, fn) { (this.listeners ||= {})[type] = fn; },
   };
@@ -382,8 +384,11 @@ test('정적 파일 버전이 올라갔다', () => {
   // 피드백(#47)이 문자열 버전(?v=feedback-1)으로 바꾼 뒤라 숫자가 아니라 새 문자열로 올린다.
   // 정답 버튼을 근거 옆으로 옮기며 세 파일이 함께 바뀌었다(evidence-1 → answer-1, feedback.js 3 → 4).
   // v59(리랭킹 일부 적용 · 묶음 수 표기)는 map.js만 바뀌어 map.js 버전만 올렸다(answer-1 → rerank-status-1)
-  assert.ok(/map\.js\?v=rerank-status-1/.test(html), 'map.js 버전');
-  assert.ok(/style\.css\?v=answer-1/.test(html), 'style.css 버전');
+  // 공통 단서 묶음(목록 위 한 번 · 곡별 표는 다른 점 먼저)은 map.js·style.css·index.html이 함께 바뀌었다
+  assert.ok(/map\.js\?v=common-clues-1/.test(html), 'map.js 버전');
+  assert.ok(/style\.css\?v=common-clues-1/.test(html), 'style.css 버전');
+  assert.ok(/id="commonClues"/.test(html), '공통 단서 자리가 목록 위에 있다');
+  assert.ok(html.indexOf('id="commonClues"') < html.indexOf('id="resultList"'));
   assert.ok(/feedback\.js\?v=4/.test(html), 'feedback.js 버전');
 });
 
@@ -525,4 +530,129 @@ test('v59: 예외 없는 리랭킹 실패(백엔드 내부 폴백)도 경고색�
   r.ev('renderRunNote()');
   assert.ok(!r.runNoteEl.textContent.includes('모델 호출'), '부르지 않은 요청에 호출 횟수를 적지 않는다');
   assert.equal(r.runNoteEl.classList.contains('warn'), false);
+});
+
+/* ---------- 공통 단서 묶기 (2026-11-02) ---------- */
+
+function check(slot, clue, status, observed, extra = {}) {
+  const labels = { match: '일치', partial: '부분 일치', mismatch: '다름', unverified: '미확인' };
+  return { slot, clue, clue_origin: 'query', observed, status, status_label: labels[status], source: 'x',
+           ranking_basis: [], basis_label: '순위 반영 기록 없음', ...extra };
+}
+function resultWith(id, checks, summary = 's') {
+  return { id, explain: legacyExplain({ song_id: id, user_explanation: { summary, clue_checks: checks } }) };
+}
+/* 예시 질의(술·이별·남자 고음 발라드)를 줄인 것 — 성별·장르·가사 내용은 세 곡 모두 같고, 고음·술 태그만 다르다 */
+function balladResults() {
+  const gender = (b) => check('vocal_gender', '남성 보컬', 'match', '등록된 보컬 정보: 남성', b ? { basis_label: b } : {});
+  const genre = check('genre', '발라드', 'match', '등록 장르: 발라드');
+  return [
+    resultWith('a', [gender('검색 점수에 반영'), genre,
+      check('tag', '고음', 'match', '곡 자료에 이렇게 적혀 있음: 사운드 태그 ‘폭발적인 고음’'),
+      check('tag', '술', 'unverified', '곡 자료(…)에서 같은 표현을 찾지 못함(없다는 뜻은 아님)'),
+      check('mv_scene', '장면', 'unverified', '자료 없음')]),
+    resultWith('b', [gender('검색 점수에 반영'), genre,
+      check('tag', '고음', 'unverified', '곡 자료(…)에서 같은 표현을 찾지 못함(없다는 뜻은 아님)'),
+      check('tag', '술', 'match', '곡 자료에 이렇게 적혀 있음: 장소·활동 태그 ‘술’'),
+      check('mv_scene', '장면', 'unverified', '자료 없음')]),
+    resultWith('c', [gender('순위 반영 기록 없음'), genre,
+      check('tag', '고음', 'match', '곡 자료에 이렇게 적혀 있음: 사운드 태그 ‘고음’'),
+      check('tag', '술', 'unverified', '곡 자료(…)에서 같은 표현을 찾지 못함(없다는 뜻은 아님)'),
+      check('mv_scene', '장면', 'unverified', '자료 없음')]),
+  ];
+}
+
+test('결과 곡 전체에서 상태가 같은 단서만 묶는다 · 순위 기여 문구는 모두 같을 때만 묶음에 적는다', () => {
+  const r = realm();
+  r.ctx.results = balladResults();
+  const { count, rows } = JSON.parse(r.ev('JSON.stringify(commonClues(results))')); // 다른 realm의 배열이라 값으로 옮긴다
+  assert.equal(count, 3);
+  assert.deepEqual(rows.map((row) => `${row.clue}:${row.status}`), ['남성 보컬:match', '발라드:match', '장면:unverified']);
+  const gender = rows.find((row) => row.clue === '남성 보컬');
+  assert.equal(gender.basis_label, '', '곡마다 반영 기록이 다르면 묶음에 "반영"을 적지 않는다');
+  assert.equal(rows.find((row) => row.clue === '장면').status_label, '미확인', '미확인은 미확인으로 묶인다');
+});
+
+test('공통 상자는 기본으로 접고, 접은 줄에도 개수와 미확인 수를 보인다', () => {
+  const r = realm();
+  r.ctx.results = balladResults();
+  r.ctx.box = node('div');
+  r.ev('renderCommonClues(box, results)');
+  const details = find(r.ctx.box, (n) => n.tag === 'details')[0];
+  assert.ok(details, '접을 수 있어야 좁은 화면에서 곡 목록을 밀어내지 않는다');
+  assert.equal(details.open, false);
+  const summary = find(details, (n) => n.tag === 'summary')[0];
+  const line = allText(summary);
+  assert.ok(line.includes('모두 같은 단서 3개'), line);
+  assert.ok(line.includes('미확인 1개'), '접어도 미확인이 있다는 사실은 보인다: ' + line);
+  r.ev('commonCluesOpen = true');
+  r.ev('renderCommonClues(box, results)');
+  assert.equal(find(r.ctx.box, (n) => n.tag === 'details')[0].open, true, '펼친 상태는 다시 그려도 유지한다');
+});
+
+test('못 찾은 단서를 묶은 줄은 곡마다 목록이 같을 때만 공통으로 묶는다', () => {
+  const r = realm();
+  const genre = check('genre', '발라드', 'match', '등록 장르: 발라드');
+  const missing = (clue) => check('material_not_found', clue, 'unverified', '곡 태그·요약에서 같은 표현을 찾지 못함(없다는 뜻은 아님)');
+  r.ctx.results = [resultWith('a', [genre, missing('술, 고음')]), resultWith('b', [genre, missing('술, 고음')])];
+  let rows = JSON.parse(r.ev('JSON.stringify(commonClues(results).rows)'));
+  assert.deepEqual(rows.map((row) => `${row.clue}:${row.status}`), ['발라드:match', '술, 고음:unverified']);
+  r.ctx.results = [resultWith('a', [genre, missing('술, 고음')]), resultWith('b', [genre, missing('술')])];
+  rows = JSON.parse(r.ev('JSON.stringify(commonClues(results).rows)'));
+  assert.deepEqual(rows.map((row) => row.clue), ['발라드'], '못 찾은 단서가 다르면 곡별 표에 남는다');
+});
+
+test('공통 단서는 목록 위에 한 번 그리고, 곡별 표에서는 다른 줄을 앞세우고 공통 줄을 지우지 않는다', () => {
+  const r = realm();
+  r.ctx.results = balladResults();
+  r.ctx.box = node('div');
+  r.ctx.box.hidden = true;
+  r.ev('renderCommonClues(box, results)');
+  assert.equal(r.ctx.box.hidden, false);
+  const head = allText(r.ctx.box);
+  assert.ok(head.includes('근거를 대조한 3곡 모두 같은 단서'), head);
+  assert.ok(head.includes('남성 보컬') && head.includes('발라드') && head.includes('미확인'));
+  assert.ok(!head.includes('고음') && !head.includes('술'), '곡마다 다른 단서는 묶음에 없다');
+  assert.ok(!head.includes('검색 점수에 반영'), head);
+
+  r.ctx.x = r.ctx.results[1].explain;
+  const panel = r.ev('explainPanel(x)');
+  const rows = find(panel, (n) => n.tag === 'tr' && hasClass(n, 'exclue'));
+  assert.equal(rows.length, 5, '공통 줄도 곡별 표에 남는다 — 숨기면 미확인이 확인으로 읽힌다');
+  const clues = rows.map((tr) => tr.children[0].textContent);
+  assert.deepEqual([...clues], ['고음', '술', '남성 보컬', '발라드', '장면'], '곡마다 다른 줄이 먼저다');
+  assert.ok(!hasClass(rows[0], 'exclue-common') && hasClass(rows[2], 'exclue-common'));
+  assert.ok(allText(rows[2]).includes('모든 곡 공통'));
+  assert.ok(allText(rows[2]).includes('검색 점수에 반영'), '곡별 순위 기여 문구는 그 곡 것 그대로다');
+  assert.ok(allText(rows[1]).includes('장소·활동 태그 ‘술’'));
+});
+
+test('설명이 있는 곡이 하나뿐이거나 공통 단서가 없으면 묶음을 숨기고 곡별 순서도 그대로다', () => {
+  const r = realm();
+  r.ctx.box = node('div');
+  r.ctx.results = [balladResults()[0], { id: 'z', explain: legacyExplain({ user_explanation: null }) }];
+  r.ev('renderCommonClues(box, results)');
+  assert.equal(r.ctx.box.hidden, true);
+  assert.equal(r.ev('commonClueKeys.size'), 0);
+  r.ctx.x = r.ctx.results[0].explain;
+  const clues = find(r.ev('explainPanel(x)'), (n) => n.tag === 'tr' && hasClass(n, 'exclue')).map((tr) => tr.children[0].textContent);
+  assert.deepEqual(clues, ['남성 보컬', '발라드', '고음', '술', '장면'], '서버 순서 그대로');
+
+  r.ctx.results = [
+    resultWith('a', [check('tag', '고음', 'match', 'x')]),
+    resultWith('b', [check('tag', '고음', 'unverified', 'y')]),
+  ];
+  r.ev('renderCommonClues(box, results)');
+  assert.equal(r.ctx.box.hidden, true, '상태가 다르면 공통이 아니다');
+  r.ev('renderCommonClues(null, [])');
+  assert.equal(r.ev('commonClueKeys.size'), 0, '새 결과가 비면 앞 결과의 공통 단서가 남지 않는다');
+});
+
+test('공통 단서 묶음은 텍스트로만 그린다', () => {
+  const r = realm();
+  r.ctx.box = node('div');
+  r.ctx.results = [resultWith('a', [check('tag', SCRIPTY, 'match', 'x')]), resultWith('b', [check('tag', SCRIPTY, 'match', 'y')])];
+  r.ev('renderCommonClues(box, results)');
+  assert.ok(allText(r.ctx.box).includes(SCRIPTY));
+  assert.ok(!/innerHTML/.test(functionSource('renderCommonClues') + functionSource('commonClues')));
 });
