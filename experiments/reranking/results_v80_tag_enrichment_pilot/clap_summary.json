@@ -1,0 +1,177 @@
+{
+ "embeddings": 5143,
+ "labels": [
+  {
+   "label": "피아노",
+   "sentence": "a song with prominent piano",
+   "tag_songs": 1064,
+   "auc": 0.66,
+   "tag_share_in_top15": 0.326,
+   "base": 0.207,
+   "lift": 1.58
+  },
+  {
+   "label": "통기타",
+   "sentence": "a song with prominent acoustic guitar",
+   "tag_songs": 917,
+   "auc": 0.642,
+   "tag_share_in_top15": 0.263,
+   "base": 0.178,
+   "lift": 1.47
+  },
+  {
+   "label": "일렉기타",
+   "sentence": "a song with prominent electric guitar",
+   "tag_songs": 128,
+   "auc": 0.575,
+   "tag_share_in_top15": 0.034,
+   "base": 0.025,
+   "lift": 1.35
+  },
+  {
+   "label": "스트링",
+   "sentence": "a song with a string section of violins and cellos",
+   "tag_songs": 576,
+   "auc": 0.725,
+   "tag_share_in_top15": 0.247,
+   "base": 0.112,
+   "lift": 2.21
+  },
+  {
+   "label": "오케스트라",
+   "sentence": "a song with a full orchestra",
+   "tag_songs": 112,
+   "auc": 0.764,
+   "tag_share_in_top15": 0.071,
+   "base": 0.022,
+   "lift": 3.27
+  },
+  {
+   "label": "신스",
+   "sentence": "a song with synthesizers and electronic sounds",
+   "tag_songs": 554,
+   "auc": 0.678,
+   "tag_share_in_top15": 0.184,
+   "base": 0.108,
+   "lift": 1.71
+  },
+  {
+   "label": "드럼",
+   "sentence": "a song with prominent drums",
+   "tag_songs": 192,
+   "auc": 0.634,
+   "tag_share_in_top15": 0.063,
+   "base": 0.037,
+   "lift": 1.7
+  },
+  {
+   "label": "브라스",
+   "sentence": "a song with a brass section of trumpets and saxophones",
+   "tag_songs": 96,
+   "auc": 0.615,
+   "tag_share_in_top15": 0.032,
+   "base": 0.019,
+   "lift": 1.73
+  },
+  {
+   "label": "고음",
+   "sentence": "a singer belting very high powerful notes",
+   "tag_songs": 270,
+   "auc": 0.446,
+   "tag_share_in_top15": 0.035,
+   "base": 0.052,
+   "lift": 0.67
+  },
+  {
+   "label": "디스코",
+   "sentence": "a disco song",
+   "tag_songs": 18,
+   "auc": 0.519,
+   "tag_share_in_top15": 0.0,
+   "base": 0.003,
+   "lift": 0.0
+  },
+  {
+   "label": "랩",
+   "sentence": "a person rapping",
+   "tag_songs": 516,
+   "auc": 0.676,
+   "tag_share_in_top15": 0.207,
+   "base": 0.1,
+   "lift": 2.07
+  }
+ ],
+ "E0_rap_auc": 0.676,
+ "median_auc_excl_rap": 0.638,
+ "median_lift_excl_rap": 1.64,
+ "dev": {
+  "cases": 54,
+  "missing_tag_cases": 25,
+  "missing_in_top15": 8,
+  "missing_rate": 0.32,
+  "by_label": {
+   "피아노": {
+    "cases": 13,
+    "missing": 7,
+    "missing_top15": 2
+   },
+   "통기타": {
+    "cases": 6,
+    "missing": 2,
+    "missing_top15": 0
+   },
+   "일렉기타": {
+    "cases": 4,
+    "missing": 4,
+    "missing_top15": 1
+   },
+   "스트링": {
+    "cases": 9,
+    "missing": 3,
+    "missing_top15": 2
+   },
+   "오케스트라": {
+    "cases": 2,
+    "missing": 2,
+    "missing_top15": 1
+   },
+   "신스": {
+    "cases": 8,
+    "missing": 1,
+    "missing_top15": 0
+   },
+   "드럼": {
+    "cases": 4,
+    "missing": 2,
+    "missing_top15": 1
+   },
+   "브라스": {
+    "cases": 1,
+    "missing": 1,
+    "missing_top15": 0
+   },
+   "고음": {
+    "cases": 5,
+    "missing": 2,
+    "missing_top15": 1
+   },
+   "디스코": {
+    "cases": 2,
+    "missing": 1,
+    "missing_top15": 0
+   }
+  },
+  "gold_old": 0.537,
+  "gold_union": 0.685,
+  "random_old": 0.119,
+  "random_union": 0.24,
+  "lift_old": 4.51,
+  "lift_union": 2.85
+ },
+ "gates": {
+  "E0": false,
+  "E1": false,
+  "E2": true,
+  "E3": false
+ }
+}

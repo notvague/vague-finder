@@ -1,0 +1,53 @@
+{
+ "songs": {
+  "expected": 50,
+  "ok": 50,
+  "failed": [],
+  "missing": [],
+  "retries": 0,
+  "dropped_tags": 0
+ },
+ "tags_per_song": {
+  "old": 28.6,
+  "new": 25.1,
+  "added": 13.3
+ },
+ "clue_cover": {
+  "clues": 44,
+  "F_old": 0.2045,
+  "F_union": 0.2273,
+  "R_old": 0.0527,
+  "R_union": 0.0945,
+  "lift_old": 3.88,
+  "lift_union": 2.41
+ },
+ "added": {
+  "count": 666,
+  "generic_share": 0.2793,
+  "literal_in_source_share": 0.5901,
+  "new_clue_hits": [
+   [
+    "신나는",
+    "나팔바지"
+   ]
+  ]
+ },
+ "cost": {
+  "settled_usd": 0.0666,
+  "per_song": 0.001332,
+  "full_5143_standard": 6.85,
+  "full_5143_batch": 3.43,
+  "input_tokens_median": 2393.0,
+  "output_tokens_median": 250.5,
+  "thoughts_tokens_median": 0.0,
+  "latency_ms_median": 1429.6
+ },
+ "gates": {
+  "G1_stability": true,
+  "G2_clue_cover": false,
+  "G3_discrimination": false,
+  "G4_generic": true,
+  "G5_cost": true,
+  "G6_human": "대기"
+ }
+}
