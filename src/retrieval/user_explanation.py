@@ -24,6 +24,10 @@
   exact·음차·근사 일치는 다른 말로 적고, 발췌·요약·키워드 겹침은 "가사에서 확인"이라고 하지 않는다.
   의미 검색 유사도는 "비슷하게 평가했다"까지만 말한다.
 - 모델의 자유 서술(`model_notes`)은 쓰지 않는다. 가사·상상 이미지·표지를 MV 장면의 근거로 쓰지 않는다.
+- **곡 자료(태그·요약)는 생성된 자료다.** 분석의 `korean_tags`·`lyric_semantic_query`·`performance_clues.sound_ensemble`을
+  곡의 태그·요약(`_MATERIAL_FIELDS`)과 글자로 대조해 찾은 값을 **그대로 인용**한다 — "곡 자료에 이렇게 적혀 있음"까지만
+  말하고 "가사에서 확인"이라고 쓰지 않는다. 찾지 못하면 미확인이다(다름·없음이 아니다). 태그별 가산 기록은 없으므로
+  "검색 점수에 반영"이라고 쓰지 않는다 — 편성 단서는 묶음 가산(`performance_clues`) 기록이 있을 때만 그 기록을 잇는다.
 """
 
 from __future__ import annotations
@@ -40,6 +44,7 @@ from src.retrieval.explain import (
     SongExplain,
 )
 from src.retrieval.known_slots import genre_aliases, known_genre_values, known_slot_values
+from src.retrieval.modality_queries import has_explicit_visual_clue, text_outside_artwork
 from src.retrieval.rerank_policy import mv_scene_phrases
 
 # ---------------------------------------------------------------------------
@@ -57,12 +62,18 @@ STATUS_LABELS: Dict[str, str] = {
     STATUS_UNVERIFIED: "미확인",
 }
 
-# 단서 종류(행의 slot). 초기 범위 — 성별·장르·가사·시기·MV 장면.
+# 단서 종류(행의 slot). 성별·장르·가사·시기·MV 장면 + 곡 자료(태그·요약)와 대조하는 분석 단서.
 SLOT_GENDER = "vocal_gender"
 SLOT_GENRE = "genre"
 SLOT_LYRICS = "lyrics"
 SLOT_ERA = "release_era"
 SLOT_MV = "mv_scene"
+SLOT_LYRIC_MEANING = "lyric_meaning"   # 분석의 lyric_semantic_query — 뜻으로 기억한 가사 내용
+SLOT_TAG = "tag"                       # 분석의 korean_tags 한 개(고음·술자리 같은 상황·소리 단서)
+SLOT_SOUND = "sound"                   # 분석의 performance_clues.sound_ensemble 한 개(밴드사운드·어쿠스틱 …)
+SLOT_REGISTERED = "registered"         # 등록 정보로 판정하는 분석 단서(걸그룹·남성솔로·드라마OST·댄스곡 …)
+SLOT_NOT_FOUND = "material_not_found"  # 곡 자료에서 찾지 못한 단서를 곡마다 한 줄로 묶은 행
+MATERIAL_SLOTS = (SLOT_LYRIC_MEANING, SLOT_TAG, SLOT_SOUND)
 
 # 단서의 출처. 원문(query) · 재질문 답변(answer) · 분석이 뽑거나 해석한 값(analysis) · 출생 연도로 유도(birth_year).
 ORIGIN_QUERY = "query"
@@ -91,6 +102,13 @@ KIND_ERA_LATER = "era_later"                 # 창보다 나중 발매
 KIND_ERA_EARLIER_THAN_ESTIMATE = "era_earlier_than_estimate"  # 추정 창보다 먼저 — 그 시절에 들었을 수 있다
 KIND_ERA_NO_DATE = "era_no_date"
 KIND_ERA_NEEDS_BIRTH_YEAR = "era_needs_birth_year"
+KIND_MATERIAL_TAG = "material_tag"           # 곡 태그 값과 같은 표현이 적혀 있음
+KIND_MATERIAL_TEXT = "material_text"         # 곡 요약·설명 문장에 같은 낱말이 있음(태그 일치는 없음)
+KIND_MATERIAL_NEAR = "material_near"         # 더 짧은 곡 태그가 단서 안에 들어 있음(비슷한 표현)
+KIND_MATERIAL_NOT_FOUND = "material_not_found"   # 곡 자료에서 찾지 못함 — 미확인
+KIND_REGISTERED = "registered_info"          # 태그가 아니라 등록 정보(형태·성별·장르·앨범명)로 판정
+
+MATERIAL_NOT_FOUND_TEXT = "곡 태그·요약에서 같은 표현을 찾지 못함(없다는 뜻은 아님)"
 
 # 순위 기여의 요약 문구. 기록이 있을 때만 "반영"을 쓴다.
 BASIS_SCORED = "검색 점수에 반영"
@@ -107,6 +125,8 @@ BASIS_NONE = "순위 반영 기록 없음"
 # 이전 사용자 제보로 후보에 들어온 곡의 가산·감점. 그 기록은 "후보에 드는가"를 가릴 때만 쓰였고 자리는 후보 끝으로
 # 고정됐다(`search_router.pin_feedback_entrants`). "검색 점수에 반영"이라고 하면 순위를 만든 것처럼 읽힌다.
 BASIS_ENTRY_ONLY = "후보에 드는 데만 쓰임 · 자리는 후보 끝(순위는 리랭커가 정함)"
+# 편성 단서는 묶음으로 한 번 가산된다(`performance_clues`). 이 단서 하나가 얼마를 만들었는지는 기록에 없다.
+BASIS_GROUP_SCORED = "검색 점수에 반영(보컬·편성 단서 묶음 기준 · 단서별 몫은 기록에 없음)"
 
 # 제보로 들어온 곡의 설명은 이 문장으로 시작한다. 출처만 말한다 — 제보 내용을 사실로 확인했다거나 이 곡이
 # 정답이라는 뜻으로 쓰지 않는다.
@@ -832,6 +852,713 @@ def _check_mv(query: str, rerank_skip_reason: str) -> Optional[ClueCheck]:
 
 
 # ---------------------------------------------------------------------------
+# 곡 자료(태그·요약)와 대조하는 분석 단서 — korean_tags · lyric_semantic_query · 편성 단서
+# ---------------------------------------------------------------------------
+
+# 대조하는 곡 자료. 모두 생성된 자료다 — 인용할 때 이름을 그대로 붙여 "어디에 적혀 있는가"를 밝힌다.
+# (필드, 화면 이름, 목록인가)
+_MATERIAL_FIELDS: Tuple[Tuple[str, str, bool], ...] = (
+    ("sound_tags", "사운드 태그", True),
+    ("place_activity_tags", "장소·활동 태그", True),
+    ("time_weather_tags", "시간·날씨 태그", True),
+    ("emotion_tags", "감정 태그", True),
+    ("mood_tags", "무드 태그", True),
+    ("vibe_tags", "느낌 태그", True),
+    ("relation_context_tags", "관계·상황 태그", True),
+    ("lyrics_summary", "가사 요약", False),
+    ("search_style_summary", "분위기 설명", False),
+)
+_FIELDS_FOR_TAG = tuple(f for f, _, _ in _MATERIAL_FIELDS)
+_FIELDS_FOR_SOUND = ("sound_tags", "search_style_summary")
+_MEANING_TAG_FIELDS = ("relation_context_tags", "emotion_tags")
+_MATERIAL_NAMES = {f: name for f, name, _ in _MATERIAL_FIELDS}
+_MATERIAL_IS_LIST = {f: is_list for f, _, is_list in _MATERIAL_FIELDS}
+
+# 한 행에 인용하는 수. 태그는 짧아 셋까지, 문장은 길어 하나까지다 — 나머지는 "외 N건"으로 센다.
+_MAX_MATERIAL_QUOTES = 3
+_MAX_SENTENCE_QUOTES = 1
+_MAX_MEANING_QUOTES = 2
+# 문장 인용의 최대 길이(앞뒤를 줄임표로 자른다).
+_MAX_QUOTE_CHARS = 48
+
+# 사용자가 그대로 말하지 않은 단서의 표시. 분석이 바꿔 쓰거나 덧붙인 값을 "기억한 단서"로 읽히지 않게 한다.
+INTERPRETED_CLUE_SUFFIX = "(검색이 해석한 단서)"
+INTERPRETED_MEANING_SUFFIX = "(검색이 해석한 내용)"
+
+# 다른 행이 이미 다루거나 단서가 되지 못하는 낱말 — korean_tags에서 행을 만들지 않는다.
+_TAG_SKIP_WORDS = frozenset(_norm(w) for w in (
+    "노래", "곡", "가사", "가수", "음악", "멜로디", "뮤비", "뮤직비디오", "앨범", "보컬",
+    "남자", "여자", "남성", "여성", "혼성", "남자가수", "여자가수", "남성가수", "여성가수",
+    "남자보컬", "여자보컬", "남성보컬", "여성보컬", "남자노래", "여자노래", "남녀",
+))
+# 대조할 자료가 없는 표지 단서. 곡 태그·요약은 표지를 설명하는 자료가 아니어서 찾아봐야 늘 미확인이다.
+_COVER_WORDS = frozenset(_norm(w) for w in (
+    "앨범표지", "앨범커버", "앨범아트", "앨범자켓", "앨범재킷", "표지", "커버", "자켓", "재킷", "일러스트", "사진", "그림",
+))
+# 시기 단서는 시기 행이 다룬다. 태그·요약에서 찾을 값이 아니다.
+_ERA_TAG_RE = re.compile(
+    r"\d+(?:년대?|년생|살)?|(?:19|20)?\d{2}년대?(?:초반|중반|후반|초|중|말)?.{0,4}"
+    r"|옛날|옛날노래|옛노래|예전|예전노래|요즘|요즘노래|최근|최신|최신곡|학창시절|중학교|고등학교|대학교"
+)
+# 한 글자 단서 뒤에 붙어도 같은 낱말로 보는 조사. "술"은 "술을"과 같지만 "기술"과는 다르다.
+_ONE_CHAR_PARTICLES = frozenset("을를이가은는도에과와의로만")
+# 한 글자 단서가 가리키는 값. 앞뒤 글자를 넓게 허용하면 "기술"·"예술"·깨진 태그 "술자격"까지 걸리므로 **목록에
+# 있는 값만** 인정한다. 태그는 값 전체가 같아야 하고("술자리스태프"는 아니다), 문장은 낱말이 들어 있으면 된다.
+_SHORT_CLUE_VALUES: Dict[str, Tuple[str, ...]] = {
+    "술": ("술자리", "혼술", "술집", "음주", "소주", "맥주", "포장마차", "포차", "막걸리", "술잔"),
+    "비": ("비오는날", "빗소리", "빗길", "장마", "봄비", "겨울비", "소낙비", "소나기"),
+    "눈": ("첫눈", "함박눈", "눈오는날"),
+    "밤": ("늦은밤", "여름밤", "가을밤", "겨울밤", "봄밤", "한밤중", "심야", "밤길", "밤거리", "밤산책", "밤하늘"),
+    "봄": ("봄날", "봄바람", "봄밤", "봄비", "초봄", "늦봄", "봄나들이"),
+    "꽃": ("벚꽃", "벚꽃길", "꽃잎", "꽃길"),
+}
+# 글자는 들어 있지만 뜻이 다른 표현. 단서마다 실제 곡 자료에서 확인한 것만 적는다.
+_FALSE_FRIENDS: Dict[str, Tuple[str, ...]] = {
+    "고음": ("복고음", "고음비트"),
+    "슬픈": ("구슬픈",),
+}
+# ㅂ 불규칙 활용의 끝 글자. 단서와 곡 자료의 활용형이 다를 때만 쓴다.
+_BIEUP_ENDINGS = ("워", "움", "운")
+# 단서 안에 들어 있어도 근거가 되지 않는 흔한 태그("허스키보컬"의 "보컬", "살랑거리는"의 "거리", "무한도전"의 "도전").
+_NEAR_GENERIC_TAGS = frozenset(_norm(w) for w in (
+    "보컬", "노래", "멜로디", "사운드", "음색", "목소리", "리듬", "비트", "감성", "분위기", "거리", "도전",
+))
+# 뜻 문장에서 낱말 끝을 떼어 줄기를 만든다 — 긴 것부터. 형태소 분석기(모델)는 부르지 않는다.
+_ENDINGS = (
+    "이라는", "하는데", "했었던", "하는", "했던", "하던", "한다", "하고", "해서", "하며", "에서", "으로", "에게",
+    "처럼", "까지", "부터", "라는", "이란", "였던", "었던", "았던", "인",
+    "을", "를", "이", "가", "은", "는", "의", "에", "와", "과", "도", "로", "한", "던", "고", "며",
+)
+# 뜻 문장에서 곡을 가르지 못하는 낱말. 가사 요약의 23%에 나오는 "연인"처럼 흔한 말은 겹쳐도 근거가 아니다.
+_MEANING_STOP = frozenset(_norm(w) for w in (
+    "내용", "가사", "노래", "이야기", "얘기", "느낌", "그런", "있는", "같은", "어떤", "모습", "사람", "마음",
+    "그리고", "하지만", "있다", "없다", "있었", "대한", "관한",
+    "연인", "사랑", "상대", "자신", "그대", "남자", "여자",
+))
+# 등록 정보로 판정하는 형태 단서: (형태 후보, 성별, 아이돌처럼 등록 정보가 말해 주지 않는 부분이 있는가).
+_FORM_TAGS: Dict[str, Tuple[Tuple[str, ...], str, bool]] = {
+    "솔로": (("솔로",), "", False),
+    "남성솔로": (("솔로",), "남성", False),
+    "남자솔로": (("솔로",), "남성", False),
+    "여성솔로": (("솔로",), "여성", False),
+    "여자솔로": (("솔로",), "여성", False),
+    "그룹": (("그룹",), "", False),
+    "걸그룹": (("그룹", "걸그룹"), "여성", False),
+    "여성그룹": (("그룹", "걸그룹"), "여성", False),
+    "여자그룹": (("그룹", "걸그룹"), "여성", False),
+    "보이그룹": (("그룹",), "남성", False),
+    "남성그룹": (("그룹",), "남성", False),
+    "남자그룹": (("그룹",), "남성", False),
+    "혼성그룹": (("그룹",), "혼성", False),
+    "아이돌": (("그룹", "걸그룹"), "", True),
+    "남자아이돌": (("그룹",), "남성", True),
+    "남성아이돌": (("그룹",), "남성", True),
+    "여자아이돌": (("그룹", "걸그룹"), "여성", True),
+    "여성아이돌": (("그룹", "걸그룹"), "여성", True),
+    "밴드": (("밴드",), "", False),
+    "듀오": (("듀오",), "", False),
+    "남성듀오": (("듀오",), "남성", False),
+    "남자듀오": (("듀오",), "남성", False),
+    "여성듀오": (("듀오",), "여성", False),
+    "여자듀오": (("듀오",), "여성", False),
+    "남녀보컬": ((), "혼성", False),
+    "혼성보컬": ((), "혼성", False),
+    "남녀듀엣": ((), "혼성", False),
+    "혼성듀엣": ((), "혼성", False),
+}
+# OST 단서 → 그 작품 종류를 뜻하는 등록 장르. 앨범·제목에 OST 표기만 있으면 작품 종류는 모르므로 부분 일치다.
+_OST_TAGS: Dict[str, Tuple[str, ...]] = {
+    "ost": ("국내드라마", "국외드라마", "국내영화", "국외영화", "애니메이션/웹툰", "게임", "국내뮤지컬"),
+    "드라마ost": ("국내드라마", "국외드라마"),
+    "영화ost": ("국내영화", "국외영화"),
+    "애니ost": ("애니메이션/웹툰",),
+    "애니메이션ost": ("애니메이션/웹툰",),
+    "게임ost": ("게임",),
+}
+_GENRE_WORD_SUFFIXES = ("곡", "음악", "노래", "풍")
+# 성별을 품은 태그("남성발라드"·"여자가수"). "남자친구"처럼 성별 낱말로 시작할 뿐인 태그는 읽지 않는다.
+_GENDER_PREFIXES = (("남성", "남성"), ("남자", "남성"), ("여성", "여성"), ("여자", "여성"), ("남녀", "혼성"), ("혼성", "혼성"))
+_GENDERED_TAIL_RE = re.compile(r"보컬|솔로|그룹|듀오|듀엣|밴드|아이돌|가수|노래|랩|래퍼|발라드|댄스|힙합|록|목소리")
+# 장르 낱말 뒤에 붙어도 장르를 말하는 것으로 보는 꼬리("힙합그룹"·"발라드가수"). "일렉기타"·"재즈바"·"소울메이트"는 아니다.
+_GENRE_PERSON_TAIL_RE = re.compile(r"보컬|가수|그룹|듀오|밴드|아이돌|래퍼")
+_ANSWER_FORMS = frozenset({"솔로", "그룹", "듀오", "밴드"})
+
+
+@dataclass
+class _MaterialHit:
+    field: str
+    quote: str          # 곡 자료에 적힌 값 그대로(문장은 앞뒤를 줄일 수 있다)
+    strength: str       # "tag" 태그에 같은 표현 · "text" 문장에 같은 낱말 · "near" 더 짧은 태그가 단서 안에
+
+
+def _strip_ending(word: str) -> str:
+    for ending in _ENDINGS:
+        if word.endswith(ending) and len(word) - len(ending) >= 2:
+            return word[: -len(ending)]
+    return word
+
+
+def _tag_terms(tag: str) -> List[str]:
+    """한 korean_tag로 찾을 표현 — 태그 그대로, 끝을 뗀 줄기(다를 때)."""
+    norm = _norm(tag)
+    terms = [norm]
+    stem = _strip_ending(norm)
+    if stem != norm and len(stem) >= 2:
+        terms.append(stem)
+    return terms
+
+
+def _meaning_terms(text: str) -> List[str]:
+    """뜻 문장의 내용 낱말 줄기. 두 글자 미만·흔한 말은 뺀다."""
+    out: List[str] = []
+    for word in re.findall(r"[가-힣A-Za-z0-9]+", str(text or "")):
+        stem = _strip_ending(_norm(word))
+        if len(stem) >= 2 and stem not in _MEANING_STOP and stem not in out:
+            out.append(stem)
+    return out
+
+
+def _term_variants(term: str) -> List[str]:
+    """ㅂ 불규칙 활용만 잇는다 — "그리워"·"그리움"·"그리운", "귀여운"·"귀여움". 어근을 넓게 잘라 "그리고"까지 걸리지 않게 한다."""
+    if len(term) >= 3 and term[-1] in _BIEUP_ENDINGS:
+        return [term, *(term[:-1] + ending for ending in _BIEUP_ENDINGS if ending != term[-1])]
+    return [term]
+
+
+def _one_char_in(term: str, text: str) -> bool:
+    """한 글자 단서는 낱말 그대로(조사 하나까지)일 때만 맞다고 본다."""
+    for word in re.findall(r"[가-힣A-Za-z0-9]+", text):
+        word = word.lower()
+        if word == term or (len(word) == 2 and word[0] == term and word[1] in _ONE_CHAR_PARTICLES):
+            return True
+    return False
+
+
+def _without_false_friends(term: str, text: str) -> str:
+    """단서와 글자만 같고 뜻이 다른 표현을 지운다. 같은 문장의 진짜 일치("복고음악과 시원한 고음")는 남는다."""
+    for friend in _FALSE_FRIENDS.get(term, ()):
+        text = text.replace(friend, " ")
+    return text
+
+
+def _term_in_tag(term: str, value: str) -> Optional[str]:
+    """곡 태그 하나와 견준다. 'tag'(단서가 태그 안에) · 'near'(두 글자 이상의 태그가 단서 안에) · None."""
+    v = _norm(value)
+    if not term or not v:
+        return None
+    if len(term) == 1:
+        return "tag" if _one_char_in(term, value) else None
+    if term in _without_false_friends(term, v):
+        return "tag"
+    if len(v) >= 2 and v in term and v not in _NEAR_GENERIC_TAGS:
+        return "near"
+    # 활용 끝만 다른 경우("그리워"·"그리움")는 정해진 활용형만 인정한다. 앞글자만 같은 태그까지 잇으면
+    # "드라마"가 "드라이브"에, "술자리"가 깨진 태그 "술자격"에 걸린다.
+    if any(v.startswith(variant) for variant in _term_variants(term)[1:]):
+        return "near"
+    return None
+
+
+def _spaced_pattern(term: str) -> str:
+    return r"\s*".join(re.escape(ch) for ch in term)
+
+
+def _term_span(term: str, text: str) -> Optional[Tuple[int, int]]:
+    """문장에서 낱말이 실제로 있는 **원문 위치**. 대조와 인용이 이 위치 하나를 쓴다 — 따로 찾으면 "밴드사운드"가 "밴드 사운드"와
+    맞고도 인용은 엉뚱한 곳을 가리킨다.
+
+    표기는 대소문자를 가리지 않는다. 세 글자 이상은 띄어쓰기를 무시하고, 두 글자는 건너 맞추지 않는다("이 별이"는 "이별"이
+    아니다). 한 글자는 낱말 그대로(조사 하나까지)만 본다. 뜻이 다른 표현(`_FALSE_FRIENDS`)에 걸친 자리는 건너뛴다.
+    """
+    if not term or not text:
+        return None
+    text = str(text)
+    if len(term) == 1:
+        for found in re.finditer(r"[가-힣A-Za-z0-9]+", text):
+            word = found.group().lower()
+            if word == term or (len(word) == 2 and word[0] == term and word[1] in _ONE_CHAR_PARTICLES):
+                return found.span()
+        return None
+    friends = [
+        found.span()
+        for friend in _FALSE_FRIENDS.get(term, ())
+        for found in re.finditer(_spaced_pattern(friend), text, re.IGNORECASE)
+    ]
+    pattern = re.escape(term) if len(term) == 2 else _spaced_pattern(term)
+    for found in re.finditer(pattern, text, re.IGNORECASE):
+        if not any(found.start() < end and start < found.end() for start, end in friends):
+            return found.span()
+    return None
+
+
+def _term_in_text(term: str, text: str) -> bool:
+    """문장에 낱말이 있는가."""
+    return _term_span(term, text) is not None
+
+
+def _sentences_of(text: Any) -> List[str]:
+    return [part.strip() for part in re.split(r"(?<=[.!?。])\s+|\n+", str(text or "")) if part.strip()]
+
+
+def _clip_quote(sentence: str, term: str) -> str:
+    """문장 인용을 줄인다. 앞뒤만 자르고 글자를 바꾸지 않는다. 낱말 중간에서 끊지 않는다 — "떠난 연인"이 "…난 연인"이
+    되면 다른 말로 읽힌다. 실제로 일치한 자리(`_term_span`)를 남긴다."""
+    if len(sentence) <= _MAX_QUOTE_CHARS:
+        return sentence
+    span = _term_span(_norm(term), sentence)
+    at, match_end = span if span else (0, 0)
+    half = max(0, _MAX_QUOTE_CHARS - (match_end - at)) // 2
+    start = max(0, at - half)
+    end = max(match_end, min(len(sentence), start + _MAX_QUOTE_CHARS))
+    start = max(0, min(start, end - _MAX_QUOTE_CHARS))
+    if start > 0 and not sentence[start - 1].isspace():
+        # 앞쪽이 낱말 중간이면 다음 낱말부터. 찾는 낱말을 넘어가면 그 낱말이 든 어절의 시작까지 물러난다.
+        next_space = sentence.find(" ", start, at + 1)
+        start = next_space + 1 if next_space >= 0 else sentence.rfind(" ", 0, at) + 1
+    if end < len(sentence) and not sentence[end].isspace():
+        prev_space = sentence.rfind(" ", match_end, end)
+        if prev_space > 0:
+            end = prev_space
+        else:
+            next_space = sentence.find(" ", end)
+            end = next_space if next_space >= 0 else len(sentence)
+    return ("…" if start > 0 else "") + sentence[start:end].strip() + ("…" if end < len(sentence) else "")
+
+
+def _find_material(
+    track: Any, terms: Sequence[str], fields: Sequence[str], exact_values: Sequence[str] = (),
+) -> List[_MaterialHit]:
+    """terms 가운데 하나라도 곡 자료에 적혀 있는 곳. 값마다 한 번만, 필드 순서대로.
+
+    exact_values는 짧은 단서의 허용 목록이다. 태그는 값 전체가 같을 때만, 문장은 낱말이 있을 때 인정한다.
+    """
+    hits: List[_MaterialHit] = []
+    seen = set()
+    exact = {_norm(v) for v in exact_values}
+    for field_name in fields:
+        raw = getattr(track, field_name, None)
+        if _MATERIAL_IS_LIST[field_name]:
+            for value in list(raw or ()):
+                value = str(value or "").strip()
+                strength = "tag" if _norm(value) in exact else None
+                for term in terms:
+                    if strength == "tag":
+                        break
+                    found = _term_in_tag(term, value)
+                    if found == "tag":
+                        strength = "tag"
+                    else:
+                        strength = strength or found
+                if strength and (field_name, value) not in seen:
+                    seen.add((field_name, value))
+                    hits.append(_MaterialHit(field_name, value, strength))
+        else:
+            for sentence in _sentences_of(raw):
+                term = next((t for t in [*terms, *exact_values] if _term_in_text(_norm(t), sentence)), None)
+                if term is not None and (field_name, sentence) not in seen:
+                    seen.add((field_name, sentence))
+                    hits.append(_MaterialHit(field_name, _clip_quote(sentence, term), "text"))
+    return hits
+
+
+def _quote_line(hits: Sequence[_MaterialHit], total: int) -> str:
+    # 같은 곳에 적힌 값은 이름을 한 번만 쓴다 — "장소·활동 태그 ‘술집’·‘혼술’"
+    by_field: Dict[str, List[str]] = {}
+    for hit in hits:
+        by_field.setdefault(hit.field, []).append(f"‘{hit.quote}’")
+    shown = [f"{_MATERIAL_NAMES[field_name]} {'·'.join(quotes)}" for field_name, quotes in by_field.items()]
+    more = f" 외 {total - len(hits)}건" if total > len(hits) else ""
+    return "곡 자료에 이렇게 적혀 있음: " + " · ".join(shown) + more
+
+
+def _material_observed(hits: Sequence[_MaterialHit]) -> str:
+    """가장 분명한 근거만 인용한다. 태그에 같은 표현이 있으면 긴 문장을 덧붙이지 않아 표가 길어지지 않는다."""
+    tags = [h for h in hits if h.strength == "tag"]
+    if tags:
+        return _quote_line(tags[:_MAX_MATERIAL_QUOTES], len(tags))
+    texts = [h for h in hits if h.strength == "text"]
+    if texts:
+        return _quote_line(texts[:_MAX_SENTENCE_QUOTES], len(texts))
+    return _quote_line(hits[:_MAX_MATERIAL_QUOTES], len(hits))
+
+
+def _material_status(hits: Sequence[_MaterialHit]) -> Tuple[str, str]:
+    """태그에 같은 표현 → 일치. 문장 속 낱말·더 짧은 태그 → 부분 일치(문맥·부정은 보지 않는다). 없음 → 미확인."""
+    if any(h.strength == "tag" for h in hits):
+        return STATUS_MATCH, KIND_MATERIAL_TAG
+    if any(h.strength == "text" for h in hits):
+        return STATUS_PARTIAL, KIND_MATERIAL_TEXT
+    if hits:
+        return STATUS_PARTIAL, KIND_MATERIAL_NEAR
+    return STATUS_UNVERIFIED, KIND_MATERIAL_NOT_FOUND
+
+
+def _said_in_query(tag: str, query: str) -> bool:
+    """사용자가 이 표현을 글자 그대로(활용 끝 제외) 말했는가. 한 글자는 낱말로만 본다 — "비슷한"의 "비"가 아니다."""
+    terms = _tag_terms(tag)
+    if len(terms[0]) == 1:
+        return _one_char_in(terms[0], str(query or ""))
+    hay = _norm(query)
+    return any(term in hay for term in terms)
+
+
+def _material_row(
+    slot: str, clue: str, track: Any, terms: Sequence[str], fields: Sequence[str], exact_values: Sequence[str] = (),
+) -> ClueCheck:
+    hits = _find_material(track, terms, fields, exact_values)
+    status, kind = _material_status(hits)
+    used_fields = list(dict.fromkeys(h.field for h in hits)) or list(fields)
+    return ClueCheck(
+        slot=slot, clue=clue, clue_origin=ORIGIN_ANALYSIS,
+        observed=_material_observed(hits) if hits else MATERIAL_NOT_FOUND_TEXT,
+        status=status, status_label=STATUS_LABELS[status],
+        source="+".join(f"track.{f}" for f in used_fields),
+        detail_kind=kind,
+    )
+
+
+def _meaning_row(meaning: str, query: str, track: Any) -> Optional[ClueCheck]:
+    """뜻으로 기억한 가사 내용 한 줄. 내용 낱말이 **둘 이상** 겹칠 때만 부분 일치다(낱말이 하나뿐인 문장은 그 하나).
+
+    낱말 하나만 봐서는 곡을 가르지 못한다(전체 곡의 66%가 부분 일치였다). 문맥·부정은 보지 않으므로 일치라고 하지
+    않는다. 태그는 낱말을 세는 데만 쓰고, 인용은 가사 요약 문장을 우선한다 — 태그는 태그 행이 이미 보인다.
+    """
+    terms = _meaning_terms(meaning)
+    if not terms:
+        return None
+    clue = meaning if _norm(meaning) in _norm(query) else f"{meaning}{INTERPRETED_MEANING_SUFFIX}"
+    variants = {term: [_norm(v) for v in _term_variants(term)] for term in terms}
+    found: set = set()
+    tag_hits: List[_MaterialHit] = []
+    for field_name in _MEANING_TAG_FIELDS:
+        for value in list(getattr(track, field_name, None) or ()):
+            value = str(value or "").strip()
+            matched = [t for t in terms if any(_term_in_tag(v, value) for v in variants[t])]
+            if matched:
+                found.update(matched)
+                tag_hits.append(_MaterialHit(field_name, value, "near"))
+    scored: List[Tuple[int, int, str]] = []
+    for order, sentence in enumerate(_sentences_of(getattr(track, "lyrics_summary", ""))):
+        matched = [t for t in terms if any(_term_in_text(v, sentence) for v in variants[t])]
+        if matched:
+            found.update(matched)
+            scored.append((-len(matched), order, sentence))
+    if len(found) < min(2, len(terms)):
+        return ClueCheck(
+            slot=SLOT_LYRIC_MEANING, clue=clue, clue_origin=ORIGIN_ANALYSIS,
+            observed="곡 태그·요약에서 이 내용과 충분히 겹치는 표현을 찾지 못함(없다는 뜻은 아님)",
+            status=STATUS_UNVERIFIED, status_label=STATUS_LABELS[STATUS_UNVERIFIED],
+            source="track.lyrics_summary", detail_kind=KIND_MATERIAL_NOT_FOUND,
+        )
+    scored.sort()
+    quotes = [
+        _MaterialHit("lyrics_summary", _clip_quote(sentence, next(
+            (v for t in terms for v in variants[t] if _term_in_text(v, sentence)), "")), "text")
+        for _, _, sentence in scored
+    ]
+    hits = quotes or tag_hits
+    return ClueCheck(
+        slot=SLOT_LYRIC_MEANING, clue=clue, clue_origin=ORIGIN_ANALYSIS,
+        observed=_quote_line(hits[:_MAX_MEANING_QUOTES], len(hits)),
+        status=STATUS_PARTIAL, status_label=STATUS_LABELS[STATUS_PARTIAL],
+        source="+".join(dict.fromkeys(f"track.{h.field}" for h in hits)),
+        detail_kind=KIND_MATERIAL_TEXT if quotes else KIND_MATERIAL_NEAR,
+    )
+
+
+def _registered_form(track: Any) -> Tuple[List[str], str]:
+    """곡의 등록 형태·성별. 표기 그대로 돌려준다 — 화면에 그대로 인용한다."""
+    forms = [str(v).strip() for v in (getattr(track, "artist_types", None) or ()) if str(v).strip()]
+    forms = [v for v in forms if v.lower() != "unknown"]
+    gender = str(getattr(track, "vocal_gender", "") or "").strip()
+    return forms, gender if gender in _GENDERS else ""
+
+
+def _form_row(tag: str, clue: str, search_analysis: Any, track: Any, explain: SongExplain) -> ClueCheck:
+    """형태 단서(걸그룹·남성솔로·밴드 …)는 태그가 아니라 등록 정보로 판정한다. 다르다고 단정하지 않고 값을 보인다."""
+    want_forms, want_gender, partial_only = _FORM_TAGS[_norm(tag)]
+    forms, gender = _registered_form(track)
+    registered = " · ".join([*forms, *([gender] if gender else [])])
+    form_ok = not want_forms or any(f in forms for f in want_forms)
+    gender_ok = not want_gender or gender == want_gender
+    if not registered:
+        status, observed = STATUS_UNVERIFIED, "등록된 형태·보컬 정보 없음"
+    elif form_ok and gender_ok:
+        status = STATUS_PARTIAL if partial_only else STATUS_MATCH
+        observed = f"등록 정보: {registered}" + ("(아이돌 여부는 자료에 없음)" if partial_only else "")
+    else:
+        status, observed = STATUS_UNVERIFIED, f"등록 정보: {registered}({tag} 여부를 단정하지 않음)"
+    basis: List[RankingBasis] = []
+    if status != STATUS_UNVERIFIED:
+        said = {str(v) for v in (getattr(getattr(search_analysis, "artist_type", None), "values", None) or ())}
+        adj = next((a for a in explain.adjustments if a.rule == "artist_type"), None)
+        if adj is not None and said & set(want_forms):
+            basis = [_adj_basis(adj)]
+    return ClueCheck(
+        slot=SLOT_REGISTERED, clue=clue, clue_origin=ORIGIN_ANALYSIS, observed=observed,
+        status=status, status_label=STATUS_LABELS[status], source="track.artist_types+track.vocal_gender",
+        ranking_basis=basis, basis_label=BASIS_SCORED if basis else BASIS_NONE, detail_kind=KIND_REGISTERED,
+    )
+
+
+def _ost_row(tag: str, clue: str, track: Any) -> ClueCheck:
+    genres = str(getattr(track, "genre", "") or "").strip()
+    wanted = _OST_TAGS[_norm(tag)]
+    album = str(getattr(track, "album", "") or "").strip()
+    title = str(getattr(track, "title", "") or "").strip()
+    marked = next((name for name in (album, title) if "ost" in name.lower()), "")
+    if any(g in genres for g in wanted):
+        status, observed = STATUS_MATCH, f"등록 장르: {genres}"
+    elif marked:
+        status, observed = STATUS_PARTIAL, f"등록 정보에 OST 표기: ‘{marked}’(어떤 작품인지는 자료에 없음)"
+    else:
+        status = STATUS_UNVERIFIED
+        observed = f"등록 장르는 {genres or '정보 없음'}이며 {tag} 여부를 확인할 자료는 없음"
+    return ClueCheck(
+        slot=SLOT_REGISTERED, clue=clue, clue_origin=ORIGIN_ANALYSIS, observed=observed,
+        status=status, status_label=STATUS_LABELS[status], source="track.genre+track.album+track.title",
+        basis_label=BASIS_NONE, detail_kind=KIND_REGISTERED,
+    )
+
+
+def _genre_word(norm_tag: str) -> str:
+    """"댄스곡"·"록음악"처럼 장르 낱말에 말꼬리가 붙은 태그의 장르 낱말. 아니면 빈 문자열.
+
+    `_genre_family`는 글자 포함으로 본다("기록"의 "록")는 주의가 있어, 여기서는 표에 있는 낱말과 **전체가 같을 때만** 본다.
+    """
+    known = _known_genre_words()
+    for suffix in _GENRE_WORD_SUFFIXES:
+        if norm_tag.endswith(suffix) and norm_tag[: -len(suffix)] in known:
+            return norm_tag[: -len(suffix)]
+    return ""
+
+
+def _known_genre_words() -> set:
+    return {_norm(word) for word in _GENRE_CORPUS} | {_norm(alias) for alias in genre_aliases()}
+
+
+def _tag_gender(norm_tag: str) -> str:
+    """태그가 품은 성별. 없으면 빈 문자열."""
+    form = _FORM_TAGS.get(norm_tag)
+    if form is not None:
+        return form[1]
+    for prefix, gender in _GENDER_PREFIXES:
+        if norm_tag.startswith(prefix) and _GENDERED_TAIL_RE.fullmatch(norm_tag[len(prefix):]):
+            return gender
+    return ""
+
+
+def _tag_genre_word(norm_tag: str) -> str:
+    """태그가 장르를 말할 때 그 낱말 — "댄스곡"의 댄스, "남성발라드"의 발라드, "힙합그룹"의 힙합.
+
+    앞글자만 같은 태그("일렉기타"의 일렉, "재즈바"의 재즈, "인디언"의 인디)는 장르가 아니다. 끝이 장르 낱말이거나
+    사람을 가리키는 꼬리가 붙을 때만 읽고, 두 글자 이상만 본다("기록"의 "록"이 아니다).
+    """
+    word = _genre_word(norm_tag)
+    if word:
+        return word
+    for known in sorted(_known_genre_words(), key=len, reverse=True):
+        if len(known) < 2 or known == norm_tag:
+            continue
+        if norm_tag.endswith(known):
+            return known
+        if norm_tag.startswith(known) and _GENRE_PERSON_TAIL_RE.fullmatch(norm_tag[len(known):]):
+            return known
+    return ""
+
+
+def _stale_after_answers(norm_tag: str, answers: Sequence[Any]) -> bool:
+    """재질문 답변으로 정정된 값을 품은 태그인가. 정정 전 값은 지금 단서가 아니므로 근거로 보이지 않는다.
+
+    분석의 korean_tags는 원문 기준이라 답변을 반영하지 않는다. 그대로 두면 댄스→발라드로 정정해도 "댄스곡 단서는 곡
+    정보와 일치해요"가 남는다. 정정 전 값으로 계산된 가산은 상세 기록에 남고 `_adjustment_notes`가 표시한다.
+    """
+    gender = _latest_answer(answers, "vocal_gender")
+    if gender in _GENDERS:
+        tag_gender = _tag_gender(norm_tag)
+        if tag_gender and tag_gender != gender:
+            return True
+    genre = _latest_answer(answers, "genre")
+    if genre:
+        word = _tag_genre_word(norm_tag)
+        if word and not _genre_consistent(word, genre):
+            return True
+    form = _latest_answer(answers, "type")
+    entry = _FORM_TAGS.get(norm_tag)
+    return bool(form in _ANSWER_FORMS and entry and entry[0] and form not in entry[0])
+
+
+def _genre_tag_row(word: str, tag: str, clue: str, search_analysis: Any, track: Any, explain: SongExplain) -> ClueCheck:
+    registered = str(getattr(track, "genre", "") or "").strip()
+    if not registered:
+        status, observed = STATUS_UNVERIFIED, "등록 장르 정보 없음"
+    elif _genre_in(word, registered):
+        status, observed = STATUS_MATCH, f"등록 장르: {registered}"
+    else:
+        status, observed = STATUS_UNVERIFIED, f"등록 장르는 {registered}이며 {tag} 여부를 확인할 자료는 없음"
+    used = str(getattr(search_analysis, "genre", "") or "")
+    basis = [
+        _adj_basis(a) for a in explain.adjustments
+        if a.rule == "genre_match" and status == STATUS_MATCH and _genre_consistent(word, a.value or used)
+    ]
+    return ClueCheck(
+        slot=SLOT_REGISTERED, clue=clue, clue_origin=ORIGIN_ANALYSIS, observed=observed,
+        status=status, status_label=STATUS_LABELS[status], source="track.genre",
+        ranking_basis=basis, basis_label=BASIS_SCORED if basis else BASIS_NONE, detail_kind=KIND_REGISTERED,
+    )
+
+
+def _covered_words(query: str, search_analysis: Any) -> set:
+    """다른 행이 이미 다루거나 대조할 자료가 없는 낱말 — 장르·성별·가사 구절/키워드·가수·제목·표지."""
+    covered = set(_TAG_SKIP_WORDS) | set(_COVER_WORDS)
+    for word, tokens in _GENRE_CORPUS.items():
+        covered.add(_norm(word))
+        for token in tokens:
+            covered.add(_norm(token))
+            covered.update(_norm(part) for part in token.split("/"))
+    covered.update(_norm(alias) for alias in genre_aliases())
+    covered.update(_norm(v) for v in known_genre_values(query))
+    for name in ("genre", "artist_name", "song_title"):
+        covered.add(_norm(getattr(search_analysis, name, "")))
+    covered.update(_norm(k) for k in (getattr(search_analysis, "lyric_keywords", []) or []))
+    covered.update(_norm(getattr(c, "text", "")) for c in (getattr(search_analysis, "lyric_clues", []) or []))
+    covered.discard("")
+    return covered
+
+
+def _check_material(
+    query: str,
+    search_analysis: Any,
+    track: Any,
+    explain: SongExplain,
+    existing: Sequence[ClueCheck] = (),
+    answers: Sequence[Any] = (),
+) -> List[ClueCheck]:
+    """분석이 뽑은 상황·소리·가사 내용 단서를 곡 자료와 대조한 행.
+
+    - 등록 정보로 판정할 수 있는 단서(형태·OST·장르 변형)는 등록 정보로 본다 — 태그에 없다고 미확인으로 두면 걸그룹 곡에
+      "걸그룹을 찾지 못함"이라고 말하게 된다.
+    - 표지·시기 단서는 태그·요약으로 판정할 수 없으니 행을 만들지 않는다. 표지 묘사 질의에서는 노래·소리를 말하는 절에
+      글자 그대로 있는 태그만 쓴다 — "표지에 밤하늘에 별"의 별을 가사 요약의 별로 확인했다고 하면 다른 자료로 근거를
+      만드는 셈이다. 어느 절에서 왔는지 모르는 태그(원문에 그대로 없는 값)도 쓰지 않는다.
+    - 재질문 답변으로 정정된 값을 품은 태그는 쓰지 않는다(`_stale_after_answers`).
+    - 못 찾은 단서는 곡마다 한 줄로 묶는다. 사용자가 말한 것은 숨기지 않고(숨기면 확인으로 읽힌다), 말하지 않고 분석이
+      덧붙인 것은 빼는 대신 찾았을 때 "검색이 해석한 단서"로 표시한다.
+    - 순위 기여: korean_tags·가사 뜻은 텍스트 검색 질의에 들어가지만 **태그별 기록은 없다** — "순위 반영 기록 없음".
+      편성 단서는 묶음 가산(`performance_clues`) 기록이 있고 이 곡 자료와 맞을 때만 그 기록을 잇는다.
+    """
+    rows: List[ClueCheck] = []
+    missing: List[str] = []
+
+    meaning = str(getattr(search_analysis, "lyric_semantic_query", "") or "").strip()
+    if meaning:
+        row = _meaning_row(meaning, query, track)
+        if row is not None:
+            rows.append(row)
+
+    def label(tag: str) -> Tuple[str, bool]:
+        said = _said_in_query(tag, query)
+        return (tag if said else f"{tag}{INTERPRETED_CLUE_SUFFIX}"), said
+
+    covered = _covered_words(query, search_analysis)
+    is_visual = bool(getattr(search_analysis, "has_visual_clue", False)) or has_explicit_visual_clue(query)
+    outside_artwork = text_outside_artwork(query) if is_visual else None
+    seen = set()
+    tag_rows: Dict[str, ClueCheck] = {}
+    for tag in getattr(search_analysis, "korean_tags", []) or []:
+        tag = str(tag or "").strip()
+        norm = _norm(tag)
+        if not norm or norm in covered or norm in seen or _ERA_TAG_RE.fullmatch(norm):
+            continue
+        if outside_artwork is not None and not _said_in_query(tag, outside_artwork):
+            continue
+        if _stale_after_answers(norm, answers):
+            continue
+        seen.add(norm)
+        clue, said = label(tag)
+        if norm in _FORM_TAGS:
+            rows.append(_form_row(tag, clue, search_analysis, track, explain))
+            continue
+        if norm in _OST_TAGS:
+            rows.append(_ost_row(tag, clue, track))
+            continue
+        word = _genre_word(norm)
+        if word:
+            has_row = any(c.slot == SLOT_GENRE and _genre_consistent(word, c.clue) for c in existing)
+            if not has_row:
+                rows.append(_genre_tag_row(word, tag, clue, search_analysis, track, explain))
+            continue
+        row = _material_row(
+            SLOT_TAG, clue, track, _tag_terms(tag), _FIELDS_FOR_TAG, _SHORT_CLUE_VALUES.get(norm, ()),
+        )
+        if row.status != STATUS_UNVERIFIED:
+            rows.append(row)
+            tag_rows[norm] = row
+        elif said:
+            missing.append(tag)
+
+    clue_obj = getattr(search_analysis, "performance_clues", None)
+    group_adj = next((a for a in explain.adjustments if a.rule == "performance_clues"), None)
+    for sound in list(getattr(clue_obj, "sound_ensemble", None) or ()):
+        sound = str(sound or "").strip()
+        norm = _norm(sound)
+        # 모델이 편성 칸에 장르를 넣기도 한다("댄스"·"발라드") — 장르 행과 겹치면 같은 단서가 두 번 나온다
+        if not norm or norm in covered or _genre_word(norm):
+            continue
+        # 표지에 그려진 악기가 편성 단서로 읽힌 경우("표지에 남자가 있고 통기타를 들고 있었어")도 근거로 쓰지 않는다
+        if outside_artwork is not None and not _said_in_query(sound, outside_artwork):
+            continue
+        if norm in seen:
+            # 분석이 같은 값을 태그와 편성 양쪽에 넣은 경우(프롬프트 예시에도 있다). 행은 하나지만 편성 가산 기록은 잇는다.
+            duplicate = tag_rows.get(norm)
+            if duplicate is not None and group_adj is not None and _find_material(track, _tag_terms(sound), _FIELDS_FOR_SOUND):
+                duplicate.ranking_basis = [_adj_basis(group_adj)]
+                duplicate.basis_label = BASIS_GROUP_SCORED
+            continue
+        seen.add(norm)
+        clue, said = label(sound)
+        row = _material_row(SLOT_SOUND, clue, track, _tag_terms(sound), _FIELDS_FOR_SOUND)
+        if row.status != STATUS_UNVERIFIED:
+            if group_adj is not None:
+                row.ranking_basis = [_adj_basis(group_adj)]
+                row.basis_label = BASIS_GROUP_SCORED
+            rows.append(row)
+        elif said:
+            missing.append(sound)
+
+    if missing:
+        rows.append(ClueCheck(
+            slot=SLOT_NOT_FOUND, clue=", ".join(missing), clue_origin=ORIGIN_ANALYSIS,
+            observed=MATERIAL_NOT_FOUND_TEXT,
+            status=STATUS_UNVERIFIED, status_label=STATUS_LABELS[STATUS_UNVERIFIED],
+            source="+".join(f"track.{f}" for f in _FIELDS_FOR_TAG), detail_kind=KIND_MATERIAL_NOT_FOUND,
+        ))
+    return rows
+
+
+def _merge_semantic_lyric_rows(checks: List[ClueCheck], meaning_text: str) -> List[ClueCheck]:
+    """분석이 같은 문장을 뜻 가사 단서(lyric_clues의 semantic)와 lyric_semantic_query 양쪽에 넣으면 한 줄로 합친다.
+
+    합친 줄은 곡 자료 대조 결과에 의미 검색의 기록(텍스트 의미 검색 N위 · 유사도로 반영)을 그대로 잇는다.
+    """
+    meaning = next((c for c in checks if c.slot == SLOT_LYRIC_MEANING), None)
+    if meaning is None:
+        return checks
+    twins = [c for c in checks if c.slot == SLOT_LYRICS and c.detail_kind == KIND_LYRIC_SEMANTIC
+             and _norm(c.clue) == _norm(meaning_text)]
+    if not twins:
+        return checks
+    twin = twins[0]
+    note = twin.observed.split(" · ", 1)[1] if " · " in twin.observed else ""
+    if note:
+        meaning.observed += f" · {note}"
+    if twin.ranking_basis:
+        meaning.ranking_basis = list(twin.ranking_basis)
+        meaning.basis_label = twin.basis_label
+    return [c for c in checks if c is not twin]
+
+
+# ---------------------------------------------------------------------------
 # 요약 문장 — 최대 2문장: ① 확인된 것(또는 제한된 설명) ② 확인하지 못한 것
 # ---------------------------------------------------------------------------
 
@@ -847,7 +1574,9 @@ def _short_name(check: ClueCheck) -> str:
         return "추정한 시기" if check.clue_origin == ORIGIN_BIRTH_YEAR else "발매 시기"
     if check.slot == SLOT_LYRICS:
         return "기억한 구절"
-    return check.clue
+    if check.slot == SLOT_LYRIC_MEANING:
+        return "가사 내용"
+    return check.clue.removesuffix(INTERPRETED_CLUE_SUFFIX)
 
 
 def _unverified_topic(check: ClueCheck) -> Optional[str]:
@@ -921,7 +1650,9 @@ def _lyric_clause(row: ClueCheck) -> Clause:
     return (f"{unused} 이 순위 계산에는 쓰이지 않았고", f"{unused} 이 순위 계산에는 쓰이지 않았어요")
 
 
-def _positive_clauses(checks: Sequence[ClueCheck], *, facts_only: bool = False) -> List[Clause]:
+def _positive_clauses(
+    checks: Sequence[ClueCheck], *, facts_only: bool = False, hit_counts: Optional[Dict[Tuple[str, str], int]] = None,
+) -> List[Clause]:
     """확인된 것. `facts_only`면 곡 자료와 맞는다는 사실만 말하고 "검색 점수에 반영"이라는 말을 쓰지 않는다
     (제보로 들어온 곡 — 호출부가 순위 기록을 뗀 행을 넘긴다)."""
     clauses: List[Clause] = []
@@ -932,7 +1663,22 @@ def _positive_clauses(checks: Sequence[ClueCheck], *, facts_only: bool = False) 
         clauses.append(("가사 구절 일치 기록이 검색 점수에 반영됐지만 어느 구절인지는 기록에 없고",
                         "가사 구절 일치 기록이 검색 점수에 반영됐지만 어느 구절인지는 기록에 없어요"))
 
-    attrs = [c for c in checks if c.slot in (SLOT_GENDER, SLOT_GENRE, SLOT_ERA)]
+    # 이름은 셋까지만 적으므로 순서가 곧 내용이다. 결과 곡 중 **적은 곡만 가진 단서**를 먼저 부른다 — 모든 곡에 있는
+    # 이별·그리움이 칸을 차지하면 곡을 가르는 고음·술이 밀린다. 같으면 일치(태그)를 겹침(문장)보다 먼저 부른다.
+    counts = hit_counts or {}
+    material = sorted(
+        (c for c in checks if c.slot in MATERIAL_SLOTS and c.status in (STATUS_MATCH, STATUS_PARTIAL)),
+        key=lambda c: (counts.get((c.slot, c.clue), 0), c.status != STATUS_MATCH),
+    )
+    if material:
+        # 곡마다 다른 점이 여기서 갈린다 — 성별·장르 같은 공통 단서보다 앞에 둔다. 생성된 곡 자료와 글자가 겹친다는
+        # 사실까지만 말한다. 단서별 가산 기록은 없으므로 "반영"이라고 쓰지 않는다(편성 묶음 기록은 표에 남는다).
+        names = list(dict.fromkeys(_short_name(c) for c in material))
+        n = "·".join(names[:_MAX_MATERIAL_QUOTES]) + (" 등" if len(names) > _MAX_MATERIAL_QUOTES else "")
+        clauses.append((f"{n} 단서는 곡 자료(태그·요약)에 적힌 표현과 겹치고",
+                        f"{n} 단서는 곡 자료(태그·요약)에 적힌 표현과 겹쳐요"))
+
+    attrs = [c for c in checks if c.slot in (SLOT_GENDER, SLOT_GENRE, SLOT_ERA, SLOT_REGISTERED)]
     matched = [c for c in attrs if c.status == STATUS_MATCH]
     scored, plain = [c for c in matched if c.ranking_basis], [c for c in matched if not c.ranking_basis]
     partial = [c for c in attrs if c.status == STATUS_PARTIAL]
@@ -1018,7 +1764,9 @@ def _limited_sentence(explain: SongExplain, checks: Sequence[ClueCheck]) -> str:
     return "일부 단서가 비슷한 후보예요(기록된 근거는 많지 않아요)."
 
 
-def _summary(checks: Sequence[ClueCheck], explain: SongExplain) -> str:
+def _summary(
+    checks: Sequence[ClueCheck], explain: SongExplain, *, hit_counts: Optional[Dict[Tuple[str, str], int]] = None,
+) -> str:
     """최대 2문장. ① 확인된 것을 한 문장으로(없으면 제한된 설명) ② 확인하지 못한 것을 한 문장으로.
 
     **이전 사용자 제보로 후보에 들어온 곡은 출처 문장이 먼저 온다**(그 뒤에 위 두 문장, 최대 3문장). 이 곡은 기존
@@ -1028,9 +1776,11 @@ def _summary(checks: Sequence[ClueCheck], explain: SongExplain) -> str:
     """
     second = _sentence(_negative_clauses(checks))
     if getattr(explain, "feedback_entrant", False):
-        facts = _sentence(_positive_clauses([replace(c, ranking_basis=[]) for c in checks], facts_only=True))
+        facts = _sentence(_positive_clauses(
+            [replace(c, ranking_basis=[]) for c in checks], facts_only=True, hit_counts=hit_counts,
+        ))
         return " ".join(s for s in (FEEDBACK_SOURCE_SENTENCE, facts, second) if s)
-    first = _sentence(_positive_clauses(checks)) or _limited_sentence(explain, checks)
+    first = _sentence(_positive_clauses(checks, hit_counts=hit_counts)) or _limited_sentence(explain, checks)
     return " ".join(s for s in (first, second) if s)
 
 
@@ -1053,6 +1803,8 @@ def build_user_explanation(
     """곡 하나의 사용자용 설명. 입력을 바꾸지 않고, 모델·DB를 부르지 않는다.
 
     - query: 사용자 원문(성별·장르·MV 장면 단서의 증거)
+    - 곡 자료 대조 행(`_check_material`): search_analysis의 korean_tags·lyric_semantic_query·편성 단서를 track의
+      태그·요약과 글자로 견준다. 문장은 템플릿이고 찾은 값을 그대로 인용한다
     - analysis: 응답에 실리는 분석(원본). 시기가 여기 없고 search_analysis에만 있으면 출생 연도 추정 창이다
     - search_analysis: 검색에 **실제로 쓴** 분석(출생 연도 창 반영). 가사 단서·시기 창·해석한 성별/장르는 여기서 읽는다
     - answers: 이번 요청의 재질문 답변. 유효한 최신 답이 원문보다 우선한다(건너뛴 답은 정정이 아니다)
@@ -1066,6 +1818,8 @@ def build_user_explanation(
         checks.append(gender)
     checks.extend(_check_genre(query, search_analysis, answers, track, explain, ctx))
     checks.extend(_check_lyrics(search_analysis, explain, evidence))
+    checks.extend(_check_material(query, search_analysis, track, explain, checks, answers))
+    checks = _merge_semantic_lyric_rows(checks, str(getattr(search_analysis, "lyric_semantic_query", "") or "").strip())
     era = _check_era(analysis, search_analysis, track, explain)
     if era is not None:
         checks.append(era)
@@ -1085,3 +1839,20 @@ def build_user_explanation(
         clue_checks=checks,
         adjustment_notes=_adjustment_notes(explain, ctx),
     )
+
+
+def distinguish_summaries(
+    items: Sequence[Tuple[UserExplanation, SongExplain]],
+) -> List[UserExplanation]:
+    """한 응답의 결과 곡을 함께 보고 요약 문장을 다시 쓴다. 곡마다 다른 단서가 요약의 이름 칸에 먼저 오게 한다.
+
+    `build_user_explanation`은 곡 하나만 보므로 어느 단서가 곡을 가르는지 모른다. 단서 표·상태·순위 기록은 그대로이고
+    요약의 순서만 바뀐다. 모델·DB를 부르지 않는다. 곡이 둘 미만이면 비교할 것이 없어 그대로 돌려준다.
+    """
+    if len(items) < 2:
+        return [ux for ux, _ in items]
+    hit_counts: Dict[Tuple[str, str], int] = {}
+    for ux, _ in items:
+        for key in {(c.slot, c.clue) for c in ux.clue_checks if c.status in (STATUS_MATCH, STATUS_PARTIAL)}:
+            hit_counts[key] = hit_counts.get(key, 0) + 1
+    return [replace(ux, summary=_summary(ux.clue_checks, explain, hit_counts=hit_counts)) for ux, explain in items]

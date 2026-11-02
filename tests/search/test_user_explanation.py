@@ -1422,3 +1422,737 @@ def test_ufet5_singer_nominal_after_an_open_scene_does_not_enter_the_mv_cell():
     assert mv_scene_phrases("뮤비에서 춤추는 사람은 여자였어") == ["뮤비에서 춤추는 사람은 여자였어"]
     assert mv_scene_phrases("뮤비에서 의자가 하늘에 떠 있고 주인공은 여자였어") == [
         "뮤비에서 의자가 하늘에 떠 있고 주인공은 여자였어"]
+
+
+# ---------------------------------------------------------------------------
+# 곡 자료(태그·요약) 대조 — korean_tags · lyric_semantic_query · 편성 단서 (2026-11-02)
+# 예시 질의에서 10곡 요약이 전부 같았다. 곡 자료에 적힌 값을 그대로 인용해 곡마다 다른 점을 보인다.
+# ---------------------------------------------------------------------------
+
+from src.retrieval.user_explanation import (  # noqa: E402
+    BASIS_GROUP_SCORED,
+    KIND_MATERIAL_NEAR,
+    KIND_MATERIAL_NOT_FOUND,
+    KIND_MATERIAL_TAG,
+    KIND_MATERIAL_TEXT,
+    SLOT_LYRIC_MEANING,
+    SLOT_SOUND,
+    SLOT_TAG,
+    SLOT_NOT_FOUND,
+    SLOT_REGISTERED,
+    INTERPRETED_CLUE_SUFFIX,
+    INTERPRETED_MEANING_SUFFIX,
+    KIND_REGISTERED,
+    MATERIAL_NOT_FOUND_TEXT,
+    _clip_quote,
+    _norm,
+    _stale_after_answers,
+    _tag_gender,
+    _term_in_tag,
+    _term_span,
+    distinguish_summaries,
+)
+
+from src.retrieval.modality_queries import text_outside_artwork  # noqa: E402
+
+DRINK_QUERY = "술 한잔 마실 때 생각나는 노래야. 이별한 전 인연을 그리워하는 가사가 있었고 남자 가수에 엄청 고음이 많은 발라드?"
+DRINK_MEANING = "이별한 전 연인을 그리워하는 내용"
+
+
+def _drink_analysis(**kw):
+    base = dict(original_query=DRINK_QUERY, vocal_gender="남성", genre="발라드",
+                korean_tags=["술", "이별", "그리움", "고음", "남자가수", "발라드"],
+                lyric_semantic_query=DRINK_MEANING)
+    base.update(kw)
+    return _analysis(**base)
+
+
+def _drink_tracks():
+    """세 곡 모두 남성 발라드다. 곡 자료(태그·요약)만 다르다."""
+    return [
+        _track(id="a", vocal_gender="남성", genre=["발라드"],
+               sound_tags=["폭발적인 고음", "피아노"], emotion_tags=["그리움", "슬픔"],
+               relation_context_tags=["이별 후"],
+               lyrics_summary="헤어진 연인을 잊지 못해 그리워하는 이야기. 다시 돌아와 달라고 말한다."),
+        _track(id="b", vocal_gender="남성", genre=["발라드"],
+               place_activity_tags=["술", "혼자 있을 때"], emotion_tags=["후회"],
+               search_style_summary="잔잔한 피아노 위로 담담하게 부르는 발라드"),
+        _track(id="c", vocal_gender="남성", genre=["발라드"], lyrics_highlight=None),
+    ]
+
+
+def _drink_build(track, analysis=None, rec=None):
+    analysis = analysis or _drink_analysis()
+    rec = rec or _record(track.id, adjust=[("vocal_gender_match", 0.016, "", {"slot": "vocal_gender", "value": "남성"})])
+    return _build(DRINK_QUERY, analysis, track, rec)
+
+
+def _rows(ux, slot):
+    return [c for c in ux.clue_checks if c.slot == slot]
+
+
+def test_drink_case_summaries_differ_per_song_and_quote_the_song_material():
+    uxs = [_drink_build(t) for t in _drink_tracks()]
+    summaries = [ux.summary for ux in uxs]
+    assert len(set(summaries)) == 3, summaries
+
+    a, b, c = uxs
+    high_a = next(r for r in _rows(a, SLOT_TAG) if r.clue == "고음")
+    assert high_a.status == STATUS_MATCH and high_a.detail_kind == KIND_MATERIAL_TAG
+    assert "사운드 태그 ‘폭발적인 고음’" in high_a.observed and high_a.observed.startswith("곡 자료에 이렇게 적혀 있음")
+    assert high_a.basis_label == BASIS_NONE and not high_a.ranking_basis, "태그별 가산 기록이 없으면 반영이라고 쓰지 않는다"
+
+    drink_b = next(r for r in _rows(b, SLOT_TAG) if r.clue == "술")
+    assert drink_b.status == STATUS_MATCH and "장소·활동 태그 ‘술’" in drink_b.observed
+    missing_b = _rows(b, SLOT_NOT_FOUND)[0]
+    assert "고음" in missing_b.clue and missing_b.status == STATUS_UNVERIFIED and missing_b.status_label == "미확인"
+    assert missing_b.detail_kind == KIND_MATERIAL_NOT_FOUND and "없다는 뜻은 아님" in missing_b.observed
+
+    assert "고음" in a.summary and "고음" not in b.summary and "술" in b.summary
+    assert a.summary.startswith("이별·그리움·고음 등 단서는 곡 자료(태그·요약)에 적힌 표현과 겹치고"), a.summary
+    assert "반영" not in a.summary.split("남성 보컬")[0], "곡 자료 겹침에는 반영이라고 쓰지 않는다"
+    assert a.summary.index("고음") < a.summary.index("남성 보컬"), "곡마다 다른 단서를 공통 단서보다 앞에 둔다"
+    assert not _rows(c, SLOT_TAG), "못 찾은 단서는 한 줄로 묶는다"
+    assert all(r.status == STATUS_UNVERIFIED for r in _rows(c, SLOT_NOT_FOUND) + _rows(c, SLOT_LYRIC_MEANING))
+    assert c.summary.startswith("남성 보컬·발라드 단서는") or c.summary.startswith("남성 보컬 단서는"), c.summary
+
+
+def test_material_rows_never_claim_lyrics_confirmation_mismatch_or_absence():
+    for ux in (_drink_build(t) for t in _drink_tracks()):
+        for row in _rows(ux, SLOT_TAG) + _rows(ux, SLOT_LYRIC_MEANING) + _rows(ux, SLOT_SOUND) + _rows(ux, SLOT_NOT_FOUND):
+            assert row.status != STATUS_MISMATCH, "찾지 못한 단서는 미확인이다"
+            for banned in ("가사에서 확인", "다름", "반영"):
+                assert banned not in row.observed, (banned, row.observed)
+            assert row.basis_label == BASIS_NONE, "태그별 가산 기록이 없다"
+        assert "가사에서 확인" not in ux.summary and "다름" not in ux.summary
+
+
+def test_lyric_meaning_row_quotes_the_summary_sentence_as_partial():
+    a = _drink_build(_drink_tracks()[0])
+    meaning = _rows(a, SLOT_LYRIC_MEANING)[0]
+    assert meaning.clue == f"{DRINK_MEANING}{INTERPRETED_MEANING_SUFFIX}", "원문과 글자가 다르면 해석이라고 표시한다"
+    assert meaning.status == STATUS_PARTIAL, "뜻 문장은 낱말 겹침이라 일치라고 하지 않는다"
+    assert "가사 요약 ‘헤어진 연인을 잊지 못해 그리워하는 이야기.’" in meaning.observed, meaning.observed
+    assert "다시 돌아와" not in meaning.observed, "낱말이 든 문장만 인용한다"
+    assert "track.lyrics_summary" in meaning.source
+    # 요약 문장에 내용 낱말이 둘 다 있는 곡도 부분 일치까지다 — 문맥·부정은 보지 않으므로 일치라고 하지 않는다
+    only_text = _track(id="t", lyrics_summary="이별 뒤에 떠난 연인을 그리워하며 부르는 노래")
+    row = _rows(_drink_build(only_text), SLOT_LYRIC_MEANING)[0]
+    assert row.status == STATUS_PARTIAL and row.detail_kind == KIND_MATERIAL_TEXT
+
+
+@pytest.mark.parametrize("summary", [
+    "연인과 함께한 내용입니다",               # 흔한 낱말만 겹친다
+    "이별의 순간을 담담하게 그린다",           # 내용 낱말이 둘인데 하나만 겹친다
+    "그리워하는 고향의 풍경을 노래한다",
+    "이 별이 빛나는 밤의 풍경",                # 띄어쓰기를 건너 "이별"이 되면 안 된다
+])
+def test_lyric_meaning_row_is_not_partial_on_one_or_common_words(summary):
+    row = _rows(_drink_build(_track(id="t", lyrics_summary=summary)), SLOT_LYRIC_MEANING)[0]
+    assert row.status == STATUS_UNVERIFIED and row.detail_kind == KIND_MATERIAL_NOT_FOUND, row
+
+
+def test_lyric_meaning_row_reads_conjugated_forms_and_a_single_word_is_enough_alone():
+    # "그리워"는 요약의 "그리움"·"그리운"으로도 읽는다. "그리고"까지 넓히지 않는다
+    assert _rows(_drink_build(_track(id="t", lyrics_summary="이별 후의 깊은 그리움을 담았다")), SLOT_LYRIC_MEANING)[0].status == STATUS_PARTIAL
+    assert _rows(_drink_build(_track(id="t", lyrics_summary="이별 그리고 새로운 시작")), SLOT_LYRIC_MEANING)[0].status == STATUS_UNVERIFIED
+    analysis = _drink_analysis(lyric_semantic_query="위로하는 내용", korean_tags=[])
+    assert _rows(_drink_build(_track(id="t", lyrics_summary="지친 사람을 위로하는 노래"), analysis), SLOT_LYRIC_MEANING)[0].status == STATUS_PARTIAL
+
+
+def test_tags_already_covered_by_other_rows_do_not_make_material_rows():
+    ux = _drink_build(_drink_tracks()[0])
+    tags = [r.clue for r in _rows(ux, SLOT_TAG)]
+    # 장르(발라드)·성별(남자가수)은 위 행이 다룬다. 원문에 그대로 없는 "그리움"은 해석으로 표시한다
+    assert tags == ["이별", f"그리움{INTERPRETED_CLUE_SUFFIX}", "고음"], tags
+    assert _rows(ux, SLOT_NOT_FOUND)[0].clue == "술"
+    analysis = _drink_analysis(korean_tags=["가사", "2010년대", "고음", "고음"], lyric_keywords=["이별"])
+    assert [r.clue for r in _rows(_drink_build(_drink_tracks()[0], analysis), SLOT_TAG)] == ["고음"]
+
+
+@pytest.mark.parametrize("tag", ["앨범표지", "앨범커버", "일러스트", "사진", "2000년대초반", "90년대", "옛날노래", "최신곡"])
+def test_cover_and_era_tags_make_no_row_because_song_tags_cannot_answer_them(tag):
+    query = f"{tag} 얘기를 했던 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=[tag], lyric_semantic_query="")
+    ux = _build(query, analysis, _track(id="x"), _record("x"))
+    assert not _rows(ux, SLOT_TAG) and not _rows(ux, SLOT_NOT_FOUND) and not _rows(ux, SLOT_REGISTERED), ux.clue_checks
+
+
+@pytest.mark.parametrize("field,values,expected", [
+    ("place_activity_tags", ["술"], STATUS_MATCH),
+    ("place_activity_tags", ["술집", "혼술"], STATUS_MATCH),
+    ("place_activity_tags", ["술자리"], STATUS_MATCH),
+    ("place_activity_tags", ["포장마차"], STATUS_MATCH),
+    ("place_activity_tags", ["기술", "예술가"], None),
+    ("place_activity_tags", ["술자격", "술자석", "술자리스태프"], None),   # 실제 곡 자료의 깨진 태그
+    ("search_style_summary", "기술이 좋은 연주", None),
+    ("search_style_summary", "술을 마시며 부르는 노래", STATUS_PARTIAL),
+    ("search_style_summary", "소주 한 잔 기울일 때 듣는 노래", STATUS_PARTIAL),
+])
+def test_one_letter_clue_reads_only_the_word_and_its_allowed_values(field, values, expected):
+    analysis = _drink_analysis(korean_tags=["술"], lyric_semantic_query="")
+    ux = _drink_build(_track(id="x", **{field: values}), analysis)
+    rows = _rows(ux, SLOT_TAG)
+    if expected is None:
+        assert not rows and _rows(ux, SLOT_NOT_FOUND)[0].clue == "술", rows
+    else:
+        assert rows[0].status == expected, rows
+
+
+@pytest.mark.parametrize("values,found", [
+    (["비"], True), (["비오는날"], True), (["비트", "비통함", "알앤비"], False),
+])
+def test_time_weather_tags_are_compared_for_a_weather_clue(values, found):
+    query = "비 오는 날 듣던 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["비"], lyric_semantic_query="")
+    ux = _build(query, analysis, _track(id="x", time_weather_tags=values), _record("x"))
+    assert bool(_rows(ux, SLOT_TAG)) is found, ux.clue_checks
+
+
+@pytest.mark.parametrize("tag,found", [
+    ("폭발적고음", True), ("폭발적인 고음", True), ("시원한고음", True), ("고음보컬", True), ("고음", True),
+    ("복고음악", False), ("고음비트", False),
+])
+def test_high_note_clue_does_not_match_words_that_only_contain_its_letters(tag, found):
+    analysis = _drink_analysis(korean_tags=["고음"], lyric_semantic_query="")
+    rows = _rows(_drink_build(_track(id="x", sound_tags=[tag]), analysis), SLOT_TAG)
+    assert (bool(rows) and rows[0].status == STATUS_MATCH) is found, rows
+
+
+def test_high_note_clue_in_a_sentence_ignores_false_friends_but_keeps_the_real_word():
+    analysis = _drink_analysis(korean_tags=["고음"], lyric_semantic_query="")
+    only_false = _track(id="x", search_style_summary="복고음악 느낌의 곡이다")
+    both = _track(id="y", search_style_summary="복고음악 위로 시원한 고음을 내지른다")
+    assert not _rows(_drink_build(only_false, analysis), SLOT_TAG)
+    assert _rows(_drink_build(both, analysis), SLOT_TAG)[0].status == STATUS_PARTIAL
+
+
+def test_a_common_short_tag_inside_the_clue_is_not_a_near_match():
+    query = "허스키보컬 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["허스키보컬"], lyric_semantic_query="")
+    assert not _rows(_build(query, analysis, _track(id="x", sound_tags=["보컬"]), _record("x")), SLOT_TAG)
+    near = _rows(_build(query, analysis, _track(id="x", sound_tags=["허스키"]), _record("x")), SLOT_TAG)[0]
+    assert near.status == STATUS_PARTIAL and near.detail_kind == KIND_MATERIAL_NEAR
+
+
+@pytest.mark.parametrize("clue,tag", [
+    ("술자리", "술자격"), ("술자리", "술자석"), ("여름밤", "여름휴가"), ("드라마", "드라이브"), ("드라이브", "드라이아이스"),
+    ("스트링", "스트레스해소"), ("트로트", "트로피컬"), ("미니멀", "미니홈피"), ("대중적", "대중교통"),
+    ("그리워", "그리스"),
+])
+def test_clue_does_not_match_a_tag_that_only_shares_its_first_letters(clue, tag):
+    assert _term_in_tag(clue, tag) is None
+
+
+@pytest.mark.parametrize("clue,tag", [
+    ("그리워", "그리움"), ("그리워", "그리운"), ("그리움", "그리운"), ("귀여운", "귀여움"), ("어두운", "어두움"), ("외로움", "외로워"),
+])
+def test_clue_reads_only_the_conjugated_forms_of_its_word(clue, tag):
+    assert _term_in_tag(clue, tag) == "near"
+
+
+@pytest.mark.parametrize("clue,tag", [("살랑거리는", "거리"), ("무한도전", "도전")])
+def test_common_word_inside_a_longer_clue_is_not_a_near_match(clue, tag):
+    assert _term_in_tag(clue, tag) is None
+    assert _term_in_tag(tag, tag) == "tag", "그 낱말을 직접 말한 단서는 그대로 일치다"
+
+
+def test_clue_sharing_first_letters_is_not_shown_as_material_evidence():
+    # 요약의 이름 칸과 인용에 실리면 사용자에게 틀린 근거가 보인다
+    query = "드라마 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["드라마"], lyric_semantic_query="")
+    ux = _build(query, analysis, _track(id="x", place_activity_tags=["드라이브"]), _record("x"))
+    assert not _rows(ux, SLOT_TAG) and _rows(ux, SLOT_NOT_FOUND)[0].clue == "드라마"
+    assert "드라이브" not in ux.summary
+
+
+def _visual_build(query, tags, track, **kw):
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=tags, lyric_semantic_query="",
+                               has_visual_clue=True, image_english_query="album art", **kw)
+    return _build(query, analysis, track, _record(track.id))
+
+
+def test_cover_description_is_not_confirmed_by_song_tags_or_lyric_summary():
+    # 분석기 프롬프트의 실제 예시. 표지 확인 자료가 없는데 시간·날씨 태그·가사 요약으로 근거를 만들면 안 된다
+    query = "앨범 표지에 밤하늘에 별이 그려져있고, 남자 발라드 노래 가사에 찰나라는 단어가 포함되어있어"
+    track = _track(id="x", time_weather_tags=["밤하늘"], lyrics_summary="별이 빛나는 밤의 이야기")
+    ux = _visual_build(query, ["밤하늘", "별", "남성보컬", "발라드"], track)
+    assert not _rows(ux, SLOT_TAG) and not _rows(ux, SLOT_NOT_FOUND), ux.clue_checks
+    assert "밤하늘" not in ux.summary and "별" not in ux.summary
+
+
+@pytest.mark.parametrize("query,tags,kept", [
+    ("표지는 검은색이었고 고음이 많은 노래", ["검은색", "고음"], ["고음"]),
+    ("검은 배경에 흰 글씨였고 고음이 많은 발라드야", ["배경", "글씨", "고음"], ["고음"]),
+    ("빨간 배경에 하트가 그려진 앨범이었어", ["빨간", "하트"], []),
+    ("밤하늘 표지. 술 마실 때 듣던 노래", ["밤하늘", "술"], ["술"]),
+])
+def test_only_tags_from_clauses_outside_the_cover_description_are_compared(query, tags, kept):
+    track = _track(id="x", sound_tags=["고음", "배경", "글씨"], place_activity_tags=["술집", "하트"], time_weather_tags=["밤하늘"], emotion_tags=["빨간", "검은색"])
+    ux = _visual_build(query, tags, track)
+    assert [r.clue for r in _rows(ux, SLOT_TAG)] == kept, ux.clue_checks
+
+
+def test_cover_query_drops_a_tag_whose_clause_is_unknown_but_keeps_the_rule_reading_without_model_flag():
+    # 원문에 그대로 없으면 어느 절에서 왔는지 모른다
+    query = "표지는 검은색이었고 슬픈 노래"
+    assert not _rows(_visual_build(query, ["이별"], _track(id="x", relation_context_tags=["이별"])), SLOT_TAG)
+    # 모델이 시각 단서를 끄더라도(모달리티 강등) 규칙이 표지를 읽으면 같게 다룬다
+    query = "앨범 표지에 별이 가득했던 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["별"], lyric_semantic_query="")
+    assert not analysis.has_visual_clue
+    assert not _rows(_build(query, analysis, _track(id="x", lyrics_summary="별이 빛난다"), _record("x")), SLOT_TAG)
+
+
+@pytest.mark.parametrize("query,expected", [
+    # 표지 설명이 이어지는 절은 문맥을 유지한다
+    ("표지에 남자가 있고 기타를 들고 있었어", ""),
+    ("표지에 남자가 있고 기타를 들고 있던 곡이야", ""),
+    ("앨범 커버에 글씨만 크게 박혀 있었어. 되게 심플했는데", ""),
+    # 노래·소리 얘기로 넘어가면 대조 대상이다
+    ("표지에 남자가 있고 기타 소리가 큰 노래였어", "기타 소리가 큰 노래였어"),
+    ("표지는 검은색이었고 고음이 많은 발라드야", "고음이 많은 발라드야"),
+    ("밤하늘 표지. 술 마실 때 듣던 노래", "술 마실 때 듣던 노래"),
+    # 표지보다 앞의 절은 그대로다. 뒤에서 다시 노래 얘기를 해도 남는다
+    ("남성 솔로 곡인데, 앨범 커버에 책이 쌓여 있었어", "남성 솔로 곡"),
+    ("이별 노래인데 표지는 검은색이었고 이어서 빨간 글씨가 있었어. 가사는 슬펐어", "이별 노래 가사는 슬펐어"),
+    # 음색은 시각 단서가 아니다
+    ("표지는 검은색이었고 허스키한 음색이야", "허스키한 음색이야"),
+    ("표지에 남자가 기타를 손에 들었어", ""),
+    ("표지에 남자가 있고 기타를 들고 소리를 지르고 있었어", ""),
+    # 자세 낱말은 낱말 첫머리만 본다. 가사 내용·청취 상황으로 넘어간 절은 남는다
+    ("표지는 검은색이었고 가사는 이별 때문에 힘들고 후회한다는 내용이야", "가사는 이별 때문에 힘들고 후회한다는 내용이야"),
+    ("표지는 검은색이었고 누워서 듣던 잔잔한 피아노 노래야", "누워서 듣던 잔잔한 피아노 노래야"),
+    ("표지는 검은색이었고 비 오는 날 듣던 노래", "비 오는 날 듣던 노래"),
+    ("표지는 검은색이었고 이별해서 힘들고 지친 곡이야", "이별해서 힘들고 지친 곡이야"),
+    ("표지는 검은색이었고 마음을 그려낸 노래야", "마음을 그려낸 노래야"),
+    ("표지는 검은색이었고 내가 누워서 듣던 노래", "내가 누워서 듣던 노래"),
+    ("표지는 검은색이었고 이어폰 끼고 듣던 곡", "이어폰 끼고 듣던 곡"),
+    ("표지는 검은색이었고 기타 소리가 들렸어", "기타 소리가 들렸어"),
+    ("표지는 검은색이었고 남자가 부르는 발라드야", "남자가 부르는 발라드야"),
+    ("표지는 검은색이었고 가사는 남자가 앉아서 우는 내용이야", "가사는 남자가 앉아서 우는 내용이야"),
+    # 표지 속 인물의 청취, 노래를 가리키지 않는 청취는 애매하므로 남기지 않는다
+    ("표지는 검은색이었고 남자가 피아노 앞에 앉아서 듣고 있었어", ""),
+    ("표지는 검은색이었고 여자가 앉아서 피아노 곡을 듣고 있었어", ""),
+    ("표지는 검은색이었고 남자가 음악을 듣고 있었어", ""),
+    ("표지는 검은색이었고 자주 들으면 슬퍼", ""),
+    # 듣는 동작의 주어가 3인칭이면 표지 속 인물이다. 인물 명사 목록에 없어도 같다
+    ("표지는 검은색이었고 남자 한 명이 피아노 앞에 앉아서 음악을 듣고 있었어", ""),
+    ("표지는 검은색이었고 커플이 피아노 앞에 앉아서 음악을 듣고 있었어", ""),
+    ("표지는 검은색이었고 가수가 앉아서 음악을 듣고 있었어", ""),
+    ("표지는 검은색이었고 남자가 잔잔한 음악을 듣고 있었어", ""),
+    ("표지는 검은색이었고 남자는 앉아서 음악을 듣고 있었어", ""),
+    ("표지는 검은색이었고 여자가 헤드폰 끼고 음악 듣는 모습이었어", ""),
+    # 주변 사람이 듣던 곡을 회상하는 말은 장면이 아니다
+    ("표지는 검은색이었고 엄마가 자주 듣던 피아노 노래", "엄마가 자주 듣던 피아노 노래"),
+    ("표지는 검은색이었고 친구가 추천해줘서 듣던 노래", "친구가 추천해줘서 듣던 노래"),
+    ("표지는 검은색이었고 아빠가 차에서 틀어줘서 듣던 곡", "아빠가 차에서 틀어줘서 듣던 곡"),
+    # 다른 서술어의 주어(가수 설명·때·조건)는 듣는 사람이 아니다
+    ("표지는 검은색이었고 남자가 부르는 허스키한 노래를 자주 듣곤 했어", "남자가 부르는 허스키한 노래를 자주 듣곤 했어"),
+    ("표지는 검은색이었고 비가 오는 날 듣던 노래", "비가 오는 날 듣던 노래"),
+    ("표지는 검은색이었고 기분이 안 좋을 때 듣던 곡", "기분이 안 좋을 때 듣던 곡"),
+    # 주어를 생략하거나 1인칭·소리가 주어인 청취는 그대로다
+    ("표지는 검은색이었고 자주 듣던 피아노 노래", "자주 듣던 피아노 노래"),
+    ("표지는 검은색이었고 많이 듣던 노래", "많이 듣던 노래"),
+    ("표지는 검은색이었고 우리가 자주 듣던 노래", "우리가 자주 듣던 노래"),
+    ("표지는 검은색이었고 목소리가 좋은 노래를 자주 듣곤 했어", "목소리가 좋은 노래를 자주 듣곤 했어"),
+    ("표지는 검은색이었고 피아노가 들리는 곡이야", "피아노가 들리는 곡이야"),
+    # 표지를 직접 말한 절은 듣는 얘기가 섞여도 남지 않는다
+    ("별이 그려진 앨범 표지를 보며 듣던 노래", ""),
+    # 표지 낱말보다 앞에 온 묘사, 표지 낱말이 없는 묘사도 노래를 말하지 않으면 남지 않는다
+    ("활주로 같은 데에 옛날 프로펠러 비행기가 서 있고, 여자 한 명이 있는 사진 표지", ""),
+    ("공원 큰 나무 밑에 자전거 세워져 있고, 위에 주황색 문자가 크게 박힌 표지", ""),
+    ("쨍한 드레스 입은 여자가 풀밭에 엎드려 턱 괴고 있는 이미지", ""),
+])
+def test_text_outside_artwork_keeps_only_clauses_about_the_song(query, expected):
+    assert text_outside_artwork(query) == expected
+
+
+def test_cover_description_that_continues_over_clauses_is_not_shown_as_sound_evidence():
+    # 리뷰 지적 입력. 분석 태그와 곡 사운드 태그에 모두 기타가 있어도 표지의 기타로는 근거를 만들지 않는다
+    query = "표지에 남자가 있고 기타를 들고 있었어"
+    track = _track(id="x", sound_tags=["기타"])
+    ux = _visual_build(query, ["남자", "기타"], track)
+    assert not _rows(ux, SLOT_TAG) and "기타" not in ux.summary, ux.clue_checks
+    # 편성 칸으로 들어온 값도 같다
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=[], lyric_semantic_query="",
+                               has_visual_clue=True, image_english_query="album art",
+                               performance_clues={"sound_ensemble": ["기타", "어쿠스틱"], "confidence": 0.9})
+    with_adj = _record("x", adjust=[("performance_clues", 0.01, "x")])
+    ux = _build(query, analysis, _track(id="x", sound_tags=["기타", "어쿠스틱"]), with_adj)
+    assert not _rows(ux, SLOT_SOUND), ux.clue_checks
+    # 실제로 소리를 말하면 남는다
+    query = "표지에 남자가 있고 기타 소리가 큰 노래였어"
+    ux = _visual_build(query, ["기타"], track)
+    assert [r.clue for r in _rows(ux, SLOT_TAG)] == ["기타"]
+
+
+@pytest.mark.parametrize("query,tags,track_kw,kept", [
+    ("표지는 검은색이었고 가사는 이별 때문에 힘들고 후회한다는 내용이야", ["이별", "후회"],
+     dict(relation_context_tags=["이별"], emotion_tags=["후회"]), ["이별", "후회"]),
+    ("표지는 검은색이었고 누워서 듣던 잔잔한 피아노 노래야", ["잔잔한", "피아노"],
+     dict(vibe_tags=["잔잔함"], sound_tags=["피아노"]), ["잔잔한", "피아노"]),
+    ("표지에 남자가 있고 기타를 들고 있던 곡이야", ["기타"], dict(sound_tags=["기타"]), []),
+    ("표지는 검은색이었고 남자가 피아노 앞에 앉아서 듣고 있었어", ["피아노"], dict(sound_tags=["피아노"]), []),
+    ("표지는 검은색이었고 남자 한 명이 피아노 앞에 앉아서 음악을 듣고 있었어", ["피아노"], dict(sound_tags=["피아노"]), []),
+    ("표지는 검은색이었고 남자가 부르는 허스키한 노래를 자주 듣곤 했어", ["허스키"], dict(sound_tags=["허스키"]), ["허스키"]),
+    ("표지는 검은색이었고 누워서 듣던 피아노 노래", ["피아노"], dict(sound_tags=["피아노"]), ["피아노"]),
+    ("표지는 검은색이었고 엄마가 자주 듣던 피아노 노래", ["피아노"], dict(sound_tags=["피아노"]), ["피아노"]),
+])
+def test_song_clues_after_a_cover_stay_and_a_pose_on_the_cover_does_not(query, tags, track_kw, kept):
+    assert [r.clue for r in _rows(_visual_build(query, tags, _track(id="x", **track_kw)), SLOT_TAG)] == kept
+
+
+def test_query_without_cover_description_is_not_filtered():
+    query = "술 마실 때 듣는 고음 많은 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["술", "고음"], lyric_semantic_query="")
+    ux = _build(query, analysis, _track(id="x", sound_tags=["고음"], place_activity_tags=["혼술"]), _record("x"))
+    assert [r.clue for r in _rows(ux, SLOT_TAG)] == ["술", "고음"]
+
+
+def _answered(query, tags, track, *answers):
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=tags, lyric_semantic_query="")
+    return _build(query, analysis, track, _record(track.id), answers=[
+        ClarifyAnswer(slot=slot, value=value) for slot, value in answers
+    ])
+
+
+def test_genre_tag_corrected_by_an_answer_is_not_shown_as_matching():
+    ux = _answered("신나는 댄스곡 찾아줘", ["댄스곡"], _track(id="x", genre=["댄스"]), ("genre", "발라드"))
+    assert not _rows(ux, SLOT_REGISTERED), ux.clue_checks
+    assert "댄스곡" not in ux.summary and "일치해요" not in ux.summary, ux.summary
+    assert _rows(ux, SLOT_GENRE)[0].clue == "발라드"
+
+
+@pytest.mark.parametrize("tag,track_kw,answer", [
+    ("남성솔로", dict(vocal_gender="남성", artist_types=["솔로"]), ("vocal_gender", "여성")),
+    ("보이그룹", dict(vocal_gender="남성", artist_types=["그룹"]), ("vocal_gender", "여성")),
+    ("걸그룹", dict(vocal_gender="여성", artist_types=["그룹"]), ("vocal_gender", "남성")),
+    ("남자아이돌", dict(vocal_gender="남성", artist_types=["그룹"]), ("vocal_gender", "혼성")),
+    ("걸그룹", dict(vocal_gender="여성", artist_types=["그룹"]), ("type", "솔로")),
+    ("밴드", dict(vocal_gender="남성", artist_types=["밴드"]), ("type", "솔로")),
+])
+def test_form_tag_corrected_by_an_answer_is_not_shown_as_matching(tag, track_kw, answer):
+    ux = _answered(f"{tag} 노래", [tag], _track(id="x", **track_kw), answer)
+    assert not _rows(ux, SLOT_REGISTERED), ux.clue_checks
+    assert tag not in ux.summary, ux.summary
+
+
+def test_material_tag_carrying_a_corrected_value_is_not_shown():
+    track = _track(id="x", vocal_gender="남성", genre=["발라드"], sound_tags=["발라드"])
+    assert not _rows(_answered("남성발라드 노래", ["남성발라드"], track, ("vocal_gender", "여성")), SLOT_TAG)
+    assert not _rows(_answered("남성발라드 노래", ["남성발라드"], track, ("genre", "댄스")), SLOT_TAG)
+
+
+@pytest.mark.parametrize("tag,answer", [
+    ("일렉기타", "록"), ("재즈피아노", "발라드"), ("재즈바", "발라드"), ("소울메이트", "발라드"), ("인디언", "발라드"),
+])
+def test_tag_that_only_starts_with_a_genre_word_survives_a_genre_answer(tag, answer):
+    # 일렉기타는 록 곡에서 가장 흔한 단서다 — 장르 답변 때문에 말없이 사라지면 안 된다
+    ux = _answered(f"{tag} 소리 나는 노래", [tag], _track(id="x", sound_tags=[tag]), ("genre", answer))
+    assert [r.clue for r in _rows(ux, SLOT_TAG)] == [tag], ux.clue_checks
+
+
+@pytest.mark.parametrize("tag,answer,stale", [
+    ("남성발라드", "댄스", True), ("록발라드", "댄스", True), ("힙합그룹", "발라드", True), ("발라드가수", "댄스", True),
+    ("남성발라드", "발라드", False), ("힙합그룹", "힙합", False),
+])
+def test_tag_that_names_a_genre_is_checked_against_the_genre_answer(tag, answer, stale):
+    answers = [ClarifyAnswer(slot="genre", value=answer)]
+    assert _stale_after_answers(_norm(tag), answers) is stale
+
+
+def test_tag_gender_needs_a_person_or_genre_word_after_the_gender():
+    assert _tag_gender("남성발라드") == "남성" and _tag_gender("여자가수") == "여성" and _tag_gender("걸그룹") == "여성"
+    assert _tag_gender("여자") == "" and _tag_gender("남자친구") == ""
+
+
+def test_tags_consistent_with_the_answer_or_unrelated_to_it_stay():
+    track = _track(id="x", vocal_gender="여성", artist_types=["그룹"], genre=["발라드"], sound_tags=["고음"], relation_context_tags=["남자친구"])
+    # 답과 같은 값은 남는다
+    assert _rows(_answered("걸그룹 노래", ["걸그룹"], track, ("vocal_gender", "여성"), ("type", "그룹")), SLOT_REGISTERED)
+    # 답과 무관한 단서·성별 낱말로 시작할 뿐인 낱말은 남는다
+    ux = _answered("남자친구와 고음 노래", ["남자친구", "고음"], track, ("vocal_gender", "여성"), ("genre", "댄스"))
+    assert [r.clue for r in _rows(ux, SLOT_TAG)] == ["남자친구", "고음"]
+    # 건너뛴 답은 정정이 아니다
+    analysis = _drink_analysis(original_query="걸그룹 노래", vocal_gender=None, genre="", korean_tags=["걸그룹"], lyric_semantic_query="")
+    skipped = _build("걸그룹 노래", analysis, track, _record("x"), answers=[ClarifyAnswer(slot="vocal_gender", value="남성", skipped=True)])
+    assert _rows(skipped, SLOT_REGISTERED)
+    # "기록"의 "록"을 장르로 읽어 지우지 않는다
+    assert _rows(_answered("기록 노래", ["기록"], _track(id="x", sound_tags=["기록"]), ("genre", "발라드")), SLOT_TAG)
+
+
+def test_sound_clue_duplicated_in_tags_keeps_the_group_adjustment_on_the_single_row():
+    query = "밴드사운드 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["밴드사운드"], lyric_semantic_query="",
+                               performance_clues={"sound_ensemble": ["밴드사운드"], "confidence": 0.8})
+    with_adj = _record("x", adjust=[("performance_clues", 0.01, "단서 유사 0.50")])
+    ux = _build(query, analysis, _track(id="x", sound_tags=["밴드사운드"]), with_adj)
+    assert len(_rows(ux, SLOT_TAG)) == 1 and not _rows(ux, SLOT_SOUND), "같은 단서가 두 줄로 나오면 안 된다"
+    row = _rows(ux, SLOT_TAG)[0]
+    assert row.basis_label == BASIS_GROUP_SCORED and [b.code for b in row.ranking_basis] == ["performance_clues"]
+    # 가산 기록이 없으면 잇지 않는다
+    row = _rows(_build(query, analysis, _track(id="x", sound_tags=["밴드사운드"]), _record("x")), SLOT_TAG)[0]
+    assert row.basis_label == BASIS_NONE and not row.ranking_basis
+    # 편성 자료(사운드 태그·분위기 설명)에서 확인되지 않으면 잇지 않는다
+    row = _rows(_build(query, analysis, _track(id="x", place_activity_tags=["밴드사운드"]), with_adj), SLOT_TAG)[0]
+    assert row.basis_label == BASIS_NONE and not row.ranking_basis
+
+
+def test_shorter_song_tag_inside_the_clue_is_only_a_near_match():
+    analysis = _drink_analysis(korean_tags=["이별노래"], lyric_semantic_query="")
+    row = _rows(_drink_build(_track(id="x", relation_context_tags=["이별"]), analysis), SLOT_TAG)[0]
+    assert row.status == STATUS_PARTIAL and row.detail_kind == KIND_MATERIAL_NEAR
+    assert "관계·상황 태그 ‘이별’" in row.observed
+
+
+def test_long_summary_quote_is_clipped_without_rewriting_the_words():
+    long = "처음에는 " + "아주 " * 20 + "높은 고음으로 시원하게 내지르는 후렴이 이어지고 " + "끝까지 " * 15 + "잔잔하다"
+    analysis = _drink_analysis(korean_tags=["고음"], lyric_semantic_query="")
+    row = _rows(_drink_build(_track(id="x", search_style_summary=long), analysis), SLOT_TAG)[0]
+    quote = row.observed.split("‘", 1)[1].rsplit("’", 1)[0]
+    assert "고음" in quote and quote.startswith("…") and quote.endswith("…")
+    assert quote.strip("…") in long, "자르기만 하고 글자를 바꾸지 않는다"
+
+
+@pytest.mark.parametrize("sentence,term", [
+    ("어떤 사람은 떠난 연인을 잊지 못하고 그리워하며 술로 아픔을 달래는 절절한 이별의 감정을 끝까지 담고 있다", "연인"),
+    ("지나간 시절에 함께 걷던 거리의 풍경을 떠올리면서 한참을 멍하니 서서 고음으로 내지르는 후렴까지 듣게 된다", "고음"),
+])
+def test_clipped_quote_starts_and_ends_on_word_boundaries(sentence, term):
+    quote = _clip_quote(sentence, term)
+    body = quote.strip("…")
+    assert term in body and body in sentence
+    words = sentence.split(" ")
+    assert body.split(" ")[0] in words and body.split(" ")[-1] in words, quote
+
+
+_LONG_LEAD = "잔잔하게 시작해서 끝없이 이어지는 긴 도입부를 한참 지나고 나면 후렴에서 "
+
+
+@pytest.mark.parametrize("sentence,term,expected", [
+    (_LONG_LEAD + "밴드 사운드가 터져 나오는 곡이다", "밴드사운드", "밴드 사운드"),   # 띄어쓰기를 무시한 일치
+    (_LONG_LEAD + "EDM 비트가 터져 나오는 곡이다", "edm", "EDM"),                     # 대소문자가 다른 일치
+    ("복고음악 느낌으로 " + _LONG_LEAD + "시원한 고음이 터져 나온다", "고음", "시원한 고음"),   # 앞의 "복고음악"이 아니다
+    ("예술적인 느낌으로 " + _LONG_LEAD + "술에 취한 남자가 나온다", "술", "술에"),            # 앞의 "예술"이 아니다
+])
+def test_clipped_quote_shows_the_place_that_actually_matched(sentence, term, expected):
+    assert len(sentence) > 48
+    quote = _clip_quote(sentence, term)
+    assert expected in quote, quote
+    assert quote.strip("…") in sentence, "자르기만 하고 글자를 바꾸지 않는다"
+
+
+def test_material_row_quotes_the_spaced_form_it_matched():
+    query = "밴드사운드 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["밴드사운드"], lyric_semantic_query="")
+    track = _track(id="x", search_style_summary=_LONG_LEAD + "밴드 사운드가 터져 나오는 곡이다")
+    row = _rows(_build(query, analysis, track, _record("x")), SLOT_TAG)[0]
+    assert row.status == STATUS_PARTIAL and "밴드 사운드" in row.observed, row.observed
+
+
+def test_term_span_returns_the_position_in_the_original_text():
+    assert _term_span("밴드사운드", "큰 밴드 사운드") == (2, 8)
+    assert _term_span("edm", "신나는 EDM") == (4, 7)
+    assert _term_span("이별", "이 별이 빛난다") is None
+    assert _term_span("고음", "복고음악 곡이다") is None
+
+
+def test_tag_row_with_a_matching_tag_does_not_also_quote_long_sentences():
+    track = _track(id="x", relation_context_tags=["이별"], lyrics_summary="이별 뒤의 이야기를 담았다", search_style_summary="이별 후 듣기 좋다")
+    row = _rows(_drink_build(track, _drink_analysis(korean_tags=["이별"], lyric_semantic_query="")), SLOT_TAG)[0]
+    assert "관계·상황 태그 ‘이별’" in row.observed and "가사 요약" not in row.observed
+
+
+def test_values_from_the_same_field_name_it_once():
+    analysis = _drink_analysis(korean_tags=["술"], lyric_semantic_query="")
+    track = _track(id="x", place_activity_tags=["술집", "혼술", "포장마차"])
+    row = _rows(_drink_build(track, analysis), SLOT_TAG)[0]
+    assert "장소·활동 태그 ‘술집’·‘혼술’·‘포장마차’" in row.observed, row.observed
+
+
+def test_clues_not_found_are_grouped_per_song_and_only_what_the_user_said_is_listed():
+    query = "술 마실 때 듣는 고음 많은 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="",
+                               korean_tags=["술", "고음", "리메이크"], lyric_semantic_query="")
+    ux = _build(query, analysis, _track(id="x"), _record("x"))
+    assert not _rows(ux, SLOT_TAG)
+    row = _rows(ux, SLOT_NOT_FOUND)
+    assert len(row) == 1 and row[0].clue == "술, 고음", "말하지 않은 리메이크는 못 찾았다고 적지 않는다"
+    assert row[0].observed == MATERIAL_NOT_FOUND_TEXT and row[0].status == STATUS_UNVERIFIED
+
+
+def test_interpreted_clue_is_marked_in_the_table_and_named_plainly_in_the_summary():
+    query = "슬픈 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["리메이크"], lyric_semantic_query="")
+    ux = _build(query, analysis, _track(id="x", search_style_summary="명곡을 리메이크한 노래"), _record("x"))
+    row = _rows(ux, SLOT_TAG)[0]
+    assert row.clue == f"리메이크{INTERPRETED_CLUE_SUFFIX}"
+    assert "리메이크 단서" in ux.summary and "(검색이" not in ux.summary
+
+
+@pytest.mark.parametrize("tag,forms,gender,expected", [
+    ("걸그룹", ["그룹"], "여성", STATUS_MATCH),
+    ("걸그룹", ["걸그룹"], "여성", STATUS_MATCH),
+    ("보이그룹", ["그룹"], "남성", STATUS_MATCH),
+    ("남성솔로", ["솔로"], "남성", STATUS_MATCH),
+    ("밴드", ["그룹", "밴드"], "남성", STATUS_MATCH),
+    ("남녀듀엣", ["듀오", "혼성"], "혼성", STATUS_MATCH),
+    ("남자아이돌", ["그룹"], "남성", STATUS_PARTIAL),       # 아이돌 여부는 등록 정보에 없다
+    ("걸그룹", ["솔로"], "여성", STATUS_UNVERIFIED),
+    ("걸그룹", ["그룹"], "남성", STATUS_UNVERIFIED),
+    ("걸그룹", [], None, STATUS_UNVERIFIED),
+])
+def test_form_tags_are_judged_from_registered_info_not_song_tags(tag, forms, gender, expected):
+    query = f"{tag} 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=[tag], lyric_semantic_query="")
+    ux = _build(query, analysis, _track(id="x", artist_types=forms, vocal_gender=gender), _record("x"))
+    row = _rows(ux, SLOT_REGISTERED)[0]
+    assert row.status == expected, row
+    assert row.detail_kind == KIND_REGISTERED and row.status != STATUS_MISMATCH
+    assert "찾지 못함" not in row.observed and not _rows(ux, SLOT_NOT_FOUND)
+    if forms and gender:
+        assert "등록 정보:" in row.observed, row.observed
+
+
+def test_form_row_links_the_artist_type_record_only_when_the_user_said_that_form():
+    query = "걸그룹 노래"
+    said = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["걸그룹"], lyric_semantic_query="",
+                           artist_type={"values": ["그룹"], "confidence": 0.9})
+    rec = _record("x", adjust=[("artist_type", 0.01, "형태 유사 1.00")])
+    row = _rows(_build(query, said, _track(id="x", artist_types=["그룹"], vocal_gender="여성"), rec), SLOT_REGISTERED)[0]
+    assert row.basis_label == BASIS_SCORED and [b.code for b in row.ranking_basis] == ["artist_type"]
+    other = said.model_copy(update={"artist_type": said.artist_type.model_copy(update={"values": ["솔로"]})})
+    row = _rows(_build(query, other, _track(id="x", artist_types=["그룹"], vocal_gender="여성"), rec), SLOT_REGISTERED)[0]
+    assert row.basis_label == BASIS_NONE and not row.ranking_basis
+
+
+@pytest.mark.parametrize("tag,kw,expected", [
+    ("드라마OST", dict(genre=["국내드라마"]), STATUS_MATCH),
+    ("드라마OST", dict(genre=["발라드"], album="어떤 드라마 OST Part.1"), STATUS_PARTIAL),
+    ("드라마OST", dict(genre=["발라드"], album="정규 1집"), STATUS_UNVERIFIED),
+    ("OST", dict(genre=["국내영화"]), STATUS_MATCH),
+    ("영화OST", dict(genre=["국내드라마"], album="정규 1집"), STATUS_UNVERIFIED),
+])
+def test_ost_tags_are_judged_from_registered_genre_and_album(tag, kw, expected):
+    query = f"{tag} 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=[tag], lyric_semantic_query="")
+    row = _rows(_build(query, analysis, _track(id="x", **kw), _record("x")), SLOT_REGISTERED)[0]
+    assert row.status == expected, row
+    assert "찾지 못함" not in row.observed
+
+
+def test_genre_variant_tag_uses_the_genre_row_or_registered_genre_without_duplicating():
+    # 원문에 장르가 있으면 장르 행이 다룬다
+    query = "댄스곡 찾아줘"
+    with_row = _drink_analysis(original_query=query, vocal_gender=None, genre="댄스", korean_tags=["댄스곡"], lyric_semantic_query="")
+    ux = _build(query, with_row, _track(id="x", genre=["댄스"]), _record("x"))
+    assert [c.slot for c in ux.clue_checks].count(SLOT_GENRE) == 1
+    assert not _rows(ux, SLOT_REGISTERED) and not _rows(ux, SLOT_TAG) and not _rows(ux, SLOT_NOT_FOUND)
+    # 원문에 장르가 없으면 등록 장르로 본다. 곡 태그에 없다고 미확인으로 두지 않는다
+    query = "춤추기 좋은 빠른 곡"
+    no_row = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["댄스곡"], lyric_semantic_query="")
+    row = _rows(_build(query, no_row, _track(id="x", genre=["댄스"]), _record("x")), SLOT_REGISTERED)[0]
+    assert row.status == STATUS_MATCH and row.clue == f"댄스곡{INTERPRETED_CLUE_SUFFIX}" and "등록 장르: 댄스" in row.observed
+    row = _rows(_build(query, no_row, _track(id="x", genre=["발라드"]), _record("x")), SLOT_REGISTERED)[0]
+    assert row.status == STATUS_UNVERIFIED and "등록 장르는 발라드" in row.observed
+    # 글자만 든 낱말을 장르로 읽지 않는다
+    query = "기록 같은 노래"
+    word = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["기록"], lyric_semantic_query="")
+    assert not _rows(_build(query, word, _track(id="x", genre=["록/메탈"]), _record("x")), SLOT_REGISTERED)
+
+
+def test_sound_clue_links_the_group_adjustment_only_when_recorded_and_found():
+    analysis = _drink_analysis(korean_tags=[], lyric_semantic_query="",
+                               performance_clues={"sound_ensemble": ["밴드사운드"], "confidence": 0.8})
+    band = _track(id="x", sound_tags=["밴드사운드", "드럼"])
+    with_adj = _record("x", adjust=[("performance_clues", 0.01, "단서 유사 0.50")])
+    row = _rows(_drink_build(band, analysis, with_adj), SLOT_SOUND)[0]
+    assert row.status == STATUS_MATCH and row.basis_label == BASIS_GROUP_SCORED
+    assert [b.code for b in row.ranking_basis] == ["performance_clues"]
+
+    row = _rows(_drink_build(band, analysis, _record("x")), SLOT_SOUND)[0]
+    assert row.status == STATUS_MATCH and row.basis_label == BASIS_NONE and not row.ranking_basis
+
+    # 자료에서 못 찾은 단서에 묶음 가산을 잇지 않는다. 말한 편성은 "못 찾음" 줄에, 말하지 않은 편성은 줄 없이
+    assert not _rows(_drink_build(_track(id="x"), analysis, with_adj), SLOT_SOUND)
+    query = "밴드사운드 노래"
+    said = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=[], lyric_semantic_query="",
+                           performance_clues={"sound_ensemble": ["밴드사운드"], "confidence": 0.8})
+    ux = _build(query, said, _track(id="x"), with_adj)
+    assert not _rows(ux, SLOT_SOUND) and _rows(ux, SLOT_NOT_FOUND)[0].clue == "밴드사운드"
+    assert _rows(ux, SLOT_NOT_FOUND)[0].basis_label == BASIS_NONE
+
+
+def test_genre_word_in_the_sound_clue_does_not_repeat_the_genre_row():
+    # 실제 분석이 sound_ensemble에 "발라드"를 넣은 질의가 있었다 — 요약에 같은 단서가 두 번 나왔다
+    analysis = _drink_analysis(korean_tags=[], lyric_semantic_query="",
+                               performance_clues={"sound_ensemble": ["발라드"], "confidence": 0.8})
+    ux = _drink_build(_track(id="x", genre=["발라드"], sound_tags=["발라드"]), analysis)
+    assert not _rows(ux, SLOT_SOUND) and ux.summary.count("발라드") == 1, ux.summary
+
+
+def _ux_item(track, analysis):
+    rec = _record(track.id)
+    return _build(DRINK_QUERY, analysis, track, rec), rec.record.get(track.id)
+
+
+def test_distinguish_summaries_names_the_clue_that_separates_songs_first():
+    # 이별·그리움은 모든 곡에 있다. 고음은 한 곡, 술은 두 곡에만 있다 — 이름 칸 셋을 공통 단서가 차지하면 안 된다
+    analysis = _drink_analysis(korean_tags=["이별", "그리움", "술", "고음"], lyric_semantic_query="")
+    def song(song_id, **kw):
+        return _track(id=song_id, vocal_gender="남성", genre=["발라드"], relation_context_tags=["이별"], emotion_tags=["그리움"], **kw)
+    items = [_ux_item(t, analysis) for t in (
+        song("a", sound_tags=["고음"], place_activity_tags=["혼술"]),
+        song("b", place_activity_tags=["술집"]),
+        song("c"), song("d"),
+    )]
+    before = [ux.summary for ux, _ in items]
+    assert before[0].startswith("이별·그리움·술 등"), before[0]
+    after = distinguish_summaries(items)
+    assert after[0].summary.startswith("고음·술·이별 등"), after[0].summary
+    assert after[1].summary.startswith("술·이별·그리움 단서는"), after[1].summary
+    # 요약만 바뀐다. 표·상태·입력은 그대로이고 문장 수도 그대로다
+    for (ux, _), new in zip(items, after):
+        assert new.clue_checks == ux.clue_checks and new.adjustment_notes == ux.adjustment_notes
+        assert _sentences(new.summary) == _sentences(ux.summary)
+    assert [ux.summary for ux, _ in items] == before, "입력을 바꾸지 않는다"
+
+
+def test_distinguish_summaries_with_one_song_changes_nothing():
+    analysis = _drink_analysis()
+    item = _ux_item(_drink_tracks()[0], analysis)
+    assert distinguish_summaries([item]) == [item[0]] and distinguish_summaries([]) == []
+
+
+def test_semantic_lyric_clue_with_the_same_text_is_merged_into_the_meaning_row():
+    analysis = _drink_analysis(lyric_clues=[_lyric_clue(DRINK_MEANING, kind="semantic")])
+    rec = _record("a", paths=[("text_hybrid", 2, 0.015)])
+    ux = _drink_build(_drink_tracks()[0], analysis, rec)
+    assert not [r for r in _rows(ux, SLOT_LYRICS) if r.clue == DRINK_MEANING], "같은 문장이 두 줄로 나온다"
+    meaning = _rows(ux, SLOT_LYRIC_MEANING)[0]
+    assert "가사 요약" in meaning.observed and "2위로 평가" in meaning.observed
+    assert meaning.basis_label == BASIS_SEMANTIC
+
+
+def test_material_rows_do_not_change_scores_or_inputs_and_keep_two_sentences():
+    analysis = _drink_analysis()
+    for track in _drink_tracks():
+        rec = _record(track.id, adjust=[("vocal_gender_match", 0.016, "", {"slot": "vocal_gender", "value": "남성"})])
+        before_track, before_analysis = track.model_copy(deep=True), analysis.model_copy(deep=True)
+        before_adj = [(a.rule, a.delta) for a in rec.record.get(track.id).adjustments]
+        ux = _drink_build(track, analysis, rec)
+        assert track == before_track and analysis == before_analysis
+        assert [(a.rule, a.delta) for a in rec.record.get(track.id).adjustments] == before_adj
+        assert 1 <= _sentences(ux.summary) <= 2, ux.summary
+
+
+def test_feedback_entrant_material_rows_say_entry_only_and_summary_has_no_reflected_claim():
+    from src.retrieval.user_explanation import BASIS_ENTRY_ONLY
+    analysis = _drink_analysis(korean_tags=["고음"], lyric_semantic_query="",
+                               performance_clues={"sound_ensemble": ["피아노"], "confidence": 0.8})
+    rec = _record("a", adjust=[("performance_clues", 0.01, "x")], paths=[("feedback_case", 1, 0.02)])
+    rec.record.get("a").feedback_entrant = True
+    ux = _drink_build(_drink_tracks()[0], analysis, rec)
+    assert _rows(ux, SLOT_SOUND)[0].basis_label == BASIS_ENTRY_ONLY
+    assert "반영" not in ux.summary

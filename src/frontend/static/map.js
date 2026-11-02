@@ -767,6 +767,7 @@ const resultBlock = document.getElementById("resultBlock");
 const runNote = document.getElementById("runNote");
 const resultSub = document.getElementById("resultSub");
 const resultList = document.getElementById("resultList");
+const commonCluesBox = document.getElementById("commonClues");
 const clarifyBox = document.getElementById("clarifyBox");
 
 let convo = null;       // 진행 중인 재질문 대화. 새 검색마다 초기화
@@ -969,6 +970,8 @@ function renderPanel() {
   if (convo.turn > 1) sub.push(`${convo.turn - 1}번째 다시 찾음`);
   resultSub.textContent = sub.join(" · ");
   renderRunNote();
+  // 곡별 패널(explainPanel)이 공통 단서를 뒤로 미루므로 목록을 그리기 전에 센다
+  renderCommonClues(commonCluesBox, convo.results);
 
   const frag = document.createDocumentFragment();
   convo.results.forEach((r, i) => {
@@ -1237,6 +1240,80 @@ function explainPanel(x) {
 }
 
 /*
+ * 결과 곡 전체에서 상태가 같은 단서 — 목록 위에 한 번만 보이고, 곡별 표에서는 뒤로 미룬다.
+ *
+ * 열 곡이 모두 "남성 보컬 일치 · 발라드 일치"면 곡마다 그 줄을 먼저 읽게 되어 곡끼리 다른 점이 묻힌다.
+ * 같은지는 서버가 보낸 값(단서 종류·단서·상태)으로만 가린다 — 화면이 문장을 짓거나 상태를 바꾸지 않는다.
+ * 확인한 내용(observed)은 곡마다 다를 수 있어(발매 연도 등) 공통 묶음에 옮기지 않고 곡별 표에 그대로 둔다.
+ * 순위 기여 문구는 모든 곡에서 같을 때만 묶음에 적는다. 사용자용 설명이 있는 곡이 둘 이상일 때만 묶는다.
+ */
+let commonClueKeys = new Set();
+let commonCluesOpen = false; // 사용자가 펼친 상태는 다시 그려도 유지한다
+
+function clueKey(c) {
+  return [c.slot || "", c.clue || "", c.status || "unverified"].join("\u0001");
+}
+
+function commonClues(results) {
+  const lists = (results || [])
+    .map((r) => r && r.explain && r.explain.user_explanation)
+    .filter((ux) => ux && Array.isArray(ux.clue_checks))
+    .map((ux) => ux.clue_checks);
+  const rows = [];
+  if (lists.length < 2) return { count: lists.length, rows };
+  const seen = new Set();
+  for (const c of lists[0]) {
+    const key = clueKey(c);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const same = lists.map((list) => list.find((d) => clueKey(d) === key));
+    if (!same.every(Boolean)) continue;
+    const bases = new Set(same.map((d) => d.basis_label || ""));
+    rows.push({
+      key, clue: c.clue || "", status: c.status || "unverified", status_label: c.status_label || "미확인",
+      basis_label: bases.size === 1 ? c.basis_label || "" : "",
+    });
+  }
+  return { count: lists.length, rows };
+}
+
+function renderCommonClues(box, results) {
+  const { count, rows } = commonClues(results);
+  commonClueKeys = new Set(rows.map((row) => row.key));
+  if (!box) return;
+  if (!rows.length) {
+    box.replaceChildren();
+    box.hidden = true;
+    return;
+  }
+  /*
+   * 기본은 접는다 — 고정 영역에 펼쳐 두면 좁은 화면에서 곡 목록을 밀어낸다(실제 화면으로 확인, 2026-11-02).
+   * 미확인 개수는 접은 줄에도 보인다. 숨기면 "모두 같은 단서"가 전부 확인된 것으로 읽힌다.
+   */
+  const details = makeEl("details", "commondetails");
+  details.open = commonCluesOpen;
+  const head = makeEl("summary", "commonhead", `근거를 대조한 ${count}곡 모두 같은 단서 ${rows.length}개`);
+  const unverified = rows.filter((row) => row.status === "unverified").length;
+  if (unverified) head.append(makeEl("span", "commonunverified", ` · 미확인 ${unverified}개`));
+  const note = makeEl("p", "commonnote", "곡별 근거에서는 곡마다 다른 점을 먼저 보여 드려요");
+  const list = makeEl("ul", "commonlist");
+  for (const row of rows) {
+    const item = makeEl("li", `commonitem exclue-${row.status}`);
+    item.append(makeEl("span", "commonclue", row.clue));
+    item.append(makeEl("span", `exstatus exstatus-${row.status}`, row.status_label));
+    if (row.basis_label) item.append(makeEl("span", "commonbasis", row.basis_label));
+    list.append(item);
+  }
+  details.append(head, note, list);
+  details.addEventListener("toggle", () => {
+    commonCluesOpen = details.open;
+    syncRailMetrics(); // 펼치면 좁은 화면에서 레일이 높아진다
+  });
+  box.replaceChildren(details);
+  box.hidden = false;
+}
+
+/*
  * 기억한 단서 / 이 곡에서 확인한 내용 / 상태. 모든 칸은 텍스트 노드다 — 질의·가사·곡 설명에
  * 어떤 글자가 와도 마크업으로 해석되지 않는다. 상태는 색뿐 아니라 글자(일치·부분 일치·다름·미확인)로
  * 보인다. 행 수를 제한하지 않는다 — 미확인 단서를 숨기면 "확인됐다"로 읽힌다.
@@ -1250,12 +1327,17 @@ function explainClues(checks) {
   table.append(head);
 
   const body = makeEl("tbody");
-  for (const c of checks) {
+  // 곡마다 다른 줄을 앞세운다. 모든 곡에서 같은 줄(목록 위 묶음)은 뒤에 두되 지우지 않는다 — 숨기면 미확인이 확인으로 읽힌다
+  const shared = (c) => commonClueKeys.has(clueKey(c));
+  const ordered = [...checks.filter((c) => !shared(c)), ...checks.filter(shared)];
+  for (const c of ordered) {
     const status = c.status || "unverified";
-    const tr = makeEl("tr", `exclue exclue-${status}`);
+    const common = shared(c);
+    const tr = makeEl("tr", `exclue exclue-${status}${common ? " exclue-common" : ""}`);
 
     const clue = makeEl("td", "excluetext", c.clue || "");
     clue.setAttribute("data-label", "기억한 단서");
+    if (common) clue.append(makeEl("span", "excommon", "모든 곡 공통"));
 
     const observed = makeEl("td", "exclueobs");
     observed.setAttribute("data-label", "확인한 내용");

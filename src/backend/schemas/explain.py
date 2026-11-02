@@ -216,8 +216,17 @@ class RankingBasisOut(BaseModel):
 class ClueCheckOut(BaseModel):
     """기억한 단서 / 이 곡에서 확인한 내용 / 상태 — 사용자용 대조표의 한 줄."""
 
-    slot: str = Field(..., description="vocal_gender · genre · lyrics · release_era · mv_scene")
-    clue: str = Field(..., description="기억한 단서(사용자 표현 또는 실제 답변)")
+    slot: str = Field(
+        ...,
+        description=(
+            "vocal_gender · genre · lyrics · release_era · mv_scene · "
+            "lyric_meaning · tag · sound(분석 단서를 곡 자료 태그·요약과 대조한 줄) · "
+            "registered(분석 단서를 등록 정보와 대조한 줄) · material_not_found(곡 자료에서 찾지 못한 단서를 묶은 줄)"
+        ),
+    )
+    clue: str = Field(
+        ..., description="기억한 단서(사용자 표현 또는 실제 답변). 말하지 않은 값은 '(검색이 해석한 단서)'가 붙는다",
+    )
     clue_origin: str = Field(..., description="query · answer · analysis · birth_year")
     observed: str = Field(..., description="이 곡에서 확인한 내용. 자료 없음은 없음이 아니라 미확인이다")
     status: str = Field(..., description="match · partial · mismatch · unverified")
@@ -230,7 +239,10 @@ class ClueCheckOut(BaseModel):
     basis_label: str = Field(..., description="순위 기여 요약(검색 점수에 반영 · 먼저 배치 · 순위 반영 기록 없음 …)")
     detail_kind: str = Field(
         default="",
-        description="행의 세부 종류(lyric_exact · lyric_summary · slot_conflict · era_earlier_than_estimate …). 진단용",
+        description=(
+            "행의 세부 종류(lyric_exact · lyric_summary · slot_conflict · era_earlier_than_estimate · "
+            "material_tag · material_text · material_near · material_not_found · registered_info …). 진단용"
+        ),
     )
 
 

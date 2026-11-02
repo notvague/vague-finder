@@ -937,6 +937,112 @@ def _has_implicit_artwork_description(text: str) -> bool:
     )
 
 
+# _CLAUSE_BREAK_RE는 모달리티 질의 검증과 함께 쓰여 바꾸지 않는다. 절을 더 잘게 나눠도 표지 묘사가 남는 쪽으로
+# 틀리지 않는 이 용도에서만 과거형 연결("검은색이었고", "그려졌는데")을 더한다.
+_ARTWORK_CLAUSE_BREAK_RE = re.compile(
+    _CLAUSE_BREAK_RE.pattern + r"|(?:었고|았고|졌고|었는데|았는데|졌는데|였는데)",
+    re.IGNORECASE,
+)
+
+
+# 가사 내용으로 넘어갔다는 분명한 표시. 그림 속 모습으로 읽을 수 없어 시각·자세 낱말이 있어도 절을 남긴다("가사는 바다 얘기").
+_LYRIC_SWITCH_RE = re.compile(r"가사|노랫말|후렴")
+# 듣는 행동. 사용자의 청취("누워서 듣던 노래")일 수도, 표지 속 인물의 행동("남자가 앉아서 듣고 있었어")일 수도 있다.
+# "들었"은 넣지 않는다 — "기타를 손에 들었어"로도 읽힌다.
+_LISTENING_RE = re.compile(r"듣|들으|들을|들리|들렸")
+# 듣는 동작의 주어를 가리는 표(`_listener_is_depicted`). 인물 명사를 늘어놓지 않는다 — "커플이"·"남자 한 명이"처럼 끝이 없다.
+_FIRST_PERSON_WORD_RE = re.compile(r"(?:내가|제가|우리가|나는|난|저는|전|우리는|나도|저도|우리도)")
+# 은·는은 관형형("잔잔한 노래는", "듣는")과 글자가 같아 명백한 인물 명사일 때만 주어로 본다.
+_PERSON_TOPIC_WORD_RE = re.compile(r"(?:남자|여자|남성|여성|사람|아이|소년|소녀|인물|멤버|가수|커플)들?(?:은|는)")
+# 끝이 이·가지만 주어가 아닌 부사, 주어여도 사람이 아닌 낱말.
+_NOT_SUBJECT_WORDS = frozenset({"많이", "같이", "깊이", "높이", "길이", "없이", "일찍이", "가끔이"})
+_NON_PERSON_SUBJECT_RE = re.compile(r"분위기|느낌|기분|마음|날씨|바람|가슴|시간|계절")
+# 듣는 모습을 장면으로 묘사하는 꼴.
+_SCENE_LISTENING_RE = re.compile(r"듣고\s*있|듣는\s*(?:모습|사진|그림|장면|이미지|표지)")
+# 앞쪽 주어가 듣는 동작이 아니라 이 서술어나 때·조건에 걸린다는 표시.
+_SINGING_WORD_RE = re.compile(r"부르|부른|불렀|노래하|랩하")
+_TIME_WORD_RE = re.compile(r"(?:때|날|밤|새벽|아침|저녁|시절|동안|순간)(?:에|엔|면|마다|이면|에는)?$|면$")
+# 노래·소리를 가리키는 낱말. 표지 설명 끝에도 붙으므로("기타를 들고 있던 곡이야") 시각·자세 낱말이 없을 때만 인정한다.
+# 악기 이름은 넣지 않는다 — "기타를 들고 있었어"는 표지 설명이다.
+_SONG_TOPIC_RE = re.compile(
+    _MUSIC_CONTEXT_RE.pattern[:-1]
+    + r"|소리|연주|불렀|부르|부른|고음|저음|음색|가창|화음|코러스|편곡|미성|허스키"
+    r"|발라드|댄스|재즈|알앤비|r\s*&\s*b|힙합|랩|" + _ROCK + r"|메탈|트로트|포크)",
+    re.IGNORECASE,
+)
+# 그림 속 모습을 말하는 서술어. 낱말 첫머리만 본다 — "힘들고"의 "들고", "그려낸"의 "그려"가 아니다.
+_ARTWORK_POSE_RE = re.compile(
+    r"(?<![가-힣])(?:들고|쥐고|메고|안고|입고|끼고|앉아|서\s*있|누워|찍은|찍힌|박혀|적혀)|그려(?:진|져|있)"
+)
+
+
+def _listener_is_depicted(part: str) -> bool:
+    """듣는 동작이 표지 속 인물의 행동인가 — 3인칭 주어가 장면으로 묘사될 때만 그렇게 본다.
+
+    한국어는 주어를 자주 생략하므로("누워서 듣던 노래") 1인칭을 요구하지 않는다. 듣는 동사 앞 어절을 거꾸로 읽어 처음
+    만나는 주어로 판단한다. 그 사이에 다른 서술어(노래하는 쪽 "남자가 부르는 노래를", 때·조건 "비가 오는 날")가 있으면
+    앞쪽 주어는 그 서술어의 것이다.
+
+    3인칭 주어만으로는 부족하다. "엄마가 자주 듣던 피아노 노래"는 사용자가 곁에서 들은 곡을 회상하는 흔한 말이다. 진행
+    묘사("듣고 있었어", "듣는 모습")나 그림 속 자세("앉아서")가 함께 있을 때만 장면으로 본다.
+    """
+    listening = _LISTENING_RE.search(part)
+    if listening is None:
+        return False
+    for word in reversed(part[: listening.start()].split()):
+        if _FIRST_PERSON_WORD_RE.fullmatch(word) or _SINGING_WORD_RE.search(word) or _TIME_WORD_RE.search(word):
+            return False
+        if _PERSON_TOPIC_WORD_RE.fullmatch(word):
+            return _describes_a_scene(part)
+        if (
+            len(word) >= 2
+            and word[-1] in "이가"
+            and word not in _NOT_SUBJECT_WORDS
+            and not _SONG_TOPIC_RE.search(word)
+            and not _AUDIO_INSTRUMENT_RE.search(word)
+            and not _NON_PERSON_SUBJECT_RE.search(word)
+        ):
+            return _describes_a_scene(part)
+    return False
+
+
+def _describes_a_scene(part: str) -> bool:
+    return bool(_SCENE_LISTENING_RE.search(part) or _ARTWORK_POSE_RE.search(part))
+
+
+def text_outside_artwork(query: str) -> str:
+    """Return only the clauses that speak about the song. Call it for a visual query.
+
+    For deciding whether a word in a visual query is a fact about the song. A cover
+    description can start before the cover noun ("활주로에 비행기가 서 있고, … 표지") and
+    continue after it ("표지에 남자가 있고 기타를 들고 있었어"), so a clause must
+    positively name the song. A clause naming the cover is always dropped. One that
+    turns to the lyrics is kept. One that names the song or its sound while the user is
+    listening is kept. One that only names the song or its sound is kept when it has no
+    visual or pose detail. Listening by a depicted person is cover content, and a clause
+    that could be either is dropped: a non-visual word is lost rather than a visual word
+    being treated as a fact about the song.
+    """
+    kept: list[str] = []
+    for raw_part in _ARTWORK_CLAUSE_BREAK_RE.split(_mask_lyric_literals(query)):
+        part = (raw_part or "").strip()
+        if not part or _find_album_cover_context(part) is not None:
+            continue
+        if _LYRIC_SWITCH_RE.search(part):
+            kept.append(part)
+            continue
+        if not _SONG_TOPIC_RE.search(part):
+            continue
+        if _LISTENING_RE.search(part):
+            if not _listener_is_depicted(part):
+                kept.append(part)
+            continue
+        # "음색"의 "색"은 시각 단서가 아니다
+        if not _VISUAL_DETAIL_RE.search(part.replace("음색", "")) and not _ARTWORK_POSE_RE.search(part):
+            kept.append(part)
+    return " ".join(kept)
+
+
 def has_explicit_visual_clue(query: str) -> bool:
     """Return whether the user described album-art appearance.
 
