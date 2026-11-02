@@ -1,0 +1,6 @@
+runs/
+logs/
+budget/
+*.log
+# 루트 .gitignore의 *.csv를 이 파일만 푼다. 원기록(runs/)이 Git 밖이라 질의별 결과는 이 표로만 검증할 수 있다.
+!per_query.csv
