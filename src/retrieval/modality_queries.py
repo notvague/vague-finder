@@ -957,6 +957,8 @@ _PERSON_TOPIC_WORD_RE = re.compile(r"(?:남자|여자|남성|여성|사람|아�
 # 끝이 이·가지만 주어가 아닌 부사, 주어여도 사람이 아닌 낱말.
 _NOT_SUBJECT_WORDS = frozenset({"많이", "같이", "깊이", "높이", "길이", "없이", "일찍이", "가끔이"})
 _NON_PERSON_SUBJECT_RE = re.compile(r"분위기|느낌|기분|마음|날씨|바람|가슴|시간|계절")
+# 듣는 모습을 장면으로 묘사하는 꼴.
+_SCENE_LISTENING_RE = re.compile(r"듣고\s*있|듣는\s*(?:모습|사진|그림|장면|이미지|표지)")
 # 앞쪽 주어가 듣는 동작이 아니라 이 서술어나 때·조건에 걸린다는 표시.
 _SINGING_WORD_RE = re.compile(r"부르|부른|불렀|노래하|랩하")
 _TIME_WORD_RE = re.compile(r"(?:때|날|밤|새벽|아침|저녁|시절|동안|순간)(?:에|엔|면|마다|이면|에는)?$|면$")
@@ -975,11 +977,14 @@ _ARTWORK_POSE_RE = re.compile(
 
 
 def _listener_is_depicted(part: str) -> bool:
-    """듣는 동작의 주어가 3인칭인가 — 그렇다면 표지 속 인물의 행동으로 본다.
+    """듣는 동작이 표지 속 인물의 행동인가 — 3인칭 주어가 장면으로 묘사될 때만 그렇게 본다.
 
     한국어는 주어를 자주 생략하므로("누워서 듣던 노래") 1인칭을 요구하지 않는다. 듣는 동사 앞 어절을 거꾸로 읽어 처음
     만나는 주어로 판단한다. 그 사이에 다른 서술어(노래하는 쪽 "남자가 부르는 노래를", 때·조건 "비가 오는 날")가 있으면
     앞쪽 주어는 그 서술어의 것이다.
+
+    3인칭 주어만으로는 부족하다. "엄마가 자주 듣던 피아노 노래"는 사용자가 곁에서 들은 곡을 회상하는 흔한 말이다. 진행
+    묘사("듣고 있었어", "듣는 모습")나 그림 속 자세("앉아서")가 함께 있을 때만 장면으로 본다.
     """
     listening = _LISTENING_RE.search(part)
     if listening is None:
@@ -988,7 +993,7 @@ def _listener_is_depicted(part: str) -> bool:
         if _FIRST_PERSON_WORD_RE.fullmatch(word) or _SINGING_WORD_RE.search(word) or _TIME_WORD_RE.search(word):
             return False
         if _PERSON_TOPIC_WORD_RE.fullmatch(word):
-            return True
+            return _describes_a_scene(part)
         if (
             len(word) >= 2
             and word[-1] in "이가"
@@ -997,8 +1002,12 @@ def _listener_is_depicted(part: str) -> bool:
             and not _AUDIO_INSTRUMENT_RE.search(word)
             and not _NON_PERSON_SUBJECT_RE.search(word)
         ):
-            return True
+            return _describes_a_scene(part)
     return False
+
+
+def _describes_a_scene(part: str) -> bool:
+    return bool(_SCENE_LISTENING_RE.search(part) or _ARTWORK_POSE_RE.search(part))
 
 
 def text_outside_artwork(query: str) -> str:

@@ -1742,6 +1742,11 @@ def test_cover_query_drops_a_tag_whose_clause_is_unknown_but_keeps_the_rule_read
     ("표지는 검은색이었고 가수가 앉아서 음악을 듣고 있었어", ""),
     ("표지는 검은색이었고 남자가 잔잔한 음악을 듣고 있었어", ""),
     ("표지는 검은색이었고 남자는 앉아서 음악을 듣고 있었어", ""),
+    ("표지는 검은색이었고 여자가 헤드폰 끼고 음악 듣는 모습이었어", ""),
+    # 주변 사람이 듣던 곡을 회상하는 말은 장면이 아니다
+    ("표지는 검은색이었고 엄마가 자주 듣던 피아노 노래", "엄마가 자주 듣던 피아노 노래"),
+    ("표지는 검은색이었고 친구가 추천해줘서 듣던 노래", "친구가 추천해줘서 듣던 노래"),
+    ("표지는 검은색이었고 아빠가 차에서 틀어줘서 듣던 곡", "아빠가 차에서 틀어줘서 듣던 곡"),
     # 다른 서술어의 주어(가수 설명·때·조건)는 듣는 사람이 아니다
     ("표지는 검은색이었고 남자가 부르는 허스키한 노래를 자주 듣곤 했어", "남자가 부르는 허스키한 노래를 자주 듣곤 했어"),
     ("표지는 검은색이었고 비가 오는 날 듣던 노래", "비가 오는 날 듣던 노래"),
@@ -1792,6 +1797,7 @@ def test_cover_description_that_continues_over_clauses_is_not_shown_as_sound_evi
     ("표지는 검은색이었고 남자 한 명이 피아노 앞에 앉아서 음악을 듣고 있었어", ["피아노"], dict(sound_tags=["피아노"]), []),
     ("표지는 검은색이었고 남자가 부르는 허스키한 노래를 자주 듣곤 했어", ["허스키"], dict(sound_tags=["허스키"]), ["허스키"]),
     ("표지는 검은색이었고 누워서 듣던 피아노 노래", ["피아노"], dict(sound_tags=["피아노"]), ["피아노"]),
+    ("표지는 검은색이었고 엄마가 자주 듣던 피아노 노래", ["피아노"], dict(sound_tags=["피아노"]), ["피아노"]),
 ])
 def test_song_clues_after_a_cover_stay_and_a_pose_on_the_cover_does_not(query, tags, track_kw, kept):
     assert [r.clue for r in _rows(_visual_build(query, tags, _track(id="x", **track_kw)), SLOT_TAG)] == kept
