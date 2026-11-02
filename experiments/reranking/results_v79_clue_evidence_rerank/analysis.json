@@ -1,0 +1,77 @@
+{
+ "S0": true,
+ "S1": false,
+ "S2": false,
+ "S3": false,
+ "lost": [
+  "n057",
+  "q202",
+  "t071",
+  "t107"
+ ],
+ "gained": [
+  "t044"
+ ],
+ "metrics": {
+  "off_rep1": {
+   "n": 176,
+   "hit@1": 82,
+   "hit@5": 110,
+   "hit@10": 122,
+   "mrr": 0.5426,
+   "candidate_recall": 125
+  },
+  "off_rep2": {
+   "n": 176,
+   "hit@1": 81,
+   "hit@5": 110,
+   "hit@10": 122,
+   "mrr": 0.5398,
+   "candidate_recall": 125
+  },
+  "hits_rep1": {
+   "n": 176,
+   "hit@1": 81,
+   "hit@5": 107,
+   "hit@10": 119,
+   "mrr": 0.5283,
+   "candidate_recall": 125
+  },
+  "hits_rep2": {
+   "n": 176,
+   "hit@1": 81,
+   "hit@5": 107,
+   "hit@10": 119,
+   "mrr": 0.5283,
+   "candidate_recall": 125
+  }
+ },
+ "same_config_hit10_diff": {
+  "A1_vs_A2": [],
+  "B1_vs_B2": []
+ },
+ "clue_satisfaction": {
+  "off_rep1": {
+   "queries": 147,
+   "top10": 0.4763,
+   "top1": 0.6097
+  },
+  "off_rep2": {
+   "queries": 147,
+   "top10": 0.4764,
+   "top1": 0.6097
+  },
+  "hits_rep1": {
+   "queries": 147,
+   "top10": 0.5237,
+   "top1": 0.6266
+  },
+  "hits_rep2": {
+   "queries": 147,
+   "top10": 0.524,
+   "top1": 0.6266
+  }
+ },
+ "S4": true,
+ "verdict": "보류_S1S2S3"
+}

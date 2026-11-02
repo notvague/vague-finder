@@ -1,0 +1,715 @@
+diff --git a/.env.example b/.env.example
+index a87a77f..d4faf25 100644
+--- a/.env.example
++++ b/.env.example
+@@ -66,6 +66,9 @@ SEARCH_REFERENCE_YEAR=2026
+ # GEMINI_RERANK_BUDGET_SECONDS=30     # 리랭킹 1회 전체 예산. 넘기면 남은 호출을 건너뛰고 검색 순서 + failed
+ # GEMINI_RERANK_PASS_RESERVE_SECONDS=10  # 예산 중 본 패스 몫(검증 배치가 예산을 다 써도 본 패스가 한 번은 돈다)
+ # 재질문 답을 리랭커에 넘기는 방식(실험, results_clarify_v10_corrections · v11_prebonus)
++# GEMINI_RERANK_CLUE_EVIDENCE=off     # 실험. tags: 장소·시간·감정 태그 추가 · hits: 태그 + 곡별 단서 대조
++# CLUE_PATHS_WEIGHT=0                 # 실험. 0보다 크면 단서마다 따로 검색해 RRF에 더한다
++# CLUE_SPARSE_SYNONYMS=0              # 실험. 1이면 한 글자 단서(술 → 술자리·혼술 …)의 허용 값을 BM25 질의에 더한다
+ # GEMINI_RERANK_CORRECTIONS=all       # new_only면 원래 분석과 같은 답은 프롬프트에서 뺀다
+ # GEMINI_RERANK_TYPE_SLOT_LABEL=      # 재질문 type 슬롯 문구. 기본 "artist type (solo/group/duo/band)"
+ # CLARIFY_RERANK_INPUT_ORDER=bonus    # pre_bonus | placebo:<seed>
+diff --git a/src/retrieval/evaluate_search_accuracy.py b/src/retrieval/evaluate_search_accuracy.py
+index a4b320c..ac3e9b5 100644
+--- a/src/retrieval/evaluate_search_accuracy.py
++++ b/src/retrieval/evaluate_search_accuracy.py
+@@ -294,7 +294,7 @@ def _rerank_with_lyric_protection(
+         _after_call.n_before = len(statuses)
+         reranked = call_reranker(
+             reranker, analysis.original_query, candidates, top_k, answers, recorder,
+-            runs_out=statuses, deadline=deadline,
++            runs_out=statuses, deadline=deadline, analysis=analysis,
+         )
+         reranked = _after_call(reranked, candidates)[:top_k]
+         recorder.commit_reorder()
+@@ -325,6 +325,7 @@ def _rerank_with_lyric_protection(
+                 recorder,
+                 runs_out=statuses,
+                 deadline=deadline,
++                analysis=analysis,
+             )
+             group = _after_call(group, group_in)
+         ordered_protected.extend(group[:slots])
+@@ -342,6 +343,7 @@ def _rerank_with_lyric_protection(
+             recorder,
+             runs_out=statuses,
+             deadline=deadline,
++            analysis=analysis,
+         )
+         reranked_others = _after_call(reranked_others, others)[:remaining]
+     final = [*protected, *reranked_others][:top_k]
+diff --git a/src/retrieval/explain.py b/src/retrieval/explain.py
+index 78db44d..952eba0 100644
+--- a/src/retrieval/explain.py
++++ b/src/retrieval/explain.py
+@@ -56,6 +56,8 @@ PATH_LABELS: Dict[str, str] = {
+     # 간접 지칭 작품명 해석(실험 스위치 WORK_NAME_RESOLUTION_ENABLED)이 추정한 작품명으로 찾은 보조 후보. **추정이다** —
+     # 사용자가 그 작품을 말했다는 뜻도, 곡이 그 작품에 쓰였다는 확인도 아니다. 작품명은 요청 기록에만 남는다.
+     "work_name_aux": "작품명 추정 보조",
++    # 단서마다 따로 검색한 보조 후보(실험 스위치 CLUE_PATHS_WEIGHT). 그 단서가 곡에 있다는 확인이 아니라 검색이 찾았다는 뜻이다.
++    "clue_path": "단서별 검색 보조",
+ }
+ 
+ FEEDBACK_PATH = "feedback_case"
+diff --git a/src/retrieval/gemini_listwise_reranker.py b/src/retrieval/gemini_listwise_reranker.py
+index 423bd67..8394f52 100644
+--- a/src/retrieval/gemini_listwise_reranker.py
++++ b/src/retrieval/gemini_listwise_reranker.py
+@@ -22,6 +22,7 @@ import time
+ from dataclasses import dataclass
+ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+ 
++from src.retrieval.user_explanation import clue_evidence_for_rerank
+ from src.backend.schemas.search import ClarifyAnswer, MatchingTrack
+ from src.retrieval.explain import (
+     RERANK_APPLIED,
+@@ -239,6 +240,25 @@ def _run_coroutine_blocking(coro):
+         return pool.submit(asyncio.run, coro).result()
+ 
+ 
++_CLUE_EVIDENCE_MODES = ("off", "tags", "hits")
++CLUE_EVIDENCE_RULE = (
++    "11. clue_check (when present) compares the user's clues with this candidate's stored tags and summaries by literal "
++    "text matching. found: the same expression is stored. partial: only a word in a sentence or a shorter tag overlaps. "
++    "not_found: the same expression is not stored, which does NOT mean the song lacks it. Prefer candidates that satisfy "
++    "more of the user's distinct clues together, but treat this as supporting evidence: the stored data is generated and "
++    "incomplete, and it does not outweigh rules 2 to 4. In your output, copy each candidate's id field exactly; "
++    "retrieval_rank is not an id."
++)
++
++
++def _clue_evidence_mode() -> str:
++    """오타를 조용히 off로 두면 켠 줄 알고 잰다 — 기동에서 멈춘다."""
++    raw = os.getenv("GEMINI_RERANK_CLUE_EVIDENCE", "off").strip().lower() or "off"
++    if raw not in _CLUE_EVIDENCE_MODES:
++        raise ValueError(f"GEMINI_RERANK_CLUE_EVIDENCE={raw!r}: {_CLUE_EVIDENCE_MODES} 중 하나여야 한다")
++    return raw
++
++
+ @dataclass(frozen=True)
+ class GeminiListwiseRerankerConfig:
+     """기본값은 **1패스 · Google Search 끔**이다 (2026-10-09, results_v32~v34).
+@@ -251,6 +271,9 @@ class GeminiListwiseRerankerConfig:
+     """
+     model_name: str = "gemini-3.1-flash-lite"
+     enabled: bool = True
++    # 실험 스위치(기본 off = 입력·프롬프트가 켜기 전과 바이트까지 같다). tags: 빠져 있던 장소·활동·시간·날씨·감정 태그를
++    # 후보에 싣는다. hits: tags + 곡별 단서 대조(`clue_evidence_for_rerank`)와 그 읽는 법.
++    clue_evidence: str = "off"
+     rerank_weight: float = 0.85
+     spread_ref: float = 0.0
+     max_candidates: int = 30
+@@ -292,6 +315,7 @@ class GeminiListwiseRerankerConfig:
+             # 다시 켜지면 안 된다. 둘 중 하나라도 꺼져 있으면 끈다.
+             enabled=_env_bool("RERANKER_ENABLED", True)
+             and _env_bool("GEMINI_RERANK_ENABLED", True),
++            clue_evidence=_clue_evidence_mode(),
+             rerank_weight=min(1.0, max(0.0, weight)),
+             spread_ref=0.0,
+             max_candidates=max(10, min(50, int(os.getenv("GEMINI_RERANK_MAX_CANDIDATES", "30")))),
+@@ -387,6 +411,31 @@ class GeminiListwiseReranker:
+             )
+         return self._client
+ 
++    @property
++    def uses_clue_evidence(self) -> bool:
++        """곡별 단서 대조에 분석이 필요한가. off·tags면 호출부가 분석을 넘기지 않는다."""
++        return self.config.clue_evidence == "hits"
++
++    def _clue_checks(
++        self,
++        query: str,
++        tracks: Sequence[MatchingTrack],
++        analysis: Optional[Any],
++        answers: Optional[Sequence[ClarifyAnswer]],
++    ) -> Optional[dict[str, dict[str, list[str]]]]:
++        """단서 대조는 부가 입력이다. 실패해도 리랭킹을 막지 않고 대조 없이 진행한다."""
++        if self.config.clue_evidence != "hits" or analysis is None:
++            return None
++        try:
++            checks = {
++                str(track.id): clue_evidence_for_rerank(query, analysis, track, answers or ())
++                for track in tracks
++            }
++        except Exception:
++            logger.exception("[GeminiListwiseReranker] 단서 대조 실패 — 대조 없이 리랭킹")
++            return None
++        return {song_id: check for song_id, check in checks.items() if check} or None
++
+     @staticmethod
+     def _over_budget(deadline: Optional[float]) -> bool:
+         return deadline is not None and time.monotonic() >= deadline
+@@ -474,9 +523,15 @@ class GeminiListwiseReranker:
+         return _run_coroutine_blocking(_call())
+ 
+     @staticmethod
+-    def _candidate_payload(track: MatchingTrack, retrieval_rank: int) -> dict[str, Any]:
++    def _candidate_payload(
++        track: MatchingTrack,
++        retrieval_rank: int,
++        *,
++        extra_tags: bool = False,
++        clue_check: Optional[dict[str, list[str]]] = None,
++    ) -> dict[str, Any]:
+         title_info = analyze_title_structure(track.title or "")
+-        return {
++        payload = {
+             "id": str(track.id),
+             "retrieval_rank": retrieval_rank,
+             "title": _clip_text(track.title, 90),
+@@ -502,6 +557,13 @@ class GeminiListwiseReranker:
+             "relation_context_tags": _compact_list(track.relation_context_tags, 6),
+             "fame": _clip_text(track.fame, 80),
+         }
++        if extra_tags:
++            payload["place_activity_tags"] = _compact_list(track.place_activity_tags, 6)
++            payload["time_weather_tags"] = _compact_list(track.time_weather_tags, 4)
++            payload["emotion_tags"] = _compact_list(track.emotion_tags, 6)
++        if clue_check:
++            payload["clue_check"] = clue_check
++        return payload
+ 
+     @classmethod
+     def _build_prompt(
+@@ -511,14 +573,22 @@ class GeminiListwiseReranker:
+         retrieval_rank: Optional[dict[str, int]] = None,
+         external_evidence: str = "",
+         answers: Optional[Sequence[ClarifyAnswer]] = None,
++        extra_tags: bool = False,
++        clue_checks: Optional[dict[str, dict[str, list[str]]]] = None,
+     ) -> str:
+         rank_map = retrieval_rank or {
+             str(track.id): rank for rank, track in enumerate(tracks, start=1)
+         }
+         candidates = [
+-            cls._candidate_payload(track, rank_map[str(track.id)])
++            cls._candidate_payload(
++                track,
++                rank_map[str(track.id)],
++                extra_tags=extra_tags,
++                clue_check=(clue_checks or {}).get(str(track.id)),
++            )
+             for track in tracks
+         ]
++        clue_rule = f"{CLUE_EVIDENCE_RULE}\n" if clue_checks else ""
+         candidate_json = json.dumps(candidates, ensure_ascii=False, separators=(",", ":"))
+         evidence_block = ""
+         if external_evidence:
+@@ -545,7 +615,7 @@ Important reasoning rules:
+ 8. Rank by likelihood that this is the song the user is trying to remember, not merely semantic similarity of descriptions.
+ 9. If the query contains uncertainty markers such as '같아', '기억', '?', '아마', discount the uncertain detail.
+ 10. Return ALL candidate ids exactly once.
+-{evidence_block}
++{clue_rule}{evidence_block}
+ User query:
+ {query}
+ {_corrections_block(answers)}
+@@ -1219,6 +1289,7 @@ Return:
+         answers: Optional[Sequence[ClarifyAnswer]] = None,
+         *,
+         deadline: Optional[float] = None,
++        clue_analysis: Optional[Any] = None,
+     ) -> RerankRun:
+         """결과와 **실행 상태**를 함께 돌려준다.
+ 
+@@ -1282,6 +1353,8 @@ Return:
+                 retrieval_rank,
+                 external_evidence=external_evidence,
+                 answers=answers,
++                extra_tags=self.config.clue_evidence in ("tags", "hits"),
++                clue_checks=self._clue_checks(query, judged, clue_analysis, answers),
+             )
+             correction = ""
+ 
+diff --git a/src/retrieval/search_router.py b/src/retrieval/search_router.py
+index 9168581..17b04eb 100644
+--- a/src/retrieval/search_router.py
++++ b/src/retrieval/search_router.py
+@@ -80,6 +80,7 @@ from src.retrieval.clarify import (
+     candidates_for_reranker,
+     canonical_artist_types as _canonical_artist_types,
+ )
++from src.retrieval.user_explanation import SHORT_CLUE_VALUES, clue_search_terms
+ from src.retrieval.search_service import SearchService
+ from src.retrieval.work_name_resolution import (
+     STATUS_APPLIED as WORK_STATUS_APPLIED,
+@@ -758,6 +759,9 @@ def _reject_and_trim(
+ # 작품명 해석 마감 = 해석기 시간 제한 + 이 여유(로컬 보조 조회). 넘으면 결과를 쓰지 않는다.
+ _WORK_LOOKUP_MARGIN_SECONDS = 2.0
+ WORK_NAME_AUX_PATH = "work_name_aux"
++CLUE_PATH = "clue_path"
++CLUE_PATH_TOP_K = 15
++CLUE_PATH_ALPHA = 0.3   # 낱말 하나짜리 질의라 키워드 쪽에 둔다
+ 
+ 
+ @dataclass
+@@ -946,9 +950,12 @@ def call_reranker(
+     recorder: ExplainRecorder = NULL_RECORDER,
+     runs_out: Optional[List[str]] = None,
+     deadline: Optional[float] = None,
++    analysis: Optional[QueryAnalysis] = None,
+ ) -> List[MatchingTrack]:
+     """리랭커를 부른다. 재질문 답변을 쓰는 리랭커에만 answers를 넘긴다.
+ 
++    analysis는 곡별 단서 대조를 쓰는 리랭커(`uses_clue_evidence`, 실험 스위치)에만 넘긴다.
++
+     답변을 넘기지 않으면 LLM 리랭커는 최초 질의의 틀린 기억을 따라 정정된 답을
+     덮어쓴다. Cross-Encoder처럼 답변을 받지 않는 리랭커는 시그니처를 바꾸지 않는다.
+ 
+@@ -982,6 +989,8 @@ def call_reranker(
+             kwargs["answers"] = list(answers)
+         if deadline is not None and getattr(reranker, "accepts_deadline", False):
+             kwargs["deadline"] = deadline
++        if analysis is not None and getattr(reranker, "uses_clue_evidence", False) is True:
++            kwargs["clue_analysis"] = analysis
+         run = detailed(query, tracks, top_k, **kwargs)
+     else:
+         # 상태를 보고하지 않는 백엔드. 평가 범위도 알 수 없으므로 judged를 비운다 —
+@@ -1222,6 +1231,16 @@ def _audio_fusion_scale() -> float:
+     return _env_scale("AUDIO_FUSION_SCALE", 1.0)
+ 
+ 
++def _clue_paths_weight() -> float:
++    """실험 스위치(기본 0 = 꺼짐, 검색 호출도 없음): 단서별 검색을 RRF에 더하는 가중치."""
++    return _env_scale("CLUE_PATHS_WEIGHT", 0.0)
++
++
++def _clue_sparse_synonyms() -> bool:
++    """실험 스위치(기본 꺼짐): 한 글자 단서의 허용 값을 BM25 질의에 더한다. 켜지 않으면 sparse 질의가 그대로다."""
++    return os.getenv("CLUE_SPARSE_SYNONYMS", "0").strip() == "1"
++
++
+ def _text_sparse_source() -> str:
+     """텍스트 경로의 BM25 질의에 무엇을 넣는가. `tags`(현행) · `query` · `both`.
+ 
+@@ -2376,6 +2395,13 @@ class SearchRouter:
+                 reverse=True,
+             )
+ 
++        # 단서별 검색 — 단서를 하나의 질의로 섞으면 서로 자리를 뺏는다. 따로 찾아 더하면 여러 단서에 걸친 곡이 올라온다.
++        clue_weight = _clue_paths_weight()
++        if clue_weight > 0 and not disable_boost:
++            fused = await self._apply_clue_paths(
++                analysis, fused, meta_cache, excluded, clue_weight, recorder, loop,
++            )
++
+         # 작품명 보조 후보 — 다른 보조 경로와 같은 자리에서 RRF 기여만 더한다(분석·기존 경로는 그대로). 판정 미통과·보류·
+         # 실패·시간 초과면 fused는 손대지 않은 그대로다. 아래 보정·거절 제외·절단·가사 보호·리랭킹은 기존과 같다.
+         if work_job is not None:
+@@ -2622,6 +2648,7 @@ class SearchRouter:
+                                 recorder,
+                                 run_statuses,
+                                 deadline=rerank_deadline,
++                                analysis=analysis,
+                             )
+                             n_before = len(run_statuses)
+                             group_in = group
+@@ -2652,6 +2679,7 @@ class SearchRouter:
+                             recorder,
+                             run_statuses,
+                             deadline=rerank_deadline,
++                            analysis=analysis,
+                         )
+                         n_before = len(run_statuses)
+                         others_in = other_tracks
+@@ -2705,6 +2733,7 @@ class SearchRouter:
+                     recorder,
+                     run_statuses,
+                     deadline=rerank_deadline,
++                    analysis=analysis,
+                 )
+                 reranked = await loop.run_in_executor(
+                     self._pool,
+@@ -2786,6 +2815,44 @@ class SearchRouter:
+         future.add_done_callback(lambda done: done.cancelled() or done.exception())
+         return _WorkNameJob(runtime, gate, future, deadline)
+ 
++    async def _apply_clue_paths(
++        self,
++        analysis: QueryAnalysis,
++        fused: List[Tuple[str, float]],
++        meta_cache: Dict[str, MatchingTrack],
++        excluded: Optional[Set[str]],
++        weight: float,
++        recorder: ExplainRecorder,
++        loop: Any,
++    ) -> List[Tuple[str, float]]:
++        """단서마다 상위 곡을 찾아 RRF 기여를 더한다. 단서 하나가 실패해도 나머지로 진행한다."""
++        terms = clue_search_terms(analysis.original_query, analysis)
++        if not terms:
++            return fused
++
++        def search(term: str) -> List[MatchingTrack]:
++            values = SHORT_CLUE_VALUES.get(term, ())
++            return self._text_svc.search_text(
++                term, top_k=CLUE_PATH_TOP_K, alpha=CLUE_PATH_ALPHA, sparse_query=" ".join((term, *values)),
++            )
++
++        results = await asyncio.gather(
++            *(loop.run_in_executor(self._pool, search, term) for term in terms), return_exceptions=True,
++        )
++        scores = dict(fused)
++        for term, hits in zip(terms, results):
++            if isinstance(hits, BaseException):
++                logger.warning("[SearchRouter] 단서별 검색 실패 (빈 결과로 대체): %s: %s", term, hits)
++                continue
++            for rank, track in enumerate(hits, start=1):
++                if excluded and track.id in excluded:
++                    continue
++                current = meta_cache.get(track.id)
++                if current is None or current.title == "Unknown":
++                    meta_cache[track.id] = track
++                _fuse_add(scores, track.id, weight / (_RRF_K + rank), recorder, CLUE_PATH, rank, f"가중치 {weight:.2f}")
++        return sorted(scores.items(), key=lambda item: item[1], reverse=True)
++
+     async def _apply_work_name_aux(
+         self,
+         job: "_WorkNameJob",
+@@ -3356,6 +3423,10 @@ class SearchRouter:
+             alpha = min(0.60, max(alpha, 0.50))
+         else:
+             sparse_terms = list(analysis.korean_tags)
++            if _clue_sparse_synonyms():
++                # 한 글자 단서는 곡 태그("술자리"·"혼술")와 토큰이 달라 BM25에서 만나지 못한다
++                for tag in analysis.korean_tags:
++                    sparse_terms.extend(SHORT_CLUE_VALUES.get(str(tag).strip(), ()))
+             source = _text_sparse_source()
+             if source == "query":
+                 sparse_terms = [analysis.search_text]
+diff --git a/src/retrieval/user_explanation.py b/src/retrieval/user_explanation.py
+index 97a59c3..8c2554e 100644
+--- a/src/retrieval/user_explanation.py
++++ b/src/retrieval/user_explanation.py
+@@ -180,6 +180,7 @@ _PATH_SEARCH_NAMES: Dict[str, str] = {
+     "feedback_case": "이전 사용자 제보",
+     # 작품명은 말하지 않는다 — 추정한 이름을 사실처럼 보이게 하지 않는다
+     "work_name_aux": "작품명 추정 보조 검색",
++    "clue_path": "단서별 검색",
+ }
+ 
+ # 사실 일치 규칙 — "직접 확인한 것은 아니다"를 붙이지 않는다(제목·가수·형태는 등록 정보와 맞춘 것이다).
+@@ -904,7 +905,7 @@ _ERA_TAG_RE = re.compile(
+ _ONE_CHAR_PARTICLES = frozenset("을를이가은는도에과와의로만")
+ # 한 글자 단서가 가리키는 값. 앞뒤 글자를 넓게 허용하면 "기술"·"예술"·깨진 태그 "술자격"까지 걸리므로 **목록에
+ # 있는 값만** 인정한다. 태그는 값 전체가 같아야 하고("술자리스태프"는 아니다), 문장은 낱말이 들어 있으면 된다.
+-_SHORT_CLUE_VALUES: Dict[str, Tuple[str, ...]] = {
++SHORT_CLUE_VALUES: Dict[str, Tuple[str, ...]] = {
+     "술": ("술자리", "혼술", "술집", "음주", "소주", "맥주", "포장마차", "포차", "막걸리", "술잔"),
+     "비": ("비오는날", "빗소리", "빗길", "장마", "봄비", "겨울비", "소낙비", "소나기"),
+     "눈": ("첫눈", "함박눈", "눈오는날"),
+@@ -1489,7 +1490,7 @@ def _check_material(
+                 rows.append(_genre_tag_row(word, tag, clue, search_analysis, track, explain))
+             continue
+         row = _material_row(
+-            SLOT_TAG, clue, track, _tag_terms(tag), _FIELDS_FOR_TAG, _SHORT_CLUE_VALUES.get(norm, ()),
++            SLOT_TAG, clue, track, _tag_terms(tag), _FIELDS_FOR_TAG, SHORT_CLUE_VALUES.get(norm, ()),
+         )
+         if row.status != STATUS_UNVERIFIED:
+             rows.append(row)
+@@ -1856,3 +1857,62 @@ def distinguish_summaries(
+         for key in {(c.slot, c.clue) for c in ux.clue_checks if c.status in (STATUS_MATCH, STATUS_PARTIAL)}:
+             hit_counts[key] = hit_counts.get(key, 0) + 1
+     return [replace(ux, summary=_summary(ux.clue_checks, explain, hit_counts=hit_counts)) for ux, explain in items]
++
++
++# 리랭커 입력에 싣는 단서 대조의 크기 제한. 후보 30곡이 한 프롬프트에 들어가므로 작게 둔다.
++_RERANK_MAX_CLUES_PER_LIST = 6
++_RERANK_MAX_ITEM_CHARS = 70
++_QUOTE_PREFIX = "곡 자료에 이렇게 적혀 있음: "
++
++
++def clue_evidence_for_rerank(
++    query: str, analysis: Any, track: Any, answers: Sequence[Any] = (),
++) -> Dict[str, List[str]]:
++    """곡 하나의 단서 대조 결과를 리랭커 입력 모양으로. 근거 표(`_check_material`)와 **같은 판정**을 쓴다 — 표와 모델이 다른 말을 하지 않게.
++
++    found는 같은 표현이 곡 자료에 있음, partial은 문장 속 낱말이나 더 짧은 태그만 겹침, not_found는 같은 표현을 못 찾음이다.
++    not_found는 그 곡에 없다는 뜻이 아니다. 모델·DB를 부르지 않고 입력을 바꾸지 않는다.
++    """
++    rows = _check_material(query, analysis, track, SongExplain(song_id=str(getattr(track, "id", ""))), (), answers)
++    out: Dict[str, List[str]] = {"found": [], "partial": [], "not_found": []}
++    for row in rows:
++        if row.slot == SLOT_NOT_FOUND:
++            out["not_found"].extend(part for part in row.clue.split(", ") if part)
++            continue
++        name = _short_name(row)
++        if row.status == STATUS_UNVERIFIED:
++            out["not_found"].append(name)
++            continue
++        quote = row.observed.removeprefix(_QUOTE_PREFIX)
++        item = f"{name}: {quote}"
++        if len(item) > _RERANK_MAX_ITEM_CHARS:
++            item = item[: _RERANK_MAX_ITEM_CHARS - 1].rstrip() + "…"
++        out["found" if row.status == STATUS_MATCH else "partial"].append(item)
++    return {key: values[:_RERANK_MAX_CLUES_PER_LIST] for key, values in out.items() if values}
++
++
++_CLUE_SEARCH_MIN_TERMS = 2
++_CLUE_SEARCH_MAX_TERMS = 4
++
++
++def clue_search_terms(query: str, analysis: Any) -> List[str]:
++    """단서별 검색에 쓸 분석 태그. 근거 표가 곡 자료와 대조하는 단서와 같은 범위다.
++
++    원문에 글자 그대로 있는 태그만 쓴다. 장르·성별·시기·형태·OST는 이미 다른 경로와 가산이 다루고, 표지 질의에서는
++    노래를 말하는 절의 태그만 쓴다. 단서가 하나뿐이면 전체 질의 검색과 다를 것이 없어 빈 목록을 돌려준다.
++    """
++    covered = _covered_words(query, analysis)
++    is_visual = bool(getattr(analysis, "has_visual_clue", False)) or has_explicit_visual_clue(query)
++    scope = text_outside_artwork(query) if is_visual else query
++    terms: List[str] = []
++    for tag in getattr(analysis, "korean_tags", []) or []:
++        tag = str(tag or "").strip()
++        norm = _norm(tag)
++        if (
++            not norm or norm in covered or tag in terms or _ERA_TAG_RE.fullmatch(norm)
++            or norm in _FORM_TAGS or norm in _OST_TAGS or _tag_gender(norm) or _tag_genre_word(norm)
++            or not _said_in_query(tag, scope)
++        ):
++            continue
++        terms.append(tag)
++    return terms[:_CLUE_SEARCH_MAX_TERMS] if len(terms) >= _CLUE_SEARCH_MIN_TERMS else []
+diff --git a/tests/rerank/test_clue_evidence_rerank.py b/tests/rerank/test_clue_evidence_rerank.py
+new file mode 100644
+index 0000000..e875661
+--- /dev/null
++++ b/tests/rerank/test_clue_evidence_rerank.py
+@@ -0,0 +1,235 @@
++"""리랭커 단서 대조(GEMINI_RERANK_CLUE_EVIDENCE)·동의어 확장(CLUE_SPARSE_SYNONYMS) 실험 스위치.
++
++꺼져 있으면 후보 입력·프롬프트·sparse 질의가 켜기 전과 같아야 한다. 측정 기준선이 여기에 달려 있다.
++"""
++from __future__ import annotations
++
++import json
++from types import SimpleNamespace
++
++import pytest
++
++from src.backend.schemas.query import QueryAnalysis
++from src.backend.schemas.search import ClarifyAnswer, MatchingTrack
++from src.retrieval.gemini_listwise_reranker import (
++    CLUE_EVIDENCE_RULE,
++    GeminiListwiseReranker,
++    GeminiListwiseRerankerConfig,
++)
++from src.retrieval.search_router import SearchRouter, call_reranker
++from src.retrieval.user_explanation import clue_evidence_for_rerank
++
++QUERY = "술 한잔 마실 때 생각나는 노래야. 이별한 전 인연을 그리워하는 가사가 있었고 남자 가수에 엄청 고음이 많은 발라드?"
++
++
++def _analysis(**kw) -> QueryAnalysis:
++    base = dict(original_query=QUERY, intent_type="mixed", image_english_query="", audio_english_query="",
++                vocal_gender="남성", genre="발라드", korean_tags=["술", "이별", "고음", "남성보컬", "발라드"])
++    base.update(kw)
++    return QueryAnalysis(**base)
++
++
++def _track(song_id="a", **kw) -> MatchingTrack:
++    base = dict(id=song_id, score=0.1, title="제목", artist="가수", vocal_gender="남성", genre="발라드")
++    base.update(kw)
++    return MatchingTrack(**base)
++
++
++def _candidates(prompt: str) -> list:
++    start = prompt.index("Candidates (JSON):\n") + len("Candidates (JSON):\n")
++    return json.loads(prompt[start:prompt.index("\n", start)])
++
++
++def test_switch_off_keeps_candidate_input_and_prompt():
++    track = _track(place_activity_tags=["혼술"], time_weather_tags=["밤"], emotion_tags=["그리움"])
++    payload = GeminiListwiseReranker._candidate_payload(track, 1)
++    assert not {"place_activity_tags", "time_weather_tags", "emotion_tags", "clue_check"} & set(payload)
++    prompt = GeminiListwiseReranker._build_prompt(QUERY, [track])
++    assert "clue_check" not in prompt and "place_activity_tags" not in prompt
++    assert "10. Return ALL candidate ids exactly once.\n\nUser query:" in prompt, "규칙 줄이 늘지 않는다"
++
++
++def test_tags_mode_adds_only_the_missing_tags():
++    track = _track(place_activity_tags=["혼술", "술집"], time_weather_tags=["밤"], emotion_tags=["그리움"])
++    prompt = GeminiListwiseReranker._build_prompt(QUERY, [track], extra_tags=True)
++    row = _candidates(prompt)[0]
++    assert row["place_activity_tags"] == ["혼술", "술집"] and row["time_weather_tags"] == ["밤"] and row["emotion_tags"] == ["그리움"]
++    assert "clue_check" not in row and CLUE_EVIDENCE_RULE not in prompt
++
++
++def test_hits_mode_adds_the_comparison_and_how_to_read_it():
++    track = _track()
++    check = {"found": ["술: 장소·활동 태그 ‘혼술’"], "not_found": ["고음"]}
++    prompt = GeminiListwiseReranker._build_prompt(QUERY, [track], extra_tags=True, clue_checks={"a": check})
++    assert _candidates(prompt)[0]["clue_check"] == check
++    assert CLUE_EVIDENCE_RULE in prompt and "does NOT mean the song lacks it" in prompt
++    # 입력이 길어지면 모델이 id 자리에 retrieval_rank를 넣었다(실측 n017, 재시도 3회 모두) — 읽는 법에서 막는다
++    assert "retrieval_rank is not an id" in prompt
++
++
++def test_invalid_switch_value_stops_instead_of_silently_measuring_off(monkeypatch):
++    monkeypatch.setenv("GEMINI_RERANK_CLUE_EVIDENCE", "hit")
++    with pytest.raises(ValueError):
++        GeminiListwiseRerankerConfig.from_env()
++    monkeypatch.setenv("GEMINI_RERANK_CLUE_EVIDENCE", "HITS")
++    assert GeminiListwiseRerankerConfig.from_env().clue_evidence == "hits"
++    monkeypatch.delenv("GEMINI_RERANK_CLUE_EVIDENCE")
++    assert GeminiListwiseRerankerConfig.from_env().clue_evidence == "off"
++
++
++def test_evidence_uses_the_same_judgement_as_the_table():
++    track = _track(place_activity_tags=["혼술"], relation_context_tags=["이별"])
++    check = clue_evidence_for_rerank(QUERY, _analysis(), track)
++    assert check["found"] == ["술: 장소·활동 태그 ‘혼술’", "이별: 관계·상황 태그 ‘이별’"]
++    assert check["not_found"] == ["고음"]
++    assert "partial" not in check, "빈 목록은 싣지 않아 프롬프트를 늘리지 않는다"
++
++
++def test_evidence_respects_cover_description_and_corrected_answers():
++    query = "앨범 표지에 별이 가득했던 노래"
++    cover = _analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["별"], has_visual_clue=True, image_english_query="stars")
++    assert clue_evidence_for_rerank(query, cover, _track(lyrics_summary="별이 빛난다")) == {}
++    query = "남성솔로 노래"
++    corrected = _analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["남성솔로"])
++    track = _track(artist_types=["솔로"])
++    assert clue_evidence_for_rerank(query, corrected, track)["found"]
++    assert clue_evidence_for_rerank(query, corrected, track, [ClarifyAnswer(slot="vocal_gender", value="여성")]) == {}
++
++
++def test_evidence_size_is_bounded_and_does_not_change_inputs():
++    tags = [f"단서{i}" for i in range(12)]
++    query = " ".join(tags)
++    analysis = _analysis(original_query=query, vocal_gender=None, genre="", korean_tags=tags)
++    track = _track(sound_tags=tags, lyrics_summary="가" * 300)
++    before = (analysis.model_copy(deep=True), track.model_copy(deep=True))
++    check = clue_evidence_for_rerank(query, analysis, track)
++    assert len(check["found"]) == 6 and all(len(item) <= 70 for item in check["found"])
++    assert (analysis, track) == before
++
++
++def _reranker(mode: str) -> GeminiListwiseReranker:
++    return GeminiListwiseReranker(config=GeminiListwiseRerankerConfig(clue_evidence=mode), client=object())
++
++
++def test_comparison_failure_does_not_stop_reranking(monkeypatch):
++    def boom(*_a, **_k):
++        raise RuntimeError("대조 실패")
++    monkeypatch.setattr("src.retrieval.gemini_listwise_reranker.clue_evidence_for_rerank", boom)
++    assert _reranker("hits")._clue_checks(QUERY, [_track()], _analysis(), None) is None
++
++
++def test_comparison_runs_only_in_hits_mode_with_an_analysis():
++    track = _track(place_activity_tags=["혼술"])
++    assert _reranker("off")._clue_checks(QUERY, [track], _analysis(), None) is None
++    assert _reranker("tags")._clue_checks(QUERY, [track], _analysis(), None) is None
++    assert _reranker("hits")._clue_checks(QUERY, [track], None, None) is None
++    assert _reranker("hits")._clue_checks(QUERY, [track], _analysis(), None)["a"]["found"]
++    assert _reranker("hits").uses_clue_evidence is True and _reranker("tags").uses_clue_evidence is False
++
++
++class _FakeRun:
++    def __init__(self, *, uses: bool):
++        self.uses_clue_evidence = uses
++        self.kwargs = None
++
++    def rerank_run(self, query, tracks, top_k, **kwargs):
++        from src.retrieval.reranker import RerankRun, RERANK_SKIPPED
++        self.kwargs = kwargs
++        return RerankRun(list(tracks)[:top_k], RERANK_SKIPPED, [], model_calls=0)
++
++
++@pytest.mark.parametrize("uses,expected", [(True, True), (False, False)])
++def test_call_reranker_passes_the_analysis_only_when_the_reranker_uses_it(uses, expected):
++    fake = _FakeRun(uses=uses)
++    call_reranker(fake, QUERY, [_track("a"), _track("b")], 2, analysis=_analysis())
++    assert ("clue_analysis" in fake.kwargs) is expected
++
++
++def _sparse_query(monkeypatch, tags, value):
++    if value is None:
++        monkeypatch.delenv("CLUE_SPARSE_SYNONYMS", raising=False)
++    else:
++        monkeypatch.setenv("CLUE_SPARSE_SYNONYMS", value)
++    router = SearchRouter.__new__(SearchRouter)
++    seen = {}
++    def search_text(dense, top_k, alpha, sparse_query=None, **_kw):
++        seen["sparse"] = sparse_query
++        return []
++    router._text_svc = SimpleNamespace(search_text=search_text)
++    router._search_text(_analysis(korean_tags=tags), 10)
++    return seen["sparse"]
++
++
++def test_synonyms_extend_only_short_clues_and_only_when_on(monkeypatch):
++    assert _sparse_query(monkeypatch, ["술", "고음"], None) == "술 고음"
++    assert _sparse_query(monkeypatch, ["술", "고음"], "0") == "술 고음"
++    on = _sparse_query(monkeypatch, ["술", "고음"], "1")
++    assert on.startswith("술 ") and all(word in on for word in ("술자리", "혼술", "고음"))
++    assert _sparse_query(monkeypatch, ["고음", "이별"], "1") == "고음 이별"
++
++
++@pytest.mark.parametrize("query,tags,visual,expected", [
++    (QUERY, ["술", "이별", "고음", "남성보컬", "발라드"], False, ["술", "이별", "고음"]),
++    (QUERY, ["고음"], False, []),                                                  # 하나면 전체 질의와 다를 것이 없다
++    (QUERY, ["술", "그리움"], False, []),                                          # 원문에 없는 해석 값은 쓰지 않는다
++    (QUERY, ["걸그룹", "드라마OST", "2000년대초반", "고음"], False, []),            # 다른 경로가 다루는 값을 빼면 하나다
++    ("표지에 밤하늘이 있었고 고음이 많은 이별 노래", ["밤하늘", "고음", "이별"], True, ["고음", "이별"]),
++    ("술 비 눈 밤 봄 꽃 고음 이별 노래", ["술", "비", "눈", "밤", "봄", "꽃"], False, ["술", "비", "눈", "밤"]),
++])
++def test_clue_search_terms(query, tags, visual, expected):
++    from src.retrieval.user_explanation import clue_search_terms
++    kw = dict(has_visual_clue=True, image_english_query="album art") if visual else {}
++    analysis = _analysis(original_query=query, vocal_gender=None, genre="", korean_tags=tags, **kw)
++    assert clue_search_terms(query, analysis) == expected
++
++
++def _clue_router(hits_by_term):
++    from concurrent.futures import ThreadPoolExecutor
++    router = SearchRouter.__new__(SearchRouter)
++    router._pool = ThreadPoolExecutor(max_workers=2)
++    calls = []
++    def search_text(dense, top_k, alpha, sparse_query=None, **_kw):
++        calls.append((dense, top_k, alpha, sparse_query))
++        result = hits_by_term[dense]
++        if isinstance(result, Exception):
++            raise result
++        return result
++    router._text_svc = SimpleNamespace(search_text=search_text)
++    return router, calls
++
++
++def _run_clue_paths(router, excluded=None):
++    import asyncio
++    from src.retrieval.explain import ExplainRecorder
++    analysis = _analysis(korean_tags=["술", "고음"])
++    meta = {}
++    recorder = ExplainRecorder(QUERY)
++    async def go():
++        return await router._apply_clue_paths(analysis, [("base", 0.02)], meta, excluded, 0.5, recorder, asyncio.get_running_loop())
++    return asyncio.run(go()), meta, recorder
++
++
++def test_clue_paths_lift_a_song_found_by_more_than_one_clue():
++    both, one = _track("both"), _track("one")
++    router, calls = _clue_router({"술": [both, one], "고음": [both]})
++    fused, meta, recorder = _run_clue_paths(router)
++    scores = dict(fused)
++    assert scores["both"] > scores["one"], "여러 단서에 걸친 곡이 위로 간다"
++    assert fused == sorted(fused, key=lambda item: item[1], reverse=True)
++    assert meta["both"] is both and scores["base"] == 0.02
++    assert any("술자리" in call[3] for call in calls if call[0] == "술"), "짧은 단서는 허용 값을 함께 찾는다"
++    assert [p.path for p in recorder.record.get("both").paths] == ["clue_path", "clue_path"]
++
++
++def test_one_failed_clue_does_not_stop_the_others_and_excluded_songs_stay_out():
++    router, _ = _clue_router({"술": RuntimeError("실패"), "고음": [_track("a"), _track("gone")]})
++    fused, _, _ = _run_clue_paths(router, excluded={"gone"})
++    assert dict(fused).keys() == {"base", "a"}
++
++
++def test_clue_paths_are_off_by_default(monkeypatch):
++    from src.retrieval.search_router import _clue_paths_weight
++    monkeypatch.delenv("CLUE_PATHS_WEIGHT", raising=False)
++    assert _clue_paths_weight() == 0.0
++    monkeypatch.setenv("CLUE_PATHS_WEIGHT", "0.5")
++    assert _clue_paths_weight() == 0.5
