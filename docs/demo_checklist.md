@@ -49,7 +49,7 @@
 | `RERANKER_BACKEND` | `gemini_listwise` | 리랭커. 모르는 값은 기동 실패 | `api/dependencies.py` `reranker_backend()` |
 | `GEMINI_RETRIEVAL_BACKEND` | 비움 = Vertex | `vertex` 외 값은 설정 오류 | `common/gemini_client.py` |
 | `CONTEXT_WEIGHT` | `0.5` | Context(나무위키 배경 사실) 경로. 0이면 꺼짐 | `retrieval/context_search_settings.py` `ENV_DEFAULTS` |
-| `WORK_NAME_RESOLUTION_ENABLED` | 비움 = 꺼짐 | 작품명 해석(실험). `1`만 켠다 | `retrieval/work_name_resolution.py` |
+| `WORK_NAME_RESOLUTION_ENABLED` | 비움 = 꺼짐 | 작품명 해석. `1`만 켠다. 언급 저장소(`artifacts/work_names/`)가 있어야 기동한다. 시연 기기 `.env` 값을 확인한다 | `retrieval/work_name_resolution.py` |
 | `AUDIO_FUSION_SCALE` | `1.0` | 소리(음원) 경로 배율. 0이면 소리 경로 생략 | `retrieval/search_router.py` |
 | `ATTR_FILTER_WEIGHT` | `0.0` | 속성 조건 보조 후보(D). 0이면 꺼짐 | 같음 |
 | `GEMINI_RERANK_BUDGET_SECONDS` | `30` | 리랭킹 단계 예산 | `retrieval/gemini_listwise_reranker.py` |
@@ -60,9 +60,9 @@
 | `FEEDBACK_INDEX_WORKER_ENABLED` · `FEEDBACK_RETRIEVAL_ENABLED` | 꺼짐 | 승인 사례 색인 · 검색 반영 | `feedback/settings.py` |
 | `SEARCH_TIMING_LOG` | 없음 | 있으면 검색 요청별 서버 구간 기록을 이 JSONL에 남긴다 | `retrieval/timing.py` |
 
-**포스터 수치와 시연 구성의 차이.** 코드 기본값으로 띄운 서비스는 작품명 OFF·소리 ON·D OFF다. 포스터의 개발 비교 기준(v75 A, Hit@10 121/176)은
-**작품명 ON**이고, 평가기 조건(고정 분석 캐시·예열·요청 60초/질의 120초·후보 30에서 top-10 평가)에서 잰 값이다. 서비스는 화면 기준 15곡을 보여 주고
-운영 예산(분석 20초·리랭킹 30초)을 쓴다. 시연 화면의 결과를 포스터 수치의 사례로 붙이지 않는다. 점검을 이유로 기본 OFF 기능을 켜지 않는다.
+**포스터 수치와 시연 구성의 차이.** 코드 기본값으로 띄운 서비스는 작품명 OFF·소리 ON·D OFF다. 팀장 기기는 2026-11-03부터 `.env`로 작품명을 켜고 소리 경로를 껐으니(v81 확인) 시연 기기의 값을 먼저 기록한다. 포스터의 제안 구성(v75 B, Hit@10 123/176)은
+**작품명 ON · 소리 OFF**이고, 평가기 조건(고정 분석 캐시·예열·요청 60초/질의 120초·후보 30에서 top-10 평가)에서 잰 값이다. 서비스는 화면 기준 15곡을 보여 주고
+운영 예산(분석 20초·리랭킹 30초)을 쓴다. 시연 화면의 결과를 포스터 수치의 사례로 붙이지 않는다. 점검을 이유로 꺼져 있는 다른 기능을 켜지 않는다.
 
 ### 1-2. 피드백 수집이 켜져 있을 때 — 먼저 결정할 것
 
@@ -377,7 +377,7 @@
 | 모의 서버에 리랭킹 시간 초과 모드가 없고, 리랭킹 실패 기록이 CE 모양 | `demo_faults.py` `MODES` | §E 끝의 대역·기록으로 대신 |
 | 피드백 수집이 켜진 채 모의 서버를 돌리면 실제 저장소에 쓸 수 있음 | §1-2 | 연결 대상 서버 자체의 수집 OFF 기동 기록 확인. 검사 프로세스의 변수만으로 기존 서버 설정을 보장하지 않음 |
 | 화면은 예열 상태를 말하지 않는다(설계) | `check_demo_faults` E10 | 발표자가 `/health`로 본다 |
-| 작품명 해석을 켜면 기동 직후 첫 판정 질의가 시간 초과한 기록(평가기에서 재현, 서비스 경로는 미측정) | `experiments/reranking/results_v72_work_name_rerank_diagnosis/RUN_INFO.md` | 기본 OFF 그대로 시연한다. 켜는 것은 별도 작업 |
+| 작품명 해석을 켜면 기동 직후 첫 판정 질의가 시간 초과한 기록(평가기에서 재현). 서비스 경로에서는 예열이 끝난 뒤 첫 판정 질의가 정상이었고(v81), 예열 전 요청은 미측정 | `experiments/reranking/results_v72_work_name_rerank_diagnosis/RUN_INFO.md` · `experiments/reranking/results_v81_work_name_http/RUN_INFO.md` | `/health`의 예열 완료를 확인한 뒤 시연한다 |
 
 ## 5. 실행 전에 정할 것 · 아직 모르는 것
 
