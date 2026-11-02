@@ -945,9 +945,15 @@ _ARTWORK_CLAUSE_BREAK_RE = re.compile(
 )
 
 
-# 가사 내용·청취 상황으로 넘어갔다는 분명한 표시. 그림 속 모습으로 읽을 수 없어 시각·자세 낱말이 있어도 절을 남긴다
-# ("누워서 듣던 피아노 노래", "가사는 바다 얘기"). "들었"은 넣지 않는다 — "기타를 손에 들었어"로도 읽힌다.
-_SONG_SWITCH_RE = re.compile(r"가사|노랫말|후렴|듣|들으|들을|들리|들렸")
+# 가사 내용으로 넘어갔다는 분명한 표시. 그림 속 모습으로 읽을 수 없어 시각·자세 낱말이 있어도 절을 남긴다("가사는 바다 얘기").
+_LYRIC_SWITCH_RE = re.compile(r"가사|노랫말|후렴")
+# 듣는 행동. 사용자의 청취("누워서 듣던 노래")일 수도, 표지 속 인물의 행동("남자가 앉아서 듣고 있었어")일 수도 있다.
+# "들었"은 넣지 않는다 — "기타를 손에 들었어"로도 읽힌다.
+_LISTENING_RE = re.compile(r"듣|들으|들을|들리|들렸")
+# 절의 주어가 그림 속 인물로 읽히는 표현. "내가"·"제가"는 사용자라 넣지 않는다.
+_DEPICTED_PERSON_RE = re.compile(
+    r"(?<![가-힣])(?:남자|여자|남성|여성|사람|아이|소년|소녀|인물|멤버|아저씨|아줌마|할머니|할아버지)들?(?:이|가|은|는)(?![가-힣])"
+)
 # 노래·소리를 가리키는 낱말. 표지 설명 끝에도 붙으므로("기타를 들고 있던 곡이야") 시각·자세 낱말이 없을 때만 인정한다.
 # 악기 이름은 넣지 않는다 — "기타를 들고 있었어"는 표지 설명이다.
 _SONG_TOPIC_RE = re.compile(
@@ -969,21 +975,28 @@ def text_outside_artwork(query: str) -> str:
     description can start before the cover noun ("활주로에 비행기가 서 있고, … 표지") and
     continue after it ("표지에 남자가 있고 기타를 들고 있었어"), so a clause must
     positively name the song. A clause naming the cover is always dropped. One that
-    turns to the lyrics or to listening is kept. One that only names the song or its
-    sound is kept when it has no visual or pose detail. A non-visual word in any other
-    clause is lost rather than a visual word being treated as a fact about the song.
+    turns to the lyrics is kept. One that names the song or its sound while the user is
+    listening is kept. One that only names the song or its sound is kept when it has no
+    visual or pose detail. Listening by a depicted person is cover content, and a clause
+    that could be either is dropped: a non-visual word is lost rather than a visual word
+    being treated as a fact about the song.
     """
     kept: list[str] = []
     for raw_part in _ARTWORK_CLAUSE_BREAK_RE.split(_mask_lyric_literals(query)):
         part = (raw_part or "").strip()
         if not part or _find_album_cover_context(part) is not None:
             continue
-        if _SONG_SWITCH_RE.search(part) or (
-            _SONG_TOPIC_RE.search(part)
-            # "음색"의 "색"은 시각 단서가 아니다
-            and not _VISUAL_DETAIL_RE.search(part.replace("음색", ""))
-            and not _ARTWORK_POSE_RE.search(part)
-        ):
+        if _LYRIC_SWITCH_RE.search(part):
+            kept.append(part)
+            continue
+        if not _SONG_TOPIC_RE.search(part):
+            continue
+        if _LISTENING_RE.search(part):
+            if not _DEPICTED_PERSON_RE.search(part):
+                kept.append(part)
+            continue
+        # "음색"의 "색"은 시각 단서가 아니다
+        if not _VISUAL_DETAIL_RE.search(part.replace("음색", "")) and not _ARTWORK_POSE_RE.search(part):
             kept.append(part)
     return " ".join(kept)
 

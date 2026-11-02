@@ -1059,15 +1059,41 @@ def _term_in_tag(term: str, value: str) -> Optional[str]:
     return None
 
 
-def _term_in_text(term: str, text: str) -> bool:
-    """문장에 낱말이 있는가. 두 글자 낱말은 띄어쓰기를 건너 맞추지 않는다 — "이 별이"는 "이별"이 아니다."""
+def _spaced_pattern(term: str) -> str:
+    return r"\s*".join(re.escape(ch) for ch in term)
+
+
+def _term_span(term: str, text: str) -> Optional[Tuple[int, int]]:
+    """문장에서 낱말이 실제로 있는 **원문 위치**. 대조와 인용이 이 위치 하나를 쓴다 — 따로 찾으면 "밴드사운드"가 "밴드 사운드"와
+    맞고도 인용은 엉뚱한 곳을 가리킨다.
+
+    표기는 대소문자를 가리지 않는다. 세 글자 이상은 띄어쓰기를 무시하고, 두 글자는 건너 맞추지 않는다("이 별이"는 "이별"이
+    아니다). 한 글자는 낱말 그대로(조사 하나까지)만 본다. 뜻이 다른 표현(`_FALSE_FRIENDS`)에 걸친 자리는 건너뛴다.
+    """
     if not term or not text:
-        return False
+        return None
+    text = str(text)
     if len(term) == 1:
-        return _one_char_in(term, text)
-    if len(term) == 2:
-        return term in _without_false_friends(term, str(text).lower())
-    return term in _without_false_friends(term, _norm(text))
+        for found in re.finditer(r"[가-힣A-Za-z0-9]+", text):
+            word = found.group().lower()
+            if word == term or (len(word) == 2 and word[0] == term and word[1] in _ONE_CHAR_PARTICLES):
+                return found.span()
+        return None
+    friends = [
+        found.span()
+        for friend in _FALSE_FRIENDS.get(term, ())
+        for found in re.finditer(_spaced_pattern(friend), text, re.IGNORECASE)
+    ]
+    pattern = re.escape(term) if len(term) == 2 else _spaced_pattern(term)
+    for found in re.finditer(pattern, text, re.IGNORECASE):
+        if not any(found.start() < end and start < found.end() for start, end in friends):
+            return found.span()
+    return None
+
+
+def _term_in_text(term: str, text: str) -> bool:
+    """문장에 낱말이 있는가."""
+    return _term_span(term, text) is not None
 
 
 def _sentences_of(text: Any) -> List[str]:
@@ -1076,22 +1102,21 @@ def _sentences_of(text: Any) -> List[str]:
 
 def _clip_quote(sentence: str, term: str) -> str:
     """문장 인용을 줄인다. 앞뒤만 자르고 글자를 바꾸지 않는다. 낱말 중간에서 끊지 않는다 — "떠난 연인"이 "…난 연인"이
-    되면 다른 말로 읽힌다. 낱말이 원문 그대로 보이면 그 둘레를 남긴다."""
+    되면 다른 말로 읽힌다. 실제로 일치한 자리(`_term_span`)를 남긴다."""
     if len(sentence) <= _MAX_QUOTE_CHARS:
         return sentence
-    at = sentence.find(term) if term else -1
-    if at < 0:
-        at, term = 0, ""
-    half = (_MAX_QUOTE_CHARS - len(term)) // 2
+    span = _term_span(_norm(term), sentence)
+    at, match_end = span if span else (0, 0)
+    half = max(0, _MAX_QUOTE_CHARS - (match_end - at)) // 2
     start = max(0, at - half)
-    end = min(len(sentence), start + _MAX_QUOTE_CHARS)
-    start = max(0, end - _MAX_QUOTE_CHARS)
+    end = max(match_end, min(len(sentence), start + _MAX_QUOTE_CHARS))
+    start = max(0, min(start, end - _MAX_QUOTE_CHARS))
     if start > 0 and not sentence[start - 1].isspace():
         # 앞쪽이 낱말 중간이면 다음 낱말부터. 찾는 낱말을 넘어가면 그 낱말이 든 어절의 시작까지 물러난다.
         next_space = sentence.find(" ", start, at + 1)
         start = next_space + 1 if next_space >= 0 else sentence.rfind(" ", 0, at) + 1
     if end < len(sentence) and not sentence[end].isspace():
-        prev_space = sentence.rfind(" ", at + len(term), end)
+        prev_space = sentence.rfind(" ", match_end, end)
         if prev_space > 0:
             end = prev_space
         else:
@@ -1228,7 +1253,7 @@ def _meaning_row(meaning: str, query: str, track: Any) -> Optional[ClueCheck]:
     scored.sort()
     quotes = [
         _MaterialHit("lyrics_summary", _clip_quote(sentence, next(
-            (v for t in terms for v in variants[t] if v in sentence), "")), "text")
+            (v for t in terms for v in variants[t] if _term_in_text(v, sentence)), "")), "text")
         for _, _, sentence in scored
     ]
     hits = quotes or tag_hits

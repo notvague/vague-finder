@@ -1449,6 +1449,7 @@ from src.retrieval.user_explanation import (  # noqa: E402
     _stale_after_answers,
     _tag_gender,
     _term_in_tag,
+    _term_span,
     distinguish_summaries,
 )
 
@@ -1725,6 +1726,16 @@ def test_cover_query_drops_a_tag_whose_clause_is_unknown_but_keeps_the_rule_read
     ("표지는 검은색이었고 비 오는 날 듣던 노래", "비 오는 날 듣던 노래"),
     ("표지는 검은색이었고 이별해서 힘들고 지친 곡이야", "이별해서 힘들고 지친 곡이야"),
     ("표지는 검은색이었고 마음을 그려낸 노래야", "마음을 그려낸 노래야"),
+    ("표지는 검은색이었고 내가 누워서 듣던 노래", "내가 누워서 듣던 노래"),
+    ("표지는 검은색이었고 이어폰 끼고 듣던 곡", "이어폰 끼고 듣던 곡"),
+    ("표지는 검은색이었고 기타 소리가 들렸어", "기타 소리가 들렸어"),
+    ("표지는 검은색이었고 남자가 부르는 발라드야", "남자가 부르는 발라드야"),
+    ("표지는 검은색이었고 가사는 남자가 앉아서 우는 내용이야", "가사는 남자가 앉아서 우는 내용이야"),
+    # 표지 속 인물의 청취, 노래를 가리키지 않는 청취는 애매하므로 남기지 않는다
+    ("표지는 검은색이었고 남자가 피아노 앞에 앉아서 듣고 있었어", ""),
+    ("표지는 검은색이었고 여자가 앉아서 피아노 곡을 듣고 있었어", ""),
+    ("표지는 검은색이었고 남자가 음악을 듣고 있었어", ""),
+    ("표지는 검은색이었고 자주 들으면 슬퍼", ""),
     # 표지를 직접 말한 절은 듣는 얘기가 섞여도 남지 않는다
     ("별이 그려진 앨범 표지를 보며 듣던 노래", ""),
     # 표지 낱말보다 앞에 온 묘사, 표지 낱말이 없는 묘사도 노래를 말하지 않으면 남지 않는다
@@ -1761,6 +1772,7 @@ def test_cover_description_that_continues_over_clauses_is_not_shown_as_sound_evi
     ("표지는 검은색이었고 누워서 듣던 잔잔한 피아노 노래야", ["잔잔한", "피아노"],
      dict(vibe_tags=["잔잔함"], sound_tags=["피아노"]), ["잔잔한", "피아노"]),
     ("표지에 남자가 있고 기타를 들고 있던 곡이야", ["기타"], dict(sound_tags=["기타"]), []),
+    ("표지는 검은색이었고 남자가 피아노 앞에 앉아서 듣고 있었어", ["피아노"], dict(sound_tags=["피아노"]), []),
 ])
 def test_song_clues_after_a_cover_stay_and_a_pose_on_the_cover_does_not(query, tags, track_kw, kept):
     assert [r.clue for r in _rows(_visual_build(query, tags, _track(id="x", **track_kw)), SLOT_TAG)] == kept
@@ -1888,6 +1900,37 @@ def test_clipped_quote_starts_and_ends_on_word_boundaries(sentence, term):
     assert term in body and body in sentence
     words = sentence.split(" ")
     assert body.split(" ")[0] in words and body.split(" ")[-1] in words, quote
+
+
+_LONG_LEAD = "잔잔하게 시작해서 끝없이 이어지는 긴 도입부를 한참 지나고 나면 후렴에서 "
+
+
+@pytest.mark.parametrize("sentence,term,expected", [
+    (_LONG_LEAD + "밴드 사운드가 터져 나오는 곡이다", "밴드사운드", "밴드 사운드"),   # 띄어쓰기를 무시한 일치
+    (_LONG_LEAD + "EDM 비트가 터져 나오는 곡이다", "edm", "EDM"),                     # 대소문자가 다른 일치
+    ("복고음악 느낌으로 " + _LONG_LEAD + "시원한 고음이 터져 나온다", "고음", "시원한 고음"),   # 앞의 "복고음악"이 아니다
+    ("예술적인 느낌으로 " + _LONG_LEAD + "술에 취한 남자가 나온다", "술", "술에"),            # 앞의 "예술"이 아니다
+])
+def test_clipped_quote_shows_the_place_that_actually_matched(sentence, term, expected):
+    assert len(sentence) > 48
+    quote = _clip_quote(sentence, term)
+    assert expected in quote, quote
+    assert quote.strip("…") in sentence, "자르기만 하고 글자를 바꾸지 않는다"
+
+
+def test_material_row_quotes_the_spaced_form_it_matched():
+    query = "밴드사운드 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["밴드사운드"], lyric_semantic_query="")
+    track = _track(id="x", search_style_summary=_LONG_LEAD + "밴드 사운드가 터져 나오는 곡이다")
+    row = _rows(_build(query, analysis, track, _record("x")), SLOT_TAG)[0]
+    assert row.status == STATUS_PARTIAL and "밴드 사운드" in row.observed, row.observed
+
+
+def test_term_span_returns_the_position_in_the_original_text():
+    assert _term_span("밴드사운드", "큰 밴드 사운드") == (2, 8)
+    assert _term_span("edm", "신나는 EDM") == (4, 7)
+    assert _term_span("이별", "이 별이 빛난다") is None
+    assert _term_span("고음", "복고음악 곡이다") is None
 
 
 def test_tag_row_with_a_matching_tag_does_not_also_quote_long_sentences():
