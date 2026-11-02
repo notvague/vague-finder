@@ -1,0 +1,52 @@
+[
+ {
+  "query_id": "c602",
+  "expected_status": "applied",
+  "query": "힙합 경연 프로그램에서 우승한 사람이 그 프로그램 안에서 발표한 곡이야"
+ },
+ {
+  "query_id": "c607",
+  "expected_status": "applied",
+  "query": "옛 동네 골목을 배경으로 한 추억 드라마에 삽입된 곡인데, 원래는 오래된 밴드가 부르던 노래를 다시 불렀어"
+ },
+ {
+  "query_id": "c707",
+  "expected_status": "applied",
+  "query": "특별한 후각을 가진 주인공이 나오는 드라마 삽입곡인데 여자 혼자 부르는 곡이었어. 봄에 설레는 마음을 담았고 중간에 랩 파트가 섞여 있었어"
+ },
+ {
+  "query_id": "m202",
+  "expected_status": "not_triggered",
+  "query": "신디사이저랑 일렉트로닉 사운드가 강한 힙합풍 곡인데 남녀 목소리가 섞여 나와"
+ },
+ {
+  "query_id": "t040",
+  "expected_status": "not_triggered",
+  "query": "우리나라 첫 여자 비행사 얘기 다룬 영화 주제가였던 잔잔한 발라드, 나중에 오디션 프로에서 어떤 그룹이 리메이크해서 다시 떴어. 원곡 말하는 거야"
+ },
+ {
+  "query_id": "n043",
+  "expected_status": "applied",
+  "query": "의사 다섯 명이 밴드 하는 드라마에서 배우가 기타 치면서 부른 노래. 원래는 2000년대 초 혼성 그룹 노래였대, 2020년에 다시 부른 걸로 찾고 싶어"
+ },
+ {
+  "query_id": "t075",
+  "expected_status": "not_triggered",
+  "query": "피아노랑 현악기만으로 잔잔하게 흐르고, 중저음 남자 목소리가 낮게 깔리듯 부르는 발라드"
+ },
+ {
+  "query_id": "n010",
+  "expected_status": "abstained",
+  "query": "싸이월드 미니홈피 배경음악으로 한번쯤은 걸어놨던 힙합 발라드. 남자가 랩하고 여자가 노래 불러."
+ },
+ {
+  "query_id": "t043",
+  "expected_status": "no_usable_work",
+  "query": "넷플릭스 애니 노랜데, 거기서 제일 유명한 노래. 고음이 엄청 높고 영어 가사"
+ },
+ {
+  "query_id": "q307",
+  "expected_status": "not_triggered",
+  "query": "회색빛 커버였는데 사선으로 화면이 나뉘어 있었고, 남자 네 명이 아주 작게 흩어져 서 있었어. 전체적으로 차갑고 미니멀한 느낌이 강했어."
+ }
+]
