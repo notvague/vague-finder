@@ -60,3 +60,5 @@ applied 4 · abstained 1 · no_usable_work 1 · not_triggered 4. 목록은 `quer
 
 메인 `.env`에 `AUDIO_FUSION_SCALE=0`을 넣고 서버를 띄워 `/health`(예열 완료)와 `/map`을 확인했다. 코드 기본값은 켬 그대로다.
 
+**실행기 수정(리뷰 반영):** `on_noaudio`만 소리 배율을 지정하고 `off`·`on`은 상위 셸 값을 물려받아, 상위 값이 0이면 세 구성 모두 소리 OFF가 됐다. `off`·`on`에 `AUDIO_FUSION_SCALE=1`을 명시했다. 저장 응답에서 오디오 가중이 켜진 질의는 `off` 7 · `on` 7 · `on_noaudio` 0이라 이번 측정 결과는 유효하고, 다시 재지 않았다.
+
