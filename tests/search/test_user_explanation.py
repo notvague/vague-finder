@@ -1445,9 +1445,14 @@ from src.retrieval.user_explanation import (  # noqa: E402
     KIND_REGISTERED,
     MATERIAL_NOT_FOUND_TEXT,
     _clip_quote,
+    _norm,
+    _stale_after_answers,
+    _tag_gender,
     _term_in_tag,
     distinguish_summaries,
 )
+
+from src.retrieval.modality_queries import text_outside_artwork  # noqa: E402
 
 DRINK_QUERY = "술 한잔 마실 때 생각나는 노래야. 이별한 전 인연을 그리워하는 가사가 있었고 남자 가수에 엄청 고음이 많은 발라드?"
 DRINK_MEANING = "이별한 전 연인을 그리워하는 내용"
@@ -1698,6 +1703,48 @@ def test_cover_query_drops_a_tag_whose_clause_is_unknown_but_keeps_the_rule_read
     assert not _rows(_build(query, analysis, _track(id="x", lyrics_summary="별이 빛난다"), _record("x")), SLOT_TAG)
 
 
+@pytest.mark.parametrize("query,expected", [
+    # 표지 설명이 이어지는 절은 문맥을 유지한다
+    ("표지에 남자가 있고 기타를 들고 있었어", ""),
+    ("표지에 남자가 있고 기타를 들고 있던 곡이야", ""),
+    ("앨범 커버에 글씨만 크게 박혀 있었어. 되게 심플했는데", ""),
+    # 노래·소리 얘기로 넘어가면 대조 대상이다
+    ("표지에 남자가 있고 기타 소리가 큰 노래였어", "기타 소리가 큰 노래였어"),
+    ("표지는 검은색이었고 고음이 많은 발라드야", "고음이 많은 발라드야"),
+    ("밤하늘 표지. 술 마실 때 듣던 노래", "술 마실 때 듣던 노래"),
+    # 표지보다 앞의 절은 그대로다. 뒤에서 다시 노래 얘기를 해도 남는다
+    ("남성 솔로 곡인데, 앨범 커버에 책이 쌓여 있었어", "남성 솔로 곡"),
+    ("이별 노래인데 표지는 검은색이었고 이어서 빨간 글씨가 있었어. 가사는 슬펐어", "이별 노래 가사는 슬펐어"),
+    # 음색은 시각 단서가 아니다
+    ("표지는 검은색이었고 허스키한 음색이야", "허스키한 음색이야"),
+    # 표지 낱말보다 앞에 온 묘사, 표지 낱말이 없는 묘사도 노래를 말하지 않으면 남지 않는다
+    ("활주로 같은 데에 옛날 프로펠러 비행기가 서 있고, 여자 한 명이 있는 사진 표지", ""),
+    ("공원 큰 나무 밑에 자전거 세워져 있고, 위에 주황색 문자가 크게 박힌 표지", ""),
+    ("쨍한 드레스 입은 여자가 풀밭에 엎드려 턱 괴고 있는 이미지", ""),
+])
+def test_text_outside_artwork_keeps_only_clauses_about_the_song(query, expected):
+    assert text_outside_artwork(query) == expected
+
+
+def test_cover_description_that_continues_over_clauses_is_not_shown_as_sound_evidence():
+    # 리뷰 지적 입력. 분석 태그와 곡 사운드 태그에 모두 기타가 있어도 표지의 기타로는 근거를 만들지 않는다
+    query = "표지에 남자가 있고 기타를 들고 있었어"
+    track = _track(id="x", sound_tags=["기타"])
+    ux = _visual_build(query, ["남자", "기타"], track)
+    assert not _rows(ux, SLOT_TAG) and "기타" not in ux.summary, ux.clue_checks
+    # 편성 칸으로 들어온 값도 같다
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=[], lyric_semantic_query="",
+                               has_visual_clue=True, image_english_query="album art",
+                               performance_clues={"sound_ensemble": ["기타", "어쿠스틱"], "confidence": 0.9})
+    with_adj = _record("x", adjust=[("performance_clues", 0.01, "x")])
+    ux = _build(query, analysis, _track(id="x", sound_tags=["기타", "어쿠스틱"]), with_adj)
+    assert not _rows(ux, SLOT_SOUND), ux.clue_checks
+    # 실제로 소리를 말하면 남는다
+    query = "표지에 남자가 있고 기타 소리가 큰 노래였어"
+    ux = _visual_build(query, ["기타"], track)
+    assert [r.clue for r in _rows(ux, SLOT_TAG)] == ["기타"]
+
+
 def test_query_without_cover_description_is_not_filtered():
     query = "술 마실 때 듣는 고음 많은 노래"
     analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["술", "고음"], lyric_semantic_query="")
@@ -1737,6 +1784,29 @@ def test_material_tag_carrying_a_corrected_value_is_not_shown():
     track = _track(id="x", vocal_gender="남성", genre=["발라드"], sound_tags=["발라드"])
     assert not _rows(_answered("남성발라드 노래", ["남성발라드"], track, ("vocal_gender", "여성")), SLOT_TAG)
     assert not _rows(_answered("남성발라드 노래", ["남성발라드"], track, ("genre", "댄스")), SLOT_TAG)
+
+
+@pytest.mark.parametrize("tag,answer", [
+    ("일렉기타", "록"), ("재즈피아노", "발라드"), ("재즈바", "발라드"), ("소울메이트", "발라드"), ("인디언", "발라드"),
+])
+def test_tag_that_only_starts_with_a_genre_word_survives_a_genre_answer(tag, answer):
+    # 일렉기타는 록 곡에서 가장 흔한 단서다 — 장르 답변 때문에 말없이 사라지면 안 된다
+    ux = _answered(f"{tag} 소리 나는 노래", [tag], _track(id="x", sound_tags=[tag]), ("genre", answer))
+    assert [r.clue for r in _rows(ux, SLOT_TAG)] == [tag], ux.clue_checks
+
+
+@pytest.mark.parametrize("tag,answer,stale", [
+    ("남성발라드", "댄스", True), ("록발라드", "댄스", True), ("힙합그룹", "발라드", True), ("발라드가수", "댄스", True),
+    ("남성발라드", "발라드", False), ("힙합그룹", "힙합", False),
+])
+def test_tag_that_names_a_genre_is_checked_against_the_genre_answer(tag, answer, stale):
+    answers = [ClarifyAnswer(slot="genre", value=answer)]
+    assert _stale_after_answers(_norm(tag), answers) is stale
+
+
+def test_tag_gender_needs_a_person_or_genre_word_after_the_gender():
+    assert _tag_gender("남성발라드") == "남성" and _tag_gender("여자가수") == "여성" and _tag_gender("걸그룹") == "여성"
+    assert _tag_gender("여자") == "" and _tag_gender("남자친구") == ""
 
 
 def test_tags_consistent_with_the_answer_or_unrelated_to_it_stay():

@@ -978,7 +978,9 @@ _OST_TAGS: Dict[str, Tuple[str, ...]] = {
 _GENRE_WORD_SUFFIXES = ("곡", "음악", "노래", "풍")
 # 성별을 품은 태그("남성발라드"·"여자가수"). "남자친구"처럼 성별 낱말로 시작할 뿐인 태그는 읽지 않는다.
 _GENDER_PREFIXES = (("남성", "남성"), ("남자", "남성"), ("여성", "여성"), ("여자", "여성"), ("남녀", "혼성"), ("혼성", "혼성"))
-_GENDERED_TAIL_RE = re.compile(r"(?:보컬|솔로|그룹|듀오|듀엣|밴드|아이돌|가수|노래|랩|래퍼|발라드|댄스|힙합|록|목소리)?")
+_GENDERED_TAIL_RE = re.compile(r"보컬|솔로|그룹|듀오|듀엣|밴드|아이돌|가수|노래|랩|래퍼|발라드|댄스|힙합|록|목소리")
+# 장르 낱말 뒤에 붙어도 장르를 말하는 것으로 보는 꼬리("힙합그룹"·"발라드가수"). "일렉기타"·"재즈바"·"소울메이트"는 아니다.
+_GENRE_PERSON_TAIL_RE = re.compile(r"보컬|가수|그룹|듀오|밴드|아이돌|래퍼")
 _ANSWER_FORMS = frozenset({"솔로", "그룹", "듀오", "밴드"})
 
 
@@ -1322,12 +1324,20 @@ def _tag_gender(norm_tag: str) -> str:
 
 
 def _tag_genre_word(norm_tag: str) -> str:
-    """태그가 품은 장르 낱말 — "댄스곡"의 댄스, "남성발라드"의 발라드. 두 글자 이상만 본다("기록"의 "록"이 아니다)."""
+    """태그가 장르를 말할 때 그 낱말 — "댄스곡"의 댄스, "남성발라드"의 발라드, "힙합그룹"의 힙합.
+
+    앞글자만 같은 태그("일렉기타"의 일렉, "재즈바"의 재즈, "인디언"의 인디)는 장르가 아니다. 끝이 장르 낱말이거나
+    사람을 가리키는 꼬리가 붙을 때만 읽고, 두 글자 이상만 본다("기록"의 "록"이 아니다).
+    """
     word = _genre_word(norm_tag)
     if word:
         return word
     for known in sorted(_known_genre_words(), key=len, reverse=True):
-        if len(known) >= 2 and known != norm_tag and (norm_tag.startswith(known) or norm_tag.endswith(known)):
+        if len(known) < 2 or known == norm_tag:
+            continue
+        if norm_tag.endswith(known):
+            return known
+        if norm_tag.startswith(known) and _GENRE_PERSON_TAIL_RE.fullmatch(norm_tag[len(known):]):
             return known
     return ""
 
@@ -1403,7 +1413,7 @@ def _check_material(
 
     - 등록 정보로 판정할 수 있는 단서(형태·OST·장르 변형)는 등록 정보로 본다 — 태그에 없다고 미확인으로 두면 걸그룹 곡에
       "걸그룹을 찾지 못함"이라고 말하게 된다.
-    - 표지·시기 단서는 태그·요약으로 판정할 수 없으니 행을 만들지 않는다. 표지 묘사 질의에서는 표지를 말하지 않은 절에
+    - 표지·시기 단서는 태그·요약으로 판정할 수 없으니 행을 만들지 않는다. 표지 묘사 질의에서는 노래·소리를 말하는 절에
       글자 그대로 있는 태그만 쓴다 — "표지에 밤하늘에 별"의 별을 가사 요약의 별로 확인했다고 하면 다른 자료로 근거를
       만드는 셈이다. 어느 절에서 왔는지 모르는 태그(원문에 그대로 없는 값)도 쓰지 않는다.
     - 재질문 답변으로 정정된 값을 품은 태그는 쓰지 않는다(`_stale_after_answers`).
@@ -1469,6 +1479,9 @@ def _check_material(
         norm = _norm(sound)
         # 모델이 편성 칸에 장르를 넣기도 한다("댄스"·"발라드") — 장르 행과 겹치면 같은 단서가 두 번 나온다
         if not norm or norm in covered or _genre_word(norm):
+            continue
+        # 표지에 그려진 악기가 편성 단서로 읽힌 경우("표지에 남자가 있고 통기타를 들고 있었어")도 근거로 쓰지 않는다
+        if outside_artwork is not None and not _said_in_query(sound, outside_artwork):
             continue
         if norm in seen:
             # 분석이 같은 값을 태그와 편성 양쪽에 넣은 경우(프롬프트 예시에도 있다). 행은 하나지만 편성 가산 기록은 잇는다.

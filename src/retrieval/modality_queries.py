@@ -945,19 +945,38 @@ _ARTWORK_CLAUSE_BREAK_RE = re.compile(
 )
 
 
-def text_outside_artwork(query: str) -> str:
-    """Return only the clauses that do not describe album art.
+# 절이 노래·소리를 말한다는 표시. 악기 이름은 넣지 않는다 — "기타를 들고 있었어"는 표지 설명이다.
+_SONG_TOPIC_RE = re.compile(
+    _MUSIC_CONTEXT_RE.pattern[:-1]
+    + r"|가사|후렴|소리|연주|불렀|부르|부른|듣|들었|들리|들렸|고음|저음|음색|가창|화음|코러스|편곡|미성|허스키"
+    r"|발라드|댄스|재즈|알앤비|r\s*&\s*b|힙합|랩|" + _ROCK + r"|메탈|트로트|포크)",
+    re.IGNORECASE,
+)
+# 그림 속 모습을 말하는 서술어. "기타를 들고 있던 곡이야"처럼 곡을 가리켜도 내용은 표지 설명이다.
+_ARTWORK_POSE_RE = re.compile(r"들고|쥐고|메고|안고|입고|끼고|앉아|서\s*있|누워|그려|찍은|찍힌|박혀|적혀")
 
-    For deciding whether a word in the query speaks about the song itself. Stricter
-    than ``extract_audio_evidence_text``, which keeps a cover clause that also names
-    the song ("표지에 별이 가득했던 노래"): a clause with any cover or visual detail
-    is dropped whole, so a non-visual word in that clause is lost rather than a
-    visual word being treated as a fact about the song.
+
+def text_outside_artwork(query: str) -> str:
+    """Return only the clauses that speak about the song. Call it for a visual query.
+
+    For deciding whether a word in a visual query is a fact about the song. A cover
+    description can start before the cover noun ("활주로에 비행기가 서 있고, … 표지") and
+    continue after it ("표지에 남자가 있고 기타를 들고 있었어"), so a clause is kept only
+    when it positively names the song or its sound, and has no cover, visual or pose
+    detail. A non-visual word in any other clause is lost rather than a visual word
+    being treated as a fact about the song.
     """
     kept: list[str] = []
     for raw_part in _ARTWORK_CLAUSE_BREAK_RE.split(_mask_lyric_literals(query)):
         part = (raw_part or "").strip()
-        if part and _find_album_cover_context(part) is None and not _VISUAL_DETAIL_RE.search(part):
+        if (
+            part
+            and _SONG_TOPIC_RE.search(part)
+            and _find_album_cover_context(part) is None
+            # "음색"의 "색"은 시각 단서가 아니다
+            and not _VISUAL_DETAIL_RE.search(part.replace("음색", ""))
+            and not _ARTWORK_POSE_RE.search(part)
+        ):
             kept.append(part)
     return " ".join(kept)
 
