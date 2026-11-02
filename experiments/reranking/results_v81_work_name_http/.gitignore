@@ -1,0 +1,5 @@
+runs/
+logs/
+budget/
+*.log
+__pycache__/

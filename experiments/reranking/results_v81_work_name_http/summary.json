@@ -1,0 +1,391 @@
+{
+ "table": [
+  {
+   "query_id": "c602",
+   "expected": "applied",
+   "status": "applied",
+   "resolver_status": "candidates",
+   "resolver_error": "",
+   "resolver_ms": 1408.6,
+   "off_s": 7.58,
+   "on_s": 9.17,
+   "same_top": false,
+   "aux": 10,
+   "entered": 3,
+   "works": [
+    "쇼미더머니",
+    "고등래퍼",
+    "언프리티 랩스타"
+   ],
+   "reorder_on": "model_applied",
+   "reorder_off": "model_applied",
+   "fail_on": 0,
+   "fail_off": 0,
+   "http": [
+    200,
+    200
+   ],
+   "fallback": [
+    false,
+    false
+   ],
+   "failed_paths": [
+    [],
+    []
+   ]
+  },
+  {
+   "query_id": "c607",
+   "expected": "applied",
+   "status": "applied",
+   "resolver_status": "candidates",
+   "resolver_error": "",
+   "resolver_ms": 1167.3,
+   "off_s": 8.06,
+   "on_s": 8.07,
+   "same_top": false,
+   "aux": 8,
+   "entered": 0,
+   "works": [
+    "응답하라 1988"
+   ],
+   "reorder_on": "model_applied",
+   "reorder_off": "model_applied",
+   "fail_on": 0,
+   "fail_off": 0,
+   "http": [
+    200,
+    200
+   ],
+   "fallback": [
+    false,
+    false
+   ],
+   "failed_paths": [
+    [],
+    []
+   ]
+  },
+  {
+   "query_id": "c707",
+   "expected": "applied",
+   "status": "applied",
+   "resolver_status": "candidates",
+   "resolver_error": "",
+   "resolver_ms": 1111.2,
+   "off_s": 7.39,
+   "on_s": 8.2,
+   "same_top": false,
+   "aux": 4,
+   "entered": 1,
+   "works": [
+    "냄새를 보는 소녀"
+   ],
+   "reorder_on": "model_applied",
+   "reorder_off": "model_applied",
+   "fail_on": 0,
+   "fail_off": 0,
+   "http": [
+    200,
+    200
+   ],
+   "fallback": [
+    false,
+    false
+   ],
+   "failed_paths": [
+    [],
+    []
+   ]
+  },
+  {
+   "query_id": "m202",
+   "expected": "not_triggered",
+   "status": "not_triggered",
+   "resolver_status": "",
+   "resolver_error": "",
+   "resolver_ms": 0.0,
+   "off_s": 7.69,
+   "on_s": 7.69,
+   "same_top": true,
+   "aux": 0,
+   "entered": 0,
+   "works": [],
+   "reorder_on": "model_applied",
+   "reorder_off": "model_applied",
+   "fail_on": 0,
+   "fail_off": 0,
+   "http": [
+    200,
+    200
+   ],
+   "fallback": [
+    false,
+    false
+   ],
+   "failed_paths": [
+    [],
+    []
+   ]
+  },
+  {
+   "query_id": "t040",
+   "expected": "not_triggered",
+   "status": "not_triggered",
+   "resolver_status": "",
+   "resolver_error": "",
+   "resolver_ms": 0.0,
+   "off_s": 8.15,
+   "on_s": 8.69,
+   "same_top": true,
+   "aux": 0,
+   "entered": 0,
+   "works": [],
+   "reorder_on": "model_applied",
+   "reorder_off": "model_applied",
+   "fail_on": 0,
+   "fail_off": 0,
+   "http": [
+    200,
+    200
+   ],
+   "fallback": [
+    false,
+    false
+   ],
+   "failed_paths": [
+    [],
+    []
+   ]
+  },
+  {
+   "query_id": "n043",
+   "expected": "applied",
+   "status": "applied",
+   "resolver_status": "candidates",
+   "resolver_error": "",
+   "resolver_ms": 1012.8,
+   "off_s": 7.79,
+   "on_s": 10.13,
+   "same_top": false,
+   "aux": 10,
+   "entered": 2,
+   "works": [
+    "슬기로운 의사생활"
+   ],
+   "reorder_on": "model_applied",
+   "reorder_off": "model_applied",
+   "fail_on": 0,
+   "fail_off": 0,
+   "http": [
+    200,
+    200
+   ],
+   "fallback": [
+    false,
+    false
+   ],
+   "failed_paths": [
+    [],
+    []
+   ]
+  },
+  {
+   "query_id": "t075",
+   "expected": "not_triggered",
+   "status": "not_triggered",
+   "resolver_status": "",
+   "resolver_error": "",
+   "resolver_ms": 0.0,
+   "off_s": 8.12,
+   "on_s": 8.08,
+   "same_top": true,
+   "aux": 0,
+   "entered": 0,
+   "works": [],
+   "reorder_on": "model_applied",
+   "reorder_off": "model_applied",
+   "fail_on": 0,
+   "fail_off": 0,
+   "http": [
+    200,
+    200
+   ],
+   "fallback": [
+    false,
+    false
+   ],
+   "failed_paths": [
+    [],
+    []
+   ]
+  },
+  {
+   "query_id": "n010",
+   "expected": "abstained",
+   "status": "abstained",
+   "resolver_status": "abstain",
+   "resolver_error": "",
+   "resolver_ms": 890.1,
+   "off_s": 8.4,
+   "on_s": 8.69,
+   "same_top": true,
+   "aux": 0,
+   "entered": 0,
+   "works": [],
+   "reorder_on": "model_applied",
+   "reorder_off": "model_applied",
+   "fail_on": 0,
+   "fail_off": 0,
+   "http": [
+    200,
+    200
+   ],
+   "fallback": [
+    false,
+    false
+   ],
+   "failed_paths": [
+    [],
+    []
+   ]
+  },
+  {
+   "query_id": "t043",
+   "expected": "no_usable_work",
+   "status": "no_usable_work",
+   "resolver_status": "candidates",
+   "resolver_error": "",
+   "resolver_ms": 1220.1,
+   "off_s": 12.43,
+   "on_s": 7.78,
+   "same_top": true,
+   "aux": 0,
+   "entered": 0,
+   "works": [
+    "아케인",
+    "사이버펑크: 엣지러너"
+   ],
+   "reorder_on": "model_applied",
+   "reorder_off": "model_applied",
+   "fail_on": 0,
+   "fail_off": 0,
+   "http": [
+    200,
+    200
+   ],
+   "fallback": [
+    false,
+    false
+   ],
+   "failed_paths": [
+    [],
+    []
+   ]
+  },
+  {
+   "query_id": "q307",
+   "expected": "not_triggered",
+   "status": "not_triggered",
+   "resolver_status": "",
+   "resolver_error": "",
+   "resolver_ms": 0.0,
+   "off_s": 3.36,
+   "on_s": 2.45,
+   "same_top": true,
+   "aux": 0,
+   "entered": 0,
+   "works": [],
+   "reorder_on": "policy_skipped",
+   "reorder_off": "policy_skipped",
+   "fail_on": 0,
+   "fail_off": 0,
+   "http": [
+    200,
+    200
+   ],
+   "fallback": [
+    false,
+    false
+   ],
+   "failed_paths": [
+    [],
+    []
+   ]
+  }
+ ],
+ "median_delta_not_triggered": -0.02,
+ "median_delta_triggered": 0.55,
+ "on_max_s": 10.13,
+ "off_max_s": 12.43,
+ "leak": [],
+ "gates": {
+  "H1": true,
+  "H2": true,
+  "H3": true,
+  "H4": true,
+  "H5": true
+ },
+ "gold_rank_top15_for_reference": [
+  {
+   "query_id": "c602",
+   "off_rank": null,
+   "on_rank": null,
+   "expected": "applied"
+  },
+  {
+   "query_id": "c607",
+   "off_rank": null,
+   "on_rank": null,
+   "expected": "applied"
+  },
+  {
+   "query_id": "c707",
+   "off_rank": null,
+   "on_rank": 1,
+   "expected": "applied"
+  },
+  {
+   "query_id": "m202",
+   "off_rank": 1,
+   "on_rank": 1,
+   "expected": "not_triggered"
+  },
+  {
+   "query_id": "t040",
+   "off_rank": null,
+   "on_rank": null,
+   "expected": "not_triggered"
+  },
+  {
+   "query_id": "n043",
+   "off_rank": null,
+   "on_rank": 4,
+   "expected": "applied"
+  },
+  {
+   "query_id": "t075",
+   "off_rank": null,
+   "on_rank": null,
+   "expected": "not_triggered"
+  },
+  {
+   "query_id": "n010",
+   "off_rank": 2,
+   "on_rank": 2,
+   "expected": "abstained"
+  },
+  {
+   "query_id": "t043",
+   "off_rank": null,
+   "on_rank": null,
+   "expected": "no_usable_work"
+  },
+  {
+   "query_id": "q307",
+   "off_rank": 1,
+   "on_rank": 1,
+   "expected": "not_triggered"
+  }
+ ]
+}
