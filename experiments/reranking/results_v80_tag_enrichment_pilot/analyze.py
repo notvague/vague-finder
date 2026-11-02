@@ -3,7 +3,7 @@ import collections, json, re, statistics as st, sys
 from pathlib import Path
 HERE = Path(__file__).resolve().parent; ROOT = HERE.parents[2]
 sys.path[:0] = [str(ROOT), str(HERE)]
-from pilot_lib import TAG_LIMITS, failed_query_gold, load_songs, old_tags
+from pilot_lib import TAG_LIMITS, evaluation_clues, failed_query_gold, load_songs, old_tags
 from src.retrieval.user_explanation import _term_in_tag, _norm
 songs = load_songs(Path(sys.argv[1]))
 recs = {}
@@ -16,16 +16,15 @@ expected = len(sample["F"]) + len(sample["R"])
 failed = [k for k, r in recs.items() if r["status"] != "ok"]
 missing = [k for ids in sample.values() for k in ids if k not in recs]
 flat = lambda tags: [t for values in tags.values() for t in values]
-# 단서: 실패 질의의 원문에 글자 그대로 있는 분석 태그(속성·표지·시기 제외)
-SKIP = re.compile(r"남성|여성|남자|여자|보컬$|^발라드|^댄스|힙합|^록$|^인디|알앤비|R&B|걸그룹|보이그룹|솔로|그룹|듀오|듀엣|밴드$|\d|년대|앨범|표지|커버|사진|일러스트|OST")
+# 단서: pilot_lib.evaluation_clues(속성 낱말·표지 묘사 제외)
 ent = {}
 for s in ("v06", "v09", "v10"):
     ent.update(json.load((ROOT / f"experiments/reranking/results_v49_vertex_baseline/analysis_cache_{s}_dev_vertex.json").open(encoding="utf-8"))["entries"])
 gold = failed_query_gold(ROOT / "experiments/reranking/results_v79_clue_evidence_rerank/per_query.csv", ROOT / "experiments/reranking")
 clues = collections.defaultdict(list)
 for qid, ids in gold.items():
-    e = ent[qid]; q = _norm(e["query"])
-    terms = [t for t in e["analysis"].get("korean_tags", []) if len(_norm(t)) >= 2 and not SKIP.search(t) and _norm(t) in q]
+    e = ent[qid]
+    terms = evaluation_clues(e["query"], e["analysis"])
     for song_id in ids:
         if song_id in sample["F"]:
             clues[song_id].extend(terms)

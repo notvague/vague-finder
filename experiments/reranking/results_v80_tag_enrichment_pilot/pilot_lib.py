@@ -125,3 +125,23 @@ def failed_query_gold(per_query: Path, eval_dir: Path) -> Dict[str, List[str]]:
             if row.get("split") == "dev" and row["query_id"] in failed:
                 gold[row["query_id"]] = [x for x in re.split(r"[|,;\s]+", row["relevant_ids"]) if x]
     return gold
+
+
+_CLUE_SKIP = re.compile(r"남성|여성|남자|여자|보컬$|^발라드|^댄스|힙합|^록$|^인디|알앤비|R&B|걸그룹|보이그룹|솔로|그룹|듀오|듀엣|밴드$|\d|년대|앨범|표지|커버|사진|일러스트|OST")
+
+
+def evaluation_clues(query: str, analysis: Dict[str, Any]) -> List[str]:
+    """평가에 쓰는 단서 — 원문에 글자 그대로 있는 분석 태그에서 속성 낱말과 표지 묘사를 뺀다.
+
+    낱말만 거르면 표지 묘사("글씨만 있는 커버가 심플", "표지 얼굴 클로즈업")가 섞여, 음악 태그가 표지 단서를 못 맞힌 것을
+    실패로 세게 된다. 표지 질의에서는 노래를 말하는 절의 태그만 쓴다(근거 표와 같은 규칙).
+    """
+    from src.retrieval.modality_queries import has_explicit_visual_clue, text_outside_artwork
+    from src.retrieval.user_explanation import _norm, _said_in_query
+
+    hay = _norm(query)
+    terms = [t for t in analysis.get("korean_tags", []) if len(_norm(t)) >= 2 and not _CLUE_SKIP.search(t) and _norm(t) in hay]
+    if analysis.get("has_visual_clue") or has_explicit_visual_clue(query):
+        scope = text_outside_artwork(query)
+        terms = [t for t in terms if _said_in_query(t, scope)]
+    return terms

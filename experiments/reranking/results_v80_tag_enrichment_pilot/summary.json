@@ -13,13 +13,13 @@
   "added": 13.3
  },
  "clue_cover": {
-  "clues": 44,
-  "F_old": 0.2045,
-  "F_union": 0.2273,
-  "R_old": 0.0527,
-  "R_union": 0.0945,
+  "clues": 40,
+  "F_old": 0.225,
+  "F_union": 0.25,
+  "R_old": 0.058,
+  "R_union": 0.104,
   "lift_old": 3.88,
-  "lift_union": 2.41
+  "lift_union": 2.4
  },
  "added": {
   "count": 666,

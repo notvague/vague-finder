@@ -54,3 +54,14 @@ def test_clean_tags_rejects_wrong_shapes_and_drops_bad_items():
 def test_clean_tags_enforces_the_limit():
     tags, dropped = lib.clean_tags({"emotion_tags": [f"감정{i}" for i in range(9)]})
     assert len(tags["emotion_tags"]) == 6 and dropped == 3
+
+
+@pytest.mark.parametrize("query,tags,expected", [
+    ("앨범 커버에 사진 없이 글씨만 크게 박혀 있었어. 되게 심플했는데", ["심플"], []),
+    ("표지에 사람 얼굴이 크게 클로즈업되어 있던 곡이야", ["클로즈업"], []),
+    ("커버가 어둡고 차가운 느낌이었는데, 노래는 현악기 깔린 남자 발라드였어", ["차가운", "현악기", "발라드"], ["현악기"]),
+    ("누런 배경에 크레파스로 뭔가 써져있는표지였고, 노래는 호구 노래로 유명해", ["호구"], ["호구"]),
+    ("술 마실 때 듣던 고음 많은 노래", ["고음", "남성보컬"], ["고음"]),
+])
+def test_evaluation_clues_drop_cover_descriptions_and_attributes(query, tags, expected):
+    assert lib.evaluation_clues(query, {"korean_tags": tags}) == expected
