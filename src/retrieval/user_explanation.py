@@ -916,9 +916,11 @@ _FALSE_FRIENDS: Dict[str, Tuple[str, ...]] = {
     "고음": ("복고음", "고음비트"),
     "슬픈": ("구슬픈",),
 }
-# 단서 안에 들어 있어도 근거가 되지 않는 흔한 태그("허스키보컬"의 "보컬").
+# ㅂ 불규칙 활용의 끝 글자. 단서와 곡 자료의 활용형이 다를 때만 쓴다.
+_BIEUP_ENDINGS = ("워", "움", "운")
+# 단서 안에 들어 있어도 근거가 되지 않는 흔한 태그("허스키보컬"의 "보컬", "살랑거리는"의 "거리", "무한도전"의 "도전").
 _NEAR_GENERIC_TAGS = frozenset(_norm(w) for w in (
-    "보컬", "노래", "멜로디", "사운드", "음색", "목소리", "리듬", "비트", "감성", "분위기",
+    "보컬", "노래", "멜로디", "사운드", "음색", "목소리", "리듬", "비트", "감성", "분위기", "거리", "도전",
 ))
 # 뜻 문장에서 낱말 끝을 떼어 줄기를 만든다 — 긴 것부터. 형태소 분석기(모델)는 부르지 않는다.
 _ENDINGS = (
@@ -1010,9 +1012,9 @@ def _meaning_terms(text: str) -> List[str]:
 
 
 def _term_variants(term: str) -> List[str]:
-    """ㅂ 불규칙 활용만 잇는다 — "그리워"·"그리움"·"그리운". 어근을 넓게 잘라 "그리고"까지 걸리지 않게 한다."""
-    if len(term) >= 3 and term.endswith("워"):
-        return [term, term[:-1] + "움", term[:-1] + "운"]
+    """ㅂ 불규칙 활용만 잇는다 — "그리워"·"그리움"·"그리운", "귀여운"·"귀여움". 어근을 넓게 잘라 "그리고"까지 걸리지 않게 한다."""
+    if len(term) >= 3 and term[-1] in _BIEUP_ENDINGS:
+        return [term, *(term[:-1] + ending for ending in _BIEUP_ENDINGS if ending != term[-1])]
     return [term]
 
 
@@ -1043,8 +1045,10 @@ def _term_in_tag(term: str, value: str) -> Optional[str]:
         return "tag"
     if len(v) >= 2 and v in term and v not in _NEAR_GENERIC_TAGS:
         return "near"
-    if len(term) >= 3 and v.startswith(term[:-1]):
-        return "near"       # 활용 끝만 다르다 — "그리워"(그리워하는) · "그리움"
+    # 활용 끝만 다른 경우("그리워"·"그리움")는 정해진 활용형만 인정한다. 앞글자만 같은 태그까지 잇으면
+    # "드라마"가 "드라이브"에, "술자리"가 깨진 태그 "술자격"에 걸린다.
+    if any(v.startswith(variant) for variant in _term_variants(term)[1:]):
+        return "near"
     return None
 
 

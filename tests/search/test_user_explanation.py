@@ -1445,6 +1445,7 @@ from src.retrieval.user_explanation import (  # noqa: E402
     KIND_REGISTERED,
     MATERIAL_NOT_FOUND_TEXT,
     _clip_quote,
+    _term_in_tag,
     distinguish_summaries,
 )
 
@@ -1626,6 +1627,37 @@ def test_a_common_short_tag_inside_the_clue_is_not_a_near_match():
     assert not _rows(_build(query, analysis, _track(id="x", sound_tags=["보컬"]), _record("x")), SLOT_TAG)
     near = _rows(_build(query, analysis, _track(id="x", sound_tags=["허스키"]), _record("x")), SLOT_TAG)[0]
     assert near.status == STATUS_PARTIAL and near.detail_kind == KIND_MATERIAL_NEAR
+
+
+@pytest.mark.parametrize("clue,tag", [
+    ("술자리", "술자격"), ("술자리", "술자석"), ("여름밤", "여름휴가"), ("드라마", "드라이브"), ("드라이브", "드라이아이스"),
+    ("스트링", "스트레스해소"), ("트로트", "트로피컬"), ("미니멀", "미니홈피"), ("대중적", "대중교통"),
+    ("그리워", "그리스"),
+])
+def test_clue_does_not_match_a_tag_that_only_shares_its_first_letters(clue, tag):
+    assert _term_in_tag(clue, tag) is None
+
+
+@pytest.mark.parametrize("clue,tag", [
+    ("그리워", "그리움"), ("그리워", "그리운"), ("그리움", "그리운"), ("귀여운", "귀여움"), ("어두운", "어두움"), ("외로움", "외로워"),
+])
+def test_clue_reads_only_the_conjugated_forms_of_its_word(clue, tag):
+    assert _term_in_tag(clue, tag) == "near"
+
+
+@pytest.mark.parametrize("clue,tag", [("살랑거리는", "거리"), ("무한도전", "도전")])
+def test_common_word_inside_a_longer_clue_is_not_a_near_match(clue, tag):
+    assert _term_in_tag(clue, tag) is None
+    assert _term_in_tag(tag, tag) == "tag", "그 낱말을 직접 말한 단서는 그대로 일치다"
+
+
+def test_clue_sharing_first_letters_is_not_shown_as_material_evidence():
+    # 요약의 이름 칸과 인용에 실리면 사용자에게 틀린 근거가 보인다
+    query = "드라마 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["드라마"], lyric_semantic_query="")
+    ux = _build(query, analysis, _track(id="x", place_activity_tags=["드라이브"]), _record("x"))
+    assert not _rows(ux, SLOT_TAG) and _rows(ux, SLOT_NOT_FOUND)[0].clue == "드라마"
+    assert "드라이브" not in ux.summary
 
 
 def test_shorter_song_tag_inside_the_clue_is_only_a_near_match():
