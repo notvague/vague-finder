@@ -1660,6 +1660,117 @@ def test_clue_sharing_first_letters_is_not_shown_as_material_evidence():
     assert "드라이브" not in ux.summary
 
 
+def _visual_build(query, tags, track, **kw):
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=tags, lyric_semantic_query="",
+                               has_visual_clue=True, image_english_query="album art", **kw)
+    return _build(query, analysis, track, _record(track.id))
+
+
+def test_cover_description_is_not_confirmed_by_song_tags_or_lyric_summary():
+    # 분석기 프롬프트의 실제 예시. 표지 확인 자료가 없는데 시간·날씨 태그·가사 요약으로 근거를 만들면 안 된다
+    query = "앨범 표지에 밤하늘에 별이 그려져있고, 남자 발라드 노래 가사에 찰나라는 단어가 포함되어있어"
+    track = _track(id="x", time_weather_tags=["밤하늘"], lyrics_summary="별이 빛나는 밤의 이야기")
+    ux = _visual_build(query, ["밤하늘", "별", "남성보컬", "발라드"], track)
+    assert not _rows(ux, SLOT_TAG) and not _rows(ux, SLOT_NOT_FOUND), ux.clue_checks
+    assert "밤하늘" not in ux.summary and "별" not in ux.summary
+
+
+@pytest.mark.parametrize("query,tags,kept", [
+    ("표지는 검은색이었고 고음이 많은 노래", ["검은색", "고음"], ["고음"]),
+    ("검은 배경에 흰 글씨였고 고음이 많은 발라드야", ["배경", "글씨", "고음"], ["고음"]),
+    ("빨간 배경에 하트가 그려진 앨범이었어", ["빨간", "하트"], []),
+    ("밤하늘 표지. 술 마실 때 듣던 노래", ["밤하늘", "술"], ["술"]),
+])
+def test_only_tags_from_clauses_outside_the_cover_description_are_compared(query, tags, kept):
+    track = _track(id="x", sound_tags=["고음", "배경", "글씨"], place_activity_tags=["술집", "하트"], time_weather_tags=["밤하늘"], emotion_tags=["빨간", "검은색"])
+    ux = _visual_build(query, tags, track)
+    assert [r.clue for r in _rows(ux, SLOT_TAG)] == kept, ux.clue_checks
+
+
+def test_cover_query_drops_a_tag_whose_clause_is_unknown_but_keeps_the_rule_reading_without_model_flag():
+    # 원문에 그대로 없으면 어느 절에서 왔는지 모른다
+    query = "표지는 검은색이었고 슬픈 노래"
+    assert not _rows(_visual_build(query, ["이별"], _track(id="x", relation_context_tags=["이별"])), SLOT_TAG)
+    # 모델이 시각 단서를 끄더라도(모달리티 강등) 규칙이 표지를 읽으면 같게 다룬다
+    query = "앨범 표지에 별이 가득했던 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["별"], lyric_semantic_query="")
+    assert not analysis.has_visual_clue
+    assert not _rows(_build(query, analysis, _track(id="x", lyrics_summary="별이 빛난다"), _record("x")), SLOT_TAG)
+
+
+def test_query_without_cover_description_is_not_filtered():
+    query = "술 마실 때 듣는 고음 많은 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["술", "고음"], lyric_semantic_query="")
+    ux = _build(query, analysis, _track(id="x", sound_tags=["고음"], place_activity_tags=["혼술"]), _record("x"))
+    assert [r.clue for r in _rows(ux, SLOT_TAG)] == ["술", "고음"]
+
+
+def _answered(query, tags, track, *answers):
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=tags, lyric_semantic_query="")
+    return _build(query, analysis, track, _record(track.id), answers=[
+        ClarifyAnswer(slot=slot, value=value) for slot, value in answers
+    ])
+
+
+def test_genre_tag_corrected_by_an_answer_is_not_shown_as_matching():
+    ux = _answered("신나는 댄스곡 찾아줘", ["댄스곡"], _track(id="x", genre=["댄스"]), ("genre", "발라드"))
+    assert not _rows(ux, SLOT_REGISTERED), ux.clue_checks
+    assert "댄스곡" not in ux.summary and "일치해요" not in ux.summary, ux.summary
+    assert _rows(ux, SLOT_GENRE)[0].clue == "발라드"
+
+
+@pytest.mark.parametrize("tag,track_kw,answer", [
+    ("남성솔로", dict(vocal_gender="남성", artist_types=["솔로"]), ("vocal_gender", "여성")),
+    ("보이그룹", dict(vocal_gender="남성", artist_types=["그룹"]), ("vocal_gender", "여성")),
+    ("걸그룹", dict(vocal_gender="여성", artist_types=["그룹"]), ("vocal_gender", "남성")),
+    ("남자아이돌", dict(vocal_gender="남성", artist_types=["그룹"]), ("vocal_gender", "혼성")),
+    ("걸그룹", dict(vocal_gender="여성", artist_types=["그룹"]), ("type", "솔로")),
+    ("밴드", dict(vocal_gender="남성", artist_types=["밴드"]), ("type", "솔로")),
+])
+def test_form_tag_corrected_by_an_answer_is_not_shown_as_matching(tag, track_kw, answer):
+    ux = _answered(f"{tag} 노래", [tag], _track(id="x", **track_kw), answer)
+    assert not _rows(ux, SLOT_REGISTERED), ux.clue_checks
+    assert tag not in ux.summary, ux.summary
+
+
+def test_material_tag_carrying_a_corrected_value_is_not_shown():
+    track = _track(id="x", vocal_gender="남성", genre=["발라드"], sound_tags=["발라드"])
+    assert not _rows(_answered("남성발라드 노래", ["남성발라드"], track, ("vocal_gender", "여성")), SLOT_TAG)
+    assert not _rows(_answered("남성발라드 노래", ["남성발라드"], track, ("genre", "댄스")), SLOT_TAG)
+
+
+def test_tags_consistent_with_the_answer_or_unrelated_to_it_stay():
+    track = _track(id="x", vocal_gender="여성", artist_types=["그룹"], genre=["발라드"], sound_tags=["고음"], relation_context_tags=["남자친구"])
+    # 답과 같은 값은 남는다
+    assert _rows(_answered("걸그룹 노래", ["걸그룹"], track, ("vocal_gender", "여성"), ("type", "그룹")), SLOT_REGISTERED)
+    # 답과 무관한 단서·성별 낱말로 시작할 뿐인 낱말은 남는다
+    ux = _answered("남자친구와 고음 노래", ["남자친구", "고음"], track, ("vocal_gender", "여성"), ("genre", "댄스"))
+    assert [r.clue for r in _rows(ux, SLOT_TAG)] == ["남자친구", "고음"]
+    # 건너뛴 답은 정정이 아니다
+    analysis = _drink_analysis(original_query="걸그룹 노래", vocal_gender=None, genre="", korean_tags=["걸그룹"], lyric_semantic_query="")
+    skipped = _build("걸그룹 노래", analysis, track, _record("x"), answers=[ClarifyAnswer(slot="vocal_gender", value="남성", skipped=True)])
+    assert _rows(skipped, SLOT_REGISTERED)
+    # "기록"의 "록"을 장르로 읽어 지우지 않는다
+    assert _rows(_answered("기록 노래", ["기록"], _track(id="x", sound_tags=["기록"]), ("genre", "발라드")), SLOT_TAG)
+
+
+def test_sound_clue_duplicated_in_tags_keeps_the_group_adjustment_on_the_single_row():
+    query = "밴드사운드 노래"
+    analysis = _drink_analysis(original_query=query, vocal_gender=None, genre="", korean_tags=["밴드사운드"], lyric_semantic_query="",
+                               performance_clues={"sound_ensemble": ["밴드사운드"], "confidence": 0.8})
+    with_adj = _record("x", adjust=[("performance_clues", 0.01, "단서 유사 0.50")])
+    ux = _build(query, analysis, _track(id="x", sound_tags=["밴드사운드"]), with_adj)
+    assert len(_rows(ux, SLOT_TAG)) == 1 and not _rows(ux, SLOT_SOUND), "같은 단서가 두 줄로 나오면 안 된다"
+    row = _rows(ux, SLOT_TAG)[0]
+    assert row.basis_label == BASIS_GROUP_SCORED and [b.code for b in row.ranking_basis] == ["performance_clues"]
+    # 가산 기록이 없으면 잇지 않는다
+    row = _rows(_build(query, analysis, _track(id="x", sound_tags=["밴드사운드"]), _record("x")), SLOT_TAG)[0]
+    assert row.basis_label == BASIS_NONE and not row.ranking_basis
+    # 편성 자료(사운드 태그·분위기 설명)에서 확인되지 않으면 잇지 않는다
+    row = _rows(_build(query, analysis, _track(id="x", place_activity_tags=["밴드사운드"]), with_adj), SLOT_TAG)[0]
+    assert row.basis_label == BASIS_NONE and not row.ranking_basis
+
+
 def test_shorter_song_tag_inside_the_clue_is_only_a_near_match():
     analysis = _drink_analysis(korean_tags=["이별노래"], lyric_semantic_query="")
     row = _rows(_drink_build(_track(id="x", relation_context_tags=["이별"]), analysis), SLOT_TAG)[0]

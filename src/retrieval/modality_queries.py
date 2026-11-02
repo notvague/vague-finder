@@ -937,6 +937,31 @@ def _has_implicit_artwork_description(text: str) -> bool:
     )
 
 
+# _CLAUSE_BREAK_RE는 모달리티 질의 검증과 함께 쓰여 바꾸지 않는다. 절을 더 잘게 나눠도 표지 묘사가 남는 쪽으로
+# 틀리지 않는 이 용도에서만 과거형 연결("검은색이었고", "그려졌는데")을 더한다.
+_ARTWORK_CLAUSE_BREAK_RE = re.compile(
+    _CLAUSE_BREAK_RE.pattern + r"|(?:었고|았고|졌고|었는데|았는데|졌는데|였는데)",
+    re.IGNORECASE,
+)
+
+
+def text_outside_artwork(query: str) -> str:
+    """Return only the clauses that do not describe album art.
+
+    For deciding whether a word in the query speaks about the song itself. Stricter
+    than ``extract_audio_evidence_text``, which keeps a cover clause that also names
+    the song ("표지에 별이 가득했던 노래"): a clause with any cover or visual detail
+    is dropped whole, so a non-visual word in that clause is lost rather than a
+    visual word being treated as a fact about the song.
+    """
+    kept: list[str] = []
+    for raw_part in _ARTWORK_CLAUSE_BREAK_RE.split(_mask_lyric_literals(query)):
+        part = (raw_part or "").strip()
+        if part and _find_album_cover_context(part) is None and not _VISUAL_DETAIL_RE.search(part):
+            kept.append(part)
+    return " ".join(kept)
+
+
 def has_explicit_visual_clue(query: str) -> bool:
     """Return whether the user described album-art appearance.
 

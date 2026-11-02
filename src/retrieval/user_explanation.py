@@ -44,6 +44,7 @@ from src.retrieval.explain import (
     SongExplain,
 )
 from src.retrieval.known_slots import genre_aliases, known_genre_values, known_slot_values
+from src.retrieval.modality_queries import has_explicit_visual_clue, text_outside_artwork
 from src.retrieval.rerank_policy import mv_scene_phrases
 
 # ---------------------------------------------------------------------------
@@ -975,6 +976,10 @@ _OST_TAGS: Dict[str, Tuple[str, ...]] = {
     "게임ost": ("게임",),
 }
 _GENRE_WORD_SUFFIXES = ("곡", "음악", "노래", "풍")
+# 성별을 품은 태그("남성발라드"·"여자가수"). "남자친구"처럼 성별 낱말로 시작할 뿐인 태그는 읽지 않는다.
+_GENDER_PREFIXES = (("남성", "남성"), ("남자", "남성"), ("여성", "여성"), ("여자", "여성"), ("남녀", "혼성"), ("혼성", "혼성"))
+_GENDERED_TAIL_RE = re.compile(r"(?:보컬|솔로|그룹|듀오|듀엣|밴드|아이돌|가수|노래|랩|래퍼|발라드|댄스|힙합|록|목소리)?")
+_ANSWER_FORMS = frozenset({"솔로", "그룹", "듀오", "밴드"})
 
 
 @dataclass
@@ -1294,11 +1299,58 @@ def _genre_word(norm_tag: str) -> str:
 
     `_genre_family`는 글자 포함으로 본다("기록"의 "록")는 주의가 있어, 여기서는 표에 있는 낱말과 **전체가 같을 때만** 본다.
     """
-    known = {_norm(word) for word in _GENRE_CORPUS} | {_norm(alias) for alias in genre_aliases()}
+    known = _known_genre_words()
     for suffix in _GENRE_WORD_SUFFIXES:
         if norm_tag.endswith(suffix) and norm_tag[: -len(suffix)] in known:
             return norm_tag[: -len(suffix)]
     return ""
+
+
+def _known_genre_words() -> set:
+    return {_norm(word) for word in _GENRE_CORPUS} | {_norm(alias) for alias in genre_aliases()}
+
+
+def _tag_gender(norm_tag: str) -> str:
+    """태그가 품은 성별. 없으면 빈 문자열."""
+    form = _FORM_TAGS.get(norm_tag)
+    if form is not None:
+        return form[1]
+    for prefix, gender in _GENDER_PREFIXES:
+        if norm_tag.startswith(prefix) and _GENDERED_TAIL_RE.fullmatch(norm_tag[len(prefix):]):
+            return gender
+    return ""
+
+
+def _tag_genre_word(norm_tag: str) -> str:
+    """태그가 품은 장르 낱말 — "댄스곡"의 댄스, "남성발라드"의 발라드. 두 글자 이상만 본다("기록"의 "록"이 아니다)."""
+    word = _genre_word(norm_tag)
+    if word:
+        return word
+    for known in sorted(_known_genre_words(), key=len, reverse=True):
+        if len(known) >= 2 and known != norm_tag and (norm_tag.startswith(known) or norm_tag.endswith(known)):
+            return known
+    return ""
+
+
+def _stale_after_answers(norm_tag: str, answers: Sequence[Any]) -> bool:
+    """재질문 답변으로 정정된 값을 품은 태그인가. 정정 전 값은 지금 단서가 아니므로 근거로 보이지 않는다.
+
+    분석의 korean_tags는 원문 기준이라 답변을 반영하지 않는다. 그대로 두면 댄스→발라드로 정정해도 "댄스곡 단서는 곡
+    정보와 일치해요"가 남는다. 정정 전 값으로 계산된 가산은 상세 기록에 남고 `_adjustment_notes`가 표시한다.
+    """
+    gender = _latest_answer(answers, "vocal_gender")
+    if gender in _GENDERS:
+        tag_gender = _tag_gender(norm_tag)
+        if tag_gender and tag_gender != gender:
+            return True
+    genre = _latest_answer(answers, "genre")
+    if genre:
+        word = _tag_genre_word(norm_tag)
+        if word and not _genre_consistent(word, genre):
+            return True
+    form = _latest_answer(answers, "type")
+    entry = _FORM_TAGS.get(norm_tag)
+    return bool(form in _ANSWER_FORMS and entry and entry[0] and form not in entry[0])
 
 
 def _genre_tag_row(word: str, tag: str, clue: str, search_analysis: Any, track: Any, explain: SongExplain) -> ClueCheck:
@@ -1340,13 +1392,21 @@ def _covered_words(query: str, search_analysis: Any) -> set:
 
 
 def _check_material(
-    query: str, search_analysis: Any, track: Any, explain: SongExplain, existing: Sequence[ClueCheck] = (),
+    query: str,
+    search_analysis: Any,
+    track: Any,
+    explain: SongExplain,
+    existing: Sequence[ClueCheck] = (),
+    answers: Sequence[Any] = (),
 ) -> List[ClueCheck]:
     """분석이 뽑은 상황·소리·가사 내용 단서를 곡 자료와 대조한 행.
 
     - 등록 정보로 판정할 수 있는 단서(형태·OST·장르 변형)는 등록 정보로 본다 — 태그에 없다고 미확인으로 두면 걸그룹 곡에
       "걸그룹을 찾지 못함"이라고 말하게 된다.
-    - 표지·시기 단서는 태그·요약으로 판정할 수 없으니 행을 만들지 않는다.
+    - 표지·시기 단서는 태그·요약으로 판정할 수 없으니 행을 만들지 않는다. 표지 묘사 질의에서는 표지를 말하지 않은 절에
+      글자 그대로 있는 태그만 쓴다 — "표지에 밤하늘에 별"의 별을 가사 요약의 별로 확인했다고 하면 다른 자료로 근거를
+      만드는 셈이다. 어느 절에서 왔는지 모르는 태그(원문에 그대로 없는 값)도 쓰지 않는다.
+    - 재질문 답변으로 정정된 값을 품은 태그는 쓰지 않는다(`_stale_after_answers`).
     - 못 찾은 단서는 곡마다 한 줄로 묶는다. 사용자가 말한 것은 숨기지 않고(숨기면 확인으로 읽힌다), 말하지 않고 분석이
       덧붙인 것은 빼는 대신 찾았을 때 "검색이 해석한 단서"로 표시한다.
     - 순위 기여: korean_tags·가사 뜻은 텍스트 검색 질의에 들어가지만 **태그별 기록은 없다** — "순위 반영 기록 없음".
@@ -1366,11 +1426,18 @@ def _check_material(
         return (tag if said else f"{tag}{INTERPRETED_CLUE_SUFFIX}"), said
 
     covered = _covered_words(query, search_analysis)
+    is_visual = bool(getattr(search_analysis, "has_visual_clue", False)) or has_explicit_visual_clue(query)
+    outside_artwork = text_outside_artwork(query) if is_visual else None
     seen = set()
+    tag_rows: Dict[str, ClueCheck] = {}
     for tag in getattr(search_analysis, "korean_tags", []) or []:
         tag = str(tag or "").strip()
         norm = _norm(tag)
         if not norm or norm in covered or norm in seen or _ERA_TAG_RE.fullmatch(norm):
+            continue
+        if outside_artwork is not None and not _said_in_query(tag, outside_artwork):
+            continue
+        if _stale_after_answers(norm, answers):
             continue
         seen.add(norm)
         clue, said = label(tag)
@@ -1391,6 +1458,7 @@ def _check_material(
         )
         if row.status != STATUS_UNVERIFIED:
             rows.append(row)
+            tag_rows[norm] = row
         elif said:
             missing.append(tag)
 
@@ -1400,7 +1468,14 @@ def _check_material(
         sound = str(sound or "").strip()
         norm = _norm(sound)
         # 모델이 편성 칸에 장르를 넣기도 한다("댄스"·"발라드") — 장르 행과 겹치면 같은 단서가 두 번 나온다
-        if not norm or norm in seen or norm in covered or _genre_word(norm):
+        if not norm or norm in covered or _genre_word(norm):
+            continue
+        if norm in seen:
+            # 분석이 같은 값을 태그와 편성 양쪽에 넣은 경우(프롬프트 예시에도 있다). 행은 하나지만 편성 가산 기록은 잇는다.
+            duplicate = tag_rows.get(norm)
+            if duplicate is not None and group_adj is not None and _find_material(track, _tag_terms(sound), _FIELDS_FOR_SOUND):
+                duplicate.ranking_basis = [_adj_basis(group_adj)]
+                duplicate.basis_label = BASIS_GROUP_SCORED
             continue
         seen.add(norm)
         clue, said = label(sound)
@@ -1705,7 +1780,7 @@ def build_user_explanation(
         checks.append(gender)
     checks.extend(_check_genre(query, search_analysis, answers, track, explain, ctx))
     checks.extend(_check_lyrics(search_analysis, explain, evidence))
-    checks.extend(_check_material(query, search_analysis, track, explain, checks))
+    checks.extend(_check_material(query, search_analysis, track, explain, checks, answers))
     checks = _merge_semantic_lyric_rows(checks, str(getattr(search_analysis, "lyric_semantic_query", "") or "").strip())
     era = _check_era(analysis, search_analysis, track, explain)
     if era is not None:
