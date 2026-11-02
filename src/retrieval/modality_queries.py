@@ -945,15 +945,21 @@ _ARTWORK_CLAUSE_BREAK_RE = re.compile(
 )
 
 
-# 절이 노래·소리를 말한다는 표시. 악기 이름은 넣지 않는다 — "기타를 들고 있었어"는 표지 설명이다.
+# 가사 내용·청취 상황으로 넘어갔다는 분명한 표시. 그림 속 모습으로 읽을 수 없어 시각·자세 낱말이 있어도 절을 남긴다
+# ("누워서 듣던 피아노 노래", "가사는 바다 얘기"). "들었"은 넣지 않는다 — "기타를 손에 들었어"로도 읽힌다.
+_SONG_SWITCH_RE = re.compile(r"가사|노랫말|후렴|듣|들으|들을|들리|들렸")
+# 노래·소리를 가리키는 낱말. 표지 설명 끝에도 붙으므로("기타를 들고 있던 곡이야") 시각·자세 낱말이 없을 때만 인정한다.
+# 악기 이름은 넣지 않는다 — "기타를 들고 있었어"는 표지 설명이다.
 _SONG_TOPIC_RE = re.compile(
     _MUSIC_CONTEXT_RE.pattern[:-1]
-    + r"|가사|후렴|소리|연주|불렀|부르|부른|듣|들었|들리|들렸|고음|저음|음색|가창|화음|코러스|편곡|미성|허스키"
+    + r"|소리|연주|불렀|부르|부른|고음|저음|음색|가창|화음|코러스|편곡|미성|허스키"
     r"|발라드|댄스|재즈|알앤비|r\s*&\s*b|힙합|랩|" + _ROCK + r"|메탈|트로트|포크)",
     re.IGNORECASE,
 )
-# 그림 속 모습을 말하는 서술어. "기타를 들고 있던 곡이야"처럼 곡을 가리켜도 내용은 표지 설명이다.
-_ARTWORK_POSE_RE = re.compile(r"들고|쥐고|메고|안고|입고|끼고|앉아|서\s*있|누워|그려|찍은|찍힌|박혀|적혀")
+# 그림 속 모습을 말하는 서술어. 낱말 첫머리만 본다 — "힘들고"의 "들고", "그려낸"의 "그려"가 아니다.
+_ARTWORK_POSE_RE = re.compile(
+    r"(?<![가-힣])(?:들고|쥐고|메고|안고|입고|끼고|앉아|서\s*있|누워|찍은|찍힌|박혀|적혀)|그려(?:진|져|있)"
+)
 
 
 def text_outside_artwork(query: str) -> str:
@@ -961,18 +967,19 @@ def text_outside_artwork(query: str) -> str:
 
     For deciding whether a word in a visual query is a fact about the song. A cover
     description can start before the cover noun ("활주로에 비행기가 서 있고, … 표지") and
-    continue after it ("표지에 남자가 있고 기타를 들고 있었어"), so a clause is kept only
-    when it positively names the song or its sound, and has no cover, visual or pose
-    detail. A non-visual word in any other clause is lost rather than a visual word
-    being treated as a fact about the song.
+    continue after it ("표지에 남자가 있고 기타를 들고 있었어"), so a clause must
+    positively name the song. A clause naming the cover is always dropped. One that
+    turns to the lyrics or to listening is kept. One that only names the song or its
+    sound is kept when it has no visual or pose detail. A non-visual word in any other
+    clause is lost rather than a visual word being treated as a fact about the song.
     """
     kept: list[str] = []
     for raw_part in _ARTWORK_CLAUSE_BREAK_RE.split(_mask_lyric_literals(query)):
         part = (raw_part or "").strip()
-        if (
-            part
-            and _SONG_TOPIC_RE.search(part)
-            and _find_album_cover_context(part) is None
+        if not part or _find_album_cover_context(part) is not None:
+            continue
+        if _SONG_SWITCH_RE.search(part) or (
+            _SONG_TOPIC_RE.search(part)
             # "음색"의 "색"은 시각 단서가 아니다
             and not _VISUAL_DETAIL_RE.search(part.replace("음색", ""))
             and not _ARTWORK_POSE_RE.search(part)

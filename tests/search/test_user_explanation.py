@@ -1717,6 +1717,16 @@ def test_cover_query_drops_a_tag_whose_clause_is_unknown_but_keeps_the_rule_read
     ("이별 노래인데 표지는 검은색이었고 이어서 빨간 글씨가 있었어. 가사는 슬펐어", "이별 노래 가사는 슬펐어"),
     # 음색은 시각 단서가 아니다
     ("표지는 검은색이었고 허스키한 음색이야", "허스키한 음색이야"),
+    ("표지에 남자가 기타를 손에 들었어", ""),
+    ("표지에 남자가 있고 기타를 들고 소리를 지르고 있었어", ""),
+    # 자세 낱말은 낱말 첫머리만 본다. 가사 내용·청취 상황으로 넘어간 절은 남는다
+    ("표지는 검은색이었고 가사는 이별 때문에 힘들고 후회한다는 내용이야", "가사는 이별 때문에 힘들고 후회한다는 내용이야"),
+    ("표지는 검은색이었고 누워서 듣던 잔잔한 피아노 노래야", "누워서 듣던 잔잔한 피아노 노래야"),
+    ("표지는 검은색이었고 비 오는 날 듣던 노래", "비 오는 날 듣던 노래"),
+    ("표지는 검은색이었고 이별해서 힘들고 지친 곡이야", "이별해서 힘들고 지친 곡이야"),
+    ("표지는 검은색이었고 마음을 그려낸 노래야", "마음을 그려낸 노래야"),
+    # 표지를 직접 말한 절은 듣는 얘기가 섞여도 남지 않는다
+    ("별이 그려진 앨범 표지를 보며 듣던 노래", ""),
     # 표지 낱말보다 앞에 온 묘사, 표지 낱말이 없는 묘사도 노래를 말하지 않으면 남지 않는다
     ("활주로 같은 데에 옛날 프로펠러 비행기가 서 있고, 여자 한 명이 있는 사진 표지", ""),
     ("공원 큰 나무 밑에 자전거 세워져 있고, 위에 주황색 문자가 크게 박힌 표지", ""),
@@ -1743,6 +1753,17 @@ def test_cover_description_that_continues_over_clauses_is_not_shown_as_sound_evi
     query = "표지에 남자가 있고 기타 소리가 큰 노래였어"
     ux = _visual_build(query, ["기타"], track)
     assert [r.clue for r in _rows(ux, SLOT_TAG)] == ["기타"]
+
+
+@pytest.mark.parametrize("query,tags,track_kw,kept", [
+    ("표지는 검은색이었고 가사는 이별 때문에 힘들고 후회한다는 내용이야", ["이별", "후회"],
+     dict(relation_context_tags=["이별"], emotion_tags=["후회"]), ["이별", "후회"]),
+    ("표지는 검은색이었고 누워서 듣던 잔잔한 피아노 노래야", ["잔잔한", "피아노"],
+     dict(vibe_tags=["잔잔함"], sound_tags=["피아노"]), ["잔잔한", "피아노"]),
+    ("표지에 남자가 있고 기타를 들고 있던 곡이야", ["기타"], dict(sound_tags=["기타"]), []),
+])
+def test_song_clues_after_a_cover_stay_and_a_pose_on_the_cover_does_not(query, tags, track_kw, kept):
+    assert [r.clue for r in _rows(_visual_build(query, tags, _track(id="x", **track_kw)), SLOT_TAG)] == kept
 
 
 def test_query_without_cover_description_is_not_filtered():
