@@ -950,10 +950,16 @@ _LYRIC_SWITCH_RE = re.compile(r"가사|노랫말|후렴")
 # 듣는 행동. 사용자의 청취("누워서 듣던 노래")일 수도, 표지 속 인물의 행동("남자가 앉아서 듣고 있었어")일 수도 있다.
 # "들었"은 넣지 않는다 — "기타를 손에 들었어"로도 읽힌다.
 _LISTENING_RE = re.compile(r"듣|들으|들을|들리|들렸")
-# 절의 주어가 그림 속 인물로 읽히는 표현. "내가"·"제가"는 사용자라 넣지 않는다.
-_DEPICTED_PERSON_RE = re.compile(
-    r"(?<![가-힣])(?:남자|여자|남성|여성|사람|아이|소년|소녀|인물|멤버|아저씨|아줌마|할머니|할아버지)들?(?:이|가|은|는)(?![가-힣])"
-)
+# 듣는 동작의 주어를 가리는 표(`_listener_is_depicted`). 인물 명사를 늘어놓지 않는다 — "커플이"·"남자 한 명이"처럼 끝이 없다.
+_FIRST_PERSON_WORD_RE = re.compile(r"(?:내가|제가|우리가|나는|난|저는|전|우리는|나도|저도|우리도)")
+# 은·는은 관형형("잔잔한 노래는", "듣는")과 글자가 같아 명백한 인물 명사일 때만 주어로 본다.
+_PERSON_TOPIC_WORD_RE = re.compile(r"(?:남자|여자|남성|여성|사람|아이|소년|소녀|인물|멤버|가수|커플)들?(?:은|는)")
+# 끝이 이·가지만 주어가 아닌 부사, 주어여도 사람이 아닌 낱말.
+_NOT_SUBJECT_WORDS = frozenset({"많이", "같이", "깊이", "높이", "길이", "없이", "일찍이", "가끔이"})
+_NON_PERSON_SUBJECT_RE = re.compile(r"분위기|느낌|기분|마음|날씨|바람|가슴|시간|계절")
+# 앞쪽 주어가 듣는 동작이 아니라 이 서술어나 때·조건에 걸린다는 표시.
+_SINGING_WORD_RE = re.compile(r"부르|부른|불렀|노래하|랩하")
+_TIME_WORD_RE = re.compile(r"(?:때|날|밤|새벽|아침|저녁|시절|동안|순간)(?:에|엔|면|마다|이면|에는)?$|면$")
 # 노래·소리를 가리키는 낱말. 표지 설명 끝에도 붙으므로("기타를 들고 있던 곡이야") 시각·자세 낱말이 없을 때만 인정한다.
 # 악기 이름은 넣지 않는다 — "기타를 들고 있었어"는 표지 설명이다.
 _SONG_TOPIC_RE = re.compile(
@@ -966,6 +972,33 @@ _SONG_TOPIC_RE = re.compile(
 _ARTWORK_POSE_RE = re.compile(
     r"(?<![가-힣])(?:들고|쥐고|메고|안고|입고|끼고|앉아|서\s*있|누워|찍은|찍힌|박혀|적혀)|그려(?:진|져|있)"
 )
+
+
+def _listener_is_depicted(part: str) -> bool:
+    """듣는 동작의 주어가 3인칭인가 — 그렇다면 표지 속 인물의 행동으로 본다.
+
+    한국어는 주어를 자주 생략하므로("누워서 듣던 노래") 1인칭을 요구하지 않는다. 듣는 동사 앞 어절을 거꾸로 읽어 처음
+    만나는 주어로 판단한다. 그 사이에 다른 서술어(노래하는 쪽 "남자가 부르는 노래를", 때·조건 "비가 오는 날")가 있으면
+    앞쪽 주어는 그 서술어의 것이다.
+    """
+    listening = _LISTENING_RE.search(part)
+    if listening is None:
+        return False
+    for word in reversed(part[: listening.start()].split()):
+        if _FIRST_PERSON_WORD_RE.fullmatch(word) or _SINGING_WORD_RE.search(word) or _TIME_WORD_RE.search(word):
+            return False
+        if _PERSON_TOPIC_WORD_RE.fullmatch(word):
+            return True
+        if (
+            len(word) >= 2
+            and word[-1] in "이가"
+            and word not in _NOT_SUBJECT_WORDS
+            and not _SONG_TOPIC_RE.search(word)
+            and not _AUDIO_INSTRUMENT_RE.search(word)
+            and not _NON_PERSON_SUBJECT_RE.search(word)
+        ):
+            return True
+    return False
 
 
 def text_outside_artwork(query: str) -> str:
@@ -992,7 +1025,7 @@ def text_outside_artwork(query: str) -> str:
         if not _SONG_TOPIC_RE.search(part):
             continue
         if _LISTENING_RE.search(part):
-            if not _DEPICTED_PERSON_RE.search(part):
+            if not _listener_is_depicted(part):
                 kept.append(part)
             continue
         # "음색"의 "색"은 시각 단서가 아니다
