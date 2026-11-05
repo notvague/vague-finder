@@ -384,6 +384,7 @@ body.listmode { background-image: var(--checker); }
 }
 .genrefilter input { width: 150px; }
 .genrefilter input:focus { border-color: #2258a5; }
+.listsearch { gap: 6px; }
 .filterclear {
   margin-left: -4px;
   border: none;

@@ -385,8 +385,8 @@ test('정적 파일 버전이 올라갔다', () => {
   // 정답 버튼을 근거 옆으로 옮기며 세 파일이 함께 바뀌었다(evidence-1 → answer-1, feedback.js 3 → 4).
   // v59(리랭킹 일부 적용 · 묶음 수 표기)는 map.js만 바뀌어 map.js 버전만 올렸다(answer-1 → rerank-status-1)
   // 공통 단서 묶음(목록 위 한 번 · 곡별 표는 다른 점 먼저)은 map.js·style.css·index.html이 함께 바뀌었다
-  assert.ok(/map\.js\?v=common-clues-1/.test(html), 'map.js 버전');
-  assert.ok(/style\.css\?v=common-clues-1/.test(html), 'style.css 버전');
+  assert.ok(/map\.js\?v=list-search-1/.test(html), 'map.js 버전');
+  assert.ok(/style\.css\?v=list-search-1/.test(html), 'style.css 버전');
   assert.ok(/id="commonClues"/.test(html), '공통 단서 자리가 목록 위에 있다');
   assert.ok(html.indexOf('id="commonClues"') < html.indexOf('id="resultList"'));
   assert.ok(/feedback\.js\?v=4/.test(html), 'feedback.js 버전');
