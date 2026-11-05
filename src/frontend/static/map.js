@@ -41,9 +41,10 @@ const listView = document.getElementById("listview");
 const listBody = document.getElementById("listBody");
 const listCount = document.getElementById("listCount");
 const genreSelect = document.getElementById("genreSelect");
-const artistInput = document.getElementById("artistInput");
+const listSearchField = document.getElementById("listSearchField");
+const listSearchInput = document.getElementById("listSearchInput");
 const artistList = document.getElementById("artistList");
-const artistClear = document.getElementById("artistClear");
+const listSearchClear = document.getElementById("listSearchClear");
 const heardOnly = document.getElementById("heardOnly");
 const searchForm = document.getElementById("searchForm");
 const searchInput = document.getElementById("searchInput");
@@ -387,13 +388,28 @@ let listDesc = SORT_DEFAULT_DESC[listSort];
 // 한글 정렬은 기본 문자열 비교로는 자모 순서가 어긋나므로 ko 로케일을 쓴다
 const collator = new Intl.Collator("ko", { numeric: true, sensitivity: "base" });
 
+/*
+ * 띄어쓰기를 빼고 비교한다 — 제목 대부분에 공백이 있어 "사랑했지만"으로 "사랑 했지만"을 찾게 한다.
+ * 자료의 제목 일부가 자모 분리형(NFD)이라 입력(NFC)과 그대로는 일치하지 않는다.
+ */
+function normalizeListSearch(text) {
+  return text.normalize("NFC").toLowerCase().replace(/\s+/g, "");
+}
+
+function matchesListSearch(song, field, needle) {
+  if (!needle) return true;
+  // 제목은 표에 보이는 전체 제목(ft)에서 찾는다
+  return normalizeListSearch(field === "artist" ? song.a : song.ft).includes(needle);
+}
+
 function sortedSongs() {
   const genre = genreSelect.value;
-  const artist = artistInput.value.trim().toLowerCase();
+  const field = listSearchField.value;
+  const needle = normalizeListSearch(listSearchInput.value);
   const rows = [...songsById.values()].filter(
     (s) =>
       (!genre || s.g === genre) &&
-      (!artist || s.a.toLowerCase().includes(artist)) &&
+      matchesListSearch(s, field, needle) &&
       (!heardOnly.checked || heard.has(s.id))
   );
   const dir = listDesc ? -1 : 1;
@@ -492,18 +508,34 @@ for (const btn of document.querySelectorAll(".sort")) {
   });
 }
 
-let artistDebounce = null;
-artistInput.addEventListener("input", () => {
-  artistClear.hidden = !artistInput.value;
-  // 타이핑마다 수천 행을 다시 그리면 버벅이므로 잠깐 모아서 처리한다
-  clearTimeout(artistDebounce);
-  artistDebounce = setTimeout(renderList, 120);
-});
-artistClear.addEventListener("click", () => {
-  artistInput.value = "";
-  artistClear.hidden = true;
+function applyListSearchField() {
+  const byArtist = listSearchField.value === "artist";
+  // 자동완성은 가수만 — 제목은 5천 개가 넘어 제안 목록이 도움이 안 된다
+  if (byArtist) listSearchInput.setAttribute("list", "artistList");
+  else listSearchInput.removeAttribute("list");
+  listSearchInput.placeholder = byArtist ? "가수 이름" : "곡 제목";
+}
+applyListSearchField();
+
+// 기준을 바꿔도 검색어는 두고 새 기준으로 다시 찾는다
+listSearchField.addEventListener("change", () => {
+  applyListSearchField();
   renderList();
-  artistInput.focus();
+  listSearchInput.focus();
+});
+
+let listSearchDebounce = null;
+listSearchInput.addEventListener("input", () => {
+  listSearchClear.hidden = !listSearchInput.value;
+  // 타이핑마다 수천 행을 다시 그리면 버벅이므로 잠깐 모아서 처리한다
+  clearTimeout(listSearchDebounce);
+  listSearchDebounce = setTimeout(renderList, 120);
+});
+listSearchClear.addEventListener("click", () => {
+  listSearchInput.value = "";
+  listSearchClear.hidden = true;
+  renderList();
+  listSearchInput.focus();
 });
 
 // 목록에서 곡을 클릭하면 해당 곡 위치로 지도를 열어준다
